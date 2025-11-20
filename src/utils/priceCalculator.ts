@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /**
  * EQUA Token Price Appreciation Calculator
  * 
@@ -175,6 +174,3 @@ export function getCurrentEquaPrice(
     compoundingComplete
   );
 }
-=======
-404: Not Found
->>>>>>> 369107deb2deb2298e4e33d2b4bd97b0179db76c
