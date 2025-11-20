@@ -24,7 +24,7 @@ interface WalletProviderProps {
 
 export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   // Use Devnet (change to Mainnet when ready for production)
-  const network = WalletAdapterNetwork.Localnet;
+  const network = WalletAdapterNetwork.Devnet;
 
   // You can also provide a custom RPC endpoint
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);

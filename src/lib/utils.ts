@@ -173,6 +173,7 @@ export function formatSolAmount(lamports: number): string {
  * @param func - Function to debounce
  * @param wait - Wait time in milliseconds
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number

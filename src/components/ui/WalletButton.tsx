@@ -10,6 +10,7 @@ export const WalletButton: FC = () => {
 
   // Only render on client side
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

@@ -1,100 +1,33 @@
 'use client';
 
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { AnchorProvider, Program } from '@coral-xyz/anchor';
-import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { useMemo } from 'react';
-import * as anchor from '@coral-xyz/anchor';
+
+/**
+ * Hook for interacting with the EQUA program
+ * This is a stub that provides PDA helpers and basic program utilities
+ * Can be extended with actual program instructions in future
+ */
 
 const PROGRAM_ID_STRING = 'G6yZUuyumRxcKbvWjaDVURJzShfeBW1zpde1BHzCr6si';
 
-// Create a minimal IDL structure that works
-const MINIMAL_IDL = {
-  version: "0.1.0",
-  name: "equa_token",
-  instructions: [
-    {
-      name: "initializeUser",
-      accounts: [
-        { name: "userAccount", isMut: true, isSigner: false },
-        { name: "authority", isMut: true, isSigner: true },
-        { name: "globalState", isMut: true, isSigner: false },
-        { name: "systemProgram", isMut: false, isSigner: false }
-      ],
-      args: [
-        { name: "referrer", type: "publicKey" },
-        { name: "registrationTime", type: "i64" },
-        { name: "lockUntil", type: "i64" }
-      ]
-    },
-    {
-      name: "mintEqua",
-      accounts: [
-        { name: "userAccount", isMut: true, isSigner: false },
-        { name: "authority", isMut: false, isSigner: true },
-        { name: "globalState", isMut: true, isSigner: false }
-      ],
-      args: [
-        { name: "amount", type: "u64" }
-      ]
-    }
-  ],
-  accounts: [
-    {
-      name: "UserAccount",
-      type: {
-        kind: "struct",
-        fields: [
-          { name: "authority", type: "publicKey" },
-          { name: "equaBalance", type: "u64" },
-          { name: "lastMintTime", type: "i64" },
-          { name: "totalMints", type: "u64" }
-        ]
-      }
-    },
-    {
-      name: "GlobalState",
-      type: {
-        kind: "struct",
-        fields: [
-          { name: "totalUsers", type: "u64" },
-          { name: "totalTransactions", type: "u64" }
-        ]
-      }
-    }
-  ]
-};
-
 export function useEquaProgram() {
   const { connection } = useConnection();
-  const wallet = useWallet();
+  const { publicKey } = useWallet();
 
-  const provider = useMemo(() => {
-    if (!wallet.publicKey) return null;
-    
-    return new AnchorProvider(
-      connection,
-      wallet as any,
-      { commitment: 'confirmed' }
-    );
-  }, [connection, wallet]);
+  const programId = useMemo(() => {
+    return new PublicKey(PROGRAM_ID_STRING);
+  }, []);
 
-  const program = useMemo(() => {
-    if (!provider) return null;
-    
-    try {
-      const programId = new PublicKey(PROGRAM_ID_STRING);
-      const programInstance = new Program(MINIMAL_IDL as any, programId, provider);
-      console.log('✅ Program initialized successfully');
-      return programInstance;
-    } catch (error) {
-      console.error('❌ Error creating program:', error);
-      return null;
-    }
-  }, [provider]);
+  const isReady = useMemo(() => {
+    return !!connection && !!publicKey;
+  }, [connection, publicKey]);
 
+  /**
+   * Get the Global State PDA
+   */
   const getGlobalStatePda = () => {
-    const programId = new PublicKey(PROGRAM_ID_STRING);
     const [pda] = PublicKey.findProgramAddressSync(
       [Buffer.from('global_state')],
       programId
@@ -102,8 +35,10 @@ export function useEquaProgram() {
     return pda;
   };
 
+  /**
+   * Get the User Account PDA for a given authority
+   */
   const getUserAccountPda = (authority: PublicKey) => {
-    const programId = new PublicKey(PROGRAM_ID_STRING);
     const [pda] = PublicKey.findProgramAddressSync(
       [Buffer.from('user_account'), authority.toBuffer()],
       programId
@@ -111,10 +46,74 @@ export function useEquaProgram() {
     return pda;
   };
 
+  /**
+   * Get the Mint PDA
+   */
+  const getMintPda = () => {
+    const [pda] = PublicKey.findProgramAddressSync(
+      [Buffer.from('mint')],
+      programId
+    );
+    return pda;
+  };
+
+  /**
+   * Get the Mint Authority PDA
+   */
+  const getMintAuthorityPda = () => {
+    const [pda] = PublicKey.findProgramAddressSync(
+      [Buffer.from('mint_authority')],
+      programId
+    );
+    return pda;
+  };
+
+  /**
+   * Fetch global state account
+   * TODO: Implement actual account fetching
+   */
+  const fetchGlobalState = async () => {
+    if (!isReady) return null;
+    
+    try {
+      const globalStatePda = getGlobalStatePda();
+      // TODO: Fetch and deserialize account data
+      console.log('Fetching global state:', globalStatePda.toBase58());
+      return null;
+    } catch (error) {
+      console.error('Error fetching global state:', error);
+      return null;
+    }
+  };
+
+  /**
+   * Fetch user account data
+   * TODO: Implement actual account fetching
+   */
+  const fetchUserAccount = async (authority: PublicKey) => {
+    if (!isReady) return null;
+    
+    try {
+      const userAccountPda = getUserAccountPda(authority);
+      // TODO: Fetch and deserialize account data
+      console.log('Fetching user account:', userAccountPda.toBase58());
+      return null;
+    } catch (error) {
+      console.error('Error fetching user account:', error);
+      return null;
+    }
+  };
+
   return {
-    program,
-    provider,
+    programId,
+    connection,
+    publicKey,
+    isReady,
     getGlobalStatePda,
     getUserAccountPda,
+    getMintPda,
+    getMintAuthorityPda,
+    fetchGlobalState,
+    fetchUserAccount,
   };
 }

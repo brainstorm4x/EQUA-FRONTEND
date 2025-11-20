@@ -18,6 +18,7 @@ export default function Home() {
         setBalance(bal / LAMPORTS_PER_SOL);
       });
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBalance(null);
     }
   }, [publicKey, connected, connection]);
