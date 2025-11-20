@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { EquaToken } from "../target/types/equa_token";
+import { EquaToken } from "../equa_token/target/types/equa_token";
 
 async function main() {
   const provider = anchor.AnchorProvider.env();

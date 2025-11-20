@@ -2,7 +2,7 @@ import { PublicKey, SystemProgram, TransactionInstruction, Connection, Keypair }
 import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import BN from 'bn.js';
 
-export const PROGRAM_ID = new PublicKey('G6yZUuyumRxcKbvWjaDVURJzShfeBW1zpde1BHzCr6si');
+export const PROGRAM_ID = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
 
 // ✅ Export STANDARD SPL Token Program ID (matches your backend)
 export { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
@@ -161,6 +161,7 @@ export function createInitializeUserInstruction(
   });
 }
 
+
 // Add tracking mint (mint_equa) instruction
 export function createMintEquaTrackingInstruction(
   userAccount: PublicKey,
@@ -247,3 +248,36 @@ export async function getSPLTokenBalance(
     return 0;
   }
 }
+
+// Create mint_equa_tokens instruction
+export function createMintEquaInstruction(
+  userAccount: PublicKey,
+  userTokenAccount: PublicKey,
+  mint: PublicKey,
+  mintAuthority: PublicKey,
+  authority: PublicKey,
+  tokenProgram: PublicKey,
+  amount: number
+): TransactionInstruction {
+  const discriminator = Buffer.from([166, 66, 221, 55, 153, 196, 139, 85]);
+  const amountBN = new BN(amount);
+  
+  const data = Buffer.concat([
+    discriminator,
+    amountBN.toArrayLike(Buffer, 'le', 8),
+  ]);
+
+  return new TransactionInstruction({
+    keys: [
+      { pubkey: userAccount, isSigner: false, isWritable: true },
+      { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+      { pubkey: mint, isSigner: false, isWritable: true },
+      { pubkey: mintAuthority, isSigner: false, isWritable: false },
+      { pubkey: authority, isSigner: true, isWritable: false },
+      { pubkey: tokenProgram, isSigner: false, isWritable: false },
+    ],
+    programId: PROGRAM_ID,
+    data,
+  });
+}
+

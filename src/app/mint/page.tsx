@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Transaction, Keypair, PublicKey } from '@solana/web3.js';
 import * as program from '@/lib/program';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } from '@solana/spl-token';
+import BN from 'bn.js';
 
 // ✅ Helper function to store/retrieve user keypair from localStorage
 const STORAGE_KEY = 'equa_user_keypair';
@@ -38,6 +39,23 @@ function saveUserKeypairToStorage(keypair: Keypair): void {
   }
 }
 
+// ✅ Helper to format seconds into human-readable time
+function formatTimeRemaining(seconds: number): string {
+  if (seconds <= 0) return 'Ready to mint!';
+  
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
+  } else {
+    return `${secs}s`;
+  }
+}
+
 export default function MintPage() {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
@@ -48,7 +66,6 @@ export default function MintPage() {
     getMintPDA,
     getMintAuthorityPDA,
     isUserRegistered, 
-    getUserBalance, 
     getGlobalState 
   } = useProgram();
 
@@ -61,8 +78,13 @@ export default function MintPage() {
   const [error, setError] = useState('');
   const [totalUsers, setTotalUsers] = useState(0);
   const [currentPrice, setCurrentPrice] = useState(0.01);
+  
+  // ✅ NEW: Cooldown state
+  const [lastMintTime, setLastMintTime] = useState<number>(0);
+  const [timeUntilNextMint, setTimeUntilNextMint] = useState<number>(0);
+  const [canMint, setCanMint] = useState<boolean>(true);
 
-  // ✅ Load or generate user account keypair on mount (only once)
+  // ✅ Load or generate user account keypair on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
@@ -79,7 +101,48 @@ export default function MintPage() {
     setUserAccountKeypair(keypair);
   }, []);
 
-  // ✅ Memoize checkRegistration function
+  // ✅ NEW: Function to read last_mint_time from user account
+  // Read last_mint_time from user account
+  const getLastMintTime = useCallback(async (userPubkey: PublicKey): Promise<number> => {
+    try {
+      const accountInfo = await connection.getAccountInfo(userPubkey);
+      if (!accountInfo || accountInfo.data.length === 0) {
+        console.log('⚠️ User account not found');
+        return 0;
+      }
+      
+      // Correct offset based on IDL:
+      // 8 discriminator + 32 authority + 32 referral + 32 token_account + 8 minted_amount + 8 mint_start + 8 locked_until = 128
+      const LAST_MINT_TIME_OFFSET = 136;
+      
+      if (accountInfo.data.length < LAST_MINT_TIME_OFFSET + 8) {
+        console.log('⚠️ Account data too short for last_mint_time');
+        return 0;
+      }
+      
+      const lastMintRaw = new BN(
+        accountInfo.data.slice(LAST_MINT_TIME_OFFSET, LAST_MINT_TIME_OFFSET + 8),
+        'le'
+      );
+      
+      // Safe conversion with reasonable timestamp bounds
+      const MAX_SAFE_TIMESTAMP = 8640000000; // ~year 2243 in seconds
+      if (lastMintRaw.gt(new BN(MAX_SAFE_TIMESTAMP))) {
+        console.warn('⚠️ Last mint time appears uninitialized or corrupted:', lastMintRaw.toString());
+        return 0;
+      }
+      
+      const timestamp = lastMintRaw.toNumber();
+      console.log('⏰ Raw last_mint_time:', timestamp, 'Date:', new Date(timestamp * 1000).toLocaleString());
+      return timestamp;
+    } catch (error) {
+      console.error('Error getting last mint time:', error);
+      return 0;
+    }
+  }, [connection]);
+
+
+  // ✅ Check registration and fetch last mint time
   const checkRegistration = useCallback(async () => {
     if (!publicKey || !isReady || !userAccountKeypair) {
       setIsCheckingRegistration(false);
@@ -90,13 +153,57 @@ export default function MintPage() {
     
     try {
       const userPubkey = userAccountKeypair.publicKey;
+      
+      // ✅ Check if account exists first
+      const accountInfo = await connection.getAccountInfo(userPubkey);
+      if (accountInfo) {
+        console.log('⚠️ User account already exists, checking if it\'s properly initialized...');
+        
+        // Try to verify if it's a valid user account by checking discriminator
+        if (accountInfo.data.length >= 8) {
+          const discriminator = accountInfo.data.slice(0, 8);
+          console.log('Account discriminator:', Array.from(discriminator));
+          
+          // If account exists but has wrong data, we need a new keypair
+          const isReg = await isUserRegistered(userPubkey);
+          setRegistered(isReg);
+          
+          if (!isReg) {
+            console.log('❌ Account exists but not properly registered. Generating new keypair...');
+            // Clear and generate new keypair
+            localStorage.removeItem(STORAGE_KEY);
+            const newKeypair = Keypair.generate();
+            saveUserKeypairToStorage(newKeypair);
+            setUserAccountKeypair(newKeypair);
+            setIsCheckingRegistration(false);
+            return;
+          }
+        }
+      } else {
+        console.log('✅ User account does not exist yet, ready to register');
+      }
+      
       const isReg = await isUserRegistered(userPubkey);
       console.log('📋 User registered:', isReg);
       setRegistered(isReg);
 
       if (isReg) {
-        const bal = await getUserBalance(userPubkey);
+        // Get balance
+        const [mintPDA] = getMintPDA();
+        const userTokenAccount = getAssociatedTokenAddressSync(
+          mintPDA,
+          publicKey,
+          false,
+          program.TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        );
+        const bal = await program.getSPLTokenBalance(connection, userTokenAccount);
         setBalance(bal);
+
+        // Get last mint time
+        const lastMint = await getLastMintTime(userPubkey);
+        setLastMintTime(lastMint);
+        console.log('⏰ Last mint time:', lastMint);
       }
 
       const [globalStatePDA] = getGlobalStatePDA();
@@ -109,14 +216,45 @@ export default function MintPage() {
     } finally {
       setIsCheckingRegistration(false);
     }
-  }, [publicKey, isReady, userAccountKeypair, isUserRegistered, getUserBalance, getGlobalStatePDA, getGlobalState]);
+  }, [publicKey, isReady, userAccountKeypair, isUserRegistered, getMintPDA, getGlobalStatePDA, getGlobalState, connection, getLastMintTime]);
 
   // Check registration when wallet connects or user account is ready
   useEffect(() => {
     checkRegistration();
   }, [checkRegistration]);
 
-  // ✅✅✅ REGISTER USER - WITH STANDARD SPL TOKEN ✅✅✅
+  // ✅ NEW: Countdown timer effect
+  useEffect(() => {
+    if (lastMintTime === 0) {
+      setCanMint(true);
+      setTimeUntilNextMint(0);
+      return;
+    }
+
+    const updateCooldown = () => {
+      const now = Math.floor(Date.now() / 1000);
+      const timeSinceLastMint = now - lastMintTime;
+      const cooldownPeriod = 86400; // 24 hours in seconds
+      
+      if (timeSinceLastMint >= cooldownPeriod) {
+        setCanMint(true);
+        setTimeUntilNextMint(0);
+      } else {
+        setCanMint(false);
+        setTimeUntilNextMint(cooldownPeriod - timeSinceLastMint);
+      }
+    };
+
+    // Update immediately
+    updateCooldown();
+
+    // Update every second
+    const interval = setInterval(updateCooldown, 1000);
+
+    return () => clearInterval(interval);
+  }, [lastMintTime]);
+
+  // ✅ REGISTER USER
   const handleRegister = async (e?: React.MouseEvent) => {
     e?.preventDefault();
     console.log('🔵 Register button clicked');
@@ -134,12 +272,11 @@ export default function MintPage() {
       const [globalStatePDA] = getGlobalStatePDA();
       const [mintPDA] = getMintPDA();
 
-      // ✅ FIXED: Use TOKEN_PROGRAM_ID (standard SPL Token)
       const userTokenAccount = getAssociatedTokenAddressSync(
         mintPDA,
         publicKey,
         false,
-        program.TOKEN_PROGRAM_ID,  // ✅ FIXED: Standard SPL Token
+        program.TOKEN_PROGRAM_ID,
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
@@ -149,42 +286,33 @@ export default function MintPage() {
       console.log('📝 Global State PDA:', globalStatePDA.toBase58());
       console.log('📝 User Token Account:', userTokenAccount.toBase58());
       console.log('📝 Mint PDA:', mintPDA.toBase58());
-      console.log('📝 Token Program:', program.TOKEN_PROGRAM_ID.toBase58());
-      console.log('📝 Associated Token Program:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
 
       const now = Math.floor(Date.now() / 1000);
       
-      // ✅ FIXED: Pass TOKEN_PROGRAM_ID as 8th parameter
       const instruction = program.createInitializeUserInstruction(
         userAccountKeypair.publicKey,
         publicKey,
         globalStatePDA,
-        userAccountKeypair.publicKey,              // No referral account
+        userAccountKeypair.publicKey,
         userTokenAccount,
         mintPDA,
-        ASSOCIATED_TOKEN_PROGRAM_ID,    // Standard ATA program
-        program.TOKEN_PROGRAM_ID,       // ✅ FIXED: Standard SPL Token
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        program.TOKEN_PROGRAM_ID,
         now,
-        now, // 2 years lock
-        PublicKey.default                // No referrer
+        now,
+        PublicKey.default
       );
 
       const transaction = new Transaction().add(instruction);
       transaction.feePayer = publicKey;
 
-      // ✅ BLOCKHASH FIX: Get fresh blockhash with 'confirmed' commitment
-      console.log('📝 Fetching fresh blockhash...');
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
-      console.log('📝 Blockhash:', blockhash);
-      console.log('📝 Last valid block height:', lastValidBlockHeight);
 
-      // Sign with wallet first, then add user account signature
       console.log('📝 Requesting wallet signature...');
       const signed = await wallet.signTransaction(transaction);
-      signed.partialSign(userAccountKeypair);
+      signed.partialSign(userAccountKeypair);  // ✅ CRITICAL for registration
       
-      // ✅ BLOCKHASH FIX: Send with proper commitment and retry options
       console.log('📝 Sending transaction...');
       const signature = await connection.sendRawTransaction(signed.serialize(), {
         skipPreflight: false,
@@ -193,9 +321,7 @@ export default function MintPage() {
       });
 
       console.log('📝 Transaction sent! Signature:', signature);
-      console.log('📝 Confirming transaction...');
 
-      // ✅ BLOCKHASH FIX: Confirm with block height strategy
       await connection.confirmTransaction({
         signature,
         blockhash,
@@ -206,9 +332,13 @@ export default function MintPage() {
       setTxSignature(signature);
       setRegistered(true);
       
-      // Update balance and stats
-      const bal = await getUserBalance(userAccountKeypair.publicKey);
+      // Update balance
+      const bal = await program.getSPLTokenBalance(connection, userTokenAccount);
       setBalance(bal);
+
+      // Get last mint time (should be 0 for new user)
+      const lastMint = await getLastMintTime(userAccountKeypair.publicKey);
+      setLastMintTime(lastMint);
 
       const globalState = await getGlobalState(globalStatePDA);
       if (globalState) {
@@ -218,7 +348,6 @@ export default function MintPage() {
       console.error('❌ Registration error:', err);
       if (err instanceof Error) {
         console.error('Error message:', err.message);
-        console.error('Error stack:', err.stack);
       }
       setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
     } finally {
@@ -226,13 +355,22 @@ export default function MintPage() {
     }
   };
 
-  // ✅✅✅ MINT EQUA - WITH STANDARD SPL TOKEN ✅✅✅
+
+  // ✅ MINT EQUA WITH COOLDOWN CHECK
   const handleMint = async (e?: React.MouseEvent) => {
     e?.preventDefault();
+    console.log('🔵 Mint button clicked');
+    
     if (!wallet || !publicKey || !userAccountKeypair) {
       setError('Wallet not connected');
       return;
     }
+
+    if (!canMint) {
+      setError(`⏰ Please wait ${formatTimeRemaining(timeUntilNextMint)} before minting again`);
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     setTxSignature('');
@@ -249,56 +387,82 @@ export default function MintPage() {
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
-      // 1000 EQUA (with 6 decimals)
-      const rawAmount = 1_000 * 1_000_000;
+      console.log('🪙 Creating mint transaction...');
+      console.log('🪙 User Account:', userAccountKeypair.publicKey.toBase58());
 
-      // REMOVE: tracking instruction — it doubles minted_amount
-      // const trackingIx = program.createMintEquaTrackingInstruction(
-      //   userAccountKeypair.publicKey,
-      //   publicKey,
-      //   rawAmount
-      // );
-
-      // Only send the actual token mint instruction
-      const mintIx = program.createMintEquaTokensInstruction(
+      const instruction = program.createMintEquaInstruction(
         userAccountKeypair.publicKey,
         userTokenAccount,
         mintPDA,
         mintAuthority,
         publicKey,
         program.TOKEN_PROGRAM_ID,
-        rawAmount
+        1000_000000
       );
 
-      // Build tx with ONLY mintIx
-      const transaction = new Transaction().add(mintIx);
+      const transaction = new Transaction().add(instruction);
       transaction.feePayer = publicKey;
+
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
 
+      // ✅ CRITICAL: Sign with both wallet AND user account keypair
       const signed = await wallet.signTransaction(transaction);
+      signed.partialSign(userAccountKeypair);
+      
       const signature = await connection.sendRawTransaction(signed.serialize(), {
         skipPreflight: false,
         preflightCommitment: 'confirmed',
         maxRetries: 3
       });
 
-      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
+      console.log('📤 Transaction sent:', signature);
 
+      await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed');
+
+      console.log('✅ Minting successful!', signature);
       setTxSignature(signature);
+      
+      // Wait a moment for on-chain state to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Prefer showing the SPL token balance in the UI
-      // If you already have fetchTokenBalance(), call it here:
-      // await fetchTokenBalance();
-
-      // If you still show program's minted_amount, it will now increment by +1000 only
-      const bal = await getUserBalance(userAccountKeypair.publicKey);
+      // Update balance
+      const bal = await program.getSPLTokenBalance(connection, userTokenAccount);
       setBalance(bal);
+      console.log('💰 New balance:', bal);
+
+      // ✅ Update last mint time - fetch fresh data
+      const newLastMintTime = await getLastMintTime(userAccountKeypair.publicKey);
+      setLastMintTime(newLastMintTime);
+      console.log('⏰ Updated last mint time:', newLastMintTime, 'Date:', new Date(newLastMintTime * 1000).toLocaleString());
+
     } catch (err: unknown) {
       console.error('❌ Minting error:', err);
-      setError(err instanceof Error ? err.message : 'Minting failed.');
+      if (err instanceof Error) {
+        console.error('Error message:', err.message);
+        console.error('Error stack:', err.stack);
+      }
+      setError(err instanceof Error ? err.message : 'Minting failed. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // ✅ Reset user account (development only)
+  const handleResetAccount = () => {
+    if (confirm('⚠️ This will delete your local user account keypair. You will need to register again. Continue?')) {
+      localStorage.removeItem(STORAGE_KEY);
+      setUserAccountKeypair(null);
+      setRegistered(false);
+      setBalance(0);
+      setLastMintTime(0);
+      setTxSignature('');
+      setError('');
+      window.location.reload();
     }
   };
 
@@ -364,8 +528,8 @@ export default function MintPage() {
           <div className="max-w-2xl mx-auto text-center">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-12 border border-primary-500/30">
               <div className="text-6xl mb-6">⏳</div>
-              <h2 className="text-3xl font-bold text-white mb-4">Connecting to Solana blockchain</h2>
-              <p className="text-primary-200">Please wait...</p>
+              <h2 className="text-3xl font-bold text-white mb-4 text-center">Connecting to Solana blockchain</h2>
+              <p className="text-primary-200 text-center">Please wait...</p>
             </div>
           </div>
         </div>
@@ -459,24 +623,72 @@ export default function MintPage() {
               </div>
             )}
 
-            {/* Mint Card */}
+            {/* Mint Card with Cooldown */}
             {registered && (
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-primary-500/30">
                 <div className="text-6xl mb-6 text-center">🪙</div>
-                <h2 className="text-3xl font-bold text-white mb-4 text-center">Mint EQUA</h2>
-                <div className="bg-primary-500/20 rounded-xl p-6 mb-6">
-                  <p className="text-primary-100 text-center text-2xl font-bold">1,000 EQUA</p>
+                <h2 className="text-3xl font-bold text-white mb-4 text-center">
+                  {canMint ? 'Daily EQUA Reward' : 'Cooldown Active'}
+                </h2>
+                
+                {/* Countdown Display */}
+                <div className={`rounded-xl p-6 mb-6 text-center ${
+                  canMint 
+                    ? 'bg-green-500/20 border-2 border-green-500' 
+                    : 'bg-yellow-500/20 border-2 border-yellow-500'
+                }`}>
+                  {canMint ? (
+                    <>
+                      <p className="text-green-100 text-3xl font-bold mb-2">✅ Ready to mint!</p>
+                      <p className="text-green-200 text-lg">Claim your 1,000 EQUA</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-yellow-100 text-sm mb-2">Next claim available in:</p>
+                      <p className="text-yellow-100 text-4xl font-bold mb-2">
+                        {formatTimeRemaining(timeUntilNextMint)}
+                      </p>
+                      <p className="text-yellow-200 text-sm">
+                        Come back at {new Date((lastMintTime + 86400) * 1000).toLocaleTimeString()}
+                      </p>
+                    </>
+                  )}
                 </div>
+
                 <p className="text-primary-200 mb-6 text-center text-sm">
-                  <strong>How it works:</strong> Click the button to mint 1,000 EQUA tokens.
+                  {canMint ? (
+                    <>🎁 Your daily reward is ready! Claim 1,000 EQUA tokens now.</>
+                  ) : (
+                    <>⏰ You can claim once every 24 hours. Check back soon!</>
+                  )}
                 </p>
+
                 <button
                   onClick={handleMint}
-                  disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoading || !canMint}
+                  className={`w-full font-bold py-4 px-8 rounded-xl transition-all duration-200 ${
+                    canMint && !isLoading
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white cursor-pointer'
+                      : 'bg-gray-500/50 text-gray-300 cursor-not-allowed opacity-60'
+                  }`}
                 >
-                  {isLoading ? 'Minting...' : 'Mint 1,000 EQUA'}
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin">⏳</span> Claiming...
+                    </span>
+                  ) : canMint ? (
+                    'Claim Daily EQUA'
+                  ) : (
+                    `Cooldown: ${formatTimeRemaining(timeUntilNextMint)}`
+                  )}
                 </button>
+
+                {/* Last claim info */}
+                {lastMintTime > 0 && (
+                  <p className="text-primary-300 text-xs text-center mt-4">
+                    Last claimed: {new Date(lastMintTime * 1000).toLocaleString()}
+                  </p>
+                )}
               </div>
             )}
 
@@ -500,6 +712,23 @@ export default function MintPage() {
               <p className="text-primary-300 text-center">per EQUA</p>
             </div>
           </div>
+
+          {/* Development: Reset Account Button */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-8 text-center">
+              <button
+                onClick={handleResetAccount}
+                className="text-red-400 hover:text-red-300 text-sm underline transition-colors"
+              >
+                🔄 Reset Account (Dev Only)
+              </button>
+              {userAccountKeypair && (
+                <p className="text-primary-400 text-xs mt-2">
+                  Current User Account: {userAccountKeypair.publicKey.toBase58().slice(0, 8)}...{userAccountKeypair.publicKey.toBase58().slice(-8)}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Program Info */}
           <div className="mt-12 text-center">

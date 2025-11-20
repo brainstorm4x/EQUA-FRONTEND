@@ -1,5 +1,5 @@
 {
-  "address": "G6yZUuyumRxcKbvWjaDVURJzShfeBW1zpde1BHzCr6si",
+  "address": "BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL",
   "metadata": {
     "name": "equa_token",
     "version": "0.1.0",
@@ -629,6 +629,11 @@
       "code": 6005,
       "name": "InsufficientBalance",
       "msg": "Insufficient balance for transfer."
+    },
+    {
+      "code": 6006,
+      "name": "MintCooldown",
+      "msg": "Minting only allowed once every 24 hours."
     }
   ],
   "types": [
@@ -696,6 +701,10 @@
           {
             "name": "referral_rewards",
             "type": "u64"
+          },
+          {
+            "name": "last_mint_time",
+            "type": "i64"
           }
         ]
       }
