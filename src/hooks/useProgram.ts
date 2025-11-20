@@ -2,7 +2,7 @@
 
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useMemo, useCallback } from 'react';
-import { PublicKey, Keypair } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import * as program from '@/lib/program';
 
 export function useProgram() {

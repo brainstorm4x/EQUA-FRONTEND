@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * EQUA Token Referral Reward Calculator
  * 
@@ -172,3 +173,6 @@ export function calculateReferralReward(userIndex: number): ReferralRewardInfo {
 export function formatReferralReward(rewardAmountRaw: bigint): string {
   return ReferralRewardCalculator.formatReward(rewardAmountRaw);
 }
+=======
+404: Not Found
+>>>>>>> 369107deb2deb2298e4e33d2b4bd97b0179db76c

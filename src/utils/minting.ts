@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // app/src/utils/minting.ts
 
 export interface MintSlot {
@@ -53,3 +54,6 @@ export function calculateAllowedMint(userIndex: number, daysSinceMintStart: numb
   }
   return prevailingRateByUserIndex(userIndex);
 }
+=======
+404: Not Found
+>>>>>>> 369107deb2deb2298e4e33d2b4bd97b0179db76c

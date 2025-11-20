@@ -2,17 +2,101 @@
 @tailwind components;
 @tailwind utilities;
 
+/* EQUA Token Theme - CSS Variables */
+@layer base {
+  :root {
+    /* Primary Brand Colors */
+    --color-primary-950: #3B0764;
+    --color-primary-900: #4C1D95;
+    --color-primary-800: #5B21B6;
+    --color-primary-700: #6D28D9;
+    --color-primary-600: #7C3AED;
+    --color-primary-500: #8B5CF6;
+    --color-primary-400: #A78BFA;
+    --color-primary-300: #C4B5FD;
+    --color-primary-200: #DDD6FE;
+    --color-primary-100: #EDE9FE;
+    --color-primary-50: #F5F3FF;
+    
+    /* Accent Colors */
+    --color-accent-cyan: #06B6D4;
+    --color-accent-teal: #14B8A6;
+    --color-accent-green: #10B981;
+    --color-accent-emerald: #059669;
+    
+    /* Font Variables */
+    --font-inter: 'Inter', system-ui, sans-serif;
+    --font-jetbrains-mono: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  }
+  
+  /* Base Styles */
+  * {
+    @apply border-gray-200;
+  }
+  
+  html {
+    @apply antialiased;
+  }
+  
+  body {
+    @apply bg-white text-gray-900;
+  }
+}
 
+/* Glassmorphism Component Styles */
+@layer components {
+  .glass {
+    @apply backdrop-blur-md bg-white/10 border border-white/20;
+  }
+  
+  .glass-dark {
+    @apply backdrop-blur-md bg-black/10 border border-white/10;
+  }
+  
+  .glass-card {
+    @apply backdrop-blur-md bg-white/10 border border-primary-500/30 rounded-2xl p-6 shadow-glass;
+  }
+  
+  .glass-card-hover {
+    @apply glass-card hover:bg-white/20 hover:border-primary-400 transition-all duration-200;
+  }
+  
+  /* Gradient Backgrounds */
+  .gradient-primary {
+    @apply bg-gradient-to-br from-primary-900 via-primary-800 to-primary-600;
+  }
+  
+  .gradient-accent {
+    @apply bg-gradient-to-r from-accent-cyan via-accent-teal to-accent-green;
+  }
+  
+  /* Text Gradients */
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent;
+  }
+  
+  .text-gradient-accent {
+    @apply bg-gradient-to-r from-accent-cyan to-accent-emerald bg-clip-text text-transparent;
+  }
+}
 
-@theme {
-  --color-primary-900: #4c1d95;
-  --color-primary-800: #5b21b6;
-  --color-primary-700: #6d28d9;
-  --color-primary-600: #7c3aed;
-  --color-primary-500: #8b5cf6;
-  --color-primary-400: #a78bfa;
-  --color-primary-300: #c4b5fd;
-  --color-primary-200: #ddd6fe;
-  --color-primary-100: #ede9fe;
-  --color-primary-50: #f5f3ff;
+/* Utility Classes */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Scrollbar Styles */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-primary-400 rounded hover:bg-primary-500;
+  }
 }
