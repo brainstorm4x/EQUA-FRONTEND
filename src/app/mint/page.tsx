@@ -60,7 +60,7 @@ export default function MintPage() {
   const [txSignature, setTxSignature] = useState('');
   const [error, setError] = useState('');
   const [totalUsers, setTotalUsers] = useState(0);
-  const [currentPrice, setCurrentPrice] = useState(0.01);
+  const currentPrice = 0.01;
 
   // ✅ Load or generate user account keypair on mount (only once)
   useEffect(() => {

@@ -2,7 +2,7 @@
 
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletButton } from '@/components/ui/WalletButton';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useConnection } from '@solana/wallet-adapter-react';
 import Link from 'next/link';
@@ -12,15 +12,19 @@ export default function Home() {
   const { connection } = useConnection();
   const [balance, setBalance] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (publicKey && connected) {
-      connection.getBalance(publicKey).then((bal) => {
-        setBalance(bal / LAMPORTS_PER_SOL);
-      });
-    } else {
-      setBalance(null);
-    }
-  }, [publicKey, connected, connection]);
+  // Fetch balance when wallet connects
+  if (publicKey && connected && balance === null) {
+    connection.getBalance(publicKey).then((bal) => {
+      setBalance(bal / LAMPORTS_PER_SOL);
+    }).catch(() => {
+      // Silently handle error
+    });
+  }
+
+  // Reset balance when wallet disconnects
+  if (!connected && balance !== null) {
+    setBalance(null);
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-primary-900 via-primary-800 to-primary-600">

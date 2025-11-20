@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useEffect, useState } from 'react';
+import { FC, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
@@ -9,9 +9,9 @@ export const WalletButton: FC = () => {
   const [mounted, setMounted] = useState(false);
 
   // Only render on client side
-  useEffect(() => {
+  if (typeof window !== 'undefined' && !mounted) {
     setMounted(true);
-  }, []);
+  }
 
   if (!mounted) {
     return (

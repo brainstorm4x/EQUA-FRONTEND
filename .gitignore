@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Unused/archived files (moved from src)
+equa.service.ts
+equa_token.ts
+page-2.tsx
+program-2.ts
+program.service.ts
+useEquaProgram.ts
+create_mint.ts
+find_mint.py
