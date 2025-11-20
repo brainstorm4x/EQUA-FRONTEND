@@ -309,9 +309,11 @@ export default function MintPage() {
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
 
+      console.log('📝 Signing with user account keypair...');
+      transaction.partialSign(userAccountKeypair);  // ✅ CRITICAL: Sign with user keypair FIRST
+      
       console.log('📝 Requesting wallet signature...');
       const signed = await wallet.signTransaction(transaction);
-      signed.partialSign(userAccountKeypair);  // ✅ CRITICAL for registration
       
       console.log('📝 Sending transaction...');
       const signature = await connection.sendRawTransaction(signed.serialize(), {
@@ -406,9 +408,9 @@ export default function MintPage() {
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
 
-      // ✅ CRITICAL: Sign with both wallet AND user account keypair
+      // ✅ CRITICAL: Sign with user account keypair FIRST, then wallet
+      transaction.partialSign(userAccountKeypair);
       const signed = await wallet.signTransaction(transaction);
-      signed.partialSign(userAccountKeypair);
       
       const signature = await connection.sendRawTransaction(signed.serialize(), {
         skipPreflight: false,
