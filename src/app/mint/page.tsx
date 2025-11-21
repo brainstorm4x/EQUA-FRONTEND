@@ -406,9 +406,8 @@ export default function MintPage() {
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
 
-      // ✅ CRITICAL: Sign with both wallet AND user account keypair
+      // ✅ Sign with wallet only (userAccount is not a signer for mint)
       const signed = await wallet.signTransaction(transaction);
-      signed.partialSign(userAccountKeypair);
       
       const signature = await connection.sendRawTransaction(signed.serialize(), {
         skipPreflight: false,
