@@ -1,4 +1,4 @@
-import { Connection, PublicKey, Keypair } from "@solana/web3.js";
+import { Connection, PublicKey, Keypair, TransactionInstruction, SystemProgram } from "@solana/web3.js";
 import {
   TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -193,8 +193,6 @@ export function getOrCreateKeypair(): Keypair {
 // ====================================================================
 // Instruction builders
 // ====================================================================
-
-import { TransactionInstruction, SystemProgram } from "@solana/web3.js";
 
 // Create initialize_user instruction
 export function createInitializeUserInstruction(

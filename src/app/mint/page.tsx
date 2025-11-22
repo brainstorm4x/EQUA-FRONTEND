@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Transaction, Keypair, PublicKey } from '@solana/web3.js';
 import * as program from '@/lib/program';
-import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, getAccount } from '@solana/spl-token';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 import BN from 'bn.js';
 
 // ✅ Helper function to store/retrieve user keypair from localStorage
@@ -394,25 +394,9 @@ export default function MintPage() {
       // ✅ Check if ATA exists and create it if needed
       const transaction = new Transaction();
       
-      try {
-        const ataInfo = await connection.getAccountInfo(userTokenAccount);
-        if (!ataInfo) {
-          console.log('🔧 ATA does not exist, creating it...');
-          const createAtaIx = createAssociatedTokenAccountInstruction(
-            publicKey, // payer
-            userTokenAccount, // ata
-            publicKey, // owner
-            mintPDA, // mint
-            program.TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-          );
-          transaction.add(createAtaIx);
-        } else {
-          console.log('✅ ATA already exists');
-        }
-      } catch (error) {
-        console.error('Error checking ATA:', error);
-        // If we can't check, try to create it anyway (will fail gracefully if it exists)
+      const ataInfo = await connection.getAccountInfo(userTokenAccount);
+      if (!ataInfo) {
+        console.log('🔧 ATA does not exist, creating it...');
         const createAtaIx = createAssociatedTokenAccountInstruction(
           publicKey, // payer
           userTokenAccount, // ata
@@ -422,6 +406,8 @@ export default function MintPage() {
           ASSOCIATED_TOKEN_PROGRAM_ID
         );
         transaction.add(createAtaIx);
+      } else {
+        console.log('✅ ATA already exists');
       }
 
       const instruction = program.createMintEquaInstruction(
