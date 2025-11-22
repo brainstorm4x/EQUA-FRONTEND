@@ -53,8 +53,8 @@ export async function createProgram(
       PROGRAM_ID.toBase58()
     );
 
-    // Use 3-parameter constructor to explicitly pass PROGRAM_ID
-    return new Program(idlData, PROGRAM_ID, provider);
+    // Create program with 2-parameter constructor (IDL contains the program ID)
+    return new Program(idlData, provider);
   } catch (error) {
     console.error("❌ Error creating program:", error);
     throw error;

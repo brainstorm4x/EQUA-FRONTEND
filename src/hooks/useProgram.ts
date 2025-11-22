@@ -1,58 +1,116 @@
 'use client';
-
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { useMemo, useCallback } from 'react';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey, Keypair } from '@solana/web3.js';
-import * as program from '@/lib/program';
+import { Program } from '@coral-xyz/anchor';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+createProgram,
+getGlobalStatePDA,
+getMintPDA,
+getMintAuthorityPDA,
+isUserRegistered,
+getUserBalance,
+getSPLTokenBalance,
+getGlobalState,
+getOrCreateKeypair,
+} from '@/lib/program';
 
 export function useProgram() {
-  const { publicKey, signTransaction, signAllTransactions } = useWallet();
   const { connection } = useConnection();
+  const wallet = useWallet();
+  const { publicKey } = wallet;
+  const [userAccountKeypair, setUserAccountKeypair] = useState<Keypair | null>(null);
+  const [program, setProgram] = useState<Program | null>(null);
 
-  // ✅ FIX: Memoize wallet object to prevent re-creation
-  const wallet = useMemo(() => {
-    if (!publicKey || !signTransaction || !signAllTransactions) {
-      return null;
+  // Initialize user account keypair (runs once on mount)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const keypair = getOrCreateKeypair();
+      setUserAccountKeypair(keypair);
+    }
+  }, []);
+
+  // Create program when wallet connects (async handled properly)
+  useEffect(() => {
+    if (!wallet.publicKey || !wallet.signTransaction) {
+      setProgram(null);
+      return;
     }
 
-    return {
-      publicKey,
-      signTransaction,
-      signAllTransactions,
+    let cancelled = false;
+    
+    async function initProgram() {
+      try {
+        console.log('🔄 Creating program instance...');
+        const prog = await createProgram(connection, wallet);
+        
+        if (!cancelled) {
+          setProgram(prog);
+          console.log('✅ Program initialized successfully');
+        }
+      } catch (error) {
+        console.error('❌ Failed to create program:', error);
+        if (!cancelled) {
+          setProgram(null);
+        }
+      }
+    }
+    
+    initProgram();
+    
+    return () => {
+      cancelled = true;
     };
-  }, [publicKey, signTransaction, signAllTransactions]);
+    
+  }, [connection, wallet]);
 
+  // Compute isReady based on both keypair and program initialization
   const isReady = useMemo(() => {
-    return wallet !== null && connection !== null;
-  }, [wallet, connection]);
+    return userAccountKeypair !== null && program !== null;
+  }, [userAccountKeypair, program]);
 
-  // ✅ FIX: Wrap functions in useCallback to prevent re-creation
-  const isUserRegistered = useCallback(
-    (userPubkey: PublicKey) => program.isUserRegistered(connection, userPubkey),
+  const globalStatePDA = useMemo(() => getGlobalStatePDA()[0], []);
+  const mintPDA = useMemo(() => getMintPDA()[0], []);
+  const mintAuthority = useMemo(() => getMintAuthorityPDA()[0], []);
+
+  const checkRegistration = useCallback(
+    async (userPubkey: PublicKey): Promise<boolean> => {
+      return await isUserRegistered(connection, userPubkey);
+    },
     [connection]
   );
 
-  const getUserBalance = useCallback(
-    (userPubkey: PublicKey) => program.getUserBalance(connection, userPubkey),
+  const getBalance = useCallback(
+    async (userPubkey: PublicKey): Promise<number> => {
+      return await getUserBalance(connection, userPubkey);
+    },
     [connection]
   );
 
-  const getGlobalState = useCallback(
-    (globalStatePDA: PublicKey) => program.getGlobalState(connection, globalStatePDA),
+  const getTokenBalance = useCallback(
+    async (tokenAccount: PublicKey): Promise<number> => {
+      return await getSPLTokenBalance(connection, tokenAccount);
+    },
     [connection]
   );
+
+  const fetchGlobalState = useCallback(async () => {
+    return await getGlobalState(connection, globalStatePDA);
+  }, [connection, globalStatePDA]);
 
   return {
-    wallet,
+    program,
     connection,
+    wallet,
+    publicKey,
+    userAccountKeypair,
     isReady,
-    // PDA derivation functions (these are pure functions, safe to return directly)
-    getGlobalStatePDA: program.getGlobalStatePDA,
-    getMintPDA: program.getMintPDA,
-    getMintAuthorityPDA: program.getMintAuthorityPDA,
-    // Memoized functions
-    isUserRegistered,
-    getUserBalance,
-    getGlobalState,
+    globalStatePDA,
+    mintPDA,
+    mintAuthority,
+    checkRegistration,
+    getBalance,
+    getTokenBalance,
+    fetchGlobalState,
   };
 }
