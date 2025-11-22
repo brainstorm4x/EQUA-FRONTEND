@@ -13,7 +13,7 @@ getUserBalance,
 getSPLTokenBalance,
 getGlobalState,
 getOrCreateKeypair,
-} from '@/lib/program';
+} from '../lib/program';
 export function useProgram() {
 const { connection } = useConnection();
 const wallet = useWallet();

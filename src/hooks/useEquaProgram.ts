@@ -83,8 +83,7 @@ export function useEquaProgram() {
     if (!provider) return null;
     
     try {
-      const programId = new PublicKey(PROGRAM_ID_STRING);
-      const programInstance = new Program(MINIMAL_IDL as any, programId, provider);
+      const programInstance = new Program(MINIMAL_IDL as any, provider);
       console.log('✅ Program initialized successfully');
       return programInstance;
     } catch (error) {
