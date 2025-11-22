@@ -240,11 +240,25 @@ export default function MintPage() {
 
   if (!publicKey) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600 flex items-center justify-center p-4">
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-12 border border-purple-500/30 max-w-md text-center">
-          <h1 className="text-4xl font-bold text-white mb-6">Connect Your Wallet</h1>
-          <p className="text-purple-200 mb-8">Please connect your wallet to get started</p>
-          <WalletButton />
+      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
+        <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">E</span>
+                </div>
+                <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+              </Link>
+              <WalletButton />
+            </div>
+          </div>
+        </header>
+        <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-12 border border-purple-500/30 max-w-md text-center">
+            <h1 className="text-4xl font-bold text-white mb-6">Connect Your Wallet</h1>
+            <p className="text-purple-200 mb-8">Please connect your wallet to get started</p>
+          </div>
         </div>
       </main>
     );
@@ -252,10 +266,25 @@ export default function MintPage() {
 
   if (isCheckingRegistration) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="text-6xl mb-4">⏳</div>
-          <p className="text-white text-xl">Checking registration status...</p>
+      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
+        <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">E</span>
+                </div>
+                <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+              </Link>
+              <WalletButton />
+            </div>
+          </div>
+        </header>
+        <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
+          <div className="text-center">
+            <div className="text-6xl mb-4">⏳</div>
+            <p className="text-white text-xl">Checking registration status...</p>
+          </div>
         </div>
       </main>
     );
@@ -264,11 +293,26 @@ export default function MintPage() {
   // ADD THIS NEW CHECK
   if (!program) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="text-6xl mb-4">⚙️</div>
-          <p className="text-white text-xl">Initializing program...</p>
-          <p className="text-purple-300 text-sm mt-2">Please wait a moment</p>
+      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
+        <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">E</span>
+                </div>
+                <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+              </Link>
+              <WalletButton />
+            </div>
+          </div>
+        </header>
+        <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
+          <div className="text-center">
+            <div className="text-6xl mb-4">⚙️</div>
+            <p className="text-white text-xl">Initializing program...</p>
+            <p className="text-purple-300 text-sm mt-2">Please wait a moment</p>
+          </div>
         </div>
       </main>
     );
