@@ -8,12 +8,6 @@ const nextConfig = {
     }
     return config;
   },
-  // Turbopack configuration for Next.js 16+
-  turbopack: {
-    resolveAlias: {
-      fs: false,
-    },
-  },
 };
 
 module.exports = nextConfig;
