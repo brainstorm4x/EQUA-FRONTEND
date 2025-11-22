@@ -171,6 +171,11 @@ export default function MintPage() {
   if (!accountInfo) {
     console.log('⚠️  Token account does not exist, creating it...');
     
+    // Verify wallet has signTransaction method
+    if (!wallet.signTransaction) {
+      throw new Error('Wallet does not support signing transactions');
+    }
+    
     // Create the ATA using an idempotent instruction
     const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
       publicKey,           // payer
@@ -182,12 +187,11 @@ export default function MintPage() {
     );
     
     const transaction = new Transaction().add(createAtaIx);
-    const { blockhash } = await connection.getLatestBlockhash();
-    transaction.recentBlockhash = blockhash;
     transaction.feePayer = publicKey;
+    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
     
     // Sign and send the transaction
-    const signed = await wallet.signTransaction!(transaction);
+    const signed = await wallet.signTransaction(transaction);
     const signature = await connection.sendRawTransaction(signed.serialize());
     await connection.confirmTransaction(signature, 'confirmed');
     
