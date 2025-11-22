@@ -4,6 +4,7 @@ const nextConfig = {
     if (!isServer) {
       config.resolve.fallback = {
         fs: false,
+        'pino-pretty': false,
       };
     }
     return config;
