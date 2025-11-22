@@ -10,8 +10,8 @@ const nextConfig = {
   },
   turbopack: {
     resolveAlias: {
-      // Fallback for Node.js modules in client-side code (for Solana libraries)
-      // Note: Turbopack applies this to client bundles by default, similar to webpack's !isServer condition
+      // Prevents 'fs' module resolution in browser bundles (for Solana libraries)
+      // Turbopack equivalent of webpack's resolve.fallback configuration
       fs: false,
     },
   },
