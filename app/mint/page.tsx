@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useProgram } from '@/hooks/useProgram';
 import { WalletButton } from '@/components/WalletButton';
-import { PublicKey, SystemProgram } from '@solana/web3.js';
+import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
   TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountIdempotentInstruction,
 } from '@solana/spl-token';
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
@@ -163,7 +164,48 @@ export default function MintPage() {
   console.log('  - Mint:', mintPDA.toBase58());
   console.log('  - Authority:', publicKey.toBase58());
 
-  // ✅ CORRECTED: Use mintEquaTokens (matches backend instruction name)
+  // ✅ Check if token account exists, create it if needed
+  console.log('🔍 Checking if token account exists...');
+  const accountInfo = await connection.getAccountInfo(userTokenAccount);
+  
+  if (!accountInfo) {
+    console.log('⚠️  Token account does not exist, creating it...');
+    
+    // Verify wallet has signTransaction method
+    if (!wallet.signTransaction) {
+      throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
+    }
+    
+    try {
+      // Create the ATA using an idempotent instruction
+      const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+        publicKey,           // payer
+        userTokenAccount,    // ata
+        publicKey,           // owner
+        mintPDA,             // mint
+        TOKEN_2022_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+      
+      const transaction = new Transaction().add(createAtaIx);
+      transaction.feePayer = publicKey;
+      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      
+      // Sign and send the transaction
+      const signed = await wallet.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(signature, 'confirmed');
+      
+      console.log('✅ Token account created:', signature);
+    } catch (ataError: any) {
+      console.error('Failed to create token account:', ataError);
+      throw new Error(`Failed to create token account: ${ataError.message || 'Unknown error'}`);
+    }
+  } else {
+    console.log('✅ Token account already exists');
+  }
+
+  // ✅ Now mint tokens
   const tx = await program.methods
     .mintEquaTokens(new anchor.BN(1_000_000_000))
     .accounts({
@@ -198,11 +240,25 @@ export default function MintPage() {
 
   if (!publicKey) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600 flex items-center justify-center p-4">
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-12 border border-purple-500/30 max-w-md text-center">
-          <h1 className="text-4xl font-bold text-white mb-6">Connect Your Wallet</h1>
-          <p className="text-purple-200 mb-8">Please connect your wallet to get started</p>
-          <WalletButton />
+      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
+        <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">E</span>
+                </div>
+                <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+              </Link>
+              <WalletButton />
+            </div>
+          </div>
+        </header>
+        <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-12 border border-purple-500/30 max-w-md text-center">
+            <h1 className="text-4xl font-bold text-white mb-6">Connect Your Wallet</h1>
+            <p className="text-purple-200 mb-8">Please connect your wallet to get started</p>
+          </div>
         </div>
       </main>
     );
@@ -210,10 +266,25 @@ export default function MintPage() {
 
   if (isCheckingRegistration) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="text-6xl mb-4">⏳</div>
-          <p className="text-white text-xl">Checking registration status...</p>
+      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
+        <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">E</span>
+                </div>
+                <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+              </Link>
+              <WalletButton />
+            </div>
+          </div>
+        </header>
+        <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
+          <div className="text-center">
+            <div className="text-6xl mb-4">⏳</div>
+            <p className="text-white text-xl">Checking registration status...</p>
+          </div>
         </div>
       </main>
     );
@@ -222,11 +293,26 @@ export default function MintPage() {
   // ADD THIS NEW CHECK
   if (!program) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="text-6xl mb-4">⚙️</div>
-          <p className="text-white text-xl">Initializing program...</p>
-          <p className="text-purple-300 text-sm mt-2">Please wait a moment</p>
+      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
+        <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">E</span>
+                </div>
+                <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+              </Link>
+              <WalletButton />
+            </div>
+          </div>
+        </header>
+        <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
+          <div className="text-center">
+            <div className="text-6xl mb-4">⚙️</div>
+            <p className="text-white text-xl">Initializing program...</p>
+            <p className="text-purple-300 text-sm mt-2">Please wait a moment</p>
+          </div>
         </div>
       </main>
     );
