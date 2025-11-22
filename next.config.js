@@ -8,6 +8,13 @@ const nextConfig = {
     }
     return config;
   },
+  turbopack: {
+    resolveAlias: {
+      // Prevents 'fs' module resolution in browser bundles (for Solana libraries)
+      // Turbopack equivalent of webpack's resolve.fallback configuration
+      fs: false,
+    },
+  },
 };
 
 module.exports = nextConfig;
