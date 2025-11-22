@@ -173,29 +173,34 @@ export default function MintPage() {
     
     // Verify wallet has signTransaction method
     if (!wallet.signTransaction) {
-      throw new Error('Wallet does not support signing transactions');
+      throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
     }
     
-    // Create the ATA using an idempotent instruction
-    const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
-      publicKey,           // payer
-      userTokenAccount,    // ata
-      publicKey,           // owner
-      mintPDA,             // mint
-      TOKEN_2022_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID
-    );
-    
-    const transaction = new Transaction().add(createAtaIx);
-    transaction.feePayer = publicKey;
-    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-    
-    // Sign and send the transaction
-    const signed = await wallet.signTransaction(transaction);
-    const signature = await connection.sendRawTransaction(signed.serialize());
-    await connection.confirmTransaction(signature, 'confirmed');
-    
-    console.log('✅ Token account created:', signature);
+    try {
+      // Create the ATA using an idempotent instruction
+      const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+        publicKey,           // payer
+        userTokenAccount,    // ata
+        publicKey,           // owner
+        mintPDA,             // mint
+        TOKEN_2022_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+      
+      const transaction = new Transaction().add(createAtaIx);
+      transaction.feePayer = publicKey;
+      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      
+      // Sign and send the transaction
+      const signed = await wallet.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(signature, 'confirmed');
+      
+      console.log('✅ Token account created:', signature);
+    } catch (ataError: any) {
+      console.error('Failed to create token account:', ataError);
+      throw new Error(`Failed to create token account: ${ataError.message || 'Unknown error'}`);
+    }
   } else {
     console.log('✅ Token account already exists');
   }
