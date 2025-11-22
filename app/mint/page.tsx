@@ -8,7 +8,7 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  createAssociatedTokenAccountIdempotentInstruction,
+  createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
@@ -177,8 +177,8 @@ export default function MintPage() {
     }
     
     try {
-      // Create the ATA using an idempotent instruction
-      const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+      // Create the ATA using the standard instruction (not idempotent) for Token-2022
+      const createAtaIx = createAssociatedTokenAccountInstruction(
         publicKey,           // payer
         userTokenAccount,    // ata
         publicKey,           // owner
