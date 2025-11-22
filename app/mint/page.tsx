@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useProgram } from '@/hooks/useProgram';
 import { WalletButton } from '@/components/WalletButton';
-import { PublicKey, SystemProgram } from '@solana/web3.js';
+import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
   TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountIdempotentInstruction,
 } from '@solana/spl-token';
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
@@ -163,7 +164,39 @@ export default function MintPage() {
   console.log('  - Mint:', mintPDA.toBase58());
   console.log('  - Authority:', publicKey.toBase58());
 
-  // ✅ CORRECTED: Use mintEquaTokens (matches backend instruction name)
+  // ✅ Check if token account exists, create it if needed
+  console.log('🔍 Checking if token account exists...');
+  const accountInfo = await connection.getAccountInfo(userTokenAccount);
+  
+  if (!accountInfo) {
+    console.log('⚠️  Token account does not exist, creating it...');
+    
+    // Create the ATA using an idempotent instruction
+    const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+      publicKey,           // payer
+      userTokenAccount,    // ata
+      publicKey,           // owner
+      mintPDA,             // mint
+      TOKEN_2022_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    );
+    
+    const transaction = new Transaction().add(createAtaIx);
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = publicKey;
+    
+    // Sign and send the transaction
+    const signed = await wallet.signTransaction!(transaction);
+    const signature = await connection.sendRawTransaction(signed.serialize());
+    await connection.confirmTransaction(signature, 'confirmed');
+    
+    console.log('✅ Token account created:', signature);
+  } else {
+    console.log('✅ Token account already exists');
+  }
+
+  // ✅ Now mint tokens
   const tx = await program.methods
     .mintEquaTokens(new anchor.BN(1_000_000_000))
     .accounts({
