@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Transaction, Keypair, PublicKey } from '@solana/web3.js';
 import * as program from '@/lib/program';
-import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 import BN from 'bn.js';
 
 // ✅ Helper function to store/retrieve user keypair from localStorage
@@ -389,6 +389,26 @@ export default function MintPage() {
 
       console.log('🪙 Creating mint transaction...');
       console.log('🪙 User Account:', userAccountKeypair.publicKey.toBase58());
+      console.log('🪙 User Token Account:', userTokenAccount.toBase58());
+
+      // ✅ Check if ATA exists and create it if needed
+      const transaction = new Transaction();
+      
+      const ataInfo = await connection.getAccountInfo(userTokenAccount);
+      if (!ataInfo) {
+        console.log('🔧 ATA does not exist, creating it...');
+        const createAtaIx = createAssociatedTokenAccountInstruction(
+          publicKey, // payer
+          userTokenAccount, // ata
+          publicKey, // owner
+          mintPDA, // mint
+          program.TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        );
+        transaction.add(createAtaIx);
+      } else {
+        console.log('✅ ATA already exists');
+      }
 
       const instruction = program.createMintEquaInstruction(
         userAccountKeypair.publicKey,
@@ -400,7 +420,7 @@ export default function MintPage() {
         1000_000000
       );
 
-      const transaction = new Transaction().add(instruction);
+      transaction.add(instruction);
       transaction.feePayer = publicKey;
 
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
