@@ -1,11 +1,11 @@
 import { PublicKey, SystemProgram, TransactionInstruction, Connection, Keypair } from '@solana/web3.js';
-import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import BN from 'bn.js';
 
 export const PROGRAM_ID = new PublicKey('G6yZUuyumRxcKbvWjaDVURJzShfeBW1zpde1BHzCr6si');
 
-// ✅ Export Token 2022 Program ID for use in frontend
-export { TOKEN_2022_PROGRAM_ID };
+// ✅ Export Token Program ID for use in frontend
+export { TOKEN_PROGRAM_ID };
 
 // PDA derivation for global state
 export function getGlobalStatePDA(): [PublicKey, number] {

@@ -134,12 +134,12 @@ export default function MintPage() {
       const [globalStatePDA] = getGlobalStatePDA();
       const [mintPDA] = getMintPDA();
 
-      // ✅ CRITICAL FIX: Use TOKEN_2022_PROGRAM_ID
+      // ✅ CRITICAL FIX: Use TOKEN_PROGRAM_ID
       const userTokenAccount = getAssociatedTokenAddressSync(
         mintPDA,
         publicKey,
         false,
-        program.TOKEN_2022_PROGRAM_ID,  // ✅ FIXED: Was missing this
+        program.TOKEN_PROGRAM_ID,  // ✅ FIXED: Was missing this
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
@@ -151,7 +151,7 @@ export default function MintPage() {
 
       const now = Math.floor(Date.now() / 1000);
 
-      // ✅ CRITICAL FIX: Pass TOKEN_2022_PROGRAM_ID
+      // ✅ CRITICAL FIX: Pass TOKEN_PROGRAM_ID
       const instruction = program.createInitializeUserInstruction(
         userAccountKeypair.publicKey,
         publicKey,
@@ -160,7 +160,7 @@ export default function MintPage() {
         userTokenAccount,
         mintPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
-        program.TOKEN_2022_PROGRAM_ID,  // ✅ FIXED: Use Token 2022
+        program.TOKEN_PROGRAM_ID,  // ✅ FIXED: Use Token Program
         now,
         now + (2 * 365 * 24 * 60 * 60),  // 2 years from now
         PublicKey.default  // No referrer
@@ -215,12 +215,12 @@ export default function MintPage() {
       const [mintPDA] = getMintPDA();
       const [mintAuthority] = getMintAuthorityPDA();
 
-      // ✅ CRITICAL FIX: Use TOKEN_2022_PROGRAM_ID
+      // ✅ CRITICAL FIX: Use TOKEN_PROGRAM_ID
       const userTokenAccount = getAssociatedTokenAddressSync(
         mintPDA,
         publicKey,
         false,
-        program.TOKEN_2022_PROGRAM_ID,  // ✅ FIXED: Use Token 2022
+        program.TOKEN_PROGRAM_ID,  // ✅ FIXED: Use Token Program
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
@@ -232,7 +232,7 @@ export default function MintPage() {
         mintPDA,
         mintAuthority,
         publicKey,
-        program.TOKEN_2022_PROGRAM_ID,  // ✅ CRITICAL FIX: Use Token 2022
+        program.TOKEN_PROGRAM_ID,  // ✅ CRITICAL FIX: Use Token Program
         1000_000000  // 1000 EQUA (with 6 decimals)
       );
 
