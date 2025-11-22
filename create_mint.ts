@@ -1,6 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { EquaToken } from "../equa_token/target/types/equa_token";
+import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 async function main() {
   const provider = anchor.AnchorProvider.env();
@@ -24,9 +25,10 @@ async function main() {
     program.programId
   );
 
-  console.log("Creating EQUA token mint...");
+  console.log("Creating EQUA token mint with Token-2022...");
   console.log("Mint PDA:", mint.toBase58());
   console.log("Mint Authority:", mintAuthority.toBase58());
+  console.log("Token Program:", TOKEN_2022_PROGRAM_ID.toBase58());
 
   try {
     const tx = await program.methods
@@ -36,7 +38,7 @@ async function main() {
         mintAuthority: mintAuthority,
         globalState: globalState,
         payer: provider.wallet.publicKey,
-        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
         rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       })
