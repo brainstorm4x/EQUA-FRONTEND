@@ -1,6 +1,6 @@
 import { Connection, PublicKey, Keypair } from "@solana/web3.js";
 import {
-  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
@@ -186,4 +186,4 @@ export function getOrCreateKeypair(): Keypair {
   }
   return keypair;
 }
-export { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
+export { TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };

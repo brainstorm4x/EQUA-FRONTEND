@@ -6,7 +6,7 @@ import { WalletButton } from '@/components/WalletButton';
 import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountIdempotentInstruction,
 } from '@solana/spl-token';
@@ -92,7 +92,7 @@ export default function MintPage() {
         mintPDA,
         publicKey,
         false,
-        TOKEN_PROGRAM_ID,
+        TOKEN_2022_PROGRAM_ID,
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
@@ -120,7 +120,7 @@ export default function MintPage() {
           userTokenAccount,
           mint: mintPDA,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         })
         .signers([userAccountKeypair])
@@ -154,7 +154,7 @@ export default function MintPage() {
     mintPDA,
     publicKey,
     false,
-    TOKEN_PROGRAM_ID,
+    TOKEN_2022_PROGRAM_ID,
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
 
@@ -183,7 +183,7 @@ export default function MintPage() {
         userTokenAccount,    // ata
         publicKey,           // owner
         mintPDA,             // mint
-        TOKEN_PROGRAM_ID,
+        TOKEN_2022_PROGRAM_ID,
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
       
@@ -214,7 +214,7 @@ export default function MintPage() {
       mint: mintPDA,
       mintAuthority,
       authority: publicKey,
-      tokenProgram: TOKEN_PROGRAM_ID,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
     })
     .rpc();
 
