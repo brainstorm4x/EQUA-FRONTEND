@@ -52,4 +52,6 @@ import { WalletButton } from '@/components/WalletButton';
 
 - Currently using Next.js 14.2.33 (latest patch in 14.2.x series)
 - Turbopack configuration added for forward compatibility with Next.js 16
-- Webpack fallback configured for Solana libraries (`fs: false`)
+  - `resolveAlias` configured with `fs: false` (Turbopack equivalent of webpack fallback)
+  - Ensures seamless upgrade to Next.js 16 where Turbopack is the default bundler
+- Webpack fallback configured for Solana libraries (`fs: false` for client-side)

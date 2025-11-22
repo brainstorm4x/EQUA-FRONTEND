@@ -8,6 +8,12 @@ const nextConfig = {
     }
     return config;
   },
+  turbopack: {
+    resolveAlias: {
+      // Fallback for Node.js modules in client-side code (for Solana libraries)
+      fs: false,
+    },
+  },
 };
 
 module.exports = nextConfig;
