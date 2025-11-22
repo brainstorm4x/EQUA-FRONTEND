@@ -20,7 +20,6 @@ export function useProgram() {
   const wallet = useWallet();
   const { publicKey } = wallet;
   const [userAccountKeypair, setUserAccountKeypair] = useState<Keypair | null>(null);
-  const [isReady, setIsReady] = useState(false);
   const [program, setProgram] = useState<Program | null>(null);
 
   // Initialize user account keypair (runs once on mount)
@@ -28,7 +27,6 @@ export function useProgram() {
     if (typeof window !== 'undefined') {
       const keypair = getOrCreateKeypair();
       setUserAccountKeypair(keypair);
-      setIsReady(true);
     }
   }, []);
 
@@ -64,7 +62,12 @@ export function useProgram() {
       cancelled = true;
     };
     
-  }, [connection, wallet, wallet.publicKey, wallet.signTransaction]);
+  }, [connection, wallet]);
+
+  // Compute isReady based on both keypair and program initialization
+  const isReady = useMemo(() => {
+    return userAccountKeypair !== null && program !== null;
+  }, [userAccountKeypair, program]);
 
   const globalStatePDA = useMemo(() => getGlobalStatePDA()[0], []);
   const mintPDA = useMemo(() => getMintPDA()[0], []);
