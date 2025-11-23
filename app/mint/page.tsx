@@ -218,12 +218,12 @@ export default function MintPage() {
       console.error('Failed to create token account:', ataError);
       
       // Check if it's a SendTransactionError and try to get logs
-      if (ataError.logs) {
+      if (ataError?.logs) {
         console.error('Transaction logs:', ataError.logs);
       }
       
       // User-friendly error messages
-      let errorMessage = ataError.message || 'Failed to create token account';
+      let errorMessage = ataError?.message || 'Failed to create token account';
       if (errorMessage.includes('blockhash')) {
         errorMessage = 'Transaction expired while creating token account. Please try again.';
       } else if (errorMessage.includes('insufficient funds')) {
@@ -263,12 +263,12 @@ export default function MintPage() {
   console.error('❌ Minting error:', err);
   
   // Check for SendTransactionError and extract detailed logs
-  if (err.logs) {
+  if (err?.logs) {
     console.error('Transaction logs:', err.logs);
   }
   
   // Show user-friendly error message
-  let errorMessage = err.message || 'Minting failed. Please try again.';
+  let errorMessage = err?.message || 'Minting failed. Please try again.';
   
   // Simplify common error messages for users
   if (errorMessage.includes('blockhash')) {
