@@ -267,103 +267,120 @@ export default function MintPage() {
       console.log('🔍 Verifying user token account exists...');
       const tokenAccountInfo = await connection.getAccountInfo(userTokenAccount);
       
-      const transaction = new Transaction().add(createAtaIx);
-      transaction.feePayer = publicKey;
+      if (!tokenAccountInfo) {
+        console.log('⚠️  Token account does not exist, creating it now...');
+        
+        if (!wallet.signTransaction) {
+          throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
+        }
+        
+        try {
+          const createAtaIx = createAssociatedTokenAccountInstruction(
+            publicKey,           // payer
+            userTokenAccount,    // ata
+            publicKey,           // owner
+            mintPDA,             // mint
+            TOKEN_2022_PROGRAM_ID,
+            ASSOCIATED_TOKEN_PROGRAM_ID
+          );
+          
+          const transaction = new Transaction().add(createAtaIx);
+          transaction.feePayer = publicKey;
+          
+          // Fetch blockhash with confirmed commitment level
+          const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+          transaction.recentBlockhash = blockhash;
+          
+          console.log('📝 Blockhash:', blockhash, 'lastValidBlockHeight:', lastValidBlockHeight);
+          
+          // Sign and send the transaction
+          const signed = await wallet.signTransaction(transaction);
+          const signature = await connection.sendRawTransaction(signed.serialize(), {
+            skipPreflight: false,
+            preflightCommitment: 'confirmed',
+            maxRetries: 3
+          });
+          
+          console.log('📤 Token account creation transaction sent:', signature);
+          
+          // Confirm with proper blockhash context
+          await connection.confirmTransaction({
+            signature,
+            blockhash,
+            lastValidBlockHeight
+          }, 'confirmed');
       
-      // Fetch blockhash with confirmed commitment level
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-      transaction.recentBlockhash = blockhash;
-      
-      console.log('📝 Blockhash:', blockhash, 'lastValidBlockHeight:', lastValidBlockHeight);
-      
-      // Sign and send the transaction
-      const signed = await wallet.signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signed.serialize(), {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed',
-        maxRetries: 3
-      });
-      
-      console.log('📤 Token account creation transaction sent:', signature);
-      
-      // Confirm with proper blockhash context
-      await connection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight
-      }, 'confirmed');
-      
-      console.log('✅ Token account created:', signature);
-    } catch (ataError: any) {
-      console.error('Failed to create token account:', ataError);
-      
-      // Check if it's a SendTransactionError and try to get logs
-      if (ataError?.logs) {
-        console.error('Transaction logs:', ataError.logs);
-      }
-      
-      // User-friendly error messages
-      let errorMessage = ataError?.message || 'Failed to create token account';
-      if (errorMessage.includes('blockhash')) {
-        errorMessage = 'Transaction expired while creating token account. Please try again.';
-      } else if (errorMessage.includes('insufficient funds')) {
-        errorMessage = 'Insufficient SOL balance to create token account.';
-      } else if (errorMessage.includes('simulation failed')) {
-        errorMessage = 'Token account creation failed during simulation. Please check your account and try again.';
+          console.log('✅ Token account created:', signature);
+        } catch (ataError: any) {
+          console.error('Failed to create token account:', ataError);
+          
+          // Check if it's a SendTransactionError and try to get logs
+          if (ataError?.logs) {
+            console.error('Transaction logs:', ataError.logs);
+          }
+          
+          // User-friendly error messages
+          let errorMessage = ataError?.message || 'Failed to create token account';
+          if (errorMessage.includes('blockhash')) {
+            errorMessage = 'Transaction expired while creating token account. Please try again.';
+          } else if (errorMessage.includes('insufficient funds')) {
+            errorMessage = 'Insufficient SOL balance to create token account.';
+          } else if (errorMessage.includes('simulation failed')) {
+            errorMessage = 'Token account creation failed during simulation. Please check your account and try again.';
+          } else {
+            errorMessage = `Failed to create token account: ${errorMessage}`;
+          }
+          
+          throw new Error(errorMessage);
+        }
       } else {
-        errorMessage = `Failed to create token account: ${errorMessage}`;
+        console.log('✅ Token account already exists');
+      }
+
+      // ✅ Now mint tokens
+      const tx = await program.methods
+        .mintEquaTokens(new anchor.BN(1_000_000_000))
+        .accounts({
+          userAccount: userAccountKeypair.publicKey,
+          userTokenAccount,
+          mint: mintPDA,
+          mintAuthority,
+          authority: publicKey,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc();
+
+      console.log('✅ Minting successful!', tx);
+      setTxSignature(tx);
+
+      // Refresh balance
+      await checkUserRegistration();
+
+    } catch (err: any) {
+      console.error('❌ Minting error:', err);
+      
+      // Check for SendTransactionError and extract detailed logs
+      if (err?.logs) {
+        console.error('Transaction logs:', err.logs);
       }
       
-      throw new Error(errorMessage);
+      // Show user-friendly error message
+      let errorMessage = err?.message || 'Minting failed. Please try again.';
+      
+      // Simplify common error messages for users
+      if (errorMessage.includes('blockhash')) {
+        errorMessage = 'Transaction expired. Please try again.';
+      } else if (errorMessage.includes('insufficient funds')) {
+        errorMessage = 'Insufficient SOL balance to complete transaction.';
+      } else if (errorMessage.includes('simulation failed')) {
+        errorMessage = 'Transaction simulation failed. Please check your account status and try again.';
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
-  } else {
-    console.log('✅ Token account already exists');
-  }
-
-  // ✅ Now mint tokens
-  const tx = await program.methods
-    .mintEquaTokens(new anchor.BN(1_000_000_000))
-    .accounts({
-      userAccount: userAccountKeypair.publicKey,
-      userTokenAccount,
-      mint: mintPDA,
-      mintAuthority,
-      authority: publicKey,
-      tokenProgram: TOKEN_2022_PROGRAM_ID,
-    })
-    .rpc();
-
-  console.log('✅ Minting successful!', tx);
-  setTxSignature(tx);
-
-  // Refresh balance
-  await checkUserRegistration();
-
-  } catch (err: any) {
-  console.error('❌ Minting error:', err);
-  
-  // Check for SendTransactionError and extract detailed logs
-  if (err?.logs) {
-    console.error('Transaction logs:', err.logs);
-  }
-  
-  // Show user-friendly error message
-  let errorMessage = err?.message || 'Minting failed. Please try again.';
-  
-  // Simplify common error messages for users
-  if (errorMessage.includes('blockhash')) {
-    errorMessage = 'Transaction expired. Please try again.';
-  } else if (errorMessage.includes('insufficient funds')) {
-    errorMessage = 'Insufficient SOL balance to complete transaction.';
-  } else if (errorMessage.includes('simulation failed')) {
-    errorMessage = 'Transaction simulation failed. Please check your account status and try again.';
-  }
-  
-  setError(errorMessage);
-  } finally {
-  setIsLoading(false);
-  }
-};
+  };
 
 
 
