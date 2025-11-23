@@ -96,6 +96,80 @@ export default function MintPage() {
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
+      // Check if token account exists, create it first if needed
+      console.log('🔍 Checking if token account exists...');
+      const accountInfo = await connection.getAccountInfo(userTokenAccount);
+      
+      if (!accountInfo) {
+        console.log('⚠️  Token account does not exist, creating it before registration...');
+        
+        if (!wallet.signTransaction) {
+          throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
+        }
+        
+        try {
+          const createAtaIx = createAssociatedTokenAccountInstruction(
+            publicKey,           // payer
+            userTokenAccount,    // ata
+            publicKey,           // owner
+            mintPDA,             // mint
+            TOKEN_2022_PROGRAM_ID,
+            ASSOCIATED_TOKEN_PROGRAM_ID
+          );
+          
+          const transaction = new Transaction().add(createAtaIx);
+          transaction.feePayer = publicKey;
+          
+          // Fetch blockhash with confirmed commitment level
+          const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+          transaction.recentBlockhash = blockhash;
+          
+          console.log('📝 Blockhash:', blockhash, 'lastValidBlockHeight:', lastValidBlockHeight);
+          
+          // Sign and send the transaction
+          const signed = await wallet.signTransaction(transaction);
+          const signature = await connection.sendRawTransaction(signed.serialize(), {
+            skipPreflight: false,
+            preflightCommitment: 'confirmed',
+            maxRetries: 3
+          });
+          
+          console.log('📤 Token account creation transaction sent:', signature);
+          
+          // Confirm with proper blockhash context
+          await connection.confirmTransaction({
+            signature,
+            blockhash,
+            lastValidBlockHeight
+          }, 'confirmed');
+          
+          console.log('✅ Token account created:', signature);
+        } catch (ataError: any) {
+          console.error('Failed to create token account:', ataError);
+          
+          // Check if it's a SendTransactionError and try to get logs
+          if (ataError?.logs) {
+            console.error('Transaction logs:', ataError.logs);
+          }
+          
+          // User-friendly error messages
+          let errorMessage = ataError?.message || 'Failed to create token account';
+          if (errorMessage.includes('blockhash')) {
+            errorMessage = 'Transaction expired while creating token account. Please try again.';
+          } else if (errorMessage.includes('insufficient funds')) {
+            errorMessage = 'Insufficient SOL balance to create token account.';
+          } else if (errorMessage.includes('simulation failed')) {
+            errorMessage = 'Token account creation failed during simulation. Please check your account and try again.';
+          } else {
+            errorMessage = `Failed to create token account: ${errorMessage}`;
+          }
+          
+          throw new Error(errorMessage);
+        }
+      } else {
+        console.log('✅ Token account already exists');
+      }
+
       const now = Math.floor(Date.now() / 1000);
       const lockUntil = now + (2 * 365 * 24 * 60 * 60);
 
@@ -141,51 +215,57 @@ export default function MintPage() {
 
 
   const handleMint = async () => {
-  if (!wallet.connected || !publicKey || !userAccountKeypair || !program) {
-  setError('Wallet not connected or program not ready');
-  return;
-  }
-  setIsLoading(true);
-  setError('');
-  setTxSignature('');
-  try {
-  console.log('🔄 Creating mint transaction...');
-  const userTokenAccount = getAssociatedTokenAddressSync(
-    mintPDA,
-    publicKey,
-    false,
-    TOKEN_2022_PROGRAM_ID,
-    ASSOCIATED_TOKEN_PROGRAM_ID
-  );
-
-  console.log('📝 Accounts:');
-  console.log('  - User Account:', userAccountKeypair.publicKey.toBase58());
-  console.log('  - Token Account:', userTokenAccount.toBase58());
-  console.log('  - Mint:', mintPDA.toBase58());
-  console.log('  - Authority:', publicKey.toBase58());
-
-  // ✅ Check if token account exists, create it if needed
-  console.log('🔍 Checking if token account exists...');
-  const accountInfo = await connection.getAccountInfo(userTokenAccount);
-  
-  if (!accountInfo) {
-    console.log('⚠️  Token account does not exist, creating it...');
-    
-    // Verify wallet has signTransaction method
-    if (!wallet.signTransaction) {
-      throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
+    if (!wallet.connected || !publicKey || !userAccountKeypair || !program) {
+      setError('Wallet not connected or program not ready');
+      return;
     }
     
+    setIsLoading(true);
+    setError('');
+    setTxSignature('');
+    
     try {
-      // Create the ATA using the standard instruction (not idempotent) for Token-2022
-      const createAtaIx = createAssociatedTokenAccountInstruction(
-        publicKey,           // payer
-        userTokenAccount,    // ata
-        publicKey,           // owner
-        mintPDA,             // mint
+      console.log('🔄 Starting mint process...');
+      
+      // First, verify that the mint account exists on-chain
+      console.log('🔍 Verifying mint account exists...');
+      const mintInfo = await connection.getAccountInfo(mintPDA);
+      if (!mintInfo) {
+        throw new Error(
+          'EQUA token mint has not been created yet. The program administrator needs to run the mint creation script first. ' +
+          'See MINT_CREATION_INSTRUCTIONS.md for details.'
+        );
+      }
+      console.log('✅ Mint account verified');
+      
+      // Verify global state exists
+      console.log('🔍 Verifying global state...');
+      const globalStateInfo = await connection.getAccountInfo(globalStatePDA);
+      if (!globalStateInfo) {
+        throw new Error(
+          'Global state has not been initialized. The program administrator needs to initialize it first.'
+        );
+      }
+      console.log('✅ Global state verified');
+      
+      const userTokenAccount = getAssociatedTokenAddressSync(
+        mintPDA,
+        publicKey,
+        false,
         TOKEN_2022_PROGRAM_ID,
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
+
+      console.log('📝 Accounts:');
+      console.log('  - User Account:', userAccountKeypair.publicKey.toBase58());
+      console.log('  - Token Account:', userTokenAccount.toBase58());
+      console.log('  - Mint:', mintPDA.toBase58());
+      console.log('  - Mint Authority:', mintAuthority.toBase58());
+      console.log('  - Authority:', publicKey.toBase58());
+
+      // Verify token account exists (should have been created during registration)
+      console.log('🔍 Verifying user token account exists...');
+      const tokenAccountInfo = await connection.getAccountInfo(userTokenAccount);
       
       const transaction = new Transaction().add(createAtaIx);
       transaction.feePayer = publicKey;
