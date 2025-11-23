@@ -222,7 +222,19 @@ export default function MintPage() {
         console.error('Transaction logs:', ataError.logs);
       }
       
-      throw new Error(`Failed to create token account: ${ataError.message || 'Unknown error'}`);
+      // User-friendly error messages
+      let errorMessage = ataError.message || 'Failed to create token account';
+      if (errorMessage.includes('blockhash')) {
+        errorMessage = 'Transaction expired while creating token account. Please try again.';
+      } else if (errorMessage.includes('insufficient funds')) {
+        errorMessage = 'Insufficient SOL balance to create token account.';
+      } else if (errorMessage.includes('simulation failed')) {
+        errorMessage = 'Token account creation failed during simulation. Please check your account and try again.';
+      } else {
+        errorMessage = `Failed to create token account: ${errorMessage}`;
+      }
+      
+      throw new Error(errorMessage);
     }
   } else {
     console.log('✅ Token account already exists');
@@ -251,10 +263,20 @@ export default function MintPage() {
   console.error('❌ Minting error:', err);
   
   // Check for SendTransactionError and extract detailed logs
-  let errorMessage = err.message || 'Minting failed';
   if (err.logs) {
     console.error('Transaction logs:', err.logs);
-    errorMessage += '\n\nTransaction logs:\n' + err.logs.join('\n');
+  }
+  
+  // Show user-friendly error message
+  let errorMessage = err.message || 'Minting failed. Please try again.';
+  
+  // Simplify common error messages for users
+  if (errorMessage.includes('blockhash')) {
+    errorMessage = 'Transaction expired. Please try again.';
+  } else if (errorMessage.includes('insufficient funds')) {
+    errorMessage = 'Insufficient SOL balance to complete transaction.';
+  } else if (errorMessage.includes('simulation failed')) {
+    errorMessage = 'Transaction simulation failed. Please check your account status and try again.';
   }
   
   setError(errorMessage);
