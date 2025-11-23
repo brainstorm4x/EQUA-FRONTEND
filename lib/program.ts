@@ -1,6 +1,6 @@
 import { Connection, PublicKey, Keypair, TransactionInstruction, SystemProgram } from "@solana/web3.js";
 import {
-  TOKEN_2022_PROGRAM_ID,
+  TOKEN_PROGRAM_ID as SPL_TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
@@ -271,4 +271,5 @@ export function createMintEquaInstruction(
   });
 }
 
-export { TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
+// Export standard SPL Token program ID (not Token-2022)
+export { SPL_TOKEN_PROGRAM_ID as TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
