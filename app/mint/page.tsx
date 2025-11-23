@@ -13,32 +13,41 @@ import {
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
 
+// Constants for error handling
+const ERROR_STACK_TRACE_LINES = 3;
+
 // Utility function to handle and format ATA creation errors
-function handleAtaCreationError(ataError: any, context: 'registration' | 'minting'): Error {
+function handleAtaCreationError(ataError: unknown, context: 'registration' | 'minting'): Error {
   console.error(`❌ Failed to create token account during ${context}:`, ataError);
   
+  // Type guard to check if error has logs property
+  const hasLogs = (err: unknown): err is { logs: string[] } => {
+    return typeof err === 'object' && err !== null && 'logs' in err && Array.isArray((err as any).logs);
+  };
+  
   // Check if it's a SendTransactionError and try to get logs
-  if (ataError?.logs) {
+  if (hasLogs(ataError)) {
     console.error('Transaction logs:', ataError.logs);
   }
   
   // Log full error details for debugging
+  const errorObj = ataError as any; // Safe cast for logging purposes
   console.error('Full error object:', {
-    message: ataError?.message,
-    code: ataError?.code,
-    logs: ataError?.logs,
-    stack: ataError?.stack?.split('\n').slice(0, 3)
+    message: errorObj?.message,
+    code: errorObj?.code,
+    logs: errorObj?.logs,
+    stack: errorObj?.stack?.split('\n').slice(0, ERROR_STACK_TRACE_LINES)
   });
   
   // User-friendly error messages
-  let errorMessage = ataError?.message || 'Failed to create token account';
+  let errorMessage = errorObj?.message || 'Failed to create token account';
   if (errorMessage.includes('blockhash')) {
     errorMessage = 'Transaction expired while creating token account. Please try again.';
   } else if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
     errorMessage = 'Insufficient SOL balance to create token account. You need at least 0.01 SOL for transaction fees.';
   } else if (errorMessage.includes('simulation failed')) {
     // Check for specific simulation failure reasons
-    if (ataError?.logs) {
+    if (hasLogs(ataError)) {
       const logsStr = ataError.logs.join(' ');
       if (logsStr.includes('insufficient')) {
         errorMessage = 'Insufficient SOL balance. You need at least 0.01 SOL to create a token account.';
