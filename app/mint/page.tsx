@@ -13,6 +13,50 @@ import {
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
 
+// Utility function to handle and format ATA creation errors
+function handleAtaCreationError(ataError: any, context: 'registration' | 'minting'): Error {
+  console.error(`❌ Failed to create token account during ${context}:`, ataError);
+  
+  // Check if it's a SendTransactionError and try to get logs
+  if (ataError?.logs) {
+    console.error('Transaction logs:', ataError.logs);
+  }
+  
+  // Log full error details for debugging
+  console.error('Full error object:', {
+    message: ataError?.message,
+    code: ataError?.code,
+    logs: ataError?.logs,
+    stack: ataError?.stack?.split('\n').slice(0, 3)
+  });
+  
+  // User-friendly error messages
+  let errorMessage = ataError?.message || 'Failed to create token account';
+  if (errorMessage.includes('blockhash')) {
+    errorMessage = 'Transaction expired while creating token account. Please try again.';
+  } else if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
+    errorMessage = 'Insufficient SOL balance to create token account. You need at least 0.01 SOL for transaction fees.';
+  } else if (errorMessage.includes('simulation failed')) {
+    // Check for specific simulation failure reasons
+    if (ataError?.logs) {
+      const logsStr = ataError.logs.join(' ');
+      if (logsStr.includes('insufficient')) {
+        errorMessage = 'Insufficient SOL balance. You need at least 0.01 SOL to create a token account.';
+      } else if (logsStr.includes('already in use')) {
+        errorMessage = 'Token account already exists. Please refresh the page and try again.';
+      } else {
+        errorMessage = 'Token account creation failed during simulation. This may be due to network issues or insufficient SOL. Please ensure you have at least 0.01 SOL and try again.';
+      }
+    } else {
+      errorMessage = 'Token account creation failed during simulation. Please ensure you have at least 0.01 SOL and try again.';
+    }
+  } else {
+    errorMessage = `Failed to create token account: ${errorMessage}`;
+  }
+  
+  return new Error(errorMessage);
+}
+
 export default function MintPage() {
   const {
     program,
@@ -156,46 +200,7 @@ export default function MintPage() {
           
           console.log('✅ Token account created:', signature);
         } catch (ataError: any) {
-          console.error('❌ Failed to create token account during registration:', ataError);
-          
-          // Check if it's a SendTransactionError and try to get logs
-          if (ataError?.logs) {
-            console.error('Transaction logs:', ataError.logs);
-          }
-          
-          // Log full error details for debugging
-          console.error('Full error object:', {
-            message: ataError?.message,
-            code: ataError?.code,
-            logs: ataError?.logs,
-            stack: ataError?.stack?.split('\n').slice(0, 3)
-          });
-          
-          // User-friendly error messages
-          let errorMessage = ataError?.message || 'Failed to create token account';
-          if (errorMessage.includes('blockhash')) {
-            errorMessage = 'Transaction expired while creating token account. Please try again.';
-          } else if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
-            errorMessage = 'Insufficient SOL balance to create token account. You need at least 0.01 SOL for transaction fees.';
-          } else if (errorMessage.includes('simulation failed')) {
-            // Check for specific simulation failure reasons
-            if (ataError?.logs) {
-              const logsStr = ataError.logs.join(' ');
-              if (logsStr.includes('insufficient')) {
-                errorMessage = 'Insufficient SOL balance. You need at least 0.01 SOL to create a token account.';
-              } else if (logsStr.includes('already in use')) {
-                errorMessage = 'Token account already exists. Please refresh the page and try again.';
-              } else {
-                errorMessage = 'Token account creation failed during simulation. This may be due to network issues or insufficient SOL. Please ensure you have at least 0.01 SOL and try again.';
-              }
-            } else {
-              errorMessage = 'Token account creation failed during simulation. Please ensure you have at least 0.01 SOL and try again.';
-            }
-          } else {
-            errorMessage = `Failed to create token account: ${errorMessage}`;
-          }
-          
-          throw new Error(errorMessage);
+          throw handleAtaCreationError(ataError, 'registration');
         }
       } else {
         console.log('✅ Token account already exists');
@@ -343,46 +348,7 @@ export default function MintPage() {
       
           console.log('✅ Token account created:', signature);
         } catch (ataError: any) {
-          console.error('❌ Failed to create token account during minting:', ataError);
-          
-          // Check if it's a SendTransactionError and try to get logs
-          if (ataError?.logs) {
-            console.error('Transaction logs:', ataError.logs);
-          }
-          
-          // Log full error details for debugging
-          console.error('Full error object:', {
-            message: ataError?.message,
-            code: ataError?.code,
-            logs: ataError?.logs,
-            stack: ataError?.stack?.split('\n').slice(0, 3)
-          });
-          
-          // User-friendly error messages
-          let errorMessage = ataError?.message || 'Failed to create token account';
-          if (errorMessage.includes('blockhash')) {
-            errorMessage = 'Transaction expired while creating token account. Please try again.';
-          } else if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
-            errorMessage = 'Insufficient SOL balance to create token account. You need at least 0.01 SOL for transaction fees.';
-          } else if (errorMessage.includes('simulation failed')) {
-            // Check for specific simulation failure reasons
-            if (ataError?.logs) {
-              const logsStr = ataError.logs.join(' ');
-              if (logsStr.includes('insufficient')) {
-                errorMessage = 'Insufficient SOL balance. You need at least 0.01 SOL to create a token account.';
-              } else if (logsStr.includes('already in use')) {
-                errorMessage = 'Token account already exists. Please refresh the page and try again.';
-              } else {
-                errorMessage = 'Token account creation failed during simulation. This may be due to network issues or insufficient SOL. Please ensure you have at least 0.01 SOL and try again.';
-              }
-            } else {
-              errorMessage = 'Token account creation failed during simulation. Please ensure you have at least 0.01 SOL and try again.';
-            }
-          } else {
-            errorMessage = `Failed to create token account: ${errorMessage}`;
-          }
-          
-          throw new Error(errorMessage);
+          throw handleAtaCreationError(ataError, 'minting');
         }
       } else {
         console.log('✅ Token account already exists');
