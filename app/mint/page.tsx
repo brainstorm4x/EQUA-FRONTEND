@@ -189,17 +189,52 @@ export default function MintPage() {
       
       const transaction = new Transaction().add(createAtaIx);
       transaction.feePayer = publicKey;
-      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      
+      // Fetch blockhash with confirmed commitment level
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      transaction.recentBlockhash = blockhash;
+      
+      console.log('📝 Blockhash:', blockhash, 'lastValidBlockHeight:', lastValidBlockHeight);
       
       // Sign and send the transaction
       const signed = await wallet.signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signed.serialize());
-      await connection.confirmTransaction(signature, 'confirmed');
+      const signature = await connection.sendRawTransaction(signed.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+        maxRetries: 3
+      });
+      
+      console.log('📤 Token account creation transaction sent:', signature);
+      
+      // Confirm with proper blockhash context
+      await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed');
       
       console.log('✅ Token account created:', signature);
     } catch (ataError: any) {
       console.error('Failed to create token account:', ataError);
-      throw new Error(`Failed to create token account: ${ataError.message || 'Unknown error'}`);
+      
+      // Check if it's a SendTransactionError and try to get logs
+      if (ataError?.logs) {
+        console.error('Transaction logs:', ataError.logs);
+      }
+      
+      // User-friendly error messages
+      let errorMessage = ataError?.message || 'Failed to create token account';
+      if (errorMessage.includes('blockhash')) {
+        errorMessage = 'Transaction expired while creating token account. Please try again.';
+      } else if (errorMessage.includes('insufficient funds')) {
+        errorMessage = 'Insufficient SOL balance to create token account.';
+      } else if (errorMessage.includes('simulation failed')) {
+        errorMessage = 'Token account creation failed during simulation. Please check your account and try again.';
+      } else {
+        errorMessage = `Failed to create token account: ${errorMessage}`;
+      }
+      
+      throw new Error(errorMessage);
     }
   } else {
     console.log('✅ Token account already exists');
@@ -226,7 +261,25 @@ export default function MintPage() {
 
   } catch (err: any) {
   console.error('❌ Minting error:', err);
-  setError(err.message || 'Minting failed');
+  
+  // Check for SendTransactionError and extract detailed logs
+  if (err?.logs) {
+    console.error('Transaction logs:', err.logs);
+  }
+  
+  // Show user-friendly error message
+  let errorMessage = err?.message || 'Minting failed. Please try again.';
+  
+  // Simplify common error messages for users
+  if (errorMessage.includes('blockhash')) {
+    errorMessage = 'Transaction expired. Please try again.';
+  } else if (errorMessage.includes('insufficient funds')) {
+    errorMessage = 'Insufficient SOL balance to complete transaction.';
+  } else if (errorMessage.includes('simulation failed')) {
+    errorMessage = 'Transaction simulation failed. Please check your account status and try again.';
+  }
+  
+  setError(errorMessage);
   } finally {
   setIsLoading(false);
   }

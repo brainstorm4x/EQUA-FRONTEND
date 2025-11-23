@@ -37,6 +37,8 @@ export async function createProgram(
 ): Promise<Program> {
   const provider = new AnchorProvider(connection, wallet, {
     commitment: "confirmed",
+    preflightCommitment: "confirmed",
+    skipPreflight: false,
   });
 
   try {
