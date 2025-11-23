@@ -189,16 +189,39 @@ export default function MintPage() {
       
       const transaction = new Transaction().add(createAtaIx);
       transaction.feePayer = publicKey;
-      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      
+      // Fetch blockhash with confirmed commitment level
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      transaction.recentBlockhash = blockhash;
+      
+      console.log('📝 Blockhash:', blockhash, 'lastValidBlockHeight:', lastValidBlockHeight);
       
       // Sign and send the transaction
       const signed = await wallet.signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signed.serialize());
-      await connection.confirmTransaction(signature, 'confirmed');
+      const signature = await connection.sendRawTransaction(signed.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+        maxRetries: 3
+      });
+      
+      console.log('📤 Token account creation transaction sent:', signature);
+      
+      // Confirm with proper blockhash context
+      await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed');
       
       console.log('✅ Token account created:', signature);
     } catch (ataError: any) {
       console.error('Failed to create token account:', ataError);
+      
+      // Check if it's a SendTransactionError and try to get logs
+      if (ataError.logs) {
+        console.error('Transaction logs:', ataError.logs);
+      }
+      
       throw new Error(`Failed to create token account: ${ataError.message || 'Unknown error'}`);
     }
   } else {
@@ -226,7 +249,15 @@ export default function MintPage() {
 
   } catch (err: any) {
   console.error('❌ Minting error:', err);
-  setError(err.message || 'Minting failed');
+  
+  // Check for SendTransactionError and extract detailed logs
+  let errorMessage = err.message || 'Minting failed';
+  if (err.logs) {
+    console.error('Transaction logs:', err.logs);
+    errorMessage += '\n\nTransaction logs:\n' + err.logs.join('\n');
+  }
+  
+  setError(errorMessage);
   } finally {
   setIsLoading(false);
   }
