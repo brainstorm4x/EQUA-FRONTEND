@@ -189,7 +189,29 @@ export default function MintPage() {
     setTxSignature('');
     
     try {
-      console.log('🔄 Creating mint transaction...');
+      console.log('🔄 Starting mint process...');
+      
+      // First, verify that the mint account exists on-chain
+      console.log('🔍 Verifying mint account exists...');
+      const mintInfo = await connection.getAccountInfo(mintPDA);
+      if (!mintInfo) {
+        throw new Error(
+          'EQUA token mint has not been created yet. The program administrator needs to run the mint creation script first. ' +
+          'See MINT_CREATION_INSTRUCTIONS.md for details.'
+        );
+      }
+      console.log('✅ Mint account verified');
+      
+      // Verify global state exists
+      console.log('🔍 Verifying global state...');
+      const globalStateInfo = await connection.getAccountInfo(globalStatePDA);
+      if (!globalStateInfo) {
+        throw new Error(
+          'Global state has not been initialized. The program administrator needs to initialize it first.'
+        );
+      }
+      console.log('✅ Global state verified');
+      
       const userTokenAccount = getAssociatedTokenAddressSync(
         mintPDA,
         publicKey,
@@ -206,16 +228,20 @@ export default function MintPage() {
       console.log('  - Authority:', publicKey.toBase58());
 
       // Verify token account exists (should have been created during registration)
-      console.log('🔍 Verifying token account exists...');
-      const accountInfo = await connection.getAccountInfo(userTokenAccount);
+      console.log('🔍 Verifying user token account exists...');
+      const tokenAccountInfo = await connection.getAccountInfo(userTokenAccount);
       
-      if (!accountInfo) {
-        throw new Error('Token account does not exist. Please try registering again or contact support.');
+      if (!tokenAccountInfo) {
+        throw new Error(
+          'Your token account does not exist. This should have been created during registration. ' +
+          'Please try disconnecting and reconnecting your wallet, or contact support if the issue persists.'
+        );
       }
       
       console.log('✅ Token account verified');
 
       // Mint tokens
+      console.log('🪙 Minting 1,000 EQUA tokens...');
       const tx = await program.methods
         .mintEquaTokens(new anchor.BN(1_000_000_000))
         .accounts({
@@ -236,7 +262,24 @@ export default function MintPage() {
 
     } catch (err: any) {
       console.error('❌ Minting error:', err);
-      setError(err.message || 'Minting failed');
+      
+      // Provide more helpful error messages
+      let errorMessage = err.message || 'Minting failed';
+      
+      // Check for specific error codes from the smart contract
+      if (err.message?.includes('6001')) {
+        errorMessage = 'Your tokens are currently locked. Please wait until the lock period expires.';
+      } else if (err.message?.includes('6006')) {
+        errorMessage = 'Minting is only allowed once every 24 hours. Please try again later.';
+      } else if (err.message?.includes('simulation failed')) {
+        errorMessage = 'Transaction simulation failed. This may be due to: ' +
+          '(1) The mint account not being properly initialized, ' +
+          '(2) Insufficient SOL in your wallet for transaction fees, or ' +
+          '(3) A constraint in the smart contract not being met. ' +
+          'Please check your wallet balance and try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
