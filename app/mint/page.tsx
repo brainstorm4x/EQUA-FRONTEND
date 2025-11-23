@@ -191,11 +191,14 @@ export default function MintPage() {
           console.log('📝 Blockhash:', blockhash, 'lastValidBlockHeight:', lastValidBlockHeight);
           
           // Sign and send the transaction
+          // Note: skipPreflight is set to true for ATA creation because:
+          // 1. ATA creation is idempotent (if it exists, the program will handle it)
+          // 2. Simulation can fail even when the transaction would succeed
+          // 3. This is more reliable on congested networks or with Token-2022
           const signed = await wallet.signTransaction(transaction);
           const signature = await connection.sendRawTransaction(signed.serialize(), {
-            skipPreflight: false,
-            preflightCommitment: 'confirmed',
-            maxRetries: 3
+            skipPreflight: true,
+            maxRetries: 5
           });
           
           console.log('📤 Token account creation transaction sent:', signature);
@@ -339,11 +342,14 @@ export default function MintPage() {
           console.log('📝 Blockhash:', blockhash, 'lastValidBlockHeight:', lastValidBlockHeight);
           
           // Sign and send the transaction
+          // Note: skipPreflight is set to true for ATA creation because:
+          // 1. ATA creation is idempotent (if it exists, the program will handle it)
+          // 2. Simulation can fail even when the transaction would succeed
+          // 3. This is more reliable on congested networks or with Token-2022
           const signed = await wallet.signTransaction(transaction);
           const signature = await connection.sendRawTransaction(signed.serialize(), {
-            skipPreflight: false,
-            preflightCommitment: 'confirmed',
-            maxRetries: 3
+            skipPreflight: true,
+            maxRetries: 5
           });
           
           console.log('📤 Token account creation transaction sent:', signature);
