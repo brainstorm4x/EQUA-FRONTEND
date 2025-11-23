@@ -5,7 +5,7 @@ import { WalletButton } from '@/components/ui/WalletButton';
 import { useProgram } from '@/hooks/useProgram';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Transaction, Keypair, PublicKey } from '@solana/web3.js';
+import { Transaction, Keypair, PublicKey, Connection, TransactionInstruction } from '@solana/web3.js';
 import * as program from '@/lib/program';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 import BN from 'bn.js';
@@ -54,6 +54,49 @@ function formatTimeRemaining(seconds: number): string {
   } else {
     return `${secs}s`;
   }
+}
+
+// ✅ Helper to verify mint account exists
+async function verifyMintExists(connection: Connection, mintPDA: PublicKey): Promise<void> {
+  const mintInfo = await connection.getAccountInfo(mintPDA);
+  if (!mintInfo) {
+    throw new Error('EQUA token mint has not been created yet. Please contact the program administrator.');
+  }
+  console.log('✅ Mint account verified');
+}
+
+// ✅ Helper to ensure ATA exists or create it
+async function ensureATAExists(
+  connection: Connection,
+  payer: PublicKey,
+  owner: PublicKey,
+  mint: PublicKey,
+  tokenProgram: PublicKey
+): Promise<{ ata: PublicKey; instruction: TransactionInstruction | null }> {
+  const ata = getAssociatedTokenAddressSync(
+    mint,
+    owner,
+    false,
+    tokenProgram,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  const ataInfo = await connection.getAccountInfo(ata);
+  if (!ataInfo) {
+    console.log('🔧 ATA does not exist, creating it...');
+    const instruction = createAssociatedTokenAccountInstruction(
+      payer,
+      ata,
+      owner,
+      mint,
+      tokenProgram,
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    );
+    return { ata, instruction };
+  }
+
+  console.log('✅ ATA already exists');
+  return { ata, instruction: null };
 }
 
 export default function MintPage() {
@@ -272,12 +315,16 @@ export default function MintPage() {
       const [globalStatePDA] = getGlobalStatePDA();
       const [mintPDA] = getMintPDA();
 
-      const userTokenAccount = getAssociatedTokenAddressSync(
+      // ✅ Verify mint account exists first
+      await verifyMintExists(connection, mintPDA);
+
+      // ✅ Ensure ATA exists or create it (payer and owner are the same: connected wallet)
+      const { ata: userTokenAccount, instruction: createAtaIx } = await ensureATAExists(
+        connection,
+        publicKey, // payer: wallet pays for ATA creation
+        publicKey, // owner: wallet owns the token account
         mintPDA,
-        publicKey,
-        false,
-        program.TOKEN_PROGRAM_ID,
-        ASSOCIATED_TOKEN_PROGRAM_ID
+        program.TOKEN_PROGRAM_ID
       );
 
       console.log('📝 Creating registration transaction...');
@@ -286,6 +333,13 @@ export default function MintPage() {
       console.log('📝 Global State PDA:', globalStatePDA.toBase58());
       console.log('📝 User Token Account:', userTokenAccount.toBase58());
       console.log('📝 Mint PDA:', mintPDA.toBase58());
+      console.log('📝 Token Program:', program.TOKEN_PROGRAM_ID.toBase58());
+
+      // ✅ Build transaction with ATA creation if needed
+      const transaction = new Transaction();
+      if (createAtaIx) {
+        transaction.add(createAtaIx);
+      }
 
       const now = Math.floor(Date.now() / 1000);
       
@@ -303,7 +357,7 @@ export default function MintPage() {
         PublicKey.default
       );
 
-      const transaction = new Transaction().add(instruction);
+      transaction.add(instruction);
       transaction.feePayer = publicKey;
 
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
@@ -379,6 +433,10 @@ export default function MintPage() {
       const [mintPDA] = getMintPDA();
       const [mintAuthority] = getMintAuthorityPDA();
 
+      // ✅ Verify mint account exists first
+      await verifyMintExists(connection, mintPDA);
+
+      // ✅ Get ATA address and verify it exists
       const userTokenAccount = getAssociatedTokenAddressSync(
         mintPDA,
         publicKey,
@@ -391,24 +449,15 @@ export default function MintPage() {
       console.log('🪙 User Account:', userAccountKeypair.publicKey.toBase58());
       console.log('🪙 User Token Account:', userTokenAccount.toBase58());
 
-      // ✅ Check if ATA exists and create it if needed
-      const transaction = new Transaction();
-      
+      // ✅ Verify ATA exists (should have been created during registration)
       const ataInfo = await connection.getAccountInfo(userTokenAccount);
       if (!ataInfo) {
-        console.log('🔧 ATA does not exist, creating it...');
-        const createAtaIx = createAssociatedTokenAccountInstruction(
-          publicKey, // payer
-          userTokenAccount, // ata
-          publicKey, // owner
-          mintPDA, // mint
-          program.TOKEN_PROGRAM_ID,
-          ASSOCIATED_TOKEN_PROGRAM_ID
+        throw new Error(
+          'Your token account does not exist. This usually means registration did not complete properly. ' +
+          'Please disconnect your wallet, clear your browser cache, and reconnect to register again.'
         );
-        transaction.add(createAtaIx);
-      } else {
-        console.log('✅ ATA already exists');
       }
+      console.log('✅ ATA verified, proceeding with mint');
 
       const instruction = program.createMintEquaInstruction(
         userAccountKeypair.publicKey,
@@ -420,6 +469,7 @@ export default function MintPage() {
         1000_000000
       );
 
+      const transaction = new Transaction();
       transaction.add(instruction);
       transaction.feePayer = publicKey;
 
