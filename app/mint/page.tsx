@@ -164,7 +164,7 @@ export default function MintPage() {
       console.log('🔍 Checking if token account exists...');
       const accountInfo = await connection.getAccountInfo(userTokenAccount);
       
-        if (!accountInfo) {
+      if (!accountInfo) {
         console.log('⚠️  Token account does not exist, creating it before registration...');
         
         if (!wallet.signTransaction) {
