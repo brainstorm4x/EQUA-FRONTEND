@@ -42,7 +42,6 @@
   "exclude": [
     "node_modules",
     "create_mint.ts",
-    "src/app",
     "src/services"
   ]
 }

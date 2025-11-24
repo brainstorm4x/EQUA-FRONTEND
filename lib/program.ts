@@ -1,9 +1,7 @@
 import { Connection, PublicKey, Keypair, TransactionInstruction, SystemProgram } from "@solana/web3.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
-import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import {
   PROGRAM_ID,
@@ -190,12 +188,7 @@ export function getOrCreateKeypair(): Keypair {
   }
   return keypair;
 }
-
-// ====================================================================
-// Instruction builders
-// ====================================================================
-
-// Create initialize_user instruction
+// ✅ Create initialize_user instruction
 export function createInitializeUserInstruction(
   userAccount: PublicKey,
   authority: PublicKey,
@@ -221,16 +214,15 @@ export function createInitializeUserInstruction(
     lockedUntilBN.toArrayLike(Buffer, 'le', 8),
   ]);
 
-  // ✅ FIX: Only mark referralAccount as writable if it's not PublicKey.default
-  // When PublicKey.default is passed (no referral), it cannot be marked as mutable
-  const isReferralWritable = !referralAccount.equals(PublicKey.default);
-
+  // ✅ FIX: The on-chain program requires referral_account to ALWAYS be writable per IDL
+  // Per Solana/Anchor design: referral_account must be a real account that can be marked writable
+  // The contract will handle the case where user refers themselves (no actual referrer)
   return new TransactionInstruction({
     keys: [
       { pubkey: userAccount, isSigner: true, isWritable: true },
       { pubkey: authority, isSigner: true, isWritable: true },
       { pubkey: globalState, isSigner: false, isWritable: true },
-      { pubkey: referralAccount, isSigner: false, isWritable: isReferralWritable },
+      { pubkey: referralAccount, isSigner: false, isWritable: true },  // ✅ Always writable per IDL requirement
       { pubkey: userTokenAccount, isSigner: false, isWritable: true },
       { pubkey: mint, isSigner: false, isWritable: false },
       { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
@@ -242,7 +234,7 @@ export function createInitializeUserInstruction(
   });
 }
 
-// Create mint_equa_tokens instruction
+// ✅ Create mint_equa_tokens instruction
 export function createMintEquaInstruction(
   userAccount: PublicKey,
   userTokenAccount: PublicKey,
@@ -274,5 +266,4 @@ export function createMintEquaInstruction(
   });
 }
 
-// Export standard SPL Token program ID (not Token-2022)
 export { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
