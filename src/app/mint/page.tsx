@@ -343,18 +343,20 @@ export default function MintPage() {
 
       const now = Math.floor(Date.now() / 1000);
       
+      // ✅ FIX: Pass PublicKey.default for referralAccount (4th parameter) when no referral
+      // This prevents ConstraintMut error since PublicKey.default cannot be marked as writable
       const instruction = program.createInitializeUserInstruction(
         userAccountKeypair.publicKey,
         publicKey,
         globalStatePDA,
-        userAccountKeypair.publicKey,
+        PublicKey.default,  // referralAccount: use default when no referral
         userTokenAccount,
         mintPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
         program.TOKEN_PROGRAM_ID,
         now,
         now,
-        PublicKey.default
+        PublicKey.default  // referrer: use default when no referral
       );
 
       transaction.add(instruction);
