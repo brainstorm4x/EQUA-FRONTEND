@@ -85,6 +85,39 @@ Based on the smart contract IDL:
 - **6005**: `InsufficientBalance` - Not enough tokens for transfer
 - **6006**: `MintCooldown` - Must wait 24 hours between mints
 
+### 8. Token Program Mismatch Errors
+
+**Problem**: Errors like "incorrect program id for instruction" or ATA creation fails
+
+**Cause**: Frontend and backend are using different token programs (Standard Token vs Token-2022)
+
+**Solution**: 
+1. Check which token program the mint account uses on Solana Explorer
+2. Verify `src/lib/constants.ts` uses the matching token program:
+   - For Standard Token: `import { TOKEN_PROGRAM_ID } from '@solana/spl-token'`
+   - For Token-2022: `import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token'`
+3. Contact the program administrator if mismatch is detected
+
+**How to Check**:
+```bash
+# View mint account on Solana Explorer
+# Check the "Owner" field:
+# - TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA = Standard Token
+# - TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb = Token-2022
+```
+
+### 9. Legacy Account Issues
+
+**Problem**: Errors about account already existing or wrong discriminator
+
+**Cause**: Old test accounts from previous versions with different structure
+
+**Solution**:
+1. Clear browser localStorage: `localStorage.removeItem('equa_user_keypair')`
+2. Generate new user account keypair
+3. Try registering with fresh account
+4. If issue persists, use a different wallet
+
 ## Getting Help
 
 If none of these solutions work:
@@ -92,15 +125,42 @@ If none of these solutions work:
 1. Check the browser console for detailed error logs
 2. Copy the full error message
 3. Note which step is failing (registration or minting)
-4. Contact the program administrator with this information
+4. Check the transaction signature on Solana Explorer for detailed error logs
+5. Review the AUDIT_REPORT.md for comprehensive troubleshooting
+6. Contact the program administrator with this information
 
 ## For Program Administrators
 
-Initial setup checklist:
+### Initial Setup Checklist:
 1. ☐ Deploy the smart contract to devnet
 2. ☐ Call `initialize` to create global state
 3. ☐ Run `create_mint.ts` to create the token mint
-4. ☐ Verify accounts exist using Solana Explorer
-5. ☐ Fund a test wallet with devnet SOL
-6. ☐ Test registration flow
-7. ☐ Test minting flow
+4. ☐ **IMPORTANT**: Verify frontend token program matches deployed mint
+5. ☐ Verify accounts exist using Solana Explorer
+6. ☐ Fund a test wallet with devnet SOL
+7. ☐ Test registration flow end-to-end
+8. ☐ Test minting flow end-to-end
+9. ☐ Test cooldown mechanism (24 hours)
+10. ☐ Review AUDIT_REPORT.md for comprehensive guidance
+
+### Token Program Configuration:
+
+The frontend is currently configured for **Standard SPL Token Program**.
+
+**To verify which token program your mint uses:**
+```bash
+# Check mint account owner on Solana Explorer
+# Mint PDA: 3xhEgm7rubPZyHrmgSWF8bzJvfon9WJG2g7WzDjjvNC4
+# Or run: node test_e2e_devnet.mjs
+```
+
+**If you need Token-2022 instead:**
+1. Update `src/lib/constants.ts`:
+```typescript
+import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
+```
+2. Rebuild: `npm run build`
+3. Test thoroughly
+
+See AUDIT_REPORT.md Section 16 for detailed instructions.
