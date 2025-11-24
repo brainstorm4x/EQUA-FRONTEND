@@ -1,9 +1,7 @@
 import { Connection, PublicKey, Keypair, TransactionInstruction, SystemProgram } from "@solana/web3.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
-import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import {
   PROGRAM_ID,
@@ -190,12 +188,7 @@ export function getOrCreateKeypair(): Keypair {
   }
   return keypair;
 }
-
-// ====================================================================
-// Instruction builders
-// ====================================================================
-
-// Create initialize_user instruction
+// ✅ Create initialize_user instruction
 export function createInitializeUserInstruction(
   userAccount: PublicKey,
   authority: PublicKey,
@@ -241,7 +234,7 @@ export function createInitializeUserInstruction(
   });
 }
 
-// Create mint_equa_tokens instruction
+// ✅ Create mint_equa_tokens instruction
 export function createMintEquaInstruction(
   userAccount: PublicKey,
   userTokenAccount: PublicKey,
@@ -273,5 +266,4 @@ export function createMintEquaInstruction(
   });
 }
 
-// Export standard SPL Token program ID (not Token-2022)
 export { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
