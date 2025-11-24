@@ -54,7 +54,31 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 - `/src/hooks` - Custom React hooks
 - `/src/lib` - Utility libraries and program logic
 - `/src/utils` - Helper utilities
+  - `tokenFormat.ts` - EQUA token formatting utilities (6 decimals)
 - `/public` - Static assets and IDL files
+
+## Token Formatting
+
+EQUA token uses 6 decimals (1,000,000 base units = 1 EQUA). The `src/utils/tokenFormat.ts` utility provides functions for formatting token amounts:
+
+- `formatEquaRaw(rawAmount, options)` - Format raw token amounts to human-readable strings
+- `rawToDecimal(rawAmount)` - Convert raw amounts to decimal numbers
+- `decimalToRaw(decimalAmount)` - Convert decimal amounts to raw base units
+- `parseEquaFormatted(formattedAmount)` - Parse formatted strings back to raw amounts
+
+Example:
+```typescript
+import { formatEquaRaw } from '@/utils/tokenFormat';
+
+// Format with all decimals
+formatEquaRaw(1_000_000_000) // "1,000.000000"
+
+// Format with trimmed zeros
+formatEquaRaw(1_000_000_000, { trimTrailingZeros: true }) // "1,000"
+
+// Format fractional amounts
+formatEquaRaw(123_456, { trimTrailingZeros: true }) // "0.123456"
+```
 
 ## Network Configuration
 
