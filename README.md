@@ -59,8 +59,32 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 ## Network Configuration
 
 - **Network**: Solana Devnet
-- **Token Standard**: SPL Token-2022
+- **Token Standard**: SPL Token (Standard) - *See note below*
 - **Program ID**: `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL`
+
+> **Note:** The codebase is currently configured for Standard SPL Token Program. If your deployed mint uses Token-2022, see [AUDIT_REPORT.md](AUDIT_REPORT.md#16-how-to-switch-to-token-2022-if-needed) for configuration instructions.
+
+## Documentation
+
+Comprehensive documentation is available for testing and troubleshooting:
+
+- **[COMPLETE_SUMMARY.md](COMPLETE_SUMMARY.md)** - Quick overview and testing status
+- **[AUDIT_REPORT.md](AUDIT_REPORT.md)** - Complete technical audit (18,000 words)
+- **[E2E_TESTING_GUIDE.md](E2E_TESTING_GUIDE.md)** - Step-by-step testing procedures
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
+
+### Quick Start Testing
+
+1. **Run Infrastructure Check:**
+   ```bash
+   node test_e2e_devnet.mjs
+   ```
+
+2. **Perform Manual Testing:**
+   - See [E2E_TESTING_GUIDE.md](E2E_TESTING_GUIDE.md) for detailed procedures
+
+3. **Troubleshooting:**
+   - See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues
 
 ## Learn More
 
