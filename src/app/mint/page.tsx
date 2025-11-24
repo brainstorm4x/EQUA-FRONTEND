@@ -360,6 +360,18 @@ export default function MintPage() {
         PublicKey.default  // referrer pubkey: default when no referrer
       );
 
+      // DEBUG: Dump metas
+      console.log('🧪 Instruction Accounts:');
+      instruction.keys.forEach((k, i) => {
+        console.log(
+          `${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`
+        );
+      });
+      console.log('DEBUG user_account:', userAccountKeypair.publicKey.toBase58());
+      console.log('DEBUG authority:', publicKey.toBase58());
+      console.log('DEBUG referral_account (should be SAME as user_account in self-case):', userAccountKeypair.publicKey.toBase58());
+      console.log('DEBUG referral data arg (should be default):', PublicKey.default.toBase58());
+
       transaction.add(instruction);
       transaction.feePayer = publicKey;
 
