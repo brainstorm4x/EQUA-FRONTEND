@@ -343,20 +343,21 @@ export default function MintPage() {
 
       const now = Math.floor(Date.now() / 1000);
       
-      // ✅ FIX: Pass PublicKey.default for referralAccount (4th parameter) when no referral
-      // This prevents ConstraintMut error since PublicKey.default cannot be marked as writable
+      // ✅ FIX: The on-chain program requires referral_account to be writable per IDL
+      // When user has no referrer, pass their own account as referral_account
+      // The smart contract handles self-referral case (no actual referrer rewards)
       const instruction = program.createInitializeUserInstruction(
         userAccountKeypair.publicKey,
         publicKey,
         globalStatePDA,
-        PublicKey.default,  // referralAccount: use default when no referral
+        userAccountKeypair.publicKey,  // referralAccount: use own account when no actual referrer
         userTokenAccount,
         mintPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
         program.TOKEN_PROGRAM_ID,
         now,
         now,
-        PublicKey.default  // referrer: use default when no referral
+        PublicKey.default  // referrer pubkey: default when no referrer
       );
 
       transaction.add(instruction);
