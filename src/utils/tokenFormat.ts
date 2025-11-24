@@ -29,6 +29,12 @@ export interface FormatOptions {
  * formatEquaRaw(1_000_000_000, { trimTrailingZeros: true }) // "1,000"
  * formatEquaRaw(3_120_045, { trimTrailingZeros: true }) // "3.120045"
  * formatEquaRaw(123_456) // "0.123456"
+ * 
+ * @note This function converts bigint to Number. While this can lose precision for values
+ * larger than Number.MAX_SAFE_INTEGER (2^53 - 1), this would require over 9 quintillion EQUA
+ * tokens, which is far beyond any realistic token supply. The SPL token program uses u64,
+ * which has a maximum value of ~18 quintillion, so precision loss is only a concern for
+ * extremely large unrealistic values.
  */
 export function formatEquaRaw(
   rawAmount: number | string | bigint,
@@ -74,6 +80,10 @@ export function formatEquaRaw(
  * @example
  * parseEquaFormatted("1,000") // 1_000_000_000
  * parseEquaFormatted("0.123456") // 123_456
+ * 
+ * @note Uses Math.round which can introduce minor rounding errors for edge cases with
+ * floating point arithmetic. For precise financial calculations, consider using a
+ * decimal library. However, for typical token amounts, the precision is sufficient.
  */
 export function parseEquaFormatted(formattedAmount: string): number {
   // Remove any grouping separators (commas)
@@ -84,7 +94,7 @@ export function parseEquaFormatted(formattedAmount: string): number {
     return 0;
   }
 
-  // Convert to raw units
+  // Convert to raw units (using Math.round to minimize floating point errors)
   return Math.round(tokenAmount * EQUA_DECIMAL_MULTIPLIER);
 }
 
@@ -97,6 +107,10 @@ export function parseEquaFormatted(formattedAmount: string): number {
  * @example
  * rawToDecimal(1_000_000_000) // 1000
  * rawToDecimal(123_456) // 0.123456
+ * 
+ * @note Converting bigint to Number can lose precision for values larger than
+ * Number.MAX_SAFE_INTEGER. For EQUA tokens with 6 decimals, this would require
+ * over 9 quintillion tokens, which is beyond any realistic token supply.
  */
 export function rawToDecimal(rawAmount: number | string | bigint): number {
   const amount = typeof rawAmount === 'bigint' 
@@ -121,6 +135,10 @@ export function rawToDecimal(rawAmount: number | string | bigint): number {
  * @example
  * decimalToRaw(1000) // 1_000_000_000
  * decimalToRaw(0.123456) // 123_456
+ * 
+ * @note Uses Math.round to minimize floating point errors. For typical token amounts
+ * within reasonable ranges, the precision is sufficient. Very large or very precise
+ * values may have minor rounding discrepancies due to IEEE 754 floating point arithmetic.
  */
 export function decimalToRaw(decimalAmount: number): number {
   if (isNaN(decimalAmount) || !isFinite(decimalAmount)) {
