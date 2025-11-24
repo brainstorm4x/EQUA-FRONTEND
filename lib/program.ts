@@ -221,12 +221,16 @@ export function createInitializeUserInstruction(
     lockedUntilBN.toArrayLike(Buffer, 'le', 8),
   ]);
 
+  // ✅ FIX: Only mark referralAccount as writable if it's not PublicKey.default
+  // When PublicKey.default is passed (no referral), it cannot be marked as mutable
+  const isReferralWritable = !referralAccount.equals(PublicKey.default);
+
   return new TransactionInstruction({
     keys: [
       { pubkey: userAccount, isSigner: true, isWritable: true },
       { pubkey: authority, isSigner: true, isWritable: true },
       { pubkey: globalState, isSigner: false, isWritable: true },
-      { pubkey: referralAccount, isSigner: false, isWritable: true },
+      { pubkey: referralAccount, isSigner: false, isWritable: isReferralWritable },
       { pubkey: userTokenAccount, isSigner: false, isWritable: true },
       { pubkey: mint, isSigner: false, isWritable: false },
       { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
