@@ -156,14 +156,14 @@ export default function MintPage() {
         userAccountKeypair.publicKey,
         publicKey,
         globalStatePDA,
-        PublicKey.default,  // ✅ FIXED: Use PublicKey.default for no referral
+        userAccountKeypair.publicKey,  // referralAccount: use own account when no actual referrer
         userTokenAccount,
         mintPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
         program.TOKEN_2022_PROGRAM_ID,  // ✅ FIXED: Use Token 2022
         now,
         now + (2 * 365 * 24 * 60 * 60),  // 2 years from now
-        PublicKey.default  // No referrer
+        PublicKey.default  // referrer pubkey: default when no referrer
       );
 
       const transaction = new Transaction().add(instruction);
