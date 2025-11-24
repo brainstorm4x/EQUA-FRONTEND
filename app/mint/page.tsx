@@ -69,6 +69,61 @@ function handleAtaCreationError(ataError: unknown, context: 'registration' | 'mi
   return new Error(errorMessage);
 }
 
+// Helper function to format seconds into human-readable time
+function formatTimeRemaining(seconds: number): string {
+  if (seconds <= 0) return 'Ready to mint!';
+  
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
+  } else {
+    return `${secs}s`;
+  }
+}
+
+// Helper to get last mint time from user account
+async function getLastMintTime(connection: any, userPubkey: PublicKey): Promise<number> {
+  try {
+    const accountInfo = await connection.getAccountInfo(userPubkey);
+    if (!accountInfo || accountInfo.data.length === 0) {
+      console.log('⚠️ User account not found');
+      return 0;
+    }
+    
+    // Offset based on IDL: 8 discriminator + 32 authority + 32 referral + 32 token_account + 8 minted_amount + 8 mint_start + 8 locked_until = 128
+    const LAST_MINT_TIME_OFFSET = 136;
+    
+    if (accountInfo.data.length < LAST_MINT_TIME_OFFSET + 8) {
+      console.log('⚠️ Account data too short for last_mint_time');
+      return 0;
+    }
+    
+    const lastMintRaw = new anchor.BN(
+      accountInfo.data.slice(LAST_MINT_TIME_OFFSET, LAST_MINT_TIME_OFFSET + 8),
+      'le'
+    );
+    
+    // Safe conversion with reasonable timestamp bounds
+    const MAX_SAFE_TIMESTAMP = 8640000000; // ~year 2243 in seconds
+    if (lastMintRaw.gt(new anchor.BN(MAX_SAFE_TIMESTAMP))) {
+      console.warn('⚠️ Last mint time appears uninitialized or corrupted:', lastMintRaw.toString());
+      return 0;
+    }
+    
+    const timestamp = lastMintRaw.toNumber();
+    console.log('⏰ Raw last_mint_time:', timestamp, 'Date:', new Date(timestamp * 1000).toLocaleString());
+    return timestamp;
+  } catch (error) {
+    console.error('Error getting last mint time:', error);
+    return 0;
+  }
+}
+
 export default function MintPage() {
   const {
     program,
@@ -93,6 +148,9 @@ export default function MintPage() {
   const [txSignature, setTxSignature] = useState('');
   const [isCheckingRegistration, setIsCheckingRegistration] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [lastMintTime, setLastMintTime] = useState<number>(0);
+  const [timeUntilNextMint, setTimeUntilNextMint] = useState<number>(0);
+  const [canMint, setCanMint] = useState<boolean>(true);
 
   useEffect(() => {
     setMounted(true);
@@ -112,17 +170,49 @@ export default function MintPage() {
       if (isReg) {
         const bal = await getBalance(userAccountKeypair.publicKey);
         setBalance(bal);
+        
+        // Get last mint time for cooldown
+        const lastMint = await getLastMintTime(connection, userAccountKeypair.publicKey);
+        setLastMintTime(lastMint);
+        console.log('⏰ Last mint time:', lastMint);
       }
     } catch (err) {
       console.error('Error checking registration:', err);
     } finally {
       setIsCheckingRegistration(false);
     }
-  }, [publicKey, isReady, userAccountKeypair, checkRegistration, getBalance]);
+  }, [publicKey, isReady, userAccountKeypair, checkRegistration, getBalance, connection]);
 
   useEffect(() => {
     checkUserRegistration();
   }, [checkUserRegistration]);
+
+  // Cooldown timer effect
+  useEffect(() => {
+    if (lastMintTime === 0) {
+      setCanMint(true);
+      setTimeUntilNextMint(0);
+      return;
+    }
+
+    const updateCooldown = () => {
+      const now = Math.floor(Date.now() / 1000);
+      const timeSinceLastMint = now - lastMintTime;
+      const cooldownPeriod = 86400; // 24 hours in seconds
+      
+      if (timeSinceLastMint >= cooldownPeriod) {
+        setCanMint(true);
+        setTimeUntilNextMint(0);
+      } else {
+        setCanMint(false);
+        setTimeUntilNextMint(cooldownPeriod - timeSinceLastMint);
+      }
+    };
+
+    updateCooldown();
+    const interval = setInterval(updateCooldown, 1000);
+    return () => clearInterval(interval);
+  }, [lastMintTime]);
 
   const handleRegister = async () => {
     if (!wallet.connected || !publicKey || !userAccountKeypair) {
@@ -231,13 +321,13 @@ export default function MintPage() {
       console.log('- Token Account:', userTokenAccount.toBase58());
       console.log('- Mint:', mintPDA.toBase58());
 
-      // ✅ FIX: Use manual instruction builder instead of .methods API
-      // This ensures referralAccount is marked as non-writable when PublicKey.default is used
+      // ✅ FIX: Use user's own account as referral_account for self-referral case
+      // This ensures referral_account is writable while passing PublicKey.default as referrer data
       const instruction = createInitializeUserInstruction(
         userAccountKeypair.publicKey,
         publicKey,
         globalStatePDA,
-        PublicKey.default,  // referralAccount: use default when no referral
+        userAccountKeypair.publicKey,  // referralAccount: use own account for self-referral
         userTokenAccount,
         mintPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -246,6 +336,14 @@ export default function MintPage() {
         lockUntil,
         PublicKey.default  // referrer: use default when no referral
       );
+
+      // 🧪 INSTRUMENTATION: Log instruction metas for debugging
+      console.log('🧪 InitializeUser instruction metas:');
+      instruction.keys.forEach((k, i) => {
+        console.log(`${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`);
+      });
+      console.log('DEBUG referral_account (should be same as user_account):', userAccountKeypair.publicKey.toBase58());
+      console.log('DEBUG referrer data arg (should be default):', PublicKey.default.toBase58());
 
       const transaction = new Transaction().add(instruction);
       transaction.feePayer = publicKey;
@@ -288,6 +386,12 @@ export default function MintPage() {
   const handleMint = async () => {
     if (!wallet.connected || !publicKey || !userAccountKeypair || !program) {
       setError('Wallet not connected or program not ready');
+      return;
+    }
+    
+    // Check cooldown
+    if (!canMint) {
+      setError(`⏰ Please wait ${formatTimeRemaining(timeUntilNextMint)} before minting again`);
       return;
     }
     
@@ -408,8 +512,14 @@ export default function MintPage() {
       console.log('✅ Minting successful!', tx);
       setTxSignature(tx);
 
-      // Refresh balance
+      // Wait for state to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Refresh balance and last mint time
       await checkUserRegistration();
+      const newLastMintTime = await getLastMintTime(connection, userAccountKeypair.publicKey);
+      setLastMintTime(newLastMintTime);
+      console.log('⏰ Updated last mint time:', newLastMintTime);
 
     } catch (err: any) {
       console.error('❌ Minting error:', err);
@@ -597,17 +707,62 @@ export default function MintPage() {
             ) : (
               <>
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
-                  <h3 className="text-2xl font-bold text-white mb-6">Mint EQUA</h3>
-                  <div className="bg-purple-900/50 rounded-xl p-6 mb-6">
-                    <p className="text-purple-200 text-center text-2xl font-bold">1,000 EQUA</p>
+                  <div className="text-center">
+                    <div className="text-6xl mb-6">🪙</div>
+                    <h3 className="text-2xl font-bold text-white mb-4">
+                      {canMint ? 'Daily EQUA Reward' : 'Cooldown Active'}
+                    </h3>
+                    
+                    {/* Countdown Display */}
+                    <div className={`rounded-xl p-6 mb-6 ${
+                      canMint 
+                        ? 'bg-green-500/20 border-2 border-green-500' 
+                        : 'bg-yellow-500/20 border-2 border-yellow-500'
+                    }`}>
+                      {canMint ? (
+                        <>
+                          <p className="text-green-100 text-3xl font-bold mb-2">✅ Ready to mint!</p>
+                          <p className="text-green-200 text-lg">Claim your 1,000 EQUA</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-yellow-100 text-sm mb-2">Next claim available in:</p>
+                          <p className="text-yellow-100 text-4xl font-bold mb-2">
+                            {formatTimeRemaining(timeUntilNextMint)}
+                          </p>
+                          <p className="text-yellow-200 text-sm">
+                            Come back at {new Date((lastMintTime + 86400) * 1000).toLocaleTimeString()}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    
+                    <button
+                      onClick={handleMint}
+                      disabled={isLoading || !canMint}
+                      className={`w-full font-bold py-4 px-8 rounded-xl transition-all ${
+                        canMint && !isLoading
+                          ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+                          : 'bg-gray-500/50 text-gray-300 cursor-not-allowed opacity-60'
+                      }`}
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span>⏳ Minting...</span>
+                        </span>
+                      ) : canMint ? (
+                        '🪙 Claim Daily EQUA'
+                      ) : (
+                        `Cooldown: ${formatTimeRemaining(timeUntilNextMint)}`
+                      )}
+                    </button>
+
+                    {lastMintTime > 0 && (
+                      <p className="text-purple-300 text-xs text-center mt-4">
+                        Last claimed: {new Date(lastMintTime * 1000).toLocaleString()}
+                      </p>
+                    )}
                   </div>
-                  <button
-                    onClick={handleMint}
-                    disabled={isLoading}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl transition-all disabled:opacity-50"
-                  >
-                    {isLoading ? '⏳ Minting...' : '🪙 Mint 1,000 EQUA'}
-                  </button>
                 </div>
 
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
