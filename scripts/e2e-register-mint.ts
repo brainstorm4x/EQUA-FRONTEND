@@ -40,6 +40,7 @@ import {
   createMintEquaInstruction,
   getSPLTokenBalance,
 } from '../lib/program';
+import { formatEquaRaw } from '../src/utils/tokenFormat';
 
 async function main() {
   console.log('🚀 Starting E2E Test: EQUA Registration & Minting\n');
@@ -235,12 +236,14 @@ async function main() {
   await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for state to update
   
   const finalBalance = await getSPLTokenBalance(connection, userTokenAccount);
-  console.log(`✅ Final balance: ${finalBalance} EQUA`);
+  const formattedBalance = formatEquaRaw(finalBalance, { trimTrailingZeros: true });
+  console.log(`✅ Final balance: ${formattedBalance} EQUA (raw: ${finalBalance})`);
   
-  if (finalBalance >= 1000) {
+  // Compare raw amount (should be >= 1,000,000,000 for 1000 EQUA)
+  if (finalBalance >= 1_000_000_000) {
     console.log('\n🎉 E2E Test PASSED! Registration and minting successful.');
   } else {
-    console.log('\n⚠️  E2E Test WARNING: Expected at least 1000 EQUA, got', finalBalance);
+    console.log(`\n⚠️  E2E Test WARNING: Expected at least 1,000,000,000 raw units (1000 EQUA), got ${finalBalance} (${formattedBalance} EQUA)`);
   }
   
   console.log('\n📊 Test Summary:');
@@ -248,7 +251,7 @@ async function main() {
   console.log('  ✅ Mint verified');
   console.log('  ✅ User registered (self-referral)');
   console.log('  ✅ 1000 EQUA minted');
-  console.log('  ✅ Final balance:', finalBalance, 'EQUA');
+  console.log('  ✅ Final balance:', formattedBalance, 'EQUA');
 }
 
 main().catch(err => {

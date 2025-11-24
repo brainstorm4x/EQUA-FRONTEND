@@ -15,6 +15,7 @@ import {
 } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
+import { formatEquaRaw } from '@/utils/tokenFormat';
 
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
@@ -768,7 +769,7 @@ export default function MintPage() {
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
                   <h3 className="text-purple-200 text-lg mb-4 text-center">Your Balance</h3>
                   <p className="text-white font-bold text-5xl text-center mb-2">
-                    {balance.toLocaleString()}
+                    {formatEquaRaw(balance, { trimTrailingZeros: true })}
                   </p>
                   <p className="text-purple-300 text-center">EQUA</p>
                 </div>

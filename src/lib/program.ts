@@ -72,7 +72,7 @@ export async function isUserRegistered(
     return false;
   }
 }
-// Get user's minted amount from user account
+// Get user's minted amount from user account (returns RAW amount in base units)
 export async function getUserBalance(
   connection: Connection,
   userAccountPubkey: PublicKey
@@ -95,17 +95,15 @@ export async function getUserBalance(
       "le"
     );
 
-    // Convert from lamports (6 decimals) to tokens
-    const DECIMALS = new BN(1_000_000);
-    const balance = balanceRaw.div(DECIMALS);
-
-    return balance.toNumber();
+    // Return RAW amount (not divided by decimals)
+    // Formatting should be done in the UI layer
+    return balanceRaw.toNumber();
   } catch (error) {
     console.error("Error getting balance:", error);
     return 0;
   }
 }
-// Get SPL token balance directly from token account
+// Get SPL token balance directly from token account (returns RAW amount in base units)
 export async function getSPLTokenBalance(
   connection: Connection,
   tokenAccountAddress: PublicKey
@@ -118,11 +116,9 @@ export async function getSPLTokenBalance(
     // SPL Token account: amount is at bytes 64-72 (u64 little-endian)
     const amount = new BN(tokenAccountInfo.data.slice(64, 72), "le");
 
-    // Convert from lamports (6 decimals) to tokens
-    const DECIMALS = new BN(1_000_000);
-    const balance = amount.div(DECIMALS);
-
-    return balance.toNumber();
+    // Return RAW amount (not divided by decimals)
+    // Formatting should be done in the UI layer
+    return amount.toNumber();
   } catch (error) {
     console.error("Error getting SPL token balance:", error);
     return 0;

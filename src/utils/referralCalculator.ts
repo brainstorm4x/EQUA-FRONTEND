@@ -8,6 +8,8 @@
  * - Users 10,001+: 50 EQUA
  */
 
+import { formatEquaRaw } from './tokenFormat';
+
 export interface ReferralRewardInfo {
   userIndex: number;
   tier: string;
@@ -89,8 +91,7 @@ export class ReferralRewardCalculator {
    * Format reward amount for display
    */
   static formatReward(rewardAmountRaw: bigint): string {
-    const amount = Number(rewardAmountRaw) / this.DECIMAL_MULTIPLIER;
-    return `${amount.toLocaleString()} EQUA`;
+    return `${formatEquaRaw(Number(rewardAmountRaw), { trimTrailingZeros: true })} EQUA`;
   }
 
   /**
