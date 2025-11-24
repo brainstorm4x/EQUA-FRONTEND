@@ -6,10 +6,13 @@ import { WalletButton } from '@/components/WalletButton';
 import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
+import { 
+  TOKEN_PROGRAM_ID,
+  createInitializeUserInstruction,
+} from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
 
@@ -228,25 +231,45 @@ export default function MintPage() {
       console.log('- Token Account:', userTokenAccount.toBase58());
       console.log('- Mint:', mintPDA.toBase58());
 
-      const tx = await program.methods
-        .initializeUser(
-          PublicKey.default,
-          new anchor.BN(now),
-          new anchor.BN(lockUntil)
-        )
-        .accounts({
-          userAccount: userAccountKeypair.publicKey,
-          authority: publicKey,
-          globalState: globalStatePDA,
-          referralAccount: PublicKey.default,
-          userTokenAccount,
-          mint: mintPDA,
-          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
-        })
-        .signers([userAccountKeypair])
-        .rpc();
+      // ✅ FIX: Use manual instruction builder instead of .methods API
+      // This ensures referralAccount is marked as non-writable when PublicKey.default is used
+      const instruction = createInitializeUserInstruction(
+        userAccountKeypair.publicKey,
+        publicKey,
+        globalStatePDA,
+        PublicKey.default,  // referralAccount: use default when no referral
+        userTokenAccount,
+        mintPDA,
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        now,
+        lockUntil,
+        PublicKey.default  // referrer: use default when no referral
+      );
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = publicKey;
+
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      transaction.recentBlockhash = blockhash;
+
+      console.log('📝 Requesting wallet signature...');
+      const signed = await wallet.signTransaction!(transaction);
+      signed.partialSign(userAccountKeypair);  // ✅ CRITICAL: Sign with user account keypair
+
+      console.log('📤 Sending transaction...');
+      const rawTx = signed.serialize();
+      const tx = await connection.sendRawTransaction(rawTx, {
+        skipPreflight: false,
+        maxRetries: 3
+      });
+
+      console.log('⏳ Confirming transaction...');
+      await connection.confirmTransaction({
+        signature: tx,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed');
 
       console.log('✅ Registration successful!', tx);
       setTxSignature(tx);
