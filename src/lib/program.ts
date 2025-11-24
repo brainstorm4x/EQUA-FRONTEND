@@ -1,4 +1,4 @@
-import { Connection, PublicKey, Keypair } from "@solana/web3.js";
+import { Connection, PublicKey, Keypair, TransactionInstruction, SystemProgram } from "@solana/web3.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -188,4 +188,83 @@ export function getOrCreateKeypair(): Keypair {
   }
   return keypair;
 }
+// ✅ Create initialize_user instruction
+export function createInitializeUserInstruction(
+  userAccount: PublicKey,
+  authority: PublicKey,
+  globalState: PublicKey,
+  referralAccount: PublicKey,
+  userTokenAccount: PublicKey,
+  mint: PublicKey,
+  associatedTokenProgram: PublicKey,
+  tokenProgram: PublicKey,
+  mintStart: number,
+  lockedUntil: number,
+  referrer: PublicKey = PublicKey.default
+): TransactionInstruction {
+  const discriminator = Buffer.from([111, 17, 185, 250, 60, 122, 38, 254]);
+  
+  const mintStartBN = new BN(mintStart);
+  const lockedUntilBN = new BN(lockedUntil);
+  
+  const data = Buffer.concat([
+    discriminator,
+    referrer.toBuffer(),
+    mintStartBN.toArrayLike(Buffer, 'le', 8),
+    lockedUntilBN.toArrayLike(Buffer, 'le', 8),
+  ]);
+
+  // ✅ FIX: Only mark referralAccount as writable if it's not PublicKey.default
+  // When PublicKey.default is passed (no referral), it cannot be marked as mutable
+  const isReferralWritable = !referralAccount.equals(PublicKey.default);
+
+  return new TransactionInstruction({
+    keys: [
+      { pubkey: userAccount, isSigner: true, isWritable: true },
+      { pubkey: authority, isSigner: true, isWritable: true },
+      { pubkey: globalState, isSigner: false, isWritable: true },
+      { pubkey: referralAccount, isSigner: false, isWritable: isReferralWritable },
+      { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+      { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
+      { pubkey: tokenProgram, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    programId: PROGRAM_ID,
+    data,
+  });
+}
+
+// ✅ Create mint_equa_tokens instruction
+export function createMintEquaInstruction(
+  userAccount: PublicKey,
+  userTokenAccount: PublicKey,
+  mint: PublicKey,
+  mintAuthority: PublicKey,
+  authority: PublicKey,
+  tokenProgram: PublicKey,
+  amount: number
+): TransactionInstruction {
+  const discriminator = Buffer.from([166, 66, 221, 55, 153, 196, 139, 85]);
+  const amountBN = new BN(amount);
+  
+  const data = Buffer.concat([
+    discriminator,
+    amountBN.toArrayLike(Buffer, 'le', 8),
+  ]);
+
+  return new TransactionInstruction({
+    keys: [
+      { pubkey: userAccount, isSigner: false, isWritable: true },
+      { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+      { pubkey: mint, isSigner: false, isWritable: true },
+      { pubkey: mintAuthority, isSigner: false, isWritable: false },
+      { pubkey: authority, isSigner: true, isWritable: false },
+      { pubkey: tokenProgram, isSigner: false, isWritable: false },
+    ],
+    programId: PROGRAM_ID,
+    data,
+  });
+}
+
 export { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
