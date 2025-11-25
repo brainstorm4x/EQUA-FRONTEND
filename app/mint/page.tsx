@@ -32,6 +32,9 @@ const ERROR_STACK_TRACE_LINES = 3;
 // EQUA token base units per standard mint (1000 EQUA = 1_000_000_000 base units with 6 decimals)
 const EQUA_PER_STANDARD_MINT_BASE_UNITS = 1_000_000_000;
 
+// Maximum reasonable user count (prevents overflow/invalid values)
+const MAX_REASONABLE_USERS = 10_000_000;
+
 // Utility function to handle and format ATA creation errors
 function handleAtaCreationError(ataError: unknown, context: 'registration' | 'minting'): Error {
   console.error(`❌ Failed to create token account during ${context}:`, ataError);
@@ -207,12 +210,10 @@ export default function MintPage() {
           );
           
           // Safe conversion: Check for overflow or invalid values
-          // Max safe value is around 10 million users (reasonable limit)
-          const MAX_REASONABLE_USERS = 10_000_000;
           const userCount = totalUsersRaw.toNumber();
           
           if (userCount < 0 || userCount > MAX_REASONABLE_USERS || !Number.isFinite(userCount)) {
-            console.warn('⚠️ Invalid user count detected:', userCount, '- defaulting to 0');
+            console.error('⚠️ Invalid user count detected:', userCount, '- defaulting to 0');
             setTotalUsers(0);
           } else {
             setTotalUsers(userCount);
