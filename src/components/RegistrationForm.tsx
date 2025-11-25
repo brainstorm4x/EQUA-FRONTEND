@@ -11,6 +11,9 @@ import {
   formatSolBalance 
 } from '@/utils/registration';
 import { KycKybModal } from './KycKybModal';
+import { ReferralStatusIndicator } from './ReferralStatusIndicator';
+import { useReferralResolution } from '@/hooks/useReferralResolution';
+import { ReferralState } from '@/types/referral';
 
 interface RegistrationFormProps {
   totalUsers: number;
@@ -33,6 +36,9 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   const [isValidatingReferrer, setIsValidatingReferrer] = useState(false);
   const [showKycModal, setShowKycModal] = useState(false);
   
+  // Use the referral resolution hook for code validation
+  const referralResolution = useReferralResolution(referrer);
+  
   const referralRequired = isReferralRequired(totalUsers);
   const hasSufficientBalance = hasMinimumSolBalance(walletBalance);
   const balanceSOL = formatSolBalance(walletBalance);
@@ -41,6 +47,13 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   const validateReferrerInput = useCallback(async (value: string) => {
     if (!value.trim()) {
       setReferrerError(referralRequired ? 'Referrer is required' : '');
+      return;
+    }
+
+    // If it's a valid referral code (10-char), let the referral resolution hook handle it
+    if (/^[A-Za-z0-9]{10}$/.test(value.trim())) {
+      // The hook will validate the code
+      setReferrerError('');
       return;
     }
 
@@ -89,15 +102,26 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
       return;
     }
     if (referrerError) return;
-
-    onRegister(accountType, referrer.trim() || null);
+    
+    // Use the resolved referrer public key from the hook if available
+    const effectiveReferrer = referralResolution.referrerPubkey || referrer.trim() || null;
+    
+    onRegister(accountType, effectiveReferrer);
   };
+
+  // Check if referral code validation has an error state
+  const hasReferralCodeError = referralResolution.status === ReferralState.USED ||
+    referralResolution.status === ReferralState.EXPIRED ||
+    referralResolution.status === ReferralState.NOT_FOUND ||
+    referralResolution.status === ReferralState.MALFORMED;
 
   const canSubmit = 
     hasSufficientBalance && 
     !isLoading && 
     !isValidatingReferrer &&
+    !referralResolution.isLoading &&
     !referrerError &&
+    !hasReferralCodeError &&
     (!referralRequired || referrer.trim());
 
   return (
@@ -187,7 +211,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
           htmlFor="referrer-input"
           className="block text-white font-medium mb-2"
         >
-          Referrer Wallet Address
+          Referral Code or Wallet Address
           {referralRequired && <span className="text-red-400 ml-1">*</span>}
           {!referralRequired && <span className="text-purple-400 ml-1">(optional)</span>}
         </label>
@@ -196,7 +220,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
           <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 mb-3">
             <p className="text-yellow-200 text-sm">
               ⚠️ Referral is required after the first {REFERRAL_FREE_LIMIT} users. 
-              Please enter a valid registered user&apos;s wallet address.
+              Please enter a referral code or a valid registered user&apos;s wallet address.
             </p>
           </div>
         )}
@@ -207,21 +231,31 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
             type="text"
             value={referrer}
             onChange={(e) => setReferrer(e.target.value)}
-            placeholder="Enter referrer's wallet address"
+            placeholder="Enter referral code or wallet address"
             className={`w-full bg-white/10 border-2 rounded-xl px-4 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-              referrerError 
+              referrerError || hasReferralCodeError
                 ? 'border-red-500' 
-                : 'border-purple-500/30 focus:border-purple-500'
+                : referralResolution.isValid
+                  ? 'border-green-500'
+                  : 'border-purple-500/30 focus:border-purple-500'
             }`}
-            aria-invalid={!!referrerError}
+            aria-invalid={!!referrerError || hasReferralCodeError}
             aria-describedby={referrerError ? 'referrer-error' : undefined}
           />
-          {isValidatingReferrer && (
+          {(isValidatingReferrer || referralResolution.isLoading) && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
               <span className="text-purple-400 animate-spin">⏳</span>
             </div>
           )}
         </div>
+        
+        {/* Referral Status Indicator (for code validation) */}
+        <ReferralStatusIndicator
+          status={referralResolution.status}
+          error={referralResolution.error}
+          expiresInSeconds={referralResolution.expiresInSeconds}
+          referrerPubkey={referralResolution.referrerPubkey}
+        />
         
         {referrerError && (
           <p id="referrer-error" className="text-red-400 text-sm mt-2" role="alert">

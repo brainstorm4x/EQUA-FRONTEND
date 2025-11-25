@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://equa.dev/schemas/referralRegistry.schema.json",
+  "title": "Referral Registry",
+  "type": "object",
+  "patternProperties": {
+    "^[A-Za-z0-9]{10}$": { "$ref": "referralCode.schema.json" }
+  },
+  "additionalProperties": false
+}
