@@ -4,7 +4,7 @@
  * Tests verify:
  * - Both Individual and Business options render
  * - User can toggle between options
- * - Selected option has aria-selected="true"
+ * - Selected option has aria-checked="true"
  * - State updates correctly when switching options
  * - Selection is persisted through form submission
  */
