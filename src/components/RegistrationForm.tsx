@@ -10,7 +10,6 @@ import {
   hasMinimumSolBalance,
   formatSolBalance 
 } from '@/utils/registration';
-import { KycKybModal } from './KycKybModal';
 import { ReferralStatusIndicator } from './ReferralStatusIndicator';
 import { useReferralResolution } from '@/hooks/useReferralResolution';
 import { ReferralState } from '@/types/referral';
@@ -34,7 +33,6 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   const [referrer, setReferrer] = useState('');
   const [referrerError, setReferrerError] = useState('');
   const [isValidatingReferrer, setIsValidatingReferrer] = useState(false);
-  const [showKycModal, setShowKycModal] = useState(false);
   
   // Use the referral resolution hook for code validation
   const referralResolution = useReferralResolution(referrer);
@@ -189,20 +187,6 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
             <span className="font-medium">Business</span>
           </button>
         </div>
-        
-        {/* KYC/KYB Notice */}
-        <div className="mt-3 flex items-center justify-between">
-          <p className="text-purple-300 text-sm">
-            {accountType === 'individual' ? 'KYC' : 'KYB'} verification coming soon (not required now)
-          </p>
-          <button
-            type="button"
-            onClick={() => setShowKycModal(true)}
-            className="text-purple-400 hover:text-purple-300 text-sm underline"
-          >
-            Learn more
-          </button>
-        </div>
       </div>
 
       {/* Referral Field */}
@@ -301,13 +285,6 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
           )}
         </p>
       </div>
-
-      {/* KYC/KYB Modal */}
-      <KycKybModal 
-        isOpen={showKycModal} 
-        onClose={() => setShowKycModal(false)} 
-        accountType={accountType}
-      />
     </div>
   );
 };

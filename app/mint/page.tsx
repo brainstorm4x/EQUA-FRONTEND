@@ -18,7 +18,7 @@ import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
 import { formatEquaRaw } from '@/utils/tokenFormat';
 import { RegistrationForm } from '@/components/RegistrationForm';
-import { MintTierCard, MintScheduleCard } from '@/components/MintTierCard';
+import { MintTierCard } from '@/components/MintTierCard';
 import { 
   AccountType, 
   MIN_SOL_BALANCE,
@@ -205,10 +205,25 @@ export default function MintPage() {
             accountInfo.data.slice(8, 16),
             'le'
           );
-          setTotalUsers(totalUsersRaw.toNumber());
+          
+          // Safe conversion: Check for overflow or invalid values
+          // Max safe value is around 10 million users (reasonable limit)
+          const MAX_REASONABLE_USERS = 10_000_000;
+          const userCount = totalUsersRaw.toNumber();
+          
+          if (userCount < 0 || userCount > MAX_REASONABLE_USERS || !Number.isFinite(userCount)) {
+            console.warn('⚠️ Invalid user count detected:', userCount, '- defaulting to 0');
+            setTotalUsers(0);
+          } else {
+            setTotalUsers(userCount);
+          }
+        } else {
+          // No account info or insufficient data - default to 0
+          setTotalUsers(0);
         }
       } catch (err) {
         console.error('Error fetching total users:', err);
+        setTotalUsers(0);
       }
     };
 
@@ -813,7 +828,6 @@ export default function MintPage() {
                   isLoading={isLoading}
                   validateReferrer={validateReferrer}
                 />
-                <MintScheduleCard />
               </>
             ) : (
               <>
@@ -900,13 +914,6 @@ export default function MintPage() {
               </>
             )}
           </div>
-
-          {/* Mint Schedule for registered users */}
-          {registered && (
-            <div className="mt-8">
-              <MintScheduleCard />
-            </div>
-          )}
 
           <div className="mt-12 text-center">
             <p className="text-purple-300 text-sm">
