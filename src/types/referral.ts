@@ -1,0 +1,78 @@
+/**
+ * Types for the off-chain referral code system
+ */
+
+/**
+ * Enum representing the possible states of a referral resolution
+ */
+export enum ReferralState {
+  /** Code is valid and can be used */
+  VALID = 'VALID',
+  /** Code has already been used */
+  USED = 'USED',
+  /** Code has expired (15 minute TTL exceeded) */
+  EXPIRED = 'EXPIRED',
+  /** Code was not found in the registry */
+  NOT_FOUND = 'NOT_FOUND',
+  /** Input was detected as a direct public key */
+  PUBLIC_KEY = 'PUBLIC_KEY',
+  /** Input format is invalid (neither valid code nor public key) */
+  MALFORMED = 'MALFORMED',
+  /** Loading/pending state while resolving */
+  LOADING = 'LOADING',
+  /** Initial state before any input */
+  IDLE = 'IDLE',
+}
+
+/**
+ * A single referral code entry in the registry
+ */
+export interface ReferralCodeEntry {
+  /** The referrer's Solana public key (base58 encoded) */
+  referrer_pubkey: string;
+  /** Unix timestamp (seconds) when the code was created */
+  created_at: number;
+  /** Unix timestamp (seconds) when the code expires */
+  expires_at: number;
+  /** Whether this code has been used */
+  used: boolean;
+}
+
+/**
+ * The referral registry mapping codes to their entries
+ */
+export interface ReferralRegistry {
+  [code: string]: ReferralCodeEntry;
+}
+
+/**
+ * Result of resolving a referral input (code or public key)
+ */
+export interface ReferralResolutionResult {
+  /** The current state of the resolution */
+  state: ReferralState;
+  /** The referrer's public key if resolution was successful */
+  referrerPubkey?: string;
+  /** Error message if applicable */
+  error?: string;
+  /** Seconds until the code expires (only for VALID state) */
+  expiresInSeconds?: number;
+}
+
+/**
+ * Hook return type for useReferralResolution
+ */
+export interface UseReferralResolutionResult {
+  /** Current resolution status */
+  status: ReferralState;
+  /** The referrer's public key if resolution was successful */
+  referrerPubkey: string | null;
+  /** Error message if resolution failed */
+  error: string | null;
+  /** Seconds until expiration (only for VALID state) */
+  expiresInSeconds: number | null;
+  /** Whether the resolution is currently loading */
+  isLoading: boolean;
+  /** Whether the input represents a valid referral */
+  isValid: boolean;
+}

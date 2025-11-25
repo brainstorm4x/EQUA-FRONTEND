@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://equa.dev/schemas/referralCode.schema.json",
+  "title": "Referral Code Record",
+  "type": "object",
+  "required": ["referrer_pubkey", "created_at", "expires_at", "used"],
+  "properties": {
+    "referrer_pubkey": { "type": "string", "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$" },
+    "created_at": { "type": "integer", "minimum": 0 },
+    "expires_at": { "type": "integer", "minimum": 0 },
+    "used": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}
