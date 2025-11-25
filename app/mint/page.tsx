@@ -25,6 +25,7 @@ import {
   hasMinimumSolBalance,
   getUserMintTier,
 } from '@/utils/registration';
+import { safeParseUserCount, safeParseTimestamp } from '@/utils/safeAccountParsing';
 
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
@@ -114,26 +115,17 @@ async function getLastMintTime(connection: any, userPubkey: PublicKey): Promise<
     // Offset based on IDL: 8 discriminator + 32 authority + 32 referral + 32 token_account + 8 minted_amount + 8 mint_start + 8 locked_until = 128
     const LAST_MINT_TIME_OFFSET = 136;
     
-    if (accountInfo.data.length < LAST_MINT_TIME_OFFSET + 8) {
-      console.log('⚠️ Account data too short for last_mint_time');
-      return 0;
+    // Use safe parsing to handle overflow, uninitialized, or corrupted values
+    const lastMintTime = safeParseTimestamp(accountInfo.data, LAST_MINT_TIME_OFFSET);
+    
+    if (lastMintTime > 0) {
+      const dateStr = new Date(lastMintTime * 1000).toLocaleString();
+      console.log(`⏰ Raw last_mint_time: ${lastMintTime}, Date: ${dateStr}`);
+    } else {
+      console.log('⏰ Raw last_mint_time:', lastMintTime, '(uninitialized)');
     }
     
-    const lastMintRaw = new anchor.BN(
-      accountInfo.data.slice(LAST_MINT_TIME_OFFSET, LAST_MINT_TIME_OFFSET + 8),
-      'le'
-    );
-    
-    // Safe conversion with reasonable timestamp bounds
-    const MAX_SAFE_TIMESTAMP = 8640000000; // ~year 2243 in seconds
-    if (lastMintRaw.gt(new anchor.BN(MAX_SAFE_TIMESTAMP))) {
-      console.warn('⚠️ Last mint time appears uninitialized or corrupted:', lastMintRaw.toString());
-      return 0;
-    }
-    
-    const timestamp = lastMintRaw.toNumber();
-    console.log('⏰ Raw last_mint_time:', timestamp, 'Date:', new Date(timestamp * 1000).toLocaleString());
-    return timestamp;
+    return lastMintTime;
   } catch (error) {
     console.error('Error getting last mint time:', error);
     return 0;
@@ -202,28 +194,19 @@ export default function MintPage() {
     const fetchTotalUsers = async () => {
       try {
         const accountInfo = await connection.getAccountInfo(globalStatePDA);
-        if (accountInfo && accountInfo.data.length >= 16) {
+        if (accountInfo) {
           // Global state structure: 8 discriminator + 8 total_users
-          const totalUsersRaw = new anchor.BN(
-            accountInfo.data.slice(8, 16),
-            'le'
-          );
-          
-          // Safe conversion: Check for overflow or invalid values
-          const userCount = totalUsersRaw.toNumber();
-          
-          if (userCount < 0 || userCount > MAX_REASONABLE_USERS || !Number.isFinite(userCount)) {
-            console.error('⚠️ Invalid user count detected:', userCount, '- defaulting to 0');
-            setTotalUsers(0);
-          } else {
-            setTotalUsers(userCount);
-          }
+          // Use safe parsing to handle overflow, uninitialized, or corrupted values
+          const totalUsersCount = safeParseUserCount(accountInfo.data);
+          setTotalUsers(totalUsersCount);
+          console.log('✅ Total users fetched safely:', totalUsersCount);
         } else {
-          // No account info or insufficient data - default to 0
+          console.warn('⚠️ Global state account not found, setting totalUsers to 0');
           setTotalUsers(0);
         }
       } catch (err) {
         console.error('Error fetching total users:', err);
+        // Set to 0 on error to ensure safe behavior
         setTotalUsers(0);
       }
     };
