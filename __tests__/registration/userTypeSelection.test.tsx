@@ -66,10 +66,8 @@ describe('User Type Selection', () => {
       const individualButton = screen.getByTestId('user-type-individual');
       const businessButton = screen.getByTestId('user-type-business');
 
-      expect(individualButton).toHaveAttribute('aria-selected', 'true');
-      expect(individualButton).toHaveAttribute('aria-pressed', 'true');
-      expect(businessButton).toHaveAttribute('aria-selected', 'false');
-      expect(businessButton).toHaveAttribute('aria-pressed', 'false');
+      expect(individualButton).toHaveAttribute('aria-checked', 'true');
+      expect(businessButton).toHaveAttribute('aria-checked', 'false');
     });
   });
 
@@ -80,8 +78,7 @@ describe('User Type Selection', () => {
       const businessButton = screen.getByTestId('user-type-business');
       fireEvent.click(businessButton);
 
-      expect(businessButton).toHaveAttribute('aria-selected', 'true');
-      expect(businessButton).toHaveAttribute('aria-pressed', 'true');
+      expect(businessButton).toHaveAttribute('aria-checked', 'true');
     });
 
     it('should deselect Individual when selecting Business', () => {
@@ -91,15 +88,15 @@ describe('User Type Selection', () => {
       const businessButton = screen.getByTestId('user-type-business');
 
       // Initially Individual is selected
-      expect(individualButton).toHaveAttribute('aria-selected', 'true');
-      expect(businessButton).toHaveAttribute('aria-selected', 'false');
+      expect(individualButton).toHaveAttribute('aria-checked', 'true');
+      expect(businessButton).toHaveAttribute('aria-checked', 'false');
 
       // Click Business
       fireEvent.click(businessButton);
 
       // Now Business should be selected and Individual deselected
-      expect(individualButton).toHaveAttribute('aria-selected', 'false');
-      expect(businessButton).toHaveAttribute('aria-selected', 'true');
+      expect(individualButton).toHaveAttribute('aria-checked', 'false');
+      expect(businessButton).toHaveAttribute('aria-checked', 'true');
     });
 
     it('should allow switching back to Individual from Business', () => {
@@ -110,12 +107,12 @@ describe('User Type Selection', () => {
 
       // Click Business
       fireEvent.click(businessButton);
-      expect(businessButton).toHaveAttribute('aria-selected', 'true');
+      expect(businessButton).toHaveAttribute('aria-checked', 'true');
 
       // Click Individual again
       fireEvent.click(individualButton);
-      expect(individualButton).toHaveAttribute('aria-selected', 'true');
-      expect(businessButton).toHaveAttribute('aria-selected', 'false');
+      expect(individualButton).toHaveAttribute('aria-checked', 'true');
+      expect(businessButton).toHaveAttribute('aria-checked', 'false');
     });
   });
 

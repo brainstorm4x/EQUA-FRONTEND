@@ -168,8 +168,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
                 ? 'bg-purple-600/30 border-purple-500 text-white'
                 : 'bg-white/5 border-purple-500/30 text-purple-200 hover:bg-white/10'
             }`}
-            aria-pressed={accountType === 'individual'}
-            aria-selected={accountType === 'individual'}
+            aria-checked={accountType === 'individual'}
             data-testid="user-type-individual"
             role="radio"
           >
@@ -184,8 +183,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
                 ? 'bg-purple-600/30 border-purple-500 text-white'
                 : 'bg-white/5 border-purple-500/30 text-purple-200 hover:bg-white/10'
             }`}
-            aria-pressed={accountType === 'business'}
-            aria-selected={accountType === 'business'}
+            aria-checked={accountType === 'business'}
             data-testid="user-type-business"
             role="radio"
           >

@@ -56,6 +56,17 @@ test.describe('Referral Code Input Validation', () => {
     test('should show VALID state when entering a valid referral code', async ({ page }) => {
       const referralInput = await getReferralInput(page);
 
+      // Verify user type selection is present on registration page
+      const individualButton = page.locator('[data-testid="user-type-individual"]');
+      const businessButton = page.locator('[data-testid="user-type-business"]');
+      const hasUserTypeSelection = await individualButton.count() > 0 && await businessButton.count() > 0;
+      
+      if (hasUserTypeSelection) {
+        // User type selection should be visible before referral input
+        await expect(individualButton).toBeVisible();
+        await expect(businessButton).toBeVisible();
+      }
+
       // Enter the valid mock referral code (ABC123xyz9 from registry)
       await enterReferral(page, VALID_CODE);
 

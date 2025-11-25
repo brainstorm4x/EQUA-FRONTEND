@@ -89,12 +89,12 @@ test.describe('User Type Selection (Individual vs. Business)', () => {
       await expect(individualButton).toHaveAttribute('role', 'radio');
       await expect(businessButton).toHaveAttribute('role', 'radio');
 
-      // Check aria-pressed attributes
-      const individualPressed = await individualButton.getAttribute('aria-pressed');
-      const businessPressed = await businessButton.getAttribute('aria-pressed');
+      // Check aria-checked attributes exist
+      const individualChecked = await individualButton.getAttribute('aria-checked');
+      const businessChecked = await businessButton.getAttribute('aria-checked');
       
-      expect(individualPressed).toBeTruthy();
-      expect(businessPressed).toBeTruthy();
+      expect(individualChecked).toBeTruthy();
+      expect(businessChecked).toBeTruthy();
     });
   });
 
@@ -109,13 +109,9 @@ test.describe('User Type Selection (Individual vs. Business)', () => {
       const individualButton = page.locator('[data-testid="user-type-individual"]');
       const businessButton = page.locator('[data-testid="user-type-business"]');
 
-      // Check aria-selected attributes
-      await expect(individualButton).toHaveAttribute('aria-selected', 'true');
-      await expect(businessButton).toHaveAttribute('aria-selected', 'false');
-
-      // Check aria-pressed attributes
-      await expect(individualButton).toHaveAttribute('aria-pressed', 'true');
-      await expect(businessButton).toHaveAttribute('aria-pressed', 'false');
+      // Check aria-checked attributes
+      await expect(individualButton).toHaveAttribute('aria-checked', 'true');
+      await expect(businessButton).toHaveAttribute('aria-checked', 'false');
 
       // Capture screenshot of default state
       await captureScreenshot(page, 'user-type-individual-default.png');
@@ -139,8 +135,7 @@ test.describe('User Type Selection (Individual vs. Business)', () => {
       await page.waitForTimeout(100);
 
       // Verify Business is now selected
-      await expect(businessButton).toHaveAttribute('aria-selected', 'true');
-      await expect(businessButton).toHaveAttribute('aria-pressed', 'true');
+      await expect(businessButton).toHaveAttribute('aria-checked', 'true');
 
       // Capture screenshot
       await captureScreenshot(page, 'user-type-business-selected.png');
@@ -157,16 +152,16 @@ test.describe('User Type Selection (Individual vs. Business)', () => {
       const businessButton = page.locator('[data-testid="user-type-business"]');
 
       // Initially Individual should be selected
-      await expect(individualButton).toHaveAttribute('aria-selected', 'true');
-      await expect(businessButton).toHaveAttribute('aria-selected', 'false');
+      await expect(individualButton).toHaveAttribute('aria-checked', 'true');
+      await expect(businessButton).toHaveAttribute('aria-checked', 'false');
 
       // Click Business
       await businessButton.click();
       await page.waitForTimeout(100);
 
       // Now Business should be selected and Individual deselected
-      await expect(individualButton).toHaveAttribute('aria-selected', 'false');
-      await expect(businessButton).toHaveAttribute('aria-selected', 'true');
+      await expect(individualButton).toHaveAttribute('aria-checked', 'false');
+      await expect(businessButton).toHaveAttribute('aria-checked', 'true');
     });
 
     test('should allow switching back to Individual from Business', async ({ page }) => {
@@ -182,15 +177,15 @@ test.describe('User Type Selection (Individual vs. Business)', () => {
       // Click Business first
       await businessButton.click();
       await page.waitForTimeout(100);
-      await expect(businessButton).toHaveAttribute('aria-selected', 'true');
+      await expect(businessButton).toHaveAttribute('aria-checked', 'true');
 
       // Click Individual to switch back
       await individualButton.click();
       await page.waitForTimeout(100);
 
       // Individual should be selected again
-      await expect(individualButton).toHaveAttribute('aria-selected', 'true');
-      await expect(businessButton).toHaveAttribute('aria-selected', 'false');
+      await expect(individualButton).toHaveAttribute('aria-checked', 'true');
+      await expect(businessButton).toHaveAttribute('aria-checked', 'false');
     });
 
     test('should toggle multiple times correctly', async ({ page }) => {
@@ -206,19 +201,19 @@ test.describe('User Type Selection (Individual vs. Business)', () => {
       // Toggle Business -> Individual -> Business -> Individual
       await businessButton.click();
       await page.waitForTimeout(100);
-      await expect(businessButton).toHaveAttribute('aria-selected', 'true');
+      await expect(businessButton).toHaveAttribute('aria-checked', 'true');
 
       await individualButton.click();
       await page.waitForTimeout(100);
-      await expect(individualButton).toHaveAttribute('aria-selected', 'true');
+      await expect(individualButton).toHaveAttribute('aria-checked', 'true');
 
       await businessButton.click();
       await page.waitForTimeout(100);
-      await expect(businessButton).toHaveAttribute('aria-selected', 'true');
+      await expect(businessButton).toHaveAttribute('aria-checked', 'true');
 
       await individualButton.click();
       await page.waitForTimeout(100);
-      await expect(individualButton).toHaveAttribute('aria-selected', 'true');
+      await expect(individualButton).toHaveAttribute('aria-checked', 'true');
     });
   });
 
@@ -279,7 +274,7 @@ test.describe('User Type Selection (Individual vs. Business)', () => {
       }
 
       // Business should still be selected
-      await expect(businessButton).toHaveAttribute('aria-selected', 'true');
+      await expect(businessButton).toHaveAttribute('aria-checked', 'true');
     });
 
     test('should show both user type options before referral input in DOM order', async ({ page }) => {
@@ -329,7 +324,7 @@ test.describe('User Type Selection (Individual vs. Business)', () => {
 
       const individualButton = page.locator('[data-testid="user-type-individual"]');
       await expect(individualButton).toBeVisible();
-      await expect(individualButton).toHaveAttribute('aria-selected', 'true');
+      await expect(individualButton).toHaveAttribute('aria-checked', 'true');
 
       await captureScreenshot(page, 'user-type-individual.png');
     });
@@ -345,7 +340,7 @@ test.describe('User Type Selection (Individual vs. Business)', () => {
       await businessButton.click();
       await page.waitForTimeout(200);
 
-      await expect(businessButton).toHaveAttribute('aria-selected', 'true');
+      await expect(businessButton).toHaveAttribute('aria-checked', 'true');
       await captureScreenshot(page, 'user-type-business.png');
     });
 
