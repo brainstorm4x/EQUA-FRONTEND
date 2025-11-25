@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import {
   enterReferral,
   waitForReferralResolution,
@@ -31,7 +31,7 @@ test.describe('Registration Threshold Enforcement', () => {
   /**
    * Helper to check if we're on the registration page (not already registered)
    */
-  async function ensureOnRegistrationPage(page: any): Promise<boolean> {
+  async function ensureOnRegistrationPage(page: Page): Promise<boolean> {
     await page.waitForLoadState('domcontentloaded');
 
     // Look for the registration form indicators
@@ -47,7 +47,7 @@ test.describe('Registration Threshold Enforcement', () => {
   /**
    * Helper to check if referral is shown as required
    */
-  async function isReferralRequired(page: any): Promise<boolean> {
+  async function isReferralRequired(page: Page): Promise<boolean> {
     // Look for required indicator (red asterisk or required text)
     const requiredIndicator = page.locator('label:has-text("*"), .text-red-400:has-text("*")');
     const requiredText = page.locator('text=/required/i');
@@ -63,7 +63,7 @@ test.describe('Registration Threshold Enforcement', () => {
   /**
    * Helper to check if referral is shown as optional
    */
-  async function isReferralOptional(page: any): Promise<boolean> {
+  async function isReferralOptional(page: Page): Promise<boolean> {
     const optionalText = page.locator('text=/optional/i');
     return await optionalText.count() > 0;
   }

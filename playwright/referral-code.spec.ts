@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import {
   enterReferral,
   waitForReferralResolution,
@@ -38,7 +38,7 @@ test.describe('Referral Code Input Validation', () => {
   /**
    * Helper to check if the referral input exists and skip test if not integrated
    */
-  async function getReferralInput(page: any) {
+  async function getReferralInput(page: Page) {
     // Wait for page to be ready
     await page.waitForLoadState('domcontentloaded');
 

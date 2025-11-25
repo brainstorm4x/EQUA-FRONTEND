@@ -45,3 +45,4 @@ test-format.mjs
 /playwright-report/
 /test-results/
 /playwright/.cache/
+/playwright-artifacts/.last-run.json
