@@ -25,6 +25,8 @@ export function useReferralResolution(
   const [expiresInSeconds, setExpiresInSeconds] = useState<number | null>(null);
   const [registry, setRegistry] = useState<ReferralRegistry | null>(null);
   
+  const [registryError, setRegistryError] = useState<string | null>(null);
+  
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -37,9 +39,14 @@ export function useReferralResolution(
         const data = await fetchReferralRegistry();
         if (mounted) {
           setRegistry(data);
+          setRegistryError(null);
         }
       } catch (err) {
-        console.error('Failed to fetch referral registry:', err);
+        // Surface error to users through the hook's error state
+        if (mounted) {
+          setRegistryError('Failed to load referral registry. Please try again later.');
+          setError('Unable to validate referral codes. Please try again later.');
+        }
       }
     }
     

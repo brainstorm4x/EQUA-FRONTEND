@@ -2,7 +2,7 @@
  * Index file for referral utilities
  */
 
-export { generateReferralCode, clearGeneratedCodes, isCodeGenerated } from './generateCode';
+export { generateReferralCode, clearGeneratedCodes, isCodeGenerated, CodeGenerationError } from './generateCode';
 export {
   fetchReferralRegistry,
   resolveReferralInput,
