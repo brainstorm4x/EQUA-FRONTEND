@@ -18,7 +18,7 @@ import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
 import { formatEquaRaw } from '@/utils/tokenFormat';
 import { RegistrationForm } from '@/components/RegistrationForm';
-import { MintTierCard, MintScheduleCard } from '@/components/MintTierCard';
+import { MintTierCard } from '@/components/MintTierCard';
 import { 
   AccountType, 
   MIN_SOL_BALANCE,
@@ -32,6 +32,9 @@ const ERROR_STACK_TRACE_LINES = 3;
 
 // EQUA token base units per standard mint (1000 EQUA = 1_000_000_000 base units with 6 decimals)
 const EQUA_PER_STANDARD_MINT_BASE_UNITS = 1_000_000_000;
+
+// Maximum reasonable user count (prevents overflow/invalid values)
+const MAX_REASONABLE_USERS = 10_000_000;
 
 // Utility function to handle and format ATA creation errors
 function handleAtaCreationError(ataError: unknown, context: 'registration' | 'minting'): Error {
@@ -809,7 +812,6 @@ export default function MintPage() {
                   isLoading={isLoading}
                   validateReferrer={validateReferrer}
                 />
-                <MintScheduleCard />
               </>
             ) : (
               <>
@@ -896,13 +898,6 @@ export default function MintPage() {
               </>
             )}
           </div>
-
-          {/* Mint Schedule for registered users */}
-          {registered && (
-            <div className="mt-8">
-              <MintScheduleCard />
-            </div>
-          )}
 
           <div className="mt-12 text-center">
             <p className="text-purple-300 text-sm">
