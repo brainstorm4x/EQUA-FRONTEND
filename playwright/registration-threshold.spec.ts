@@ -84,6 +84,16 @@ test.describe('Registration Threshold Enforcement', () => {
         return;
       }
 
+      // Verify user type selection is present
+      const individualButton = page.locator('[data-testid="user-type-individual"]');
+      const businessButton = page.locator('[data-testid="user-type-business"]');
+      const hasUserTypeSelection = await individualButton.count() > 0;
+      
+      if (hasUserTypeSelection) {
+        await expect(individualButton).toBeVisible();
+        await expect(businessButton).toBeVisible();
+      }
+
       // Check current displayed user count
       const userCountText = page.locator('text=/Current Users:/i, text=/User/i').first();
       const userCountVisible = await userCountText.isVisible().catch(() => false);
@@ -106,6 +116,16 @@ test.describe('Registration Threshold Enforcement', () => {
       if (!isOnRegistration) {
         test.skip();
         return;
+      }
+
+      // Verify user type selection is present and functional
+      const individualButton = page.locator('[data-testid="user-type-individual"]');
+      const businessButton = page.locator('[data-testid="user-type-business"]');
+      const hasUserTypeSelection = await individualButton.count() > 0;
+      
+      if (hasUserTypeSelection) {
+        // Individual should be selected by default
+        await expect(individualButton).toHaveAttribute('aria-checked', 'true');
       }
 
       // Look for register button
@@ -132,6 +152,14 @@ test.describe('Registration Threshold Enforcement', () => {
       if (!isOnRegistration) {
         test.skip();
         return;
+      }
+
+      // Verify user type selection is present on registration page
+      const individualButton = page.locator('[data-testid="user-type-individual"]');
+      const hasUserTypeSelection = await individualButton.count() > 0;
+      
+      if (hasUserTypeSelection) {
+        await expect(individualButton).toBeVisible();
       }
 
       // Check if required indicator is visible

@@ -149,6 +149,8 @@ Comprehensive documentation is available for testing and troubleshooting:
 - **[COMPLETE_SUMMARY.md](COMPLETE_SUMMARY.md)** - Quick overview and testing status
 - **[AUDIT_REPORT.md](AUDIT_REPORT.md)** - Complete technical audit (18,000 words)
 - **[E2E_TESTING_GUIDE.md](E2E_TESTING_GUIDE.md)** - Step-by-step testing procedures
+- **[TESTING_USER_TYPE_SELECTION.md](TESTING_USER_TYPE_SELECTION.md)** - User type selection testing guide
+- **[USER_TYPE_SELECTION_SUMMARY.md](USER_TYPE_SELECTION_SUMMARY.md)** - User type selection implementation details
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
 
 ### Quick Start Testing

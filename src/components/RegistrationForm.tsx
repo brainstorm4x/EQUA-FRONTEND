@@ -155,7 +155,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
       )}
 
       {/* Account Type Selection */}
-      <div className="mb-6">
+      <div className="mb-6" role="radiogroup" aria-label="Account type selection">
         <label className="block text-white font-medium mb-3">
           Register as:
         </label>
@@ -168,7 +168,9 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
                 ? 'bg-purple-600/30 border-purple-500 text-white'
                 : 'bg-white/5 border-purple-500/30 text-purple-200 hover:bg-white/10'
             }`}
-            aria-pressed={accountType === 'individual'}
+            aria-checked={accountType === 'individual'}
+            data-testid="user-type-individual"
+            role="radio"
           >
             <span className="text-2xl block mb-2">👤</span>
             <span className="font-medium">Individual</span>
@@ -181,7 +183,9 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
                 ? 'bg-purple-600/30 border-purple-500 text-white'
                 : 'bg-white/5 border-purple-500/30 text-purple-200 hover:bg-white/10'
             }`}
-            aria-pressed={accountType === 'business'}
+            aria-checked={accountType === 'business'}
+            data-testid="user-type-business"
+            role="radio"
           >
             <span className="text-2xl block mb-2">🏢</span>
             <span className="font-medium">Business</span>
