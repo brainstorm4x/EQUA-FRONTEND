@@ -371,13 +371,18 @@ test.describe('Registration Threshold Enforcement', () => {
         return;
       }
 
-      // The "Upcoming Mint Schedule" section should not be visible on the registration form
+      // Per UI simplification requirements, the main focus should be on registration,
+      // not the full schedule table. The schedule may exist but should not be the primary element.
       const scheduleHeader = page.locator('text=/Upcoming Mint Schedule/i');
       const scheduleVisible = await scheduleHeader.isVisible().catch(() => false);
 
-      // For unregistered users viewing the registration form, the schedule should not be prominent
-      // Note: It may still exist in a card, but should not be the main focus
-      console.log('Upcoming Mint Schedule visible on registration:', scheduleVisible);
+      // Document current state - schedule may be visible as supplementary info
+      console.log('Upcoming Mint Schedule visible on registration page:', scheduleVisible);
+      
+      // Main assertion: Registration form should be the primary focus
+      const registrationForm = page.locator('text=/Register Account/i');
+      const formVisible = await registrationForm.isVisible().catch(() => false);
+      expect(formVisible).toBe(true);
     });
   });
 });
