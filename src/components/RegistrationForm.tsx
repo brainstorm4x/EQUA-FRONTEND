@@ -228,6 +228,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
         <div className="relative">
           <input
             id="referrer-input"
+            data-testid="referral-input"
             type="text"
             value={referrer}
             onChange={(e) => setReferrer(e.target.value)}
@@ -250,12 +251,14 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
         </div>
         
         {/* Referral Status Indicator (for code validation) */}
-        <ReferralStatusIndicator
-          status={referralResolution.status}
-          error={referralResolution.error}
-          expiresInSeconds={referralResolution.expiresInSeconds}
-          referrerPubkey={referralResolution.referrerPubkey}
-        />
+        <div data-testid="referral-status">
+          <ReferralStatusIndicator
+            status={referralResolution.status}
+            error={referralResolution.error}
+            expiresInSeconds={referralResolution.expiresInSeconds}
+            referrerPubkey={referralResolution.referrerPubkey}
+          />
+        </div>
         
         {referrerError && (
           <p id="referrer-error" className="text-red-400 text-sm mt-2" role="alert">
@@ -268,6 +271,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
       <button
         onClick={handleSubmit}
         disabled={!canSubmit}
+        data-testid="register-button"
         className={`w-full font-bold py-4 px-8 rounded-xl transition-all ${
           canSubmit
             ? 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
@@ -287,7 +291,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
       </button>
 
       {/* Current Status */}
-      <div className="mt-6 text-center">
+      <div className="mt-6 text-center" data-testid="user-count-display">
         <p className="text-purple-300 text-sm">
           Current Users: <span className="text-white font-medium">{totalUsers}</span>
           {totalUsers < REFERRAL_FREE_LIMIT && (
