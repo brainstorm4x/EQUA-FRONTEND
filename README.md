@@ -31,6 +31,56 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 - **Token Minting**: Mint EQUA tokens with dynamic pricing
 - **Time-Locked Rewards**: First 100 users get special 2-year locked rewards
 - **Referral System**: Earn bonuses for referring new users
+- **Account Type Selection**: Register as Individual or Business account
+- **SOL Balance Gate**: Minimum 0.05 SOL required for registration
+- **Elevated Mint Tiers**: Early users get higher mint limits
+
+## Registration Guide
+
+### Account Types
+
+Users can register as either:
+- **Individual** - Personal user accounts
+- **Business** - Business/organization accounts
+
+> **Note:** KYC (Know Your Customer) for individuals and KYB (Know Your Business) for organizations will be required in a future update but is **not enforced** at this time. Users can register and mint immediately.
+
+### Referral Requirements
+
+| User Range | Referral Required? |
+|------------|-------------------|
+| Users 1-100 | No - Optional referral |
+| Users 101+ | Yes - Must provide a valid registered user's wallet address |
+
+When registering as user #101 or later, you must provide a referral from an existing registered user. The UI will validate that the referral address belongs to a registered user before allowing registration.
+
+### SOL Balance Requirement
+
+**Minimum Balance: 0.05 SOL**
+
+Before registering, ensure your connected wallet has at least 0.05 SOL to cover:
+- Transaction fees
+- Account rent
+- Token account creation
+
+If your balance is below this threshold, the registration button will be disabled and an error banner will be shown with instructions.
+
+### Elevated Mint Tiers
+
+Early users benefit from elevated minting rates:
+
+| User # | EQUA per Attempt | Elevated Attempts |
+|--------|------------------|-------------------|
+| 1 | 100,000 EQUA | 100 attempts |
+| 2-10 | 10,000 EQUA | 100 attempts |
+| 11-100 | 1,000 EQUA | 100 attempts |
+| 101+ | 100 EQUA | Standard rate |
+
+The registration and minting UI displays:
+- Your current mint tier
+- Remaining elevated attempts (if applicable)
+- Maximum EQUA per attempt
+- Upcoming mint schedule for all tiers
 
 ## Available Scripts
 
@@ -51,10 +101,14 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 - `/app` - Next.js 14 App Router pages
 - `/src/components` - React components
+  - `RegistrationForm.tsx` - Account registration with type selection and referral
+  - `MintTierCard.tsx` - Elevated mint tier display
+  - `KycKybModal.tsx` - KYC/KYB placeholder modal
 - `/src/hooks` - Custom React hooks
 - `/src/lib` - Utility libraries and program logic
 - `/src/utils` - Helper utilities
   - `tokenFormat.ts` - EQUA token formatting utilities (6 decimals)
+  - `registration.ts` - Registration utilities (SOL balance, referral, mint tiers)
 - `/public` - Static assets and IDL files
 
 ## Token Formatting

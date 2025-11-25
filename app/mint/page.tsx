@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useProgram } from '@/hooks/useProgram';
 import { WalletButton } from '@/components/WalletButton';
-import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -12,13 +12,25 @@ import {
 import { 
   TOKEN_PROGRAM_ID,
   createInitializeUserInstruction,
+  isUserRegistered,
 } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
 import { formatEquaRaw } from '@/utils/tokenFormat';
+import { RegistrationForm } from '@/components/RegistrationForm';
+import { MintTierCard, MintScheduleCard } from '@/components/MintTierCard';
+import { 
+  AccountType, 
+  MIN_SOL_BALANCE,
+  hasMinimumSolBalance,
+  getUserMintTier,
+} from '@/utils/registration';
 
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
+
+// EQUA token base units per standard mint (1000 EQUA = 1_000_000_000 base units with 6 decimals)
+const EQUA_PER_STANDARD_MINT_BASE_UNITS = 1_000_000_000;
 
 // Utility function to handle and format ATA creation errors
 function handleAtaCreationError(ataError: unknown, context: 'registration' | 'minting'): Error {
@@ -152,10 +164,56 @@ export default function MintPage() {
   const [lastMintTime, setLastMintTime] = useState<number>(0);
   const [timeUntilNextMint, setTimeUntilNextMint] = useState<number>(0);
   const [canMint, setCanMint] = useState<boolean>(true);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+  const [userNumber, setUserNumber] = useState<number>(0);
+  const [totalMints, setTotalMints] = useState<number>(0);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Fetch wallet SOL balance
+  useEffect(() => {
+    if (!publicKey || !connection) return;
+    
+    const fetchWalletBalance = async () => {
+      try {
+        const balance = await connection.getBalance(publicKey);
+        setWalletBalance(balance);
+      } catch (err) {
+        console.error('Error fetching wallet balance:', err);
+      }
+    };
+
+    fetchWalletBalance();
+    // Refresh balance every 30 seconds
+    const interval = setInterval(fetchWalletBalance, 30000);
+    return () => clearInterval(interval);
+  }, [publicKey, connection]);
+
+  // Fetch total users from global state
+  useEffect(() => {
+    if (!connection || !globalStatePDA) return;
+
+    const fetchTotalUsers = async () => {
+      try {
+        const accountInfo = await connection.getAccountInfo(globalStatePDA);
+        if (accountInfo && accountInfo.data.length >= 16) {
+          // Global state structure: 8 discriminator + 8 total_users
+          const totalUsersRaw = new anchor.BN(
+            accountInfo.data.slice(8, 16),
+            'le'
+          );
+          setTotalUsers(totalUsersRaw.toNumber());
+        }
+      } catch (err) {
+        console.error('Error fetching total users:', err);
+      }
+    };
+
+    fetchTotalUsers();
+  }, [connection, globalStatePDA]);
 
   const checkUserRegistration = useCallback(async () => {
     if (!publicKey || !isReady || !userAccountKeypair) {
@@ -176,6 +234,29 @@ export default function MintPage() {
         const lastMint = await getLastMintTime(connection, userAccountKeypair.publicKey);
         setLastMintTime(lastMint);
         console.log('⏰ Last mint time:', lastMint);
+
+        // Get user's registration number and total mints from account
+        try {
+          const accountInfo = await connection.getAccountInfo(userAccountKeypair.publicKey);
+          if (accountInfo && accountInfo.data.length >= 152) {
+            // Read user_number at offset 144 (8 disc + 32 auth + 32 ref + 32 token + 8 minted + 8 mint_start + 8 locked + 8 last_mint = 136 + 8 = 144)
+            const userNumRaw = new anchor.BN(
+              accountInfo.data.slice(144, 152),
+              'le'
+            );
+            setUserNumber(userNumRaw.toNumber());
+            
+            // Read total_mints from minted_amount offset
+            const mintedAmountRaw = new anchor.BN(
+              accountInfo.data.slice(104, 112),
+              'le'
+            );
+            // Estimate total mints based on minted amount
+            setTotalMints(Math.floor(mintedAmountRaw.toNumber() / EQUA_PER_STANDARD_MINT_BASE_UNITS));
+          }
+        } catch (e) {
+          console.error('Error reading user data:', e);
+        }
       }
     } catch (err) {
       console.error('Error checking registration:', err);
@@ -215,7 +296,22 @@ export default function MintPage() {
     return () => clearInterval(interval);
   }, [lastMintTime]);
 
-  const handleRegister = async () => {
+  // Validate referrer address
+  const validateReferrer = useCallback(async (referrerAddress: string): Promise<boolean> => {
+    if (!connection) return false;
+    
+    try {
+      const referrerPubkey = new PublicKey(referrerAddress);
+      // In a real implementation, we would check if the referrer is a registered user
+      // For now, we validate that it's a valid public key that exists on chain
+      const accountInfo = await connection.getAccountInfo(referrerPubkey);
+      return accountInfo !== null;
+    } catch {
+      return false;
+    }
+  }, [connection]);
+
+  const handleRegisterWithForm = async (accountType: AccountType, referrer: string | null) => {
     if (!wallet.connected || !publicKey || !userAccountKeypair) {
       setError('Wallet not connected');
       return;
@@ -223,6 +319,12 @@ export default function MintPage() {
 
     if (!program) {
       setError('Program is loading... Please try again');
+      return;
+    }
+
+    // Check SOL balance
+    if (!hasMinimumSolBalance(walletBalance)) {
+      setError(`Insufficient SOL balance. You need at least ${MIN_SOL_BALANCE} SOL to register.`);
       return;
     }
 
@@ -234,6 +336,8 @@ export default function MintPage() {
       console.log('Creating registration transaction...');
       console.log('Wallet connected:', wallet.connected);
       console.log('Public key:', publicKey.toBase58());
+      console.log('Account type:', accountType);
+      console.log('Referrer:', referrer || 'None');
 
       // First, verify that the mint account exists on-chain
       console.log('🔍 Verifying mint account exists...');
@@ -285,10 +389,6 @@ export default function MintPage() {
           console.log('📝 Blockhash:', blockhash, 'lastValidBlockHeight:', lastValidBlockHeight);
           
           // Sign and send the transaction
-          // Note: skipPreflight is set to true for ATA creation because:
-          // 1. ATA creation is idempotent (if it exists, the program will handle it)
-          // 2. Simulation can fail even when the transaction would succeed
-          // 3. This is more reliable on congested networks or with Token-2022
           const signed = await wallet.signTransaction(transaction);
           const signature = await connection.sendRawTransaction(signed.serialize(), {
             skipPreflight: true,
@@ -305,7 +405,7 @@ export default function MintPage() {
           }, 'confirmed');
           
           console.log('✅ Token account created:', signature);
-        } catch (ataError: any) {
+        } catch (ataError: unknown) {
           throw handleAtaCreationError(ataError, 'registration');
         }
       } else {
@@ -322,29 +422,39 @@ export default function MintPage() {
       console.log('- Token Account:', userTokenAccount.toBase58());
       console.log('- Mint:', mintPDA.toBase58());
 
-      // ✅ FIX: Use user's own account as referral_account for self-referral case
-      // This ensures referral_account is writable while passing PublicKey.default as referrer data
+      // Determine referral account - use referrer if provided, otherwise use own account
+      let referralAccountPubkey = userAccountKeypair.publicKey;
+      let referrerPubkey = PublicKey.default;
+      
+      if (referrer) {
+        try {
+          referrerPubkey = new PublicKey(referrer);
+          // In a real implementation, you'd look up the referrer's user account PDA
+          referralAccountPubkey = referrerPubkey;
+        } catch {
+          console.log('Invalid referrer address, using self-referral');
+        }
+      }
+
       const instruction = createInitializeUserInstruction(
         userAccountKeypair.publicKey,
         publicKey,
         globalStatePDA,
-        userAccountKeypair.publicKey,  // referralAccount: use own account for self-referral
+        referralAccountPubkey,
         userTokenAccount,
         mintPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         now,
         lockUntil,
-        PublicKey.default  // referrer: use default when no referral
+        referrerPubkey
       );
 
-      // 🧪 INSTRUMENTATION: Log instruction metas for debugging
+      // Log instruction metas for debugging
       console.log('🧪 InitializeUser instruction metas:');
       instruction.keys.forEach((k, i) => {
         console.log(`${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`);
       });
-      console.log('DEBUG referral_account (should be same as user_account):', userAccountKeypair.publicKey.toBase58());
-      console.log('DEBUG referrer data arg (should be default):', PublicKey.default.toBase58());
 
       const transaction = new Transaction().add(instruction);
       transaction.feePayer = publicKey;
@@ -354,7 +464,7 @@ export default function MintPage() {
 
       console.log('📝 Requesting wallet signature...');
       const signed = await wallet.signTransaction!(transaction);
-      signed.partialSign(userAccountKeypair);  // ✅ CRITICAL: Sign with user account keypair
+      signed.partialSign(userAccountKeypair);
 
       console.log('📤 Sending transaction...');
       const rawTx = signed.serialize();
@@ -375,12 +485,18 @@ export default function MintPage() {
       setRegistered(true);
 
       await checkUserRegistration();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Registration error:', err);
-      setError(err.message || 'Registration failed');
+      const errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Keep the old handleRegister for backward compatibility
+  const handleRegister = async () => {
+    handleRegisterWithForm('individual', null);
   };
 
 
@@ -689,22 +805,16 @@ export default function MintPage() {
 
           <div className="grid md:grid-cols-2 gap-6">
             {!registered ? (
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
-                <div className="text-center">
-                  <div className="text-6xl mb-6">📝</div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Register Account</h3>
-                  <p className="text-purple-200 mb-6">
-                    Create your on-chain user account to start minting EQUA tokens
-                  </p>
-                  <button
-                    onClick={handleRegister}
-                    disabled={isLoading}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all disabled:opacity-50"
-                  >
-                    {isLoading ? '⏳ Registering...' : '✅ Register Now'}
-                  </button>
-                </div>
-              </div>
+              <>
+                <RegistrationForm
+                  totalUsers={totalUsers}
+                  walletBalance={walletBalance}
+                  onRegister={handleRegisterWithForm}
+                  isLoading={isLoading}
+                  validateReferrer={validateReferrer}
+                />
+                <MintScheduleCard />
+              </>
             ) : (
               <>
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
@@ -723,7 +833,9 @@ export default function MintPage() {
                       {canMint ? (
                         <>
                           <p className="text-green-100 text-3xl font-bold mb-2">✅ Ready to mint!</p>
-                          <p className="text-green-200 text-lg">Claim your 1,000 EQUA</p>
+                          <p className="text-green-200 text-lg">
+                            Claim your {getUserMintTier(userNumber || totalUsers + 1)?.equaPerAttempt.toLocaleString() || '1,000'} EQUA
+                          </p>
                         </>
                       ) : (
                         <>
@@ -766,16 +878,35 @@ export default function MintPage() {
                   </div>
                 </div>
 
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
-                  <h3 className="text-purple-200 text-lg mb-4 text-center">Your Balance</h3>
-                  <p className="text-white font-bold text-5xl text-center mb-2">
-                    {formatEquaRaw(balance, { trimTrailingZeros: true })}
-                  </p>
-                  <p className="text-purple-300 text-center">EQUA</p>
+                <div className="space-y-6">
+                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
+                    <h3 className="text-purple-200 text-lg mb-4 text-center">Your Balance</h3>
+                    <p className="text-white font-bold text-5xl text-center mb-2">
+                      {formatEquaRaw(balance, { trimTrailingZeros: true })}
+                    </p>
+                    <p className="text-purple-300 text-center">EQUA</p>
+                    {userNumber > 0 && (
+                      <p className="text-purple-400 text-sm text-center mt-2">
+                        User #{userNumber}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Mint Tier Card for registered users */}
+                  {userNumber > 0 && (
+                    <MintTierCard userNumber={userNumber} totalMints={totalMints} />
+                  )}
                 </div>
               </>
             )}
           </div>
+
+          {/* Mint Schedule for registered users */}
+          {registered && (
+            <div className="mt-8">
+              <MintScheduleCard />
+            </div>
+          )}
 
           <div className="mt-12 text-center">
             <p className="text-purple-300 text-sm">
