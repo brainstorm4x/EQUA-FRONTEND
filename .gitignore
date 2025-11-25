@@ -40,3 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 test-format.mjs
+
+# Playwright
+/playwright-report/
+/test-results/
+/playwright/.cache/
