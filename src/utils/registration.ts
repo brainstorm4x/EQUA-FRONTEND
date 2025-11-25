@@ -39,10 +39,11 @@ export function getUserMintTier(userNumber: number): ElevatedMintTier | null {
 }
 
 /**
- * Check if a user is in an elevated tier
+ * Check if a user is in an elevated tier (users with elevated attempts)
  */
 export function isElevatedUser(userNumber: number): boolean {
-  return userNumber >= 1 && userNumber <= 10;
+  const tier = getUserMintTier(userNumber);
+  return tier !== null && tier.elevatedAttempts > 0;
 }
 
 /**

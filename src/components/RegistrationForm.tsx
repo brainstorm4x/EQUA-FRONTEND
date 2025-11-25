@@ -6,6 +6,7 @@ import {
   AccountType, 
   isReferralRequired, 
   MIN_SOL_BALANCE, 
+  REFERRAL_FREE_LIMIT,
   hasMinimumSolBalance,
   formatSolBalance 
 } from '@/utils/registration';
@@ -194,7 +195,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
         {referralRequired && (
           <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 mb-3">
             <p className="text-yellow-200 text-sm">
-              ⚠️ Referral is required after the first {100} users. 
+              ⚠️ Referral is required after the first {REFERRAL_FREE_LIMIT} users. 
               Please enter a valid registered user&apos;s wallet address.
             </p>
           </div>
@@ -255,9 +256,9 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
       <div className="mt-6 text-center">
         <p className="text-purple-300 text-sm">
           Current Users: <span className="text-white font-medium">{totalUsers}</span>
-          {totalUsers < 100 && (
+          {totalUsers < REFERRAL_FREE_LIMIT && (
             <span className="text-green-400 ml-2">
-              ({100 - totalUsers} spots left without referral)
+              ({REFERRAL_FREE_LIMIT - totalUsers} spots left without referral)
             </span>
           )}
         </p>

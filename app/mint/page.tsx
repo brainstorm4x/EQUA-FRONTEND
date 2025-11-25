@@ -23,14 +23,14 @@ import {
   AccountType, 
   MIN_SOL_BALANCE,
   hasMinimumSolBalance,
-  formatSolBalance,
   getUserMintTier,
-  isElevatedUser,
-  getRemainingElevatedAttempts,
 } from '@/utils/registration';
 
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
+
+// EQUA token base units per standard mint (1000 EQUA = 1_000_000_000 base units with 6 decimals)
+const EQUA_PER_STANDARD_MINT_BASE_UNITS = 1_000_000_000;
 
 // Utility function to handle and format ATA creation errors
 function handleAtaCreationError(ataError: unknown, context: 'registration' | 'minting'): Error {
@@ -251,8 +251,8 @@ export default function MintPage() {
               accountInfo.data.slice(104, 112),
               'le'
             );
-            // Estimate total mints based on minted amount (1000 EQUA per mint = 1_000_000_000 base units)
-            setTotalMints(Math.floor(mintedAmountRaw.toNumber() / 1_000_000_000));
+            // Estimate total mints based on minted amount
+            setTotalMints(Math.floor(mintedAmountRaw.toNumber() / EQUA_PER_STANDARD_MINT_BASE_UNITS));
           }
         } catch (e) {
           console.error('Error reading user data:', e);
