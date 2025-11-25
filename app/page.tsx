@@ -51,7 +51,7 @@ export default function HomePage() {
               href="/mint"
               className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg"
             >
-              Get Started →
+              Register Now →
             </Link>
             <a
               href="https://explorer.solana.com/address/BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL?cluster=devnet"
