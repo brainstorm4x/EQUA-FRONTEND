@@ -58,17 +58,17 @@ export function safeParseUserCount(
       return 0;
     }
 
-    // Check for negative values (shouldn't happen with u64, but defensive)
+    // Check for negative values (guards against corrupted data with invalid bit patterns)
     if (rawValue.isNeg()) {
-      console.warn('⚠️ User count is negative, returning 0');
+      console.warn('⚠️ User count is negative (corrupted data detected), returning 0');
       return 0;
     }
 
     // Safe to convert to number
     const userCount = rawValue.toNumber();
     
-    // Additional sanity check after conversion
-    if (!Number.isFinite(userCount) || userCount < 0 || userCount > MAX_REASONABLE_USER_COUNT) {
+    // Additional sanity check: ensure conversion resulted in a valid finite number
+    if (!Number.isFinite(userCount) || userCount < 0) {
       console.warn(`⚠️ User count ${userCount} failed post-conversion validation, returning 0`);
       return 0;
     }

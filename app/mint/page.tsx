@@ -115,7 +115,13 @@ async function getLastMintTime(connection: any, userPubkey: PublicKey): Promise<
     // Use safe parsing to handle overflow, uninitialized, or corrupted values
     const lastMintTime = safeParseTimestamp(accountInfo.data, LAST_MINT_TIME_OFFSET);
     
-    console.log('⏰ Raw last_mint_time:', lastMintTime, lastMintTime > 0 ? `Date: ${new Date(lastMintTime * 1000).toLocaleString()}` : '(uninitialized)');
+    if (lastMintTime > 0) {
+      const dateStr = new Date(lastMintTime * 1000).toLocaleString();
+      console.log(`⏰ Raw last_mint_time: ${lastMintTime}, Date: ${dateStr}`);
+    } else {
+      console.log('⏰ Raw last_mint_time:', lastMintTime, '(uninitialized)');
+    }
+    
     return lastMintTime;
   } catch (error) {
     console.error('Error getting last mint time:', error);
