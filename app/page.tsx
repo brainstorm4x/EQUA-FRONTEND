@@ -54,6 +54,7 @@ export default function HomePage() {
             <Link
               href="/mint"
               className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg"
+              data-testid="get-started-cta"
             >
               Get Started →
             </Link>
