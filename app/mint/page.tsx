@@ -858,7 +858,9 @@ export default function MintPage() {
               <>
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
                   <div className="text-center">
-                    <div className="text-6xl mb-6">🪙</div>
+                    <div className="flex justify-center mb-6">
+                      <Logo size={80} />
+                    </div>
                     <h3 className="text-2xl font-bold text-white mb-4">
                       {canMint ? 'Daily EQUA Reward' : 'Cooldown Active'}
                     </h3>
@@ -903,7 +905,10 @@ export default function MintPage() {
                           <span>⏳ Minting...</span>
                         </span>
                       ) : canMint ? (
-                        '🪙 Claim Daily EQUA'
+                        <span className="flex items-center justify-center gap-2">
+                          <Logo size={24} />
+                          <span>Claim Daily EQUA</span>
+                        </span>
                       ) : (
                         `Cooldown: ${formatTimeRemaining(timeUntilNextMint)}`
                       )}
