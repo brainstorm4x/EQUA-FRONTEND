@@ -34,8 +34,10 @@ export function Logo({ className = '', size = 40 }: LogoProps) {
     <div 
       className={`bg-purple-500 rounded-lg flex items-center justify-center ${className}`}
       style={{ width: size, height: size }}
+      aria-label="EQUA Logo placeholder"
+      role="img"
     >
-      <span className="text-white font-bold text-xl">E</span>
+      <span className="text-white font-bold text-xl" aria-hidden="true">E</span>
     </div>
   );
 }
