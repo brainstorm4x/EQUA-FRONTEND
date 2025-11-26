@@ -3,9 +3,14 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
-// Dynamically import WalletButton with no SSR
+// Dynamically import WalletButton and PriceDisplay with no SSR
 const WalletButton = dynamic(
   () => import('@/components/WalletButton').then((mod) => ({ default: mod.WalletButton })),
+  { ssr: false }
+);
+
+const PriceDisplay = dynamic(
+  () => import('@/components/PriceDisplay').then((mod) => ({ default: mod.PriceDisplay })),
   { ssr: false }
 );
 
@@ -63,13 +68,16 @@ export default function HomePage() {
             </a>
           </div>
 
+          {/* Price and Minting Rate Display */}
+          <PriceDisplay className="mb-16" />
+
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-6 mt-16">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
-              <div className="text-4xl mb-4">🔒</div>
-              <h3 className="text-xl font-bold text-white mb-2">Time-Locked</h3>
+              <div className="text-4xl mb-4">⚡</div>
+              <h3 className="text-xl font-bold text-white mb-2">Higher-Minting-Rate</h3>
               <p className="text-purple-200">
-                First 100 users get 2-year locked rewards for early adoption
+                First 100 users get to mint at a higher rate for early adoption
               </p>
             </div>
 

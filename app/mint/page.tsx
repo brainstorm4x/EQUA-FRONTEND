@@ -33,8 +33,14 @@ const ERROR_STACK_TRACE_LINES = 3;
 // EQUA token base units per standard mint (1000 EQUA = 1_000_000_000 base units with 6 decimals)
 const EQUA_PER_STANDARD_MINT_BASE_UNITS = 1_000_000_000;
 
+// EQUA decimal multiplier (6 decimals)
+const EQUA_BASE_UNITS_MULTIPLIER = 1_000_000;
+
 // Maximum reasonable user count (prevents overflow/invalid values)
 const MAX_REASONABLE_USERS = 10_000_000;
+
+// Maximum reasonable user number for sanity checks
+const MAX_REASONABLE_USER_NUMBER = 1_000_000;
 
 // Utility function to handle and format ATA creation errors
 function handleAtaCreationError(ataError: unknown, context: 'registration' | 'minting'): Error {
@@ -237,20 +243,44 @@ export default function MintPage() {
         // Get user's registration number and total mints from account
         try {
           const accountInfo = await connection.getAccountInfo(userAccountKeypair.publicKey);
-          if (accountInfo && accountInfo.data.length >= 152) {
-            // Read user_number at offset 144 (8 disc + 32 auth + 32 ref + 32 token + 8 minted + 8 mint_start + 8 locked + 8 last_mint = 136 + 8 = 144)
-            const userNumRaw = new anchor.BN(
-              accountInfo.data.slice(144, 152),
-              'le'
-            );
-            setUserNumber(userNumRaw.toNumber());
+          if (accountInfo && accountInfo.data.length >= 144) {
+            // Note: user_number might not be stored in the account structure
+            // Check if there's additional data beyond the standard fields
+            if (accountInfo.data.length >= 152) {
+              // Read user_number at offset 144 if it exists
+              const userNumRaw = new anchor.BN(
+                accountInfo.data.slice(144, 152),
+                'le'
+              );
+              const userNum = userNumRaw.toNumber();
+              if (userNum > 0 && userNum < MAX_REASONABLE_USER_NUMBER) { // Sanity check
+                setUserNumber(userNum);
+              } else {
+                // Fallback: use stored value or estimate from global state
+                const stored = localStorage.getItem('equa_user_number');
+                if (stored) {
+                  setUserNumber(parseInt(stored, 10));
+                }
+              }
+            } else {
+              // No user_number in account, try to get from localStorage
+              const stored = localStorage.getItem('equa_user_number');
+              if (stored) {
+                setUserNumber(parseInt(stored, 10));
+              }
+            }
             
             // Read total_mints from minted_amount offset
             const mintedAmountRaw = new anchor.BN(
               accountInfo.data.slice(104, 112),
               'le'
             );
-            // Estimate total mints based on minted amount
+            // Estimate total mints - this is an approximation
+            // NOTE: Since users have different tier rates (100, 1000, 10000, or 100000 EQUA per mint),
+            // this estimation using EQUA_PER_STANDARD_MINT_BASE_UNITS (1000 EQUA) won't be exact
+            // for users in higher tiers. This is acceptable for UI display purposes as it shows
+            // approximate activity. For accurate tracking, the smart contract would need to store
+            // a mint_count field.
             setTotalMints(Math.floor(mintedAmountRaw.toNumber() / EQUA_PER_STANDARD_MINT_BASE_UNITS));
           }
         } catch (e) {
@@ -483,6 +513,14 @@ export default function MintPage() {
       setTxSignature(tx);
       setRegistered(true);
 
+      // Store the user's registration number for future reference
+      // This is totalUsers + 1 at the time of registration
+      if (typeof window !== 'undefined') {
+        const registrationNumber = totalUsers + 1;
+        localStorage.setItem('equa_user_number', registrationNumber.toString());
+        console.log(`📝 Saved user registration number: ${registrationNumber}`);
+      }
+
       await checkUserRegistration();
     } catch (err: unknown) {
       console.error('Registration error:', err);
@@ -613,8 +651,15 @@ export default function MintPage() {
       }
 
       // ✅ Now mint tokens
+      // Calculate mint amount based on user tier (EQUA has 6 decimals)
+      const userTier = getUserMintTier(userNumber || totalUsers + 1);
+      const equaAmount = userTier?.equaPerAttempt || 1000; // Default to 1000 EQUA
+      const mintAmount = equaAmount * EQUA_BASE_UNITS_MULTIPLIER; // Convert to base units (6 decimals)
+      
+      console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${userNumber}`);
+      
       const tx = await program.methods
-        .mintEquaTokens(new anchor.BN(1_000_000_000))
+        .mintEquaTokens(new anchor.BN(mintAmount))
         .accounts({
           userAccount: userAccountKeypair.publicKey,
           userTokenAccount,
@@ -689,6 +734,7 @@ export default function MintPage() {
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-12 border border-purple-500/30 max-w-md text-center">
             <h1 className="text-4xl font-bold text-white mb-6">Connect Your Wallet</h1>
             <p className="text-purple-200 mb-8">Please connect your wallet to get started</p>
+            <WalletButton />
           </div>
         </div>
       </main>
