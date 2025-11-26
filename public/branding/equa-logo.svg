@@ -1,30 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <!-- Background circle with gradient -->
   <defs>
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#9333ea;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#7e22ce;stop-opacity:1" />
-    </linearGradient>
-    <linearGradient id="textGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#e9d5ff;stop-opacity:1" />
-    </linearGradient>
+    <!-- Gold gradient for coin -->
+    <radialGradient id="goldGradient" cx="50%" cy="40%">
+      <stop offset="0%" style="stop-color:#ffd700;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#f4c430;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d4af37;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Shadow gradient -->
+    <radialGradient id="shadowGradient" cx="50%" cy="50%">
+      <stop offset="70%" style="stop-color:#c9a329;stop-opacity:0" />
+      <stop offset="100%" style="stop-color:#997a00;stop-opacity:0.4" />
+    </radialGradient>
+    
+    <!-- Inner gradient -->
+    <radialGradient id="innerGradient" cx="50%" cy="40%">
+      <stop offset="0%" style="stop-color:#f9e79f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#daa520;stop-opacity:1" />
+    </radialGradient>
   </defs>
   
-  <!-- Main circle background -->
-  <circle cx="100" cy="100" r="95" fill="url(#bgGradient)" />
+  <!-- Outer coin rim -->
+  <circle cx="100" cy="100" r="98" fill="url(#goldGradient)" />
+  <circle cx="100" cy="100" r="98" fill="url(#shadowGradient)" />
   
-  <!-- Inner decoration circle -->
-  <circle cx="100" cy="100" r="85" fill="none" stroke="#a855f7" stroke-width="2" opacity="0.5" />
+  <!-- Rim border -->
+  <circle cx="100" cy="100" r="98" fill="none" stroke="#b8860b" stroke-width="1.5" opacity="0.6" />
+  <circle cx="100" cy="100" r="93" fill="none" stroke="#ffd700" stroke-width="1" opacity="0.8" />
   
-  <!-- EQUA text - centered and bold -->
-  <text x="100" y="115" font-family="Arial, sans-serif" font-size="60" font-weight="bold" text-anchor="middle" fill="url(#textGradient)">
-    EQUA
-  </text>
+  <!-- Inner coin face -->
+  <circle cx="100" cy="100" r="88" fill="url(#innerGradient)" />
   
-  <!-- Accent coin symbol -->
-  <circle cx="160" cy="60" r="18" fill="#fbbf24" stroke="#f59e0b" stroke-width="2" />
-  <text x="160" y="68" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#78350f">
-    $
-  </text>
+  <!-- Embossed border -->
+  <circle cx="100" cy="100" r="88" fill="none" stroke="#c9a329" stroke-width="2" opacity="0.5" />
+  <circle cx="100" cy="100" r="85" fill="none" stroke="#f4e5a0" stroke-width="1" opacity="0.6" />
+  
+  <!-- Three circles at top representing people/community -->
+  <circle cx="70" cy="55" r="10" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
+  <circle cx="100" cy="50" r="11" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
+  <circle cx="130" cy="55" r="10" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
+  
+  <!-- EQUA symbol - stylized representation -->
+  <!-- Horizontal bars (E shape) -->
+  <rect x="70" y="85" width="60" height="8" rx="2" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
+  <rect x="70" y="107" width="60" height="8" rx="2" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
+  
+  <!-- Vertical bars (forming sides) -->
+  <path d="M 65 75 L 65 140 L 72 135 L 72 80 Z" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
+  <path d="M 135 75 L 135 140 L 128 135 L 128 80 Z" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
+  
+  <!-- Bottom horizontal bar -->
+  <rect x="70" y="132" width="60" height="8" rx="2" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
+  
+  <!-- Central highlight -->
+  <ellipse cx="100" cy="45" rx="30" ry="15" fill="#fff" opacity="0.15" />
 </svg>
