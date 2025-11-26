@@ -14,7 +14,7 @@ interface LogoProps {
 export function Logo({ className = '', size = 40 }: LogoProps) {
   return (
     <Image 
-      src="/branding/equa-logo.svg" 
+      src="/equa-logo.svg" 
       alt="EQUA Logo" 
       width={size} 
       height={size}
