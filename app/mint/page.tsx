@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useProgram } from '@/hooks/useProgram';
 import { WalletButton } from '@/components/WalletButton';
+import { Logo } from '@/components/Logo';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
@@ -721,9 +722,7 @@ export default function MintPage() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">E</span>
-                </div>
+                <Logo size={40} />
                 <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
               </Link>
               <WalletButton />
@@ -748,9 +747,7 @@ export default function MintPage() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">E</span>
-                </div>
+                <Logo size={40} />
                 <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
               </Link>
               <WalletButton />
@@ -775,9 +772,7 @@ export default function MintPage() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">E</span>
-                </div>
+                <Logo size={40} />
                 <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
               </Link>
               <WalletButton />
@@ -803,9 +798,7 @@ export default function MintPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">E</span>
-              </div>
+              <Logo size={40} />
               <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
             </Link>
             <WalletButton />
@@ -817,10 +810,10 @@ export default function MintPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-5xl font-bold text-white mb-4">
-              {registered ? 'Mint EQUA Tokens' : 'Register Your Account'}
+              {registered ? 'Mint EQUA Tokens' : 'Get Started with EQUA'}
             </h2>
             <p className="text-purple-200 text-xl">
-              {registered ? 'Get your EQUA tokens on Solana Devnet' : 'One-time setup to start minting'}
+              {registered ? 'Claim your daily EQUA tokens' : 'Register your account to start minting EQUA tokens'}
             </p>
           </div>
 

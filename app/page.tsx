@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { Logo } from '@/components/Logo';
 
 // Dynamically import WalletButton and PriceDisplay with no SSR
 const WalletButton = dynamic(
@@ -23,9 +24,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">E</span>
-              </div>
+              <Logo size={40} />
               <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
             </Link>
             <WalletButton />
@@ -56,7 +55,7 @@ export default function HomePage() {
               href="/mint"
               className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg"
             >
-              Register Now →
+              Get Started →
             </Link>
             <a
               href="https://explorer.solana.com/address/BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL?cluster=devnet"
