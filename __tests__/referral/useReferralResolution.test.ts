@@ -34,8 +34,8 @@ jest.mock('@/utils/referral/registry', () => {
 
   return {
     fetchReferralRegistry: jest.fn(async () => {
-      // Return immediately to avoid act warnings
-      return Promise.resolve(mockRegistry);
+      // Return resolved promise for registry data
+      return mockRegistry;
     }),
     resolveReferralInput: jest.requireActual('@/utils/referral/registry').resolveReferralInput,
   };
