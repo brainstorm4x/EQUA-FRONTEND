@@ -613,8 +613,15 @@ export default function MintPage() {
       }
 
       // ✅ Now mint tokens
+      // Calculate mint amount based on user tier (EQUA has 6 decimals)
+      const userTier = getUserMintTier(userNumber || totalUsers + 1);
+      const equaAmount = userTier?.equaPerAttempt || 1000; // Default to 1000 EQUA
+      const mintAmount = equaAmount * 1_000_000; // Convert to base units (6 decimals)
+      
+      console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${userNumber}`);
+      
       const tx = await program.methods
-        .mintEquaTokens(new anchor.BN(1_000_000_000))
+        .mintEquaTokens(new anchor.BN(mintAmount))
         .accounts({
           userAccount: userAccountKeypair.publicKey,
           userTokenAccount,
@@ -689,6 +696,7 @@ export default function MintPage() {
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-12 border border-purple-500/30 max-w-md text-center">
             <h1 className="text-4xl font-bold text-white mb-6">Connect Your Wallet</h1>
             <p className="text-purple-200 mb-8">Please connect your wallet to get started</p>
+            <WalletButton />
           </div>
         </div>
       </main>
