@@ -120,22 +120,22 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '' }) => {
   }
 
   return (
-    <div className={`bg-gradient-to-br from-purple-500/20 to-purple-600/20 backdrop-blur-md rounded-2xl p-6 border border-purple-400/50 ${className}`}>
+    <div className={`bg-gradient-to-br from-purple-500/20 to-purple-600/20 backdrop-blur-md rounded-2xl p-6 border border-purple-400/50 ${className}`} data-testid="price-display">
       <div className="grid grid-cols-2 gap-6">
         <div>
           <p className="text-purple-200 text-sm mb-2">Current EQUA Price</p>
-          <p className="text-white text-3xl font-bold">
+          <p className="text-white text-3xl font-bold" data-testid="current-price">
             ${currentPrice < 1 ? currentPrice.toFixed(4) : currentPrice.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })}
           </p>
-          <p className="text-purple-300 text-xs mt-1">Epoch {currentEpoch.toLocaleString()}</p>
+          <p className="text-purple-300 text-xs mt-1" data-testid="current-epoch">Epoch {currentEpoch.toLocaleString()}</p>
         </div>
         
         <div>
           <p className="text-purple-200 text-sm mb-2">Minting Rate</p>
-          <p className="text-white text-3xl font-bold">{mintingRate}</p>
+          <p className="text-white text-3xl font-bold" data-testid="mint-rate">{mintingRate}</p>
           <p className="text-purple-300 text-xs mt-1">EQUA/day</p>
         </div>
       </div>

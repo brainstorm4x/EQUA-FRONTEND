@@ -57,8 +57,13 @@ export function getRemainingElevatedAttempts(userNumber: number, totalMints: num
 
 /**
  * Check if referral is required based on current user count
+ * Returns false for implausible/overflow values (treated as invalid data)
  */
 export function isReferralRequired(totalUsers: number): boolean {
+  // Treat implausible values as invalid data (no referral required)
+  if (totalUsers < 0 || totalUsers > 10_000_000) {
+    return false;
+  }
   return totalUsers >= REFERRAL_FREE_LIMIT;
 }
 

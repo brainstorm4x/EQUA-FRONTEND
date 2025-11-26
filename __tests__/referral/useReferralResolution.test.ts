@@ -33,7 +33,10 @@ jest.mock('@/utils/referral/registry', () => {
   };
 
   return {
-    fetchReferralRegistry: jest.fn(() => Promise.resolve(mockRegistry)),
+    fetchReferralRegistry: jest.fn(async () => {
+      // Return resolved promise for registry data
+      return mockRegistry;
+    }),
     resolveReferralInput: jest.requireActual('@/utils/referral/registry').resolveReferralInput,
   };
 });
@@ -52,7 +55,11 @@ describe('useReferralResolution', () => {
     it('should return IDLE state with empty input', async () => {
       const { result } = renderHook(() => useReferralResolution(''));
 
-      expect(result.current.status).toBe(ReferralState.IDLE);
+      // Wait for registry to load
+      await waitFor(() => {
+        expect(result.current.status).toBe(ReferralState.IDLE);
+      });
+
       expect(result.current.referrerPubkey).toBeNull();
       expect(result.current.error).toBeNull();
       expect(result.current.isLoading).toBe(false);
@@ -83,12 +90,14 @@ describe('useReferralResolution', () => {
       );
 
       // Wait for registry to load
-      await act(async () => {
-        await Promise.resolve();
+      await waitFor(() => {
+        expect(result.current.status).toBe(ReferralState.IDLE);
       });
 
       // Change input
-      rerender({ input: 'ValidCode1' });
+      await act(async () => {
+        rerender({ input: 'ValidCode1' });
+      });
 
       // Fast-forward past debounce
       await act(async () => {
@@ -113,11 +122,13 @@ describe('useReferralResolution', () => {
       );
 
       // Wait for registry to load
-      await act(async () => {
-        await Promise.resolve();
+      await waitFor(() => {
+        expect(result.current.status).toBe(ReferralState.IDLE);
       });
 
-      rerender({ input: 'UsedCode01' });
+      await act(async () => {
+        rerender({ input: 'UsedCode01' });
+      });
 
       await act(async () => {
         jest.advanceTimersByTime(150);
@@ -140,11 +151,13 @@ describe('useReferralResolution', () => {
       );
 
       // Wait for registry to load
-      await act(async () => {
-        await Promise.resolve();
+      await waitFor(() => {
+        expect(result.current.status).toBe(ReferralState.IDLE);
       });
 
-      rerender({ input: 'ExpiredCd1' });
+      await act(async () => {
+        rerender({ input: 'ExpiredCd1' });
+      });
 
       await act(async () => {
         jest.advanceTimersByTime(150);
@@ -167,11 +180,13 @@ describe('useReferralResolution', () => {
       );
 
       // Wait for registry to load
-      await act(async () => {
-        await Promise.resolve();
+      await waitFor(() => {
+        expect(result.current.status).toBe(ReferralState.IDLE);
       });
 
-      rerender({ input: 'Unknown123' });
+      await act(async () => {
+        rerender({ input: 'Unknown123' });
+      });
 
       await act(async () => {
         jest.advanceTimersByTime(150);
@@ -193,11 +208,13 @@ describe('useReferralResolution', () => {
       );
 
       // Wait for registry to load
-      await act(async () => {
-        await Promise.resolve();
+      await waitFor(() => {
+        expect(result.current.status).toBe(ReferralState.IDLE);
       });
 
-      rerender({ input: '11111111111111111111111111111111' });
+      await act(async () => {
+        rerender({ input: '11111111111111111111111111111111' });
+      });
 
       await act(async () => {
         jest.advanceTimersByTime(150);
@@ -220,11 +237,13 @@ describe('useReferralResolution', () => {
       );
 
       // Wait for registry to load
-      await act(async () => {
-        await Promise.resolve();
+      await waitFor(() => {
+        expect(result.current.status).toBe(ReferralState.IDLE);
       });
 
-      rerender({ input: 'invalid!!!' });
+      await act(async () => {
+        rerender({ input: 'invalid!!!' });
+      });
 
       await act(async () => {
         jest.advanceTimersByTime(150);
@@ -247,15 +266,17 @@ describe('useReferralResolution', () => {
       );
 
       // Wait for registry to load
-      await act(async () => {
-        await Promise.resolve();
+      await waitFor(() => {
+        expect(result.current.status).toBe(ReferralState.IDLE);
       });
 
       // Rapid changes
-      rerender({ input: 'V' });
-      rerender({ input: 'Va' });
-      rerender({ input: 'Val' });
-      rerender({ input: 'ValidCode1' });
+      await act(async () => {
+        rerender({ input: 'V' });
+        rerender({ input: 'Va' });
+        rerender({ input: 'Val' });
+        rerender({ input: 'ValidCode1' });
+      });
 
       // Should still be loading
       expect(result.current.status).toBe(ReferralState.LOADING);
@@ -287,11 +308,13 @@ describe('useReferralResolution', () => {
       expect(result.current.status).toBe(ReferralState.IDLE);
 
       // Wait for registry to load
-      await act(async () => {
-        await Promise.resolve();
+      await waitFor(() => {
+        expect(result.current.status).toBe(ReferralState.IDLE);
       });
 
-      rerender({ input: 'ValidCode1' });
+      await act(async () => {
+        rerender({ input: 'ValidCode1' });
+      });
 
       await act(async () => {
         jest.advanceTimersByTime(150);
@@ -314,12 +337,14 @@ describe('useReferralResolution', () => {
       );
 
       // Wait for registry to load
-      await act(async () => {
-        await Promise.resolve();
+      await waitFor(() => {
+        expect(result.current.status).toBe(ReferralState.IDLE);
       });
 
       // Set a valid code
-      rerender({ input: 'ValidCode1' });
+      await act(async () => {
+        rerender({ input: 'ValidCode1' });
+      });
 
       await act(async () => {
         jest.advanceTimersByTime(150);
@@ -330,7 +355,9 @@ describe('useReferralResolution', () => {
       });
 
       // Clear input
-      rerender({ input: '' });
+      await act(async () => {
+        rerender({ input: '' });
+      });
 
       expect(result.current.status).toBe(ReferralState.IDLE);
       expect(result.current.referrerPubkey).toBeNull();
