@@ -1,6 +1,6 @@
 /**
  * Tests for the Home/Landing Page
- * Validates CTA behavior and navigation
+ * Validates CTA behavior, navigation, and EQUA Logo display
  */
 
 import React from 'react';
@@ -11,6 +11,13 @@ import '@testing-library/jest-dom';
 jest.mock('next/link', () => {
   return ({ children, href, ...props }: any) => {
     return <a href={href} {...props}>{children}</a>;
+  };
+});
+
+jest.mock('next/image', () => {
+  return function MockImage(props: any) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img {...props} />;
   };
 });
 
@@ -52,6 +59,51 @@ describe('Home/Landing Page', () => {
       expect(screen.getByText('Higher-Minting-Rate')).toBeInTheDocument();
       expect(screen.getByText('Price Appreciation')).toBeInTheDocument();
       expect(screen.getByText('Referral Rewards')).toBeInTheDocument();
+    });
+  });
+
+  describe('EQUA Logo Display', () => {
+    it('should display EQUA Logo in hero section above welcome text', () => {
+      render(<HomePage />);
+      
+      // Check for EQUA Logo images (header + hero section)
+      const logos = screen.getAllByAltText('EQUA Logo');
+      expect(logos.length).toBeGreaterThanOrEqual(2); // At least header and hero
+    });
+
+    it('should display EQUA Logo in header', () => {
+      render(<HomePage />);
+      
+      const logos = screen.getAllByAltText('EQUA Logo');
+      // Header logo should be 40px
+      const headerLogo = logos.find(logo => logo.getAttribute('width') === '40');
+      expect(headerLogo).toBeInTheDocument();
+    });
+
+    it('should display larger EQUA Logo in hero section', () => {
+      render(<HomePage />);
+      
+      const logos = screen.getAllByAltText('EQUA Logo');
+      // Hero logo should be 80px
+      const heroLogo = logos.find(logo => logo.getAttribute('width') === '80');
+      expect(heroLogo).toBeInTheDocument();
+    });
+
+    it('should not display coin emoji in hero section', () => {
+      render(<HomePage />);
+      
+      // Ensure no coin emoji is rendered
+      const heroSection = document.querySelector('.container');
+      expect(heroSection?.textContent).not.toContain('🪙');
+    });
+
+    it('should use SVG format for logo', () => {
+      render(<HomePage />);
+      
+      const logos = screen.getAllByAltText('EQUA Logo');
+      logos.forEach(logo => {
+        expect(logo).toHaveAttribute('src', '/equa-logo.svg');
+      });
     });
   });
 
@@ -117,6 +169,43 @@ describe('Home/Landing Page', () => {
       
       const ctaButton = screen.getByTestId('get-started-cta');
       expect(ctaButton).toHaveTextContent(/get started/i);
+    });
+
+    it('should have accessible EQUA Logo images', () => {
+      render(<HomePage />);
+      
+      const logos = screen.getAllByRole('img', { name: 'EQUA Logo' });
+      expect(logos.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('User Journey - Landing to Mint', () => {
+    it('should provide clear path from landing page to mint page', () => {
+      render(<HomePage />);
+      
+      // User lands on home page and sees EQUA branding
+      const logos = screen.getAllByAltText('EQUA Logo');
+      expect(logos.length).toBeGreaterThan(0);
+      
+      // User sees welcome message
+      expect(screen.getByText('Welcome to EQUA Token')).toBeInTheDocument();
+      
+      // User can navigate to mint page
+      const ctaButton = screen.getByTestId('get-started-cta');
+      expect(ctaButton).toHaveAttribute('href', '/mint');
+    });
+
+    it('should display value proposition to new users', () => {
+      render(<HomePage />);
+      
+      // Features should be visible
+      expect(screen.getByText('Higher-Minting-Rate')).toBeInTheDocument();
+      expect(screen.getByText('Price Appreciation')).toBeInTheDocument();
+      expect(screen.getByText('Referral Rewards')).toBeInTheDocument();
+      
+      // Platform info should be visible
+      expect(screen.getByText('Solana Devnet')).toBeInTheDocument();
+      expect(screen.getByText('SPL Token-2022')).toBeInTheDocument();
     });
   });
 });

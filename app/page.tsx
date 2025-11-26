@@ -37,7 +37,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-8">
             <div className="inline-block p-4 bg-white/10 rounded-full mb-6">
-              <span className="text-6xl">🪙</span>
+              <Logo size={80} />
             </div>
           </div>
           
