@@ -6,6 +6,7 @@ import { PublicKey } from '@solana/web3.js';
 import { EquaPriceCalculator } from '@/utils/priceCalculator';
 import { PROGRAM_ID } from '@/lib/constants';
 import { safeParseUserCount } from '@/utils/safeAccountParsing';
+import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import * as anchor from '@coral-xyz/anchor';
 
 interface PriceDisplayProps {
@@ -60,13 +61,26 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '' }) => {
           setCurrentPrice(price);
           setCurrentEpoch(epoch);
           
-          // Set minting rate based on user tier
-          if (totalUsers === 0) {
-            setMintingRate('100,000');
-          } else if (totalUsers < 10) {
-            setMintingRate('10,000 - 100,000');
-          } else if (totalUsers < 100) {
-            setMintingRate('1,000 - 10,000');
+          // Calculate minting rate based on total users and tier configuration
+          const nextUserNumber = totalUsers + 1;
+          const currentTier = ELEVATED_MINT_TIERS.find(
+            tier => nextUserNumber >= tier.minUser && nextUserNumber <= tier.maxUser
+          );
+          
+          if (currentTier) {
+            if (totalUsers === 0) {
+              // First user gets 100,000
+              setMintingRate('100,000');
+            } else if (totalUsers < 10) {
+              // Next users get 10,000-100,000 range
+              setMintingRate('10,000 - 100,000');
+            } else if (totalUsers < 100) {
+              // Users 11-100 get 1,000-10,000 range
+              setMintingRate('1,000 - 10,000');
+            } else {
+              // All other users get 100
+              setMintingRate('100');
+            }
           } else {
             setMintingRate('100');
           }

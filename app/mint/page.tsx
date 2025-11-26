@@ -33,8 +33,14 @@ const ERROR_STACK_TRACE_LINES = 3;
 // EQUA token base units per standard mint (1000 EQUA = 1_000_000_000 base units with 6 decimals)
 const EQUA_PER_STANDARD_MINT_BASE_UNITS = 1_000_000_000;
 
+// EQUA decimal multiplier (6 decimals)
+const EQUA_BASE_UNITS_MULTIPLIER = 1_000_000;
+
 // Maximum reasonable user count (prevents overflow/invalid values)
 const MAX_REASONABLE_USERS = 10_000_000;
+
+// Maximum reasonable user number for sanity checks
+const MAX_REASONABLE_USER_NUMBER = 1_000_000;
 
 // Utility function to handle and format ATA creation errors
 function handleAtaCreationError(ataError: unknown, context: 'registration' | 'minting'): Error {
@@ -247,7 +253,7 @@ export default function MintPage() {
                 'le'
               );
               const userNum = userNumRaw.toNumber();
-              if (userNum > 0 && userNum < 1000000) { // Sanity check
+              if (userNum > 0 && userNum < MAX_REASONABLE_USER_NUMBER) { // Sanity check
                 setUserNumber(userNum);
               } else {
                 // Fallback: use stored value or estimate from global state
@@ -270,8 +276,11 @@ export default function MintPage() {
               'le'
             );
             // Estimate total mints - this is an approximation
-            // Since users have different tier rates, this won't be exact
-            // but it gives us a rough count for display purposes
+            // NOTE: Since users have different tier rates (100, 1000, 10000, or 100000 EQUA per mint),
+            // this estimation using EQUA_PER_STANDARD_MINT_BASE_UNITS (1000 EQUA) won't be exact
+            // for users in higher tiers. This is acceptable for UI display purposes as it shows
+            // approximate activity. For accurate tracking, the smart contract would need to store
+            // a mint_count field.
             setTotalMints(Math.floor(mintedAmountRaw.toNumber() / EQUA_PER_STANDARD_MINT_BASE_UNITS));
           }
         } catch (e) {
@@ -645,7 +654,7 @@ export default function MintPage() {
       // Calculate mint amount based on user tier (EQUA has 6 decimals)
       const userTier = getUserMintTier(userNumber || totalUsers + 1);
       const equaAmount = userTier?.equaPerAttempt || 1000; // Default to 1000 EQUA
-      const mintAmount = equaAmount * 1_000_000; // Convert to base units (6 decimals)
+      const mintAmount = equaAmount * EQUA_BASE_UNITS_MULTIPLIER; // Convert to base units (6 decimals)
       
       console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${userNumber}`);
       
