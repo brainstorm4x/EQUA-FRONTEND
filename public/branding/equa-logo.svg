@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background circle with gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9333ea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7e22ce;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e9d5ff;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main circle background -->
+  <circle cx="100" cy="100" r="95" fill="url(#bgGradient)" />
+  
+  <!-- Inner decoration circle -->
+  <circle cx="100" cy="100" r="85" fill="none" stroke="#a855f7" stroke-width="2" opacity="0.5" />
+  
+  <!-- EQUA text - centered and bold -->
+  <text x="100" y="115" font-family="Arial, sans-serif" font-size="60" font-weight="bold" text-anchor="middle" fill="url(#textGradient)">
+    EQUA
+  </text>
+  
+  <!-- Accent coin symbol -->
+  <circle cx="160" cy="60" r="18" fill="#fbbf24" stroke="#f59e0b" stroke-width="2" />
+  <text x="160" y="68" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#78350f">
+    $
+  </text>
+</svg>
