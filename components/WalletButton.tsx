@@ -3,7 +3,11 @@
 import { FC, useEffect, useState } from 'react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
-export const WalletButton: FC<{ 'data-testid'?: string }> = ({ 'data-testid': testId }) => {
+interface WalletButtonProps {
+  testId?: string;
+}
+
+export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -22,9 +26,8 @@ export const WalletButton: FC<{ 'data-testid'?: string }> = ({ 'data-testid': te
   }
 
   return (
-    <WalletMultiButton 
-      className="!bg-purple-600 hover:!bg-purple-700 !rounded-lg" 
-      data-testid={testId}
-    />
+    <div data-testid={testId}>
+      <WalletMultiButton className="!bg-purple-600 hover:!bg-purple-700 !rounded-lg" />
+    </div>
   );
 };

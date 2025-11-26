@@ -33,7 +33,7 @@ jest.mock('next/link', () => {
 });
 
 jest.mock('@/components/WalletButton', () => ({
-  WalletButton: ({ 'data-testid': testId }: any) => (
+  WalletButton: ({ testId }: any) => (
     <button data-testid={testId || 'wallet-button'}>Select Wallet</button>
   ),
 }));
