@@ -1,16 +1,10 @@
 /**
  * EQUA Logo Component
  * 
- * TODO: Replace placeholder with actual EQUA logo
- * See docs/LOGO_INSTRUCTIONS.md for implementation details
- * 
- * To use the actual logo:
- * 1. Add equa-logo.svg (or .png) to /public/ folder
- * 2. Uncomment the Image import and JSX below
- * 3. Remove the placeholder div
+ * Displays the EQUA brand logo
  */
 
-// import Image from 'next/image';
+import Image from 'next/image';
 
 interface LogoProps {
   className?: string;
@@ -18,26 +12,13 @@ interface LogoProps {
 }
 
 export function Logo({ className = '', size = 40 }: LogoProps) {
-  // TODO: Uncomment this when actual logo is available
-  // return (
-  //   <Image 
-  //     src="/equa-logo.svg" 
-  //     alt="EQUA Logo" 
-  //     width={size} 
-  //     height={size}
-  //     className={className}
-  //   />
-  // );
-
-  // Placeholder implementation
   return (
-    <div 
-      className={`bg-purple-500 rounded-lg flex items-center justify-center ${className}`}
-      style={{ width: size, height: size }}
-      aria-label="EQUA Logo placeholder"
-      role="img"
-    >
-      <span className="text-white font-bold text-xl" aria-hidden="true">E</span>
-    </div>
+    <Image 
+      src="/branding/equa-logo.svg" 
+      alt="EQUA Logo" 
+      width={size} 
+      height={size}
+      className={className}
+    />
   );
 }
