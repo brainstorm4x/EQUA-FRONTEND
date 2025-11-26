@@ -237,20 +237,41 @@ export default function MintPage() {
         // Get user's registration number and total mints from account
         try {
           const accountInfo = await connection.getAccountInfo(userAccountKeypair.publicKey);
-          if (accountInfo && accountInfo.data.length >= 152) {
-            // Read user_number at offset 144 (8 disc + 32 auth + 32 ref + 32 token + 8 minted + 8 mint_start + 8 locked + 8 last_mint = 136 + 8 = 144)
-            const userNumRaw = new anchor.BN(
-              accountInfo.data.slice(144, 152),
-              'le'
-            );
-            setUserNumber(userNumRaw.toNumber());
+          if (accountInfo && accountInfo.data.length >= 144) {
+            // Note: user_number might not be stored in the account structure
+            // Check if there's additional data beyond the standard fields
+            if (accountInfo.data.length >= 152) {
+              // Read user_number at offset 144 if it exists
+              const userNumRaw = new anchor.BN(
+                accountInfo.data.slice(144, 152),
+                'le'
+              );
+              const userNum = userNumRaw.toNumber();
+              if (userNum > 0 && userNum < 1000000) { // Sanity check
+                setUserNumber(userNum);
+              } else {
+                // Fallback: use stored value or estimate from global state
+                const stored = localStorage.getItem('equa_user_number');
+                if (stored) {
+                  setUserNumber(parseInt(stored, 10));
+                }
+              }
+            } else {
+              // No user_number in account, try to get from localStorage
+              const stored = localStorage.getItem('equa_user_number');
+              if (stored) {
+                setUserNumber(parseInt(stored, 10));
+              }
+            }
             
             // Read total_mints from minted_amount offset
             const mintedAmountRaw = new anchor.BN(
               accountInfo.data.slice(104, 112),
               'le'
             );
-            // Estimate total mints based on minted amount
+            // Estimate total mints - this is an approximation
+            // Since users have different tier rates, this won't be exact
+            // but it gives us a rough count for display purposes
             setTotalMints(Math.floor(mintedAmountRaw.toNumber() / EQUA_PER_STANDARD_MINT_BASE_UNITS));
           }
         } catch (e) {
@@ -482,6 +503,14 @@ export default function MintPage() {
       console.log('✅ Registration successful!', tx);
       setTxSignature(tx);
       setRegistered(true);
+
+      // Store the user's registration number for future reference
+      // This is totalUsers + 1 at the time of registration
+      if (typeof window !== 'undefined') {
+        const registrationNumber = totalUsers + 1;
+        localStorage.setItem('equa_user_number', registrationNumber.toString());
+        console.log(`📝 Saved user registration number: ${registrationNumber}`);
+      }
 
       await checkUserRegistration();
     } catch (err: unknown) {
