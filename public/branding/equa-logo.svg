@@ -2,56 +2,43 @@
   <defs>
     <!-- Gold gradient for coin -->
     <radialGradient id="goldGradient" cx="50%" cy="40%">
-      <stop offset="0%" style="stop-color:#ffd700;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#f9d71c;stop-opacity:1" />
       <stop offset="50%" style="stop-color:#f4c430;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#d4af37;stop-opacity:1" />
     </radialGradient>
     
-    <!-- Shadow gradient -->
-    <radialGradient id="shadowGradient" cx="50%" cy="50%">
-      <stop offset="70%" style="stop-color:#c9a329;stop-opacity:0" />
-      <stop offset="100%" style="stop-color:#997a00;stop-opacity:0.4" />
-    </radialGradient>
-    
-    <!-- Inner gradient -->
+    <!-- Inner face gradient -->
     <radialGradient id="innerGradient" cx="50%" cy="40%">
-      <stop offset="0%" style="stop-color:#f9e79f;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#daa520;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#fce570;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e8b923;stop-opacity:1" />
     </radialGradient>
   </defs>
   
-  <!-- Outer coin rim -->
-  <circle cx="100" cy="100" r="98" fill="url(#goldGradient)" />
-  <circle cx="100" cy="100" r="98" fill="url(#shadowGradient)" />
+  <!-- Outer coin circle -->
+  <circle cx="100" cy="100" r="96" fill="url(#goldGradient)" stroke="#b8860b" stroke-width="2" />
   
-  <!-- Rim border -->
-  <circle cx="100" cy="100" r="98" fill="none" stroke="#b8860b" stroke-width="1.5" opacity="0.6" />
-  <circle cx="100" cy="100" r="93" fill="none" stroke="#ffd700" stroke-width="1" opacity="0.8" />
+  <!-- Inner rim -->
+  <circle cx="100" cy="100" r="88" fill="none" stroke="#c9a329" stroke-width="2" opacity="0.6" />
   
   <!-- Inner coin face -->
-  <circle cx="100" cy="100" r="88" fill="url(#innerGradient)" />
+  <circle cx="100" cy="100" r="82" fill="url(#innerGradient)" />
   
-  <!-- Embossed border -->
-  <circle cx="100" cy="100" r="88" fill="none" stroke="#c9a329" stroke-width="2" opacity="0.5" />
-  <circle cx="100" cy="100" r="85" fill="none" stroke="#f4e5a0" stroke-width="1" opacity="0.6" />
+  <!-- Inner detail circle -->
+  <circle cx="100" cy="100" r="76" fill="none" stroke="#d4a11d" stroke-width="1.5" opacity="0.5" />
   
-  <!-- Three circles at top representing people/community -->
-  <circle cx="70" cy="55" r="10" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
-  <circle cx="100" cy="50" r="11" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
-  <circle cx="130" cy="55" r="10" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
+  <!-- Three circles at top (community/people symbol) -->
+  <circle cx="70" cy="60" r="12" fill="#b8860b" />
+  <circle cx="100" cy="55" r="13" fill="#b8860b" />
+  <circle cx="130" cy="60" r="12" fill="#b8860b" />
   
-  <!-- EQUA symbol - stylized representation -->
-  <!-- Horizontal bars (E shape) -->
-  <rect x="70" y="85" width="60" height="8" rx="2" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
-  <rect x="70" y="107" width="60" height="8" rx="2" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
+  <!-- Two horizontal bars forming the "E" pattern -->
+  <rect x="60" y="95" width="80" height="12" rx="2" fill="#b8860b" />
+  <rect x="60" y="120" width="80" height="12" rx="2" fill="#b8860b" />
   
-  <!-- Vertical bars (forming sides) -->
-  <path d="M 65 75 L 65 140 L 72 135 L 72 80 Z" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
-  <path d="M 135 75 L 135 140 L 128 135 L 128 80 Z" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
+  <!-- Vertical support bars on sides -->
+  <rect x="55" y="85" width="10" height="60" rx="2" fill="#b8860b" />
+  <rect x="135" y="85" width="10" height="60" rx="2" fill="#b8860b" />
   
-  <!-- Bottom horizontal bar -->
-  <rect x="70" y="132" width="60" height="8" rx="2" fill="#c9a329" stroke="#b8860b" stroke-width="1.5" />
-  
-  <!-- Central highlight -->
-  <ellipse cx="100" cy="45" rx="30" ry="15" fill="#fff" opacity="0.15" />
+  <!-- Subtle highlight for 3D effect -->
+  <ellipse cx="100" cy="50" rx="35" ry="18" fill="#fff" opacity="0.12" />
 </svg>
