@@ -34,6 +34,8 @@ export interface RegistrationMetadata {
   fingerprint: FingerprintMetadata;
   referrerRateLimited?: boolean;
   adjustedRewardMultiplier?: number;
+  /** Callback to record the referral - should be called by parent after successful registration */
+  onSuccessfulRegistration?: () => void;
 }
 
 export const RegistrationForm: FC<RegistrationFormProps> = ({
@@ -134,16 +136,17 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
     const fingerprint = createFingerprintMetadata();
     
     // Create registration metadata
+    // Note: referral recording should be done by the parent component after successful registration
+    // The metadata includes a callback for this purpose
     const metadata: RegistrationMetadata = {
       fingerprint,
       referrerRateLimited,
       adjustedRewardMultiplier: referrerRateLimited ? (1 - REWARD_REDUCTION_PERCENT / 100) : 1,
+      // Callback for parent to record referral after successful registration
+      onSuccessfulRegistration: effectiveReferrer && userWalletAddress 
+        ? () => recordReferral(effectiveReferrer, userWalletAddress)
+        : undefined,
     };
-    
-    // Record the referral for rate limiting (if there's a referrer)
-    if (effectiveReferrer && userWalletAddress) {
-      recordReferral(effectiveReferrer, userWalletAddress);
-    }
     
     onRegister(accountType, effectiveReferrer, metadata);
   };
