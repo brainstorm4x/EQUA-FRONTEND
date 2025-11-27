@@ -84,8 +84,8 @@ describe('Home/Landing Page', () => {
       render(<HomePage />);
       
       const logos = screen.getAllByAltText('EQUA Logo');
-      // Hero logo should be 80px
-      const heroLogo = logos.find(logo => logo.getAttribute('width') === '80');
+      // Hero logo should be 120px (larger to cover the outer circle)
+      const heroLogo = logos.find(logo => logo.getAttribute('width') === '120');
       expect(heroLogo).toBeInTheDocument();
     });
 

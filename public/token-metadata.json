@@ -1,0 +1,30 @@
+{
+  "name": "EQUA Token",
+  "symbol": "EQUA",
+  "description": "EQUA is a utility-first token on Solana with transaction-based price appreciation. Equal Access. Equal Opportunity. Equal Economy.",
+  "image": "https://raw.githubusercontent.com/brainstorm4x/EQUA-FRONTEND/main/public/equa-logo.png",
+  "attributes": [
+    {
+      "trait_type": "Network",
+      "value": "Solana"
+    },
+    {
+      "trait_type": "Standard",
+      "value": "SPL Token"
+    },
+    {
+      "trait_type": "Decimals",
+      "value": "6"
+    }
+  ],
+  "external_url": "https://equa-token.io",
+  "properties": {
+    "files": [
+      {
+        "uri": "https://raw.githubusercontent.com/brainstorm4x/EQUA-FRONTEND/main/public/equa-logo.png",
+        "type": "image/png"
+      }
+    ],
+    "category": "fungible"
+  }
+}

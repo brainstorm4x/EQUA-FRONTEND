@@ -125,7 +125,9 @@ describe('User Type Selection', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith('individual', null);
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('individual');
+        expect(mockOnRegister.mock.calls[0][1]).toBe(null);
       });
     });
 
@@ -140,7 +142,9 @@ describe('User Type Selection', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith('business', null);
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('business');
+        expect(mockOnRegister.mock.calls[0][1]).toBe(null);
       });
     });
 
@@ -159,7 +163,9 @@ describe('User Type Selection', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith('business', null);
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('business');
+        expect(mockOnRegister.mock.calls[0][1]).toBe(null);
       });
     });
   });

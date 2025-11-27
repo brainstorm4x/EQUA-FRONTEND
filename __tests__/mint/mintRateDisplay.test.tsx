@@ -8,6 +8,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { PriceDisplay } from '@/components/PriceDisplay';
 import * as anchor from '@coral-xyz/anchor';
+import { PublicKey } from '@solana/web3.js';
 
 // Mock Solana wallet adapter
 jest.mock('@solana/wallet-adapter-react', () => ({
@@ -18,11 +19,9 @@ jest.mock('@solana/wallet-adapter-react', () => ({
   })),
 }));
 
-// Mock the program ID
+// Mock the program ID with proper PublicKey methods
 jest.mock('@/lib/constants', () => ({
-  PROGRAM_ID: {
-    toBuffer: () => Buffer.from('test'),
-  },
+  PROGRAM_ID: new (require('@solana/web3.js').PublicKey)('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
 }));
 
 // Import after mocks
@@ -38,7 +37,7 @@ describe('Mint Rate Display', () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
-          new anchor.BN(0).toBuffer('le', 8), // total_users = 0
+          Buffer.from(new Uint8Array(new Uint32Array([0]).buffer)), // user_count (u32)
           new anchor.BN(0).toBuffer('le', 8), // total_transactions
           new anchor.BN(0).toBuffer('le', 8), // current_epoch
           Buffer.from([0]), // compounding_complete
@@ -65,7 +64,7 @@ describe('Mint Rate Display', () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
-          new anchor.BN(5).toBuffer('le', 8), // total_users = 5
+          Buffer.from(new Uint8Array(new Uint32Array([5]).buffer)), // user_count (u32) = 5
           new anchor.BN(0).toBuffer('le', 8), // total_transactions
           new anchor.BN(0).toBuffer('le', 8), // current_epoch
           Buffer.from([0]), // compounding_complete
@@ -93,7 +92,7 @@ describe('Mint Rate Display', () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
-          new anchor.BN(50).toBuffer('le', 8), // total_users = 50
+          Buffer.from(new Uint8Array(new Uint32Array([50]).buffer)), // user_count (u32) = 50
           new anchor.BN(0).toBuffer('le', 8), // total_transactions
           new anchor.BN(0).toBuffer('le', 8), // current_epoch
           Buffer.from([0]), // compounding_complete
@@ -121,7 +120,7 @@ describe('Mint Rate Display', () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
-          new anchor.BN(150).toBuffer('le', 8), // total_users = 150
+          Buffer.from(new Uint8Array(new Uint32Array([150]).buffer)), // user_count (u32) = 150
           new anchor.BN(0).toBuffer('le', 8), // total_transactions
           new anchor.BN(0).toBuffer('le', 8), // current_epoch
           Buffer.from([0]), // compounding_complete
@@ -148,7 +147,7 @@ describe('Mint Rate Display', () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
-          new anchor.BN(50).toBuffer('le', 8), // total_users
+          Buffer.from(new Uint8Array(new Uint32Array([50]).buffer)), // user_count (u32)
           new anchor.BN(100).toBuffer('le', 8), // total_transactions
           new anchor.BN(5).toBuffer('le', 8), // current_epoch
           Buffer.from([0]), // compounding_complete
@@ -171,11 +170,11 @@ describe('Mint Rate Display', () => {
       }, { timeout: 3000 });
     });
 
-    it('should display current epoch', async () => {
+    it('should display current phase', async () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
-          new anchor.BN(50).toBuffer('le', 8), // total_users
+          Buffer.from(new Uint8Array(new Uint32Array([50]).buffer)), // user_count (u32)
           new anchor.BN(100).toBuffer('le', 8), // total_transactions
           new anchor.BN(10).toBuffer('le', 8), // current_epoch = 10
           Buffer.from([0]), // compounding_complete
@@ -191,10 +190,10 @@ describe('Mint Rate Display', () => {
       render(<PriceDisplay />);
 
       await waitFor(() => {
-        const epochElement = screen.getByTestId('current-epoch');
-        // Check that epoch is displayed (may be 0 or 10 depending on parsing)
-        expect(epochElement).toBeInTheDocument();
-        expect(epochElement.textContent).toMatch(/Epoch \d+/);
+        const phaseElement = screen.getByTestId('current-phase');
+        // Check that phase is displayed
+        expect(phaseElement).toBeInTheDocument();
+        expect(phaseElement.textContent).toMatch(/Phase/);
       }, { timeout: 3000 });
     });
   });
@@ -266,7 +265,7 @@ describe('Mint Rate Display', () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
-          new anchor.BN(50).toBuffer('le', 8), // total_users
+          Buffer.from(new Uint8Array(new Uint32Array([50]).buffer)), // user_count (u32)
           new anchor.BN(0).toBuffer('le', 8), // total_transactions
           new anchor.BN(0).toBuffer('le', 8), // current_epoch
           Buffer.from([0]), // compounding_complete
@@ -285,7 +284,34 @@ describe('Mint Rate Display', () => {
         expect(screen.getByTestId('price-display')).toBeInTheDocument();
         expect(screen.getByTestId('current-price')).toBeInTheDocument();
         expect(screen.getByTestId('mint-rate')).toBeInTheDocument();
-        expect(screen.getByTestId('current-epoch')).toBeInTheDocument();
+        expect(screen.getByTestId('current-phase')).toBeInTheDocument();
+      }, { timeout: 3000 });
+    });
+  });
+  
+  describe('Stats Display', () => {
+    it('should display user count and transactions when showStats is true', async () => {
+      const mockAccountInfo = {
+        data: Buffer.concat([
+          Buffer.alloc(8), // discriminator
+          Buffer.from(new Uint8Array(new Uint32Array([100]).buffer)), // user_count (u32) = 100
+          new anchor.BN(5000).toBuffer('le', 8), // total_transactions = 5000
+          new anchor.BN(50).toBuffer('le', 8), // current_epoch
+          Buffer.from([0]), // compounding_complete
+        ]),
+      };
+
+      useConnection.mockReturnValue({
+        connection: {
+          getAccountInfo: jest.fn().mockResolvedValue(mockAccountInfo),
+        },
+      });
+
+      render(<PriceDisplay showStats={true} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('total-users')).toBeInTheDocument();
+        expect(screen.getByTestId('total-transactions')).toBeInTheDocument();
       }, { timeout: 3000 });
     });
   });

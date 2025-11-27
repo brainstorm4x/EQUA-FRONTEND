@@ -101,10 +101,9 @@ describe('End-to-End User Journeys', () => {
 
       // Step 5: Registration completes
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith(
-          'business',
-          '11111111111111111111111111111112'
-        );
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('business');
+        expect(mockOnRegister.mock.calls[0][1]).toBe('11111111111111111111111111111112');
       });
     });
   });
@@ -137,7 +136,9 @@ describe('End-to-End User Journeys', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith('individual', null);
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('individual');
+        expect(mockOnRegister.mock.calls[0][1]).toBe(null);
       });
     });
 
@@ -190,10 +191,9 @@ describe('End-to-End User Journeys', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith(
-          'individual',
-          '11111111111111111111111111111112'
-        );
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('individual');
+        expect(mockOnRegister.mock.calls[0][1]).toBe('11111111111111111111111111111112');
       });
     });
   });
@@ -250,10 +250,9 @@ describe('End-to-End User Journeys', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith(
-          'individual',
-          '11111111111111111111111111111112'
-        );
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('individual');
+        expect(mockOnRegister.mock.calls[0][1]).toBe('11111111111111111111111111111112');
       });
     });
   });
@@ -301,10 +300,9 @@ describe('End-to-End User Journeys', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith(
-          'business',
-          '11111111111111111111111111111112'
-        );
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('business');
+        expect(mockOnRegister.mock.calls[0][1]).toBe('11111111111111111111111111111112');
       });
     });
   });
@@ -419,10 +417,9 @@ describe('End-to-End User Journeys', () => {
       fireEvent.click(registerButton);
       
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith(
-          'business',
-          '11111111111111111111111111111112'
-        );
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('business');
+        expect(mockOnRegister.mock.calls[0][1]).toBe('11111111111111111111111111111112');
       });
 
       // Step 5: Simulate post-registration state

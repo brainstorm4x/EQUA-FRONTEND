@@ -27,7 +27,15 @@ export default function HomePage() {
               <Logo size={40} />
               <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
             </Link>
-            <WalletButton />
+            <nav className="hidden md:flex items-center gap-6">
+              <Link href="/whitepaper" className="text-purple-200 hover:text-white transition-colors">
+                Whitepaper
+              </Link>
+              <WalletButton />
+            </nav>
+            <div className="md:hidden">
+              <WalletButton />
+            </div>
           </div>
         </div>
       </header>
@@ -36,8 +44,8 @@ export default function HomePage() {
       <div className="container mx-auto px-4 py-20">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-8">
-            <div className="inline-block p-4 bg-white/10 rounded-full mb-6">
-              <Logo size={80} />
+            <div className="inline-block p-6 bg-white/10 rounded-full mb-6">
+              <Logo size={120} />
             </div>
           </div>
           
@@ -50,13 +58,19 @@ export default function HomePage() {
             time-locked rewards, and referral bonuses.
           </p>
 
-          <div className="flex gap-4 justify-center mb-16">
+          <div className="flex flex-wrap gap-4 justify-center mb-16">
             <Link
               href="/mint"
               className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg"
               data-testid="get-started-cta"
             >
               Get Started →
+            </Link>
+            <Link
+              href="/whitepaper"
+              className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg backdrop-blur-sm"
+            >
+              Read Whitepaper
             </Link>
             <a
               href="https://explorer.solana.com/address/BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL?cluster=devnet"
@@ -68,8 +82,8 @@ export default function HomePage() {
             </a>
           </div>
 
-          {/* Price and Minting Rate Display */}
-          <PriceDisplay className="mb-16" />
+          {/* Price, Users, and Transactions Display */}
+          <PriceDisplay className="mb-16" showStats={true} />
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-6 mt-16">
@@ -85,7 +99,7 @@ export default function HomePage() {
               <div className="text-4xl mb-4">📈</div>
               <h3 className="text-xl font-bold text-white mb-2">Price Appreciation</h3>
               <p className="text-purple-200">
-                Dynamic pricing with compounding and linear phases
+                Three-phase pricing: 0.1% per 100 tx, then 0.01% per 1000 tx, then $100 per 1000 tx
               </p>
             </div>
 
@@ -93,7 +107,7 @@ export default function HomePage() {
               <div className="text-4xl mb-4">🎁</div>
               <h3 className="text-xl font-bold text-white mb-2">Referral Rewards</h3>
               <p className="text-purple-200">
-                Earn 10% bonus when you refer new users to the platform
+                Earn 1% of referral&apos;s minted allocation when you refer new users
               </p>
             </div>
           </div>
