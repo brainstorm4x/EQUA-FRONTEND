@@ -90,7 +90,9 @@ describe('Threshold Referral Requirement', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith('individual', null);
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('individual');
+        expect(mockOnRegister.mock.calls[0][1]).toBe(null);
       });
     });
 
@@ -111,7 +113,9 @@ describe('Threshold Referral Requirement', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith('individual', null);
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('individual');
+        expect(mockOnRegister.mock.calls[0][1]).toBe(null);
       });
     });
 
@@ -132,7 +136,9 @@ describe('Threshold Referral Requirement', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith('individual', null);
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('individual');
+        expect(mockOnRegister.mock.calls[0][1]).toBe(null);
       });
     });
 
@@ -165,10 +171,9 @@ describe('Threshold Referral Requirement', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith(
-          'individual',
-          '11111111111111111111111111111112'
-        );
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('individual');
+        expect(mockOnRegister.mock.calls[0][1]).toBe('11111111111111111111111111111112');
       });
     });
   });
@@ -235,10 +240,9 @@ describe('Threshold Referral Requirement', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith(
-          'individual',
-          '11111111111111111111111111111112'
-        );
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('individual');
+        expect(mockOnRegister.mock.calls[0][1]).toBe('11111111111111111111111111111112');
       });
     });
   });
@@ -331,10 +335,9 @@ describe('Threshold Referral Requirement', () => {
       fireEvent.click(registerButton);
 
       await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalledWith(
-          'business',
-          '11111111111111111111111111111112'
-        );
+        expect(mockOnRegister).toHaveBeenCalled();
+        expect(mockOnRegister.mock.calls[0][0]).toBe('business');
+        expect(mockOnRegister.mock.calls[0][1]).toBe('11111111111111111111111111111112');
       });
     });
   });

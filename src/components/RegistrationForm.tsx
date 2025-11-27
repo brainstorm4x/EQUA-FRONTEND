@@ -13,13 +13,27 @@ import {
 import { ReferralStatusIndicator } from './ReferralStatusIndicator';
 import { useReferralResolution } from '@/hooks/useReferralResolution';
 import { ReferralState } from '@/types/referral';
+import { createFingerprintMetadata, FingerprintMetadata } from '@/utils/deviceFingerprint';
+import { 
+  recordReferral, 
+  getRateLimitStatus, 
+  REFERRAL_RATE_LIMIT,
+  REWARD_REDUCTION_PERCENT 
+} from '@/utils/referralRateLimit';
 
 interface RegistrationFormProps {
   totalUsers: number;
   walletBalance: number; // in lamports
-  onRegister: (accountType: AccountType, referrer: string | null) => void;
+  onRegister: (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => void;
   isLoading: boolean;
   validateReferrer?: (referrer: string) => Promise<boolean>;
+  userWalletAddress?: string;
+}
+
+export interface RegistrationMetadata {
+  fingerprint: FingerprintMetadata;
+  referrerRateLimited?: boolean;
+  adjustedRewardMultiplier?: number;
 }
 
 export const RegistrationForm: FC<RegistrationFormProps> = ({
@@ -28,11 +42,13 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   onRegister,
   isLoading,
   validateReferrer,
+  userWalletAddress,
 }) => {
   const [accountType, setAccountType] = useState<AccountType>('individual');
   const [referrer, setReferrer] = useState('');
   const [referrerError, setReferrerError] = useState('');
   const [isValidatingReferrer, setIsValidatingReferrer] = useState(false);
+  const [referrerRateLimited, setReferrerRateLimited] = useState(false);
   
   // Use the referral resolution hook for code validation
   const referralResolution = useReferralResolution(referrer);
@@ -40,6 +56,16 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   const referralRequired = isReferralRequired(totalUsers);
   const hasSufficientBalance = hasMinimumSolBalance(walletBalance);
   const balanceSOL = formatSolBalance(walletBalance);
+
+  // Check referrer rate limit when referrer changes
+  useEffect(() => {
+    if (referralResolution.referrerPubkey) {
+      const rateLimitStatus = getRateLimitStatus(referralResolution.referrerPubkey);
+      setReferrerRateLimited(rateLimitStatus.isRateLimited);
+    } else {
+      setReferrerRateLimited(false);
+    }
+  }, [referralResolution.referrerPubkey]);
 
   // Validate referrer when it changes
   const validateReferrerInput = useCallback(async (value: string) => {
@@ -104,7 +130,22 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
     // Use the resolved referrer public key from the hook if available
     const effectiveReferrer = referralResolution.referrerPubkey || referrer.trim() || null;
     
-    onRegister(accountType, effectiveReferrer);
+    // Generate fingerprint metadata
+    const fingerprint = createFingerprintMetadata();
+    
+    // Create registration metadata
+    const metadata: RegistrationMetadata = {
+      fingerprint,
+      referrerRateLimited,
+      adjustedRewardMultiplier: referrerRateLimited ? (1 - REWARD_REDUCTION_PERCENT / 100) : 1,
+    };
+    
+    // Record the referral for rate limiting (if there's a referrer)
+    if (effectiveReferrer && userWalletAddress) {
+      recordReferral(effectiveReferrer, userWalletAddress);
+    }
+    
+    onRegister(accountType, effectiveReferrer, metadata);
   };
 
   // Check if referral code validation has an error state
@@ -247,6 +288,16 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
             referrerPubkey={referralResolution.referrerPubkey}
           />
         </div>
+        
+        {/* Referrer Rate Limit Warning */}
+        {referrerRateLimited && referralResolution.isValid && (
+          <div className="bg-orange-500/20 border border-orange-500/50 rounded-xl p-3 mt-3">
+            <p className="text-orange-200 text-sm">
+              ⚠️ This referrer has exceeded {REFERRAL_RATE_LIMIT} referrals in the past 24 hours.
+              Their referral reward will be reduced by {REWARD_REDUCTION_PERCENT}%.
+            </p>
+          </div>
+        )}
         
         {referrerError && (
           <p id="referrer-error" className="text-red-400 text-sm mt-2" role="alert">
