@@ -113,11 +113,15 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
   const getPhaseLabel = (phase: PricePhase): string => {
     switch (phase) {
       case 'phase1':
-        return 'Phase 1 (Early Growth)';
+        return 'Phase 1 ($0.01-$1)';
       case 'phase2':
-        return 'Phase 2 (Scaling)';
+        return 'Phase 2 ($1-$10)';
       case 'phase3':
-        return 'Phase 3 (Perpetual)';
+        return 'Phase 3 ($10-$100)';
+      case 'phase4':
+        return 'Phase 4 ($100-$200k)';
+      case 'phase5':
+        return 'Phase 5 (Perpetual)';
     }
   };
 

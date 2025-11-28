@@ -443,7 +443,9 @@ export default function MintPage() {
       }
 
       const now = Math.floor(Date.now() / 1000);
-      const lockUntil = now + (2 * 365 * 24 * 60 * 60);
+      // Set lock period to zero - EQUA is a utility token for buying/selling goods and services
+      // No lock period is needed since EQUA is not being sold and maintains its value
+      const lockUntil = now;
 
       console.log('Accounts:');
       console.log('- User Account:', userAccountKeypair.publicKey.toBase58());

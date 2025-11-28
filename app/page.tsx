@@ -54,8 +54,8 @@ export default function HomePage() {
           </h1>
           
           <p className="text-xl text-purple-200 mb-8 max-w-2xl mx-auto">
-            A revolutionary token system on Solana blockchain with price appreciation, 
-            time-locked rewards, and referral bonuses.
+            A revolutionary token system on Solana blockchain with price appreciation 
+            and referral bonuses.
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center mb-16">
