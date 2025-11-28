@@ -17,7 +17,7 @@ import {
 } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
-import { formatEquaRaw } from '@/utils/tokenFormat';
+import { formatEquaBalance } from '@/utils/tokenFormat';
 import { RegistrationForm } from '@/components/RegistrationForm';
 import { MintTierCard } from '@/components/MintTierCard';
 import { 
@@ -31,11 +31,11 @@ import { safeParseUserCount, safeParseTimestamp } from '@/utils/safeAccountParsi
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
 
-// EQUA token base units per standard mint (1000 EQUA = 1_000_000_000 base units with 6 decimals)
-const EQUA_PER_STANDARD_MINT_BASE_UNITS = 1_000_000_000;
+// EQUA decimal multiplier (9 decimals)
+const EQUA_BASE_UNITS_MULTIPLIER = 1_000_000_000;
 
-// EQUA decimal multiplier (6 decimals)
-const EQUA_BASE_UNITS_MULTIPLIER = 1_000_000;
+// Default EQUA per mint for standard users (100 EQUA) - used as fallback
+const DEFAULT_EQUA_PER_MINT = 100;
 
 // Maximum reasonable user count (prevents overflow/invalid values)
 const MAX_REASONABLE_USERS = 10_000_000;
@@ -247,6 +247,7 @@ export default function MintPage() {
           if (accountInfo && accountInfo.data.length >= 144) {
             // Note: user_number might not be stored in the account structure
             // Check if there's additional data beyond the standard fields
+            let currentUserNumber = 0;
             if (accountInfo.data.length >= 152) {
               // Read user_number at offset 144 if it exists
               const userNumRaw = new anchor.BN(
@@ -256,18 +257,23 @@ export default function MintPage() {
               const userNum = userNumRaw.toNumber();
               if (userNum > 0 && userNum < MAX_REASONABLE_USER_NUMBER) { // Sanity check
                 setUserNumber(userNum);
+                currentUserNumber = userNum;
               } else {
                 // Fallback: use stored value or estimate from global state
                 const stored = localStorage.getItem('equa_user_number');
                 if (stored) {
-                  setUserNumber(parseInt(stored, 10));
+                  const storedNum = parseInt(stored, 10);
+                  setUserNumber(storedNum);
+                  currentUserNumber = storedNum;
                 }
               }
             } else {
               // No user_number in account, try to get from localStorage
               const stored = localStorage.getItem('equa_user_number');
               if (stored) {
-                setUserNumber(parseInt(stored, 10));
+                const storedNum = parseInt(stored, 10);
+                setUserNumber(storedNum);
+                currentUserNumber = storedNum;
               }
             }
             
@@ -276,13 +282,12 @@ export default function MintPage() {
               accountInfo.data.slice(104, 112),
               'le'
             );
-            // Estimate total mints - this is an approximation
-            // NOTE: Since users have different tier rates (100, 1000, 10000, or 100000 EQUA per mint),
-            // this estimation using EQUA_PER_STANDARD_MINT_BASE_UNITS (1000 EQUA) won't be exact
-            // for users in higher tiers. This is acceptable for UI display purposes as it shows
-            // approximate activity. For accurate tracking, the smart contract would need to store
-            // a mint_count field.
-            setTotalMints(Math.floor(mintedAmountRaw.toNumber() / EQUA_PER_STANDARD_MINT_BASE_UNITS));
+            // Calculate total mints based on user's tier rate
+            // Get the user's tier to know how many EQUA they get per mint
+            const userTier = getUserMintTier(currentUserNumber);
+            const equaPerMint = userTier?.equaPerAttempt || DEFAULT_EQUA_PER_MINT;
+            const baseUnitsPerMint = equaPerMint * EQUA_BASE_UNITS_MULTIPLIER;
+            setTotalMints(Math.floor(mintedAmountRaw.toNumber() / baseUnitsPerMint));
           }
         } catch (e) {
           console.error('Error reading user data:', e);
@@ -654,10 +659,10 @@ export default function MintPage() {
       }
 
       // ✅ Now mint tokens
-      // Calculate mint amount based on user tier (EQUA has 6 decimals)
+      // Calculate mint amount based on user tier (EQUA has 9 decimals)
       const userTier = getUserMintTier(userNumber || totalUsers + 1);
-      const equaAmount = userTier?.equaPerAttempt || 1000; // Default to 1000 EQUA
-      const mintAmount = equaAmount * EQUA_BASE_UNITS_MULTIPLIER; // Convert to base units (6 decimals)
+      const equaAmount = userTier?.equaPerAttempt || DEFAULT_EQUA_PER_MINT;
+      const mintAmount = equaAmount * EQUA_BASE_UNITS_MULTIPLIER; // Convert to base units (9 decimals)
       
       console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${userNumber}`);
       
@@ -928,7 +933,7 @@ export default function MintPage() {
                   <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
                     <h3 className="text-purple-200 text-lg mb-4 text-center">Your Balance</h3>
                     <p className="text-white font-bold text-5xl text-center mb-2">
-                      {formatEquaRaw(balance, { trimTrailingZeros: true })}
+                      {formatEquaBalance(balance)}
                     </p>
                     <p className="text-purple-300 text-center">EQUA</p>
                     {userNumber > 0 && (
@@ -938,8 +943,8 @@ export default function MintPage() {
                     )}
                   </div>
                   
-                  {/* Mint Tier Card for registered users */}
-                  {userNumber > 0 && (
+                  {/* Mint Tier Card for registered users - only show for elevated users (first 100) */}
+                  {userNumber > 0 && userNumber <= 100 && (
                     <MintTierCard userNumber={userNumber} totalMints={totalMints} />
                   )}
                 </div>

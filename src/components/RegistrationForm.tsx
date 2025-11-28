@@ -20,6 +20,7 @@ import {
   REFERRAL_RATE_LIMIT,
   REWARD_REDUCTION_PERCENT 
 } from '@/utils/referralRateLimit';
+import { recordRegistration } from '@/utils/registrationStats';
 
 interface RegistrationFormProps {
   totalUsers: number;
@@ -144,8 +145,15 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
       adjustedRewardMultiplier: referrerRateLimited ? (1 - REWARD_REDUCTION_PERCENT / 100) : 1,
       // Callback for parent to record referral after successful registration
       onSuccessfulRegistration: effectiveReferrer && userWalletAddress 
-        ? () => recordReferral(effectiveReferrer, userWalletAddress)
-        : undefined,
+        ? () => {
+            recordReferral(effectiveReferrer, userWalletAddress);
+            // Also record the registration type
+            recordRegistration(accountType);
+          }
+        : () => {
+            // Record registration type even without referrer
+            recordRegistration(accountType);
+          },
     };
     
     onRegister(accountType, effectiveReferrer, metadata);

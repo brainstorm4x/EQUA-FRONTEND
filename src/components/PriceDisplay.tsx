@@ -8,6 +8,7 @@ import { PROGRAM_ID } from '@/lib/constants';
 import { safeParseUserCount } from '@/utils/safeAccountParsing';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import * as anchor from '@coral-xyz/anchor';
+import { getRegistrationStats } from '@/utils/registrationStats';
 
 interface PriceDisplayProps {
   className?: string;
@@ -18,8 +19,10 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
   const { connection } = useConnection();
   const [currentPrice, setCurrentPrice] = useState<number>(0.01);
   const [currentEpoch, setCurrentEpoch] = useState<number>(0);
-  const [totalTransactions, setTotalTransactions] = useState<number>(0);
+  const [totalTransfers, setTotalTransfers] = useState<number>(0);
   const [totalUsers, setTotalUsers] = useState<number>(0);
+  const [individualUsers, setIndividualUsers] = useState<number>(0);
+  const [businessUsers, setBusinessUsers] = useState<number>(0);
   const [currentPhase, setCurrentPhase] = useState<PricePhase>('phase1');
   const [isLoading, setIsLoading] = useState(true);
   const [mintingRate, setMintingRate] = useState<string>('1,000 - 100,000');
@@ -42,20 +45,32 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           setTotalUsers(users);
           
           // Parse total_transactions at offset 12 (8 discriminator + 4 user_count)
-          const transactions = new anchor.BN(
+          // Note: This includes minting and registration. For true transfers count,
+          // we need to track separately. For now, we estimate transfers = total - registrations
+          const totalTx = new anchor.BN(
             accountInfo.data.slice(12, 20),
             'le'
           ).toNumber();
-          setTotalTransactions(transactions);
+          
+          // Estimate transfers: total transactions minus registrations (each user creates 1 registration tx)
+          // and minus mints (approximately users * average_mints_per_user)
+          // For accurate tracking, this should be stored in the smart contract
+          const estimatedTransfers = Math.max(0, totalTx - users);
+          setTotalTransfers(estimatedTransfers);
           
           // Calculate price using the new three-phase model
-          const price = EquaPriceCalculator.calculatePrice(transactions);
-          const phase = EquaPriceCalculator.getPhase(transactions);
-          const epoch = EquaPriceCalculator.getCurrentEpoch(transactions);
+          const price = EquaPriceCalculator.calculatePrice(totalTx);
+          const phase = EquaPriceCalculator.getPhase(totalTx);
+          const epoch = EquaPriceCalculator.getCurrentEpoch(totalTx);
           
           setCurrentPrice(price);
           setCurrentEpoch(epoch);
           setCurrentPhase(phase);
+          
+          // Get registration stats from localStorage
+          const stats = getRegistrationStats();
+          setIndividualUsers(stats.individualCount);
+          setBusinessUsers(stats.businessCount);
           
           // Calculate minting rate based on total users and tier configuration
           const nextUserNumber = users + 1;
@@ -84,8 +99,10 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           // Default values if global state doesn't exist yet
           setCurrentPrice(0.01);
           setCurrentEpoch(0);
-          setTotalTransactions(0);
+          setTotalTransfers(0);
           setTotalUsers(0);
+          setIndividualUsers(0);
+          setBusinessUsers(0);
           setCurrentPhase('phase1');
           setMintingRate('100,000');
         }
@@ -94,8 +111,10 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         // Use default values on error
         setCurrentPrice(0.01);
         setCurrentEpoch(0);
-        setTotalTransactions(0);
+        setTotalTransfers(0);
         setTotalUsers(0);
+        setIndividualUsers(0);
+        setBusinessUsers(0);
         setCurrentPhase('phase1');
         setMintingRate('1,000 - 100,000');
       } finally {
@@ -163,15 +182,19 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
               <p className="text-white text-3xl font-bold" data-testid="total-users">
                 {totalUsers.toLocaleString()}
               </p>
-              <p className="text-purple-300 text-xs mt-1">Total users</p>
+              <p className="text-purple-300 text-xs mt-1">
+                {individualUsers > 0 || businessUsers > 0 
+                  ? `👤 ${individualUsers} | 🏢 ${businessUsers}`
+                  : 'Total users'}
+              </p>
             </div>
 
             <div>
-              <p className="text-purple-200 text-sm mb-2">Transactions</p>
+              <p className="text-purple-200 text-sm mb-2">Transfers</p>
               <p className="text-white text-3xl font-bold" data-testid="total-transactions">
-                {totalTransactions.toLocaleString()}
+                {totalTransfers.toLocaleString()}
               </p>
-              <p className="text-purple-300 text-xs mt-1">Epoch {currentEpoch.toLocaleString()}</p>
+              <p className="text-purple-300 text-xs mt-1">Between users</p>
             </div>
           </>
         )}
