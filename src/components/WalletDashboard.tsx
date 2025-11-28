@@ -127,8 +127,8 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           <Logo size={32} />
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-white text-4xl font-bold">
-            {formatEquaBalance(balance)}
+          <span className="text-white text-4xl font-bold" data-testid="equa-balance">
+            {balance > 0 ? formatEquaBalance(balance) : '--'}
           </span>
           <span className="text-purple-300 text-xl">EQUA</span>
         </div>

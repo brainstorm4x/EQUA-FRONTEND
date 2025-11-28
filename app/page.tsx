@@ -20,6 +20,11 @@ const WalletDashboard = dynamic(
   { ssr: false }
 );
 
+const GetStartedButton = dynamic(
+  () => import('@/components/GetStartedButton').then((mod) => ({ default: mod.GetStartedButton })),
+  { ssr: false }
+);
+
 
 export default function HomePage() {
   return (
@@ -67,13 +72,7 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center mb-16">
-            <Link
-              href="/mint"
-              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg"
-              data-testid="get-started-cta"
-            >
-              Get Started →
-            </Link>
+            <GetStartedButton />
             <Link
               href="/whitepaper"
               className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg backdrop-blur-sm"

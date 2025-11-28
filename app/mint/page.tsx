@@ -18,7 +18,7 @@ import {
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
 import { formatEquaBalance } from '@/utils/tokenFormat';
-import { RegistrationForm } from '@/components/RegistrationForm';
+import { RegistrationForm, RegistrationMetadata } from '@/components/RegistrationForm';
 import { MintTierCard } from '@/components/MintTierCard';
 import { 
   AccountType, 
@@ -346,7 +346,7 @@ export default function MintPage() {
     }
   }, [connection]);
 
-  const handleRegisterWithForm = async (accountType: AccountType, referrer: string | null) => {
+  const handleRegisterWithForm = async (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => {
     if (!wallet.connected || !publicKey || !userAccountKeypair) {
       setError('Wallet not connected');
       return;
@@ -373,6 +373,23 @@ export default function MintPage() {
       console.log('Public key:', publicKey.toBase58());
       console.log('Account type:', accountType);
       console.log('Referrer:', referrer || 'None');
+      
+      // Log fingerprint metadata for Sybil prevention
+      if (metadata?.fingerprint) {
+        console.log('🔐 Device fingerprint:', metadata.fingerprint.fingerprint);
+        // Store fingerprint in localStorage for duplicate detection
+        if (typeof window !== 'undefined') {
+          const existingFingerprints = JSON.parse(localStorage.getItem('equa_registered_fingerprints') || '[]');
+          if (existingFingerprints.includes(metadata.fingerprint.fingerprint)) {
+            console.warn('⚠️ Duplicate fingerprint detected - potential Sybil attempt');
+          }
+          existingFingerprints.push(metadata.fingerprint.fingerprint);
+          localStorage.setItem('equa_registered_fingerprints', JSON.stringify(existingFingerprints));
+          
+          // Also store the fingerprint with wallet association
+          localStorage.setItem(`equa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
+        }
+      }
 
       // First, verify that the mint account exists on-chain
       console.log('🔍 Verifying mint account exists...');
@@ -527,6 +544,12 @@ export default function MintPage() {
         const registrationNumber = totalUsers + 1;
         localStorage.setItem('equa_user_number', registrationNumber.toString());
         console.log(`📝 Saved user registration number: ${registrationNumber}`);
+      }
+      
+      // Call the metadata callback for referral/registration recording
+      if (metadata?.onSuccessfulRegistration) {
+        metadata.onSuccessfulRegistration();
+        console.log('📝 Registration metadata recorded');
       }
 
       await checkUserRegistration();

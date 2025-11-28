@@ -222,7 +222,9 @@ export default function MerchantsPage() {
 
             {/* Footer */}
             <div className="text-center pt-8 border-t border-purple-500/30">
-              <Logo size={60} />
+              <div className="flex justify-center">
+                <Logo size={60} />
+              </div>
               <p className="text-2xl font-bold text-white mb-2 mt-4">EQUA</p>
               <p className="text-purple-300">Equal Access. Equal Opportunity. Equal Economy.</p>
             </div>
