@@ -3,7 +3,7 @@
 import { FC, useEffect, useState } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
-import { EquaPriceCalculator, PricePhase } from '@/utils/priceCalculator';
+import { EquaPriceCalculator, PricePhase, formatEquaPrice } from '@/utils/priceCalculator';
 import { PROGRAM_ID } from '@/lib/constants';
 import { safeParseUserCount } from '@/utils/safeAccountParsing';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
@@ -55,13 +55,15 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           // Estimate transfers: total transactions minus registrations (each user creates 1 registration tx)
           // and minus mints (approximately users * average_mints_per_user)
           // For accurate tracking, this should be stored in the smart contract
-          const estimatedTransfers = Math.max(0, totalTx - users);
+          // For now, consider only user-to-user transfers for price calculation
+          const estimatedTransfers = Math.max(0, totalTx - users * 2); // Subtract registrations and initial mints
           setTotalTransfers(estimatedTransfers);
           
-          // Calculate price using the new three-phase model
-          const price = EquaPriceCalculator.calculatePrice(totalTx);
-          const phase = EquaPriceCalculator.getPhase(totalTx);
-          const epoch = EquaPriceCalculator.getCurrentEpoch(totalTx);
+          // Calculate price based on TRANSFERS only (not all transactions)
+          // Price appreciates based on actual economic activity (transfers between users)
+          const price = EquaPriceCalculator.calculatePrice(estimatedTransfers);
+          const phase = EquaPriceCalculator.getPhase(estimatedTransfers);
+          const epoch = EquaPriceCalculator.getCurrentEpoch(estimatedTransfers);
           
           setCurrentPrice(price);
           setCurrentEpoch(epoch);
@@ -73,30 +75,22 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           setBusinessUsers(stats.businessCount);
           
           // Calculate minting rate based on total users and tier configuration
+          // Show the current tier rate (what the next user will get), not a range
           const nextUserNumber = users + 1;
           const currentTier = ELEVATED_MINT_TIERS.find(
             tier => nextUserNumber >= tier.minUser && nextUserNumber <= tier.maxUser
           );
           
           if (currentTier) {
-            if (users === 0) {
-              // First user gets 100,000
-              setMintingRate('100,000');
-            } else if (users < 10) {
-              // Next users get 10,000-100,000 range
-              setMintingRate('10,000 - 100,000');
-            } else if (users < 100) {
-              // Users 11-100 get 1,000-10,000 range
-              setMintingRate('1,000 - 10,000');
-            } else {
-              // All other users get 100
-              setMintingRate('100');
-            }
+            // Show the exact EQUA per attempt for the current tier
+            setMintingRate(currentTier.equaPerAttempt.toLocaleString());
           } else {
+            // Default for standard users
             setMintingRate('100');
           }
         } else {
           // Default values if global state doesn't exist yet
+          // First user gets 100,000
           setCurrentPrice(0.01);
           setCurrentEpoch(0);
           setTotalTransfers(0);
@@ -108,7 +102,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         }
       } catch (error) {
         console.error('Error fetching price data:', error);
-        // Use default values on error
+        // Use default values on error - show current tier for first user
         setCurrentPrice(0.01);
         setCurrentEpoch(0);
         setTotalTransfers(0);
@@ -116,7 +110,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         setIndividualUsers(0);
         setBusinessUsers(0);
         setCurrentPhase('phase1');
-        setMintingRate('1,000 - 100,000');
+        setMintingRate('100,000');
       } finally {
         setIsLoading(false);
       }
@@ -161,10 +155,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         <div>
           <p className="text-purple-200 text-sm mb-2">Current EQUA Price</p>
           <p className="text-white text-3xl font-bold" data-testid="current-price">
-            ${currentPrice < 1 ? currentPrice.toFixed(4) : currentPrice.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}
+            {formatEquaPrice(currentPrice)}
           </p>
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">{getPhaseLabel(currentPhase)}</p>
         </div>
