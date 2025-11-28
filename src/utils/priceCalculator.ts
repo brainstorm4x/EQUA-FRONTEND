@@ -68,22 +68,25 @@ export class EquaPriceCalculator {
   private static readonly PHASE5_INCREMENT = 100; // $100 per epoch (0.05% of $200,000)
   private static readonly PHASE5_MONTHLY_CAP = 25_000; // $25,000 max per month
 
-  // Calculate epochs needed to reach price thresholds
+  // Calculate epochs needed to reach price thresholds dynamically
   // Phase 1: $0.01 to $1 = growth of 100x = ln(100) / ln(1.001) ≈ 4605 epochs
   private static readonly PHASE1_END_EPOCH = Math.ceil(Math.log(100) / Math.log(1.001)); // ~4605
-  private static readonly PHASE1_END_TRANSACTIONS = 4605 * 1; // 4,605 transactions
+  private static readonly PHASE1_END_TRANSACTIONS = EquaPriceCalculator.PHASE1_END_EPOCH * EquaPriceCalculator.PHASE1_TX_PER_EPOCH;
   
   // Phase 2: $1 to $10 = growth of 10x = ln(10) / ln(1.001) ≈ 2303 epochs
   private static readonly PHASE2_EPOCHS_DURATION = Math.ceil(Math.log(10) / Math.log(1.001)); // ~2303
-  private static readonly PHASE2_END_TRANSACTIONS = 4605 + (2303 * 10); // 4,605 + 23,030 = 27,635
+  private static readonly PHASE2_END_TRANSACTIONS = EquaPriceCalculator.PHASE1_END_TRANSACTIONS + 
+    (EquaPriceCalculator.PHASE2_EPOCHS_DURATION * EquaPriceCalculator.PHASE2_TX_PER_EPOCH);
   
   // Phase 3: $10 to $100 = growth of 10x = ln(10) / ln(1.001) ≈ 2303 epochs
   private static readonly PHASE3_EPOCHS_DURATION = Math.ceil(Math.log(10) / Math.log(1.001)); // ~2303
-  private static readonly PHASE3_END_TRANSACTIONS = 27635 + (2303 * 100); // 27,635 + 230,300 = 257,935
+  private static readonly PHASE3_END_TRANSACTIONS = EquaPriceCalculator.PHASE2_END_TRANSACTIONS + 
+    (EquaPriceCalculator.PHASE3_EPOCHS_DURATION * EquaPriceCalculator.PHASE3_TX_PER_EPOCH);
   
   // Phase 4: $100 to $200,000 = growth of 2000x = ln(2000) / ln(1.0001) ≈ 76012 epochs
   private static readonly PHASE4_EPOCHS_DURATION = Math.ceil(Math.log(2000) / Math.log(1.0001)); // ~76012
-  private static readonly PHASE4_END_TRANSACTIONS = 257935 + (76012 * 1000); // 257,935 + 76,012,000 = 76,269,935
+  private static readonly PHASE4_END_TRANSACTIONS = EquaPriceCalculator.PHASE3_END_TRANSACTIONS + 
+    (EquaPriceCalculator.PHASE4_EPOCHS_DURATION * EquaPriceCalculator.PHASE4_TX_PER_EPOCH);
 
   /**
    * Determine the current price phase based on total transactions

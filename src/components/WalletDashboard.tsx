@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState, useEffect, useCallback } from 'react';
+import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import { 
@@ -240,6 +240,40 @@ const SendModal: FC<SendModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [txSignature, setTxSignature] = useState('');
+  const [showQRScanner, setShowQRScanner] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle QR code image upload - placeholder for future implementation
+  // Note: Full QR parsing would require a library like jsQR
+  const handleQRUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // For now, inform user about the limitation
+    setError('QR scanning coming soon! Please paste the address manually for now.');
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Handle paste from clipboard
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      // Try to validate as Solana address
+      try {
+        new PublicKey(text.trim());
+        setRecipientAddress(text.trim());
+        setError('');
+      } catch {
+        setError('Clipboard does not contain a valid Solana address');
+      }
+    } catch (err) {
+      setError('Could not read from clipboard');
+    }
+  };
 
   const handleSend = async () => {
     if (!recipientAddress || !amount || !signTransaction) return;
@@ -382,6 +416,26 @@ const SendModal: FC<SendModalProps> = ({
                 placeholder="Enter Solana address"
                 className="w-full bg-white/10 border-2 border-purple-500/30 rounded-xl px-4 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:border-purple-500"
               />
+              
+              {/* Quick actions for address input */}
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={handlePaste}
+                  className="flex-1 bg-purple-500/20 hover:bg-purple-500/40 text-purple-200 py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
+                >
+                  📋 Paste
+                </button>
+                <label className="flex-1 bg-purple-500/20 hover:bg-purple-500/40 text-purple-200 py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1 cursor-pointer">
+                  📷 Upload QR
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleQRUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="mb-4">
@@ -440,7 +494,9 @@ interface ReceiveModalProps {
 
 const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
   const [copied, setCopied] = useState(false);
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${publicKey.toBase58()}`;
+  // Using a public QR code API - the address is a public key anyway
+  // Note: For production, consider using a client-side QR library like 'qrcode' package
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(publicKey.toBase58())}`;
 
   const copyAddress = async () => {
     await navigator.clipboard.writeText(publicKey.toBase58());

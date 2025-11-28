@@ -53,7 +53,7 @@ export function safeParseUserCount(
     // Extract the raw bytes
     const rawBytes = accountData.slice(offset, offset + length);
     
-    // Parse as little-endian u64
+    // Parse as little-endian u32 (or u64 if length is 8)
     const rawValue = new anchor.BN(rawBytes, 'le');
     
     // Check for overflow: value should fit in JavaScript's safe integer range
