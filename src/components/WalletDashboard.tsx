@@ -25,6 +25,27 @@ interface WalletDashboardProps {
 const EQUA_DECIMALS = 9;
 const EQUA_MULTIPLIER = Math.pow(10, EQUA_DECIMALS);
 
+// Shared constants for referral messages
+const EQUA_SHARE_BASE_URL = 'https://equa.live/mint';
+
+/**
+ * Generates a referral message for sharing
+ * @param pubkeyBase58 - The public key in base58 format
+ * @returns The formatted referral message
+ */
+function generateReferralMessage(pubkeyBase58: string): string {
+  return `Join EQUA Token - A revolutionary token system on Solana with price appreciation! Use my referral: ${pubkeyBase58}\n\nGet started: ${EQUA_SHARE_BASE_URL}`;
+}
+
+/**
+ * Generates a referral URL for sharing
+ * @param pubkeyBase58 - The public key in base58 format
+ * @returns The referral URL with ref parameter
+ */
+function generateReferralUrl(pubkeyBase58: string): string {
+  return `${EQUA_SHARE_BASE_URL}?ref=${pubkeyBase58}`;
+}
+
 export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) => {
   const { publicKey, connected, signTransaction } = useWallet();
   const { connection } = useConnection();
@@ -572,9 +593,11 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
   const [copied, setCopied] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
   
-  const referralMessage = `Join EQUA Token - A revolutionary token system on Solana with price appreciation! Use my referral: ${publicKey.toBase58()}\n\nGet started: https://equa.live/mint`;
+  const pubkeyBase58 = publicKey.toBase58();
+  const referralMessage = generateReferralMessage(pubkeyBase58);
+  const referralUrl = generateReferralUrl(pubkeyBase58);
   const encodedMessage = encodeURIComponent(referralMessage);
-  const encodedUrl = encodeURIComponent(`https://equa.live/mint?ref=${publicKey.toBase58()}`);
+  const encodedUrl = encodeURIComponent(referralUrl);
   
   // Share via different platforms
   const shareOptions = [
@@ -587,7 +610,7 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
     {
       name: 'Telegram',
       icon: '✈️',
-      url: `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent('Join EQUA Token - A revolutionary token system on Solana! Use my referral: ' + publicKey.toBase58())}`,
+      url: `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent('Join EQUA Token - A revolutionary token system on Solana! Use my referral: ' + pubkeyBase58)}`,
       color: 'bg-blue-500 hover:bg-blue-600',
     },
     {
@@ -630,7 +653,7 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
         await navigator.share({
           title: 'Join EQUA Token',
           text: referralMessage,
-          url: `https://equa.live/mint?ref=${publicKey.toBase58()}`,
+          url: referralUrl,
         });
       } catch (err) {
         // User cancelled

@@ -39,9 +39,10 @@ export interface FormatOptions {
  * formatEquaRaw(123_456_789) // "0.123456789"
  * 
  * @note This function converts bigint to Number. While this can lose precision for values
- * larger than Number.MAX_SAFE_INTEGER (2^53 - 1), this would require over 9 million EQUA
- * tokens, which is beyond any realistic individual token holding. The SPL token program uses u64,
- * which has a maximum value of ~18 quintillion.
+ * larger than Number.MAX_SAFE_INTEGER (2^53 - 1 = ~9 quadrillion), with 9 decimal places
+ * this means amounts above ~9 million EQUA tokens (in raw base units) may lose precision.
+ * For typical individual holdings and transactions, this precision is more than sufficient.
+ * The SPL token program uses u64, which has a maximum value of ~18 quintillion.
  */
 export function formatEquaRaw(
   rawAmount: number | string | bigint,
@@ -166,8 +167,9 @@ export function parseEquaFormatted(formattedAmount: string): number {
  * rawToDecimal(123_456_789) // 0.123456789
  * 
  * @note Converting bigint to Number can lose precision for values larger than
- * Number.MAX_SAFE_INTEGER. For EQUA tokens with 9 decimals, this would require
- * over 9 million tokens, which is beyond typical individual holdings.
+ * Number.MAX_SAFE_INTEGER (~9 quadrillion). With 9 decimal places, this means
+ * amounts above ~9 million EQUA tokens (in raw base units) may lose precision.
+ * For typical individual holdings, this is more than sufficient.
  */
 export function rawToDecimal(rawAmount: number | string | bigint): number {
   const amount = typeof rawAmount === 'bigint' 

@@ -34,6 +34,9 @@ const ERROR_STACK_TRACE_LINES = 3;
 // EQUA decimal multiplier (9 decimals)
 const EQUA_BASE_UNITS_MULTIPLIER = 1_000_000_000;
 
+// Default EQUA per mint for standard users (100 EQUA) - used as fallback
+const DEFAULT_EQUA_PER_MINT = 100;
+
 // Maximum reasonable user count (prevents overflow/invalid values)
 const MAX_REASONABLE_USERS = 10_000_000;
 
@@ -282,7 +285,7 @@ export default function MintPage() {
             // Calculate total mints based on user's tier rate
             // Get the user's tier to know how many EQUA they get per mint
             const userTier = getUserMintTier(currentUserNumber);
-            const equaPerMint = userTier?.equaPerAttempt || 1000;
+            const equaPerMint = userTier?.equaPerAttempt || DEFAULT_EQUA_PER_MINT;
             const baseUnitsPerMint = equaPerMint * EQUA_BASE_UNITS_MULTIPLIER;
             setTotalMints(Math.floor(mintedAmountRaw.toNumber() / baseUnitsPerMint));
           }
@@ -656,10 +659,10 @@ export default function MintPage() {
       }
 
       // ✅ Now mint tokens
-      // Calculate mint amount based on user tier (EQUA has 6 decimals)
+      // Calculate mint amount based on user tier (EQUA has 9 decimals)
       const userTier = getUserMintTier(userNumber || totalUsers + 1);
-      const equaAmount = userTier?.equaPerAttempt || 1000; // Default to 1000 EQUA
-      const mintAmount = equaAmount * EQUA_BASE_UNITS_MULTIPLIER; // Convert to base units (6 decimals)
+      const equaAmount = userTier?.equaPerAttempt || DEFAULT_EQUA_PER_MINT;
+      const mintAmount = equaAmount * EQUA_BASE_UNITS_MULTIPLIER; // Convert to base units (9 decimals)
       
       console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${userNumber}`);
       
