@@ -15,6 +15,11 @@ const PriceDisplay = dynamic(
   { ssr: false }
 );
 
+const WalletDashboard = dynamic(
+  () => import('@/components/WalletDashboard').then((mod) => ({ default: mod.WalletDashboard })),
+  { ssr: false }
+);
+
 
 export default function HomePage() {
   return (
@@ -45,7 +50,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-8">
             <div className="inline-block p-6 bg-white/10 rounded-full mb-6">
-              <Logo size={120} />
+              <Logo size={120} priority={true} />
             </div>
           </div>
           
@@ -82,6 +87,9 @@ export default function HomePage() {
             </a>
           </div>
 
+          {/* Wallet Dashboard - Shows when connected */}
+          <WalletDashboard className="mb-16 max-w-md mx-auto" />
+
           {/* Price, Users, and Transactions Display */}
           <PriceDisplay className="mb-16" showStats={true} />
 
@@ -99,7 +107,7 @@ export default function HomePage() {
               <div className="text-4xl mb-4">📈</div>
               <h3 className="text-xl font-bold text-white mb-2">Price Appreciation</h3>
               <p className="text-purple-200">
-                Three-phase pricing: 0.1% per 100 tx, then 0.01% per 1000 tx, then $100 per 1000 tx
+                Five-phase pricing: 0.1% growth from $0.01 to $100, then 0.01% to $200k, then $100/epoch forever
               </p>
             </div>
 
@@ -107,7 +115,7 @@ export default function HomePage() {
               <div className="text-4xl mb-4">🎁</div>
               <h3 className="text-xl font-bold text-white mb-2">Referral Rewards</h3>
               <p className="text-purple-200">
-                Earn 1% of referral&apos;s minted allocation when you refer new users
+                Share your public key to refer others and earn 1% of their minted EQUA
               </p>
             </div>
           </div>
