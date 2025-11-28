@@ -36,6 +36,9 @@ export default function HomePage() {
               <Link href="/whitepaper" className="text-purple-200 hover:text-white transition-colors">
                 Whitepaper
               </Link>
+              <Link href="/merchants" className="text-purple-200 hover:text-white transition-colors">
+                For Merchants
+              </Link>
               <WalletButton />
             </nav>
             <div className="md:hidden">

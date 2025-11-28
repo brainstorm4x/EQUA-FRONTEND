@@ -14,13 +14,15 @@ import { BN } from '@coral-xyz/anchor';
 import { getMintPDA, getSPLTokenBalance } from '@/lib/program';
 import { Logo } from './Logo';
 import Image from 'next/image';
+import { formatEquaBalance } from '@/utils/tokenFormat';
+import { getReferrerData } from '@/utils/referralRateLimit';
 
 interface WalletDashboardProps {
   className?: string;
 }
 
-// EQUA Token has 6 decimals
-const EQUA_DECIMALS = 6;
+// EQUA Token has 9 decimals
+const EQUA_DECIMALS = 9;
 const EQUA_MULTIPLIER = Math.pow(10, EQUA_DECIMALS);
 
 export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) => {
@@ -30,17 +32,20 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const [isLoading, setIsLoading] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
+  const [referralCount, setReferralCount] = useState<number>(0);
 
-  // Fetch EQUA balance
+  // Fetch EQUA balance and referral count
   useEffect(() => {
     if (!publicKey || !connected) {
       setBalance(0);
+      setReferralCount(0);
       return;
     }
 
-    const fetchBalance = async () => {
+    const fetchData = async () => {
       try {
         const [mintPDA] = getMintPDA();
         const tokenAccount = getAssociatedTokenAddressSync(
@@ -53,15 +58,19 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         
         const bal = await getSPLTokenBalance(connection, tokenAccount);
         setBalance(bal);
+        
+        // Get referral count
+        const referrerData = getReferrerData(publicKey.toBase58());
+        setReferralCount(referrerData?.totalReferrals || 0);
       } catch (error) {
         console.error('Error fetching EQUA balance:', error);
         setBalance(0);
       }
     };
 
-    fetchBalance();
-    // Refresh balance every 30 seconds
-    const interval = setInterval(fetchBalance, 30000);
+    fetchData();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, [publicKey, connected, connection]);
 
@@ -78,30 +87,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     }
   }, [publicKey]);
 
-  // Share referral
-  const shareReferral = useCallback(async () => {
+  // Share referral - opens modal
+  const shareReferral = useCallback(() => {
     if (!publicKey) return;
-    
-    const referralMessage = `Join EQUA Token - A revolutionary token system on Solana with price appreciation! Use my referral: ${publicKey.toBase58()}\n\nGet started: https://equa.brainstorm4x.com/mint`;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Join EQUA Token',
-          text: referralMessage,
-        });
-      } catch (error) {
-        // User cancelled or share failed, fallback to copy
-        await navigator.clipboard.writeText(referralMessage);
-        setShareMessage('Referral message copied!');
-        setTimeout(() => setShareMessage(''), 2000);
-      }
-    } else {
-      // Fallback for browsers without share API
-      await navigator.clipboard.writeText(referralMessage);
-      setShareMessage('Referral message copied!');
-      setTimeout(() => setShareMessage(''), 2000);
-    }
+    setShowShareModal(true);
   }, [publicKey]);
 
   if (!connected || !publicKey) {
@@ -118,7 +107,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         </div>
         <div className="flex items-baseline gap-2">
           <span className="text-white text-4xl font-bold">
-            {balance.toLocaleString()}
+            {formatEquaBalance(balance)}
           </span>
           <span className="text-purple-300 text-xl">EQUA</span>
         </div>
@@ -144,10 +133,18 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
 
       {/* Referral Card */}
       <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30">
-        <h3 className="text-white text-lg font-bold mb-3 flex items-center gap-2">
-          <span className="text-2xl">🎁</span>
-          Refer & Earn
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-white text-lg font-bold flex items-center gap-2">
+            <span className="text-2xl">🎁</span>
+            Refer & Earn
+          </h3>
+          {/* Referral Count Badge */}
+          <div className="bg-purple-600/30 px-3 py-1 rounded-full">
+            <span className="text-purple-200 text-sm font-medium">
+              {referralCount} {referralCount === 1 ? 'referral' : 'referrals'}
+            </span>
+          </div>
+        </div>
         <p className="text-purple-200 text-sm mb-4">
           Share your public key to refer others and earn 1% of their minted EQUA!
         </p>
@@ -211,6 +208,14 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         <ReceiveModal
           publicKey={publicKey}
           onClose={() => setShowReceiveModal(false)}
+        />
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareModal
+          publicKey={publicKey}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </div>
@@ -551,6 +556,155 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
           >
             {copied ? '✅ Copied!' : '📋 Copy Address'}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Share Modal Component
+interface ShareModalProps {
+  publicKey: PublicKey;
+  onClose: () => void;
+}
+
+const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
+  const [copied, setCopied] = useState(false);
+  const [shareMessage, setShareMessage] = useState('');
+  
+  const referralMessage = `Join EQUA Token - A revolutionary token system on Solana with price appreciation! Use my referral: ${publicKey.toBase58()}\n\nGet started: https://equa.live/mint`;
+  const encodedMessage = encodeURIComponent(referralMessage);
+  const encodedUrl = encodeURIComponent(`https://equa.live/mint?ref=${publicKey.toBase58()}`);
+  
+  // Share via different platforms
+  const shareOptions = [
+    {
+      name: 'WhatsApp',
+      icon: '💬',
+      url: `https://wa.me/?text=${encodedMessage}`,
+      color: 'bg-green-600 hover:bg-green-700',
+    },
+    {
+      name: 'Telegram',
+      icon: '✈️',
+      url: `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent('Join EQUA Token - A revolutionary token system on Solana! Use my referral: ' + publicKey.toBase58())}`,
+      color: 'bg-blue-500 hover:bg-blue-600',
+    },
+    {
+      name: 'Email',
+      icon: '📧',
+      url: `mailto:?subject=${encodeURIComponent('Join EQUA Token')}&body=${encodedMessage}`,
+      color: 'bg-red-500 hover:bg-red-600',
+    },
+    {
+      name: 'X (Twitter)',
+      icon: '🐦',
+      url: `https://twitter.com/intent/tweet?text=${encodedMessage}`,
+      color: 'bg-slate-700 hover:bg-slate-800',
+    },
+    {
+      name: 'SMS',
+      icon: '📱',
+      url: `sms:?body=${encodedMessage}`,
+      color: 'bg-purple-500 hover:bg-purple-600',
+    },
+  ];
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(referralMessage);
+      setCopied(true);
+      setShareMessage('Message copied to clipboard!');
+      setTimeout(() => {
+        setCopied(false);
+        setShareMessage('');
+      }, 2000);
+    } catch (err) {
+      setShareMessage('Failed to copy');
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join EQUA Token',
+          text: referralMessage,
+          url: `https://equa.live/mint?ref=${publicKey.toBase58()}`,
+        });
+      } catch (err) {
+        // User cancelled
+      }
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-purple-900 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-white text-xl font-bold flex items-center gap-2">
+            <span className="text-2xl">📲</span>
+            Share Your Referral
+          </h3>
+          <button 
+            onClick={onClose}
+            className="text-purple-300 hover:text-white text-2xl"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="text-center">
+          <p className="text-purple-200 text-sm mb-6">
+            Share your referral link and earn 1% of the EQUA tokens your friends mint!
+          </p>
+
+          {/* Referral Link Preview */}
+          <div className="bg-black/20 rounded-xl p-4 mb-6">
+            <p className="text-purple-300 text-xs mb-2">Your Referral Link</p>
+            <p className="text-white text-sm font-mono break-all">
+              https://equa.live/mint?ref={publicKey.toBase58().slice(0, 8)}...
+            </p>
+          </div>
+
+          {/* Share Options Grid */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {shareOptions.map((option) => (
+              <a
+                key={option.name}
+                href={option.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${option.color} text-white font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2`}
+              >
+                <span className="text-xl">{option.icon}</span>
+                {option.name}
+              </a>
+            ))}
+            
+            {/* Native Share (if supported) */}
+            {typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'share' in navigator && (
+              <button
+                onClick={handleNativeShare}
+                className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 col-span-2"
+              >
+                <span className="text-xl">🔗</span>
+                More Options
+              </button>
+            )}
+          </div>
+
+          {/* Copy Button */}
+          <button
+            onClick={copyToClipboard}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all mb-4"
+          >
+            {copied ? '✅ Copied!' : '📋 Copy Message'}
+          </button>
+
+          {shareMessage && (
+            <p className="text-green-400 text-sm">{shareMessage}</p>
+          )}
         </div>
       </div>
     </div>

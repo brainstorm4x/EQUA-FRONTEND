@@ -1,14 +1,21 @@
 /**
  * Token formatting utilities for EQUA token
  * 
- * EQUA token uses 6 decimals (1,000,000 base units = 1 EQUA)
+ * EQUA token uses 9 decimals (1,000,000,000 base units = 1 EQUA)
+ * The smallest unit of EQUA is called Gajbhiye (singular) / Gajbhiyes (plural)
  */
 
-const EQUA_DECIMALS = 6;
-const EQUA_DECIMAL_MULTIPLIER = 1_000_000;
+const EQUA_DECIMALS = 9;
+const EQUA_DECIMAL_MULTIPLIER = 1_000_000_000;
+
+/**
+ * Name of the smallest unit of EQUA
+ */
+export const SMALLEST_UNIT_NAME = 'Gajbhiye';
+export const SMALLEST_UNIT_NAME_PLURAL = 'Gajbhiyes';
 
 export interface FormatOptions {
-  /** Number of decimal places to show. Defaults to 6 */
+  /** Number of decimal places to show. Defaults to 9 */
   decimals?: number;
   /** Whether to trim trailing zeros. Defaults to false */
   trimTrailingZeros?: boolean;
@@ -17,24 +24,24 @@ export interface FormatOptions {
 }
 
 /**
- * Formats a raw EQUA token amount (in base units) to a human-readable string
+ * Formats a raw EQUA token amount (in base units/Gajbhiyes) to a human-readable EQUA string
+ * This shows the actual EQUA balance, not the smallest unit
  * 
- * @param rawAmount - The raw token amount in base units (e.g., 1,000,000 = 1 EQUA)
+ * @param rawAmount - The raw token amount in base units (Gajbhiyes)
  * @param options - Formatting options
  * @returns Formatted token amount as a string
  * 
  * @example
- * formatEquaRaw(1_000_000_000) // "1,000.000000"
- * formatEquaRaw(1_000_000_000, { decimals: 2 }) // "1,000.00"
- * formatEquaRaw(1_000_000_000, { trimTrailingZeros: true }) // "1,000"
- * formatEquaRaw(3_120_045, { trimTrailingZeros: true }) // "3.120045"
- * formatEquaRaw(123_456) // "0.123456"
+ * formatEquaRaw(1_000_000_000_000) // "1,000.000000000"
+ * formatEquaRaw(1_000_000_000_000, { decimals: 2 }) // "1,000.00"
+ * formatEquaRaw(1_000_000_000_000, { trimTrailingZeros: true }) // "1,000"
+ * formatEquaRaw(3_120_045_000, { trimTrailingZeros: true }) // "3.120045"
+ * formatEquaRaw(123_456_789) // "0.123456789"
  * 
  * @note This function converts bigint to Number. While this can lose precision for values
- * larger than Number.MAX_SAFE_INTEGER (2^53 - 1), this would require over 9 quintillion EQUA
- * tokens, which is far beyond any realistic token supply. The SPL token program uses u64,
- * which has a maximum value of ~18 quintillion, so precision loss is only a concern for
- * extremely large unrealistic values.
+ * larger than Number.MAX_SAFE_INTEGER (2^53 - 1), this would require over 9 million EQUA
+ * tokens, which is beyond any realistic individual token holding. The SPL token program uses u64,
+ * which has a maximum value of ~18 quintillion.
  */
 export function formatEquaRaw(
   rawAmount: number | string | bigint,
@@ -55,10 +62,10 @@ export function formatEquaRaw(
 
   // Handle invalid numbers
   if (isNaN(amount) || !isFinite(amount)) {
-    return '0.000000';
+    return '0.000000000';
   }
 
-  // Convert from raw units to EQUA tokens
+  // Convert from raw units (Gajbhiyes) to EQUA tokens
   const tokenAmount = amount / EQUA_DECIMAL_MULTIPLIER;
 
   // Format with specified decimals
@@ -72,14 +79,64 @@ export function formatEquaRaw(
 }
 
 /**
- * Parses a formatted EQUA token string back to raw base units
+ * Formats a raw EQUA token amount to display the actual EQUA balance
+ * Shows appropriate decimal places based on the balance value
  * 
- * @param formattedAmount - The formatted token amount (e.g., "1,000.50" or "0.123456")
- * @returns Raw token amount in base units
+ * @param rawAmount - The raw token amount in base units (Gajbhiyes)
+ * @returns Formatted EQUA balance string with appropriate decimals
  * 
  * @example
- * parseEquaFormatted("1,000") // 1_000_000_000
- * parseEquaFormatted("0.123456") // 123_456
+ * formatEquaBalance(100_000_000_000_000) // "100,000" (whole number, no decimals needed)
+ * formatEquaBalance(1_500_000_000) // "1.5" (fractional, shows needed decimals)
+ * formatEquaBalance(123_456_789) // "0.123456789" (small amount, shows all decimals)
+ */
+export function formatEquaBalance(rawAmount: number | string | bigint): string {
+  // Convert to number if string or bigint
+  const amount = typeof rawAmount === 'bigint' 
+    ? Number(rawAmount) 
+    : typeof rawAmount === 'string'
+    ? parseFloat(rawAmount)
+    : rawAmount;
+
+  // Handle invalid numbers
+  if (isNaN(amount) || !isFinite(amount)) {
+    return '0';
+  }
+
+  // Convert from raw units (Gajbhiyes) to EQUA tokens
+  const tokenAmount = amount / EQUA_DECIMAL_MULTIPLIER;
+
+  // If it's a whole number, show without decimals
+  if (Number.isInteger(tokenAmount)) {
+    return tokenAmount.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+      useGrouping: true,
+    });
+  }
+
+  // Otherwise, show with appropriate decimals (trim trailing zeros)
+  // Find out how many decimal places are significant
+  const tokenStr = tokenAmount.toString();
+  const decimalPart = tokenStr.includes('.') ? tokenStr.split('.')[1] : '';
+  const significantDecimals = Math.min(decimalPart.replace(/0+$/, '').length, EQUA_DECIMALS);
+  
+  return tokenAmount.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: Math.max(significantDecimals, 2), // At least 2 decimals for fractional amounts
+    useGrouping: true,
+  });
+}
+
+/**
+ * Parses a formatted EQUA token string back to raw base units (Gajbhiyes)
+ * 
+ * @param formattedAmount - The formatted token amount (e.g., "1,000.50" or "0.123456789")
+ * @returns Raw token amount in base units (Gajbhiyes)
+ * 
+ * @example
+ * parseEquaFormatted("1,000") // 1_000_000_000_000
+ * parseEquaFormatted("0.123456789") // 123_456_789
  * 
  * @note Uses Math.round which can introduce minor rounding errors for edge cases with
  * floating point arithmetic. For precise financial calculations, consider using a
@@ -99,18 +156,18 @@ export function parseEquaFormatted(formattedAmount: string): number {
 }
 
 /**
- * Converts raw EQUA amount to a number (decimal form)
+ * Converts raw EQUA amount (in Gajbhiyes) to a number (decimal EQUA form)
  * 
- * @param rawAmount - The raw token amount in base units
- * @returns Token amount as a decimal number
+ * @param rawAmount - The raw token amount in base units (Gajbhiyes)
+ * @returns Token amount as a decimal number (EQUA)
  * 
  * @example
- * rawToDecimal(1_000_000_000) // 1000
- * rawToDecimal(123_456) // 0.123456
+ * rawToDecimal(1_000_000_000_000) // 1000
+ * rawToDecimal(123_456_789) // 0.123456789
  * 
  * @note Converting bigint to Number can lose precision for values larger than
- * Number.MAX_SAFE_INTEGER. For EQUA tokens with 6 decimals, this would require
- * over 9 quintillion tokens, which is beyond any realistic token supply.
+ * Number.MAX_SAFE_INTEGER. For EQUA tokens with 9 decimals, this would require
+ * over 9 million tokens, which is beyond typical individual holdings.
  */
 export function rawToDecimal(rawAmount: number | string | bigint): number {
   const amount = typeof rawAmount === 'bigint' 
@@ -127,14 +184,14 @@ export function rawToDecimal(rawAmount: number | string | bigint): number {
 }
 
 /**
- * Converts a decimal EQUA amount to raw base units
+ * Converts a decimal EQUA amount to raw base units (Gajbhiyes)
  * 
- * @param decimalAmount - Token amount as a decimal number
- * @returns Raw token amount in base units
+ * @param decimalAmount - Token amount as a decimal number (EQUA)
+ * @returns Raw token amount in base units (Gajbhiyes)
  * 
  * @example
- * decimalToRaw(1000) // 1_000_000_000
- * decimalToRaw(0.123456) // 123_456
+ * decimalToRaw(1000) // 1_000_000_000_000
+ * decimalToRaw(0.123456789) // 123_456_789
  * 
  * @note Uses Math.round to minimize floating point errors. For typical token amounts
  * within reasonable ranges, the precision is sufficient. Very large or very precise
@@ -146,4 +203,20 @@ export function decimalToRaw(decimalAmount: number): number {
   }
 
   return Math.round(decimalAmount * EQUA_DECIMAL_MULTIPLIER);
+}
+
+/**
+ * Returns the smallest unit name for a given amount
+ * @param amount - The amount (for determining singular vs plural)
+ * @returns "Gajbhiye" for 1, "Gajbhiyes" otherwise
+ */
+export function getSmallestUnitName(amount: number): string {
+  return amount === 1 ? SMALLEST_UNIT_NAME : SMALLEST_UNIT_NAME_PLURAL;
+}
+
+/**
+ * Get the number of decimals for EQUA token
+ */
+export function getEquaDecimals(): number {
+  return EQUA_DECIMALS;
 }

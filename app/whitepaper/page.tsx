@@ -18,6 +18,9 @@ export default function WhitepaperPage() {
               <Link href="/" className="text-purple-200 hover:text-white transition-colors">
                 Home
               </Link>
+              <Link href="/merchants" className="text-purple-200 hover:text-white transition-colors">
+                For Merchants
+              </Link>
               <Link href="/mint" className="text-purple-200 hover:text-white transition-colors">
                 Mint
               </Link>

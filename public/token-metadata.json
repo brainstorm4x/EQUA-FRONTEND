@@ -14,10 +14,14 @@
     },
     {
       "trait_type": "Decimals",
-      "value": "6"
+      "value": "9"
+    },
+    {
+      "trait_type": "Smallest Unit",
+      "value": "Gajbhiye"
     }
   ],
-  "external_url": "https://equa-token.io",
+  "external_url": "https://equa.live",
   "properties": {
     "files": [
       {
