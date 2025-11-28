@@ -232,8 +232,17 @@ export default function MintPage() {
       const isReg = await checkRegistration(userAccountKeypair.publicKey);
       setRegistered(isReg);
 
-      if (isReg) {
-        const bal = await getBalance(userAccountKeypair.publicKey);
+      if (isReg && publicKey) {
+        // Fetch actual SPL token balance (not minted_amount from user account)
+        // This reflects the true current balance after any transfers
+        const userTokenAccount = getAssociatedTokenAddressSync(
+          mintPDA,
+          publicKey,
+          false,
+          TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        );
+        const bal = await getTokenBalance(userTokenAccount);
         setBalance(bal);
         
         // Get last mint time for cooldown
@@ -298,7 +307,7 @@ export default function MintPage() {
     } finally {
       setIsCheckingRegistration(false);
     }
-  }, [publicKey, isReady, userAccountKeypair, checkRegistration, getBalance, connection]);
+  }, [publicKey, isReady, userAccountKeypair, checkRegistration, getTokenBalance, mintPDA, connection]);
 
   useEffect(() => {
     checkUserRegistration();
@@ -541,10 +550,13 @@ export default function MintPage() {
 
       // Store the user's registration number for future reference
       // This is totalUsers + 1 at the time of registration
+      const registrationNumber = totalUsers + 1;
+      setUserNumber(registrationNumber);
+      console.log(`📝 Set user number to: ${registrationNumber}`);
+      
       if (typeof window !== 'undefined') {
-        const registrationNumber = totalUsers + 1;
         localStorage.setItem('equa_user_number', registrationNumber.toString());
-        console.log(`📝 Saved user registration number: ${registrationNumber}`);
+        console.log(`📝 Saved user registration number to localStorage: ${registrationNumber}`);
         
         // Store fingerprint AFTER successful registration (Sybil prevention)
         if (metadata?.fingerprint) {
@@ -713,9 +725,12 @@ export default function MintPage() {
 
       console.log('✅ Minting successful!', tx);
       setTxSignature(tx);
+      
+      // Increment total mints immediately for UI responsiveness
+      setTotalMints(prev => prev + 1);
 
-      // Wait for state to update
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait for state to update on-chain
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Refresh balance and last mint time
       await checkUserRegistration();
