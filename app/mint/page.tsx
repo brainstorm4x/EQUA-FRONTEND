@@ -43,6 +43,9 @@ const MAX_REASONABLE_USERS = 10_000_000;
 // Maximum reasonable user number for sanity checks
 const MAX_REASONABLE_USER_NUMBER = 1_000_000;
 
+// Delay for on-chain state propagation after transactions (in milliseconds)
+const CHAIN_STATE_UPDATE_DELAY_MS = 2000;
+
 // Utility function to handle and format ATA creation errors
 function handleAtaCreationError(ataError: unknown, context: 'registration' | 'minting'): Error {
   console.error(`❌ Failed to create token account during ${context}:`, ataError);
@@ -235,15 +238,20 @@ export default function MintPage() {
       if (isReg && publicKey) {
         // Fetch actual SPL token balance (not minted_amount from user account)
         // This reflects the true current balance after any transfers
-        const userTokenAccount = getAssociatedTokenAddressSync(
-          mintPDA,
-          publicKey,
-          false,
-          TOKEN_PROGRAM_ID,
-          ASSOCIATED_TOKEN_PROGRAM_ID
-        );
-        const bal = await getTokenBalance(userTokenAccount);
-        setBalance(bal);
+        try {
+          const userTokenAccount = getAssociatedTokenAddressSync(
+            mintPDA,
+            publicKey,
+            false,
+            TOKEN_PROGRAM_ID,
+            ASSOCIATED_TOKEN_PROGRAM_ID
+          );
+          const bal = await getTokenBalance(userTokenAccount);
+          setBalance(bal);
+        } catch (tokenErr) {
+          console.error('Error fetching token balance:', tokenErr);
+          setBalance(0);
+        }
         
         // Get last mint time for cooldown
         const lastMint = await getLastMintTime(connection, userAccountKeypair.publicKey);
@@ -730,7 +738,7 @@ export default function MintPage() {
       setTotalMints(prev => prev + 1);
 
       // Wait for state to update on-chain
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, CHAIN_STATE_UPDATE_DELAY_MS));
 
       // Refresh balance and last mint time
       await checkUserRegistration();
