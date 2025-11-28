@@ -1,7 +1,7 @@
 /**
  * EQUA Logo Component
  * 
- * Displays the EQUA brand logo
+ * Displays the EQUA brand logo with optimized loading
  */
 
 import Image from 'next/image';
@@ -9,9 +9,10 @@ import Image from 'next/image';
 interface LogoProps {
   className?: string;
   size?: number;
+  priority?: boolean;
 }
 
-export function Logo({ className = '', size = 40 }: LogoProps) {
+export function Logo({ className = '', size = 40, priority = false }: LogoProps) {
   return (
     <Image 
       src="/equa-logo.svg" 
@@ -19,6 +20,8 @@ export function Logo({ className = '', size = 40 }: LogoProps) {
       width={size} 
       height={size}
       className={className}
+      priority={priority}
+      loading={priority ? 'eager' : 'lazy'}
     />
   );
 }

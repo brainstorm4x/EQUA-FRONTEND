@@ -16,15 +16,24 @@ const MAX_SAFE_TIMESTAMP = 8640000000;
 /**
  * Safely parse user count from global state account data
  * 
+ * GlobalState structure (from IDL):
+ * - 8 bytes: discriminator
+ * - 4 bytes: user_count (u32)
+ * - 8 bytes: total_transactions (u64)
+ * - 8 bytes: current_epoch (u64)
+ * - 1 byte: compounding_complete (bool)
+ * - 8 bytes: last_epoch_update_time (i64)
+ * - 32 bytes: token_mint (pubkey)
+ * 
  * @param accountData - Raw account data buffer from global state
  * @param offset - Byte offset where user count field starts (default: 8)
- * @param length - Byte length of the field (default: 8 for u64)
+ * @param length - Byte length of the field (default: 4 for u32)
  * @returns Parsed user count, or 0 if invalid/uninitialized
  */
 export function safeParseUserCount(
   accountData: Buffer | Uint8Array | null | undefined,
   offset: number = 8,
-  length: number = 8
+  length: number = 4
 ): number {
   // Handle null/undefined account data
   if (!accountData) {
@@ -44,7 +53,7 @@ export function safeParseUserCount(
     // Extract the raw bytes
     const rawBytes = accountData.slice(offset, offset + length);
     
-    // Parse as little-endian u64
+    // Parse as little-endian u32 (or u64 if length is 8)
     const rawValue = new anchor.BN(rawBytes, 'le');
     
     // Check for overflow: value should fit in JavaScript's safe integer range

@@ -165,37 +165,77 @@ export default function WhitepaperPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part IV: Price Appreciation Logic—What to Expect</h2>
               
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Understanding EQUA&apos;s Three-Phase Model</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Understanding EQUA&apos;s Five-Phase Model</h3>
               <p className="text-purple-200 leading-relaxed">
                 EQUA&apos;s price appreciation follows a structured, transparent mathematical model designed to reward early builders, provide steady growth during scaling, and maintain sustainable value increases indefinitely.
               </p>
 
               {/* Phase 1 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-green-400 mb-3">Phase 1: Rapid Early Growth (Building Foundation)</h4>
+                <h4 className="text-lg font-bold text-green-400 mb-3">Phase 1: Initial Growth ($0.01 to $1)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~921,500 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.1% per epoch (100 transactions)</p>
+                    <p><strong className="text-white">Duration:</strong> ~4,605 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.1% per epoch (1 transaction)</p>
                     <p><strong className="text-white">Starting Price:</strong> $0.01</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> $100</p>
+                    <p><strong className="text-white">End Price:</strong> $1</p>
                     <p><strong className="text-white">Formula:</strong> Price = $0.01 × (1.001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Early network builders take genuine risk; rapid appreciation rewards this commitment. Frequent small increases (every 100 transactions) mean appreciation is steady and visible.
+                  <strong className="text-white">Why This Mechanism?</strong> Every single transaction counts. Rapid appreciation rewards the earliest believers and network builders.
                 </p>
               </div>
 
               {/* Phase 2 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-blue-400 mb-3">Phase 2: Steady Growth (Network Scaling)</h4>
+                <h4 className="text-lg font-bold text-teal-400 mb-3">Phase 2: Early Scaling ($1 to $10)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Start:</strong> After price reaches $100</p>
+                    <p><strong className="text-white">Duration:</strong> ~23,030 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.1% per epoch (10 transactions)</p>
+                    <p><strong className="text-white">Starting Price:</strong> $1</p>
+                  </div>
+                  <div>
+                    <p><strong className="text-white">End Price:</strong> $10</p>
+                    <p><strong className="text-white">Formula:</strong> Price = $1 × (1.001)^epoch</p>
+                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
+                  </div>
+                </div>
+                <p className="text-purple-200 mt-4 text-sm">
+                  <strong className="text-white">Why This Mechanism?</strong> Growth rate stays strong as the network gains momentum. Larger epochs reflect growing transaction volume.
+                </p>
+              </div>
+
+              {/* Phase 3 */}
+              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
+                <h4 className="text-lg font-bold text-blue-400 mb-3">Phase 3: Network Growth ($10 to $100)</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
+                  <div>
+                    <p><strong className="text-white">Duration:</strong> ~230,300 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.1% per epoch (100 transactions)</p>
+                    <p><strong className="text-white">Starting Price:</strong> $10</p>
+                  </div>
+                  <div>
+                    <p><strong className="text-white">End Price:</strong> $100</p>
+                    <p><strong className="text-white">Formula:</strong> Price = $10 × (1.001)^epoch</p>
+                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
+                  </div>
+                </div>
+                <p className="text-purple-200 mt-4 text-sm">
+                  <strong className="text-white">Why This Mechanism?</strong> Network is becoming established. Compounding continues to reward all holders.
+                </p>
+              </div>
+
+              {/* Phase 4 */}
+              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
+                <h4 className="text-lg font-bold text-indigo-400 mb-3">Phase 4: Mature Scaling ($100 to $200,000)</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
+                  <div>
+                    <p><strong className="text-white">Duration:</strong> ~76,012,000 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
                     <p><strong className="text-white">Starting Price:</strong> $100</p>
                   </div>
@@ -206,13 +246,13 @@ export default function WhitepaperPage() {
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> As the network scales, 0.01% per 1,000 transactions provides steady, predictable growth. Compounding continues but at a slower rate, preventing explosive volatility.
+                  <strong className="text-white">Why This Mechanism?</strong> Slower growth rate prevents runaway appreciation while maintaining sustainable compounding.
                 </p>
               </div>
 
-              {/* Phase 3 */}
+              {/* Phase 5 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-purple-400 mb-3">Phase 3: Perpetual Sustainable Growth (Forever Appreciation)</h4>
+                <h4 className="text-lg font-bold text-purple-400 mb-3">Phase 5: Perpetual Sustainable Growth ($200,000+)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Start:</strong> After price reaches $200,000</p>
@@ -226,45 +266,57 @@ export default function WhitepaperPage() {
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> At extreme valuations, compounding becomes mathematically unsustainable. Linear growth ($100 per 1,000 transactions) is still powerful: approximately 12% annual appreciation. The $25,000/month cap prevents runaway price increases while ensuring steady, predictable growth.
+                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear $100/epoch (0.05% of $200,000) provides steady appreciation. The $25,000/month cap ensures stability while maintaining good returns.
                 </p>
               </div>
 
               {/* Comparison Table */}
               <div className="overflow-x-auto mt-8">
-                <table className="w-full text-purple-200 border-collapse">
+                <table className="w-full text-purple-200 border-collapse text-sm">
                   <thead>
                     <tr className="border-b border-purple-500/30">
-                      <th className="text-left p-3 text-white">Aspect</th>
-                      <th className="text-left p-3 text-white">Phase 1</th>
-                      <th className="text-left p-3 text-white">Phase 2</th>
-                      <th className="text-left p-3 text-white">Phase 3</th>
+                      <th className="text-left p-3 text-white">Phase</th>
+                      <th className="text-left p-3 text-white">Tx/Epoch</th>
+                      <th className="text-left p-3 text-white">Growth</th>
+                      <th className="text-left p-3 text-white">Price Range</th>
+                      <th className="text-left p-3 text-white">Type</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr className="border-b border-purple-500/20">
-                      <td className="p-3 font-semibold">Tx per Epoch</td>
+                      <td className="p-3">1</td>
+                      <td className="p-3">1</td>
+                      <td className="p-3">0.1%</td>
+                      <td className="p-3">$0.01 → $1</td>
+                      <td className="p-3">Compound</td>
+                    </tr>
+                    <tr className="border-b border-purple-500/20">
+                      <td className="p-3">2</td>
+                      <td className="p-3">10</td>
+                      <td className="p-3">0.1%</td>
+                      <td className="p-3">$1 → $10</td>
+                      <td className="p-3">Compound</td>
+                    </tr>
+                    <tr className="border-b border-purple-500/20">
+                      <td className="p-3">3</td>
                       <td className="p-3">100</td>
-                      <td className="p-3">1,000</td>
-                      <td className="p-3">1,000</td>
+                      <td className="p-3">0.1%</td>
+                      <td className="p-3">$10 → $100</td>
+                      <td className="p-3">Compound</td>
                     </tr>
                     <tr className="border-b border-purple-500/20">
-                      <td className="p-3 font-semibold">Growth per Epoch</td>
-                      <td className="p-3">0.1% (compound)</td>
-                      <td className="p-3">0.01% (compound)</td>
-                      <td className="p-3">$100 (linear)</td>
-                    </tr>
-                    <tr className="border-b border-purple-500/20">
-                      <td className="p-3 font-semibold">Price Range</td>
-                      <td className="p-3">$0.01 → $100</td>
-                      <td className="p-3">$100 → $200,000</td>
-                      <td className="p-3">$200,000 → ∞</td>
+                      <td className="p-3">4</td>
+                      <td className="p-3">1,000</td>
+                      <td className="p-3">0.01%</td>
+                      <td className="p-3">$100 → $200k</td>
+                      <td className="p-3">Compound</td>
                     </tr>
                     <tr>
-                      <td className="p-3 font-semibold">Best for</td>
-                      <td className="p-3">Early believers</td>
-                      <td className="p-3">Growing network</td>
-                      <td className="p-3">Long-term holders</td>
+                      <td className="p-3">5</td>
+                      <td className="p-3">1,000</td>
+                      <td className="p-3">$100</td>
+                      <td className="p-3">$200k → ∞</td>
+                      <td className="p-3">Linear</td>
                     </tr>
                   </tbody>
                 </table>
@@ -323,7 +375,7 @@ export default function WhitepaperPage() {
                 <h4 className="text-lg font-semibold text-white mb-3">Smart Contract Architecture:</h4>
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
                   <li>Global state tracking: transaction counts, user counts, current phase</li>
-                  <li>User accounts: minting history, referral tracking, lock mechanisms</li>
+                  <li>User accounts: minting history, referral tracking</li>
                   <li>Deterministic price calculation based on transaction volume and current phase</li>
                 </ul>
               </div>
@@ -332,7 +384,7 @@ export default function WhitepaperPage() {
                 <h4 className="text-lg font-semibold text-white mb-3">Token Economics:</h4>
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
                   <li>Variable minting rate tied to user adoption</li>
-                  <li>Time-based locks for early participants (anti-exploitation)</li>
+                  <li>Utility-first design: use EQUA to buy and sell goods and services</li>
                   <li>Referral rewards at 1% of new user allocation (merit-based)</li>
                 </ul>
               </div>

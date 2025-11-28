@@ -4,6 +4,11 @@
  * This test demonstrates that the overflow bug has been fixed
  * by showing that the problematic value (17179869188) now returns 0
  * instead of causing issues.
+ * 
+ * GlobalState structure (from IDL):
+ * - 8 bytes: discriminator
+ * - 4 bytes: user_count (u32) <- important: this is u32, not u64!
+ * - 8 bytes: total_transactions (u64)
  */
 
 import * as anchor from '@coral-xyz/anchor';
@@ -11,41 +16,59 @@ import { safeParseUserCount } from '@/utils/safeAccountParsing';
 
 describe('User Count Overflow Bug Fix - Integration Test', () => {
   it('should handle the specific overflow value from the bug report', () => {
-    // Create account data with the problematic value from the bug report
-    const buffer = Buffer.alloc(16);
+    // The original bug was reading 8 bytes instead of 4 bytes for user_count
+    // This caused garbage data to be interpreted as a huge number
+    // Now that we read 4 bytes correctly, we test that values exceeding 
+    // MAX_REASONABLE_USER_COUNT are caught
+    const buffer = Buffer.alloc(12); // 8 discriminator + 4 user_count
     
-    // 17179869188 = 0x400000004 = the exact value reported in the bug
-    const problematicValue = new anchor.BN(17179869188);
-    problematicValue.toArrayLike(Buffer, 'le', 8).copy(buffer, 8);
+    // Test with max u32 value (which exceeds our sanity limit)
+    const maxU32Value = new anchor.BN(4294967295); // 0xFFFFFFFF
+    maxU32Value.toArrayLike(Buffer, 'le', 4).copy(buffer, 8);
     
-    // Before the fix: This would have returned 17179869188 or caused overflow
-    // After the fix: This should return 0
+    // The safeParseUserCount should return 0 because it exceeds MAX_REASONABLE_USER_COUNT
     const result = safeParseUserCount(buffer);
     
+    // Should be caught by our overflow check
     expect(result).toBe(0);
-    expect(result).toBeLessThan(1_000_000);
+    expect(result).toBeLessThanOrEqual(1_000_000);
+  });
+
+  it('should handle overflow values that exceed MAX_REASONABLE_USER_COUNT', () => {
+    // Test with a value that fits in u32 but exceeds our sanity limit
+    const buffer = Buffer.alloc(12);
+    
+    // 10_000_000 exceeds MAX_REASONABLE_USER_COUNT (1_000_000)
+    const overflowValue = new anchor.BN(10_000_000);
+    overflowValue.toArrayLike(Buffer, 'le', 4).copy(buffer, 8);
+    
+    const result = safeParseUserCount(buffer);
+    
+    // Should return 0 because it exceeds the reasonable limit
+    expect(result).toBe(0);
   });
 
   it('should ensure referral gating works correctly with safe user count', () => {
     // Simulate various scenarios
     
     // Scenario 1: Fresh setup (uninitialized data)
-    const uninitializedBuffer = Buffer.alloc(16);
+    const uninitializedBuffer = Buffer.alloc(12);
     uninitializedBuffer.fill(0xFF); // Common uninitialized memory pattern
     const freshSetupCount = safeParseUserCount(uninitializedBuffer);
+    // 0xFFFFFFFF = 4294967295 which exceeds MAX_REASONABLE_USER_COUNT, should return 0
     expect(freshSetupCount).toBe(0);
     expect(freshSetupCount).toBeLessThan(100); // Referral should be optional
     
     // Scenario 2: Early adopters (< 100 users)
-    const earlyBuffer = Buffer.alloc(16);
-    new anchor.BN(50).toArrayLike(Buffer, 'le', 8).copy(earlyBuffer, 8);
+    const earlyBuffer = Buffer.alloc(12);
+    new anchor.BN(50).toArrayLike(Buffer, 'le', 4).copy(earlyBuffer, 8);
     const earlyAdopterCount = safeParseUserCount(earlyBuffer);
     expect(earlyAdopterCount).toBe(50);
     expect(earlyAdopterCount).toBeLessThan(100); // Referral should be optional
     
     // Scenario 3: After threshold (>= 100 users)
-    const afterThresholdBuffer = Buffer.alloc(16);
-    new anchor.BN(150).toArrayLike(Buffer, 'le', 8).copy(afterThresholdBuffer, 8);
+    const afterThresholdBuffer = Buffer.alloc(12);
+    new anchor.BN(150).toArrayLike(Buffer, 'le', 4).copy(afterThresholdBuffer, 8);
     const afterThresholdCount = safeParseUserCount(afterThresholdBuffer);
     expect(afterThresholdCount).toBe(150);
     expect(afterThresholdCount).toBeGreaterThanOrEqual(100); // Referral should be required
@@ -61,15 +84,14 @@ describe('User Count Overflow Bug Fix - Integration Test', () => {
       { value: 999_999, expected: 999_999 },
       { value: 1_000_000, expected: 1_000_000 }, // At the limit - still valid
       { value: 1_000_001, expected: 0 }, // Over the limit
-      { value: 17179869188, expected: 0 }, // The bug value
-      { value: Number.MAX_SAFE_INTEGER, expected: 0 }, // JavaScript max
+      { value: 10_000_000, expected: 0 }, // Over the limit
     ];
 
     testCases.forEach(({ value, expected }) => {
-      const buffer = Buffer.alloc(16);
+      const buffer = Buffer.alloc(12);
       try {
         const bn = new anchor.BN(value);
-        bn.toArrayLike(Buffer, 'le', 8).copy(buffer, 8);
+        bn.toArrayLike(Buffer, 'le', 4).copy(buffer, 8);
       } catch {
         // If BN can't handle it, the buffer stays at 0
       }
@@ -90,9 +112,10 @@ describe('User Count Overflow Bug Fix - Integration Test', () => {
     // This test verifies that proper warnings are logged
     const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
     
-    const buffer = Buffer.alloc(16);
-    const overflowValue = new anchor.BN(17179869188);
-    overflowValue.toArrayLike(Buffer, 'le', 8).copy(buffer, 8);
+    const buffer = Buffer.alloc(12);
+    // Use a value that's valid for u32 but exceeds our sanity limit
+    const overflowValue = new anchor.BN(10_000_000);
+    overflowValue.toArrayLike(Buffer, 'le', 4).copy(buffer, 8);
     
     const result = safeParseUserCount(buffer);
     
@@ -101,7 +124,7 @@ describe('User Count Overflow Bug Fix - Integration Test', () => {
       expect.stringContaining('User count overflow detected')
     );
     expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('17179869188')
+      expect.stringContaining('10000000')
     );
     
     consoleSpy.mockRestore();
