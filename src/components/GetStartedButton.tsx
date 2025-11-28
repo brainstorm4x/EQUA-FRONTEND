@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState, useEffect, useCallback } from 'react';
+import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import Link from 'next/link';
 import { isUserRegistered, getOrCreateKeypair } from '@/lib/program';
@@ -9,6 +9,9 @@ interface GetStartedButtonProps {
   className?: string;
   testId?: string;
 }
+
+// Cache duration in milliseconds (5 minutes)
+const REGISTRATION_CACHE_DURATION = 5 * 60 * 1000;
 
 /**
  * GetStartedButton - Smart CTA button that changes based on user registration status
@@ -25,10 +28,23 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
   const { connection } = useConnection();
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  // Cache to prevent excessive network calls
+  const cacheRef = useRef<{ pubkey: string; registered: boolean; timestamp: number } | null>(null);
 
   const checkRegistrationStatus = useCallback(async () => {
     if (!publicKey || !connected) {
       setIsRegistered(false);
+      return;
+    }
+
+    const pubkeyStr = publicKey.toBase58();
+    
+    // Check cache first
+    if (cacheRef.current && 
+        cacheRef.current.pubkey === pubkeyStr && 
+        Date.now() - cacheRef.current.timestamp < REGISTRATION_CACHE_DURATION) {
+      setIsRegistered(cacheRef.current.registered);
       return;
     }
 
@@ -38,6 +54,13 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
       const userAccountKeypair = getOrCreateKeypair();
       const registered = await isUserRegistered(connection, userAccountKeypair.publicKey);
       setIsRegistered(registered);
+      
+      // Update cache
+      cacheRef.current = {
+        pubkey: pubkeyStr,
+        registered,
+        timestamp: Date.now()
+      };
     } catch (error) {
       console.error('Error checking registration status:', error);
       setIsRegistered(false);

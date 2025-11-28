@@ -381,13 +381,14 @@ export default function MintPage() {
         if (typeof window !== 'undefined') {
           const existingFingerprints = JSON.parse(localStorage.getItem('equa_registered_fingerprints') || '[]');
           if (existingFingerprints.includes(metadata.fingerprint.fingerprint)) {
-            console.warn('⚠️ Duplicate fingerprint detected - potential Sybil attempt');
+            // Block registration for duplicate fingerprints (Sybil prevention)
+            console.error('🚫 Duplicate fingerprint detected - blocking Sybil attempt');
+            throw new Error(
+              'Registration blocked: This device has already been used to register an account. ' +
+              'Each device can only register one account to prevent abuse.'
+            );
           }
-          existingFingerprints.push(metadata.fingerprint.fingerprint);
-          localStorage.setItem('equa_registered_fingerprints', JSON.stringify(existingFingerprints));
-          
-          // Also store the fingerprint with wallet association
-          localStorage.setItem(`equa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
+          // Don't add fingerprint yet - only add after successful registration
         }
       }
 
@@ -544,6 +545,15 @@ export default function MintPage() {
         const registrationNumber = totalUsers + 1;
         localStorage.setItem('equa_user_number', registrationNumber.toString());
         console.log(`📝 Saved user registration number: ${registrationNumber}`);
+        
+        // Store fingerprint AFTER successful registration (Sybil prevention)
+        if (metadata?.fingerprint) {
+          const existingFingerprints = JSON.parse(localStorage.getItem('equa_registered_fingerprints') || '[]');
+          existingFingerprints.push(metadata.fingerprint.fingerprint);
+          localStorage.setItem('equa_registered_fingerprints', JSON.stringify(existingFingerprints));
+          localStorage.setItem(`equa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
+          console.log('🔐 Device fingerprint stored for Sybil prevention');
+        }
       }
       
       // Call the metadata callback for referral/registration recording

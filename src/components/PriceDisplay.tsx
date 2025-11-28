@@ -3,7 +3,7 @@
 import { FC, useEffect, useState } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
-import { EquaPriceCalculator, PricePhase } from '@/utils/priceCalculator';
+import { EquaPriceCalculator, PricePhase, formatEquaPrice } from '@/utils/priceCalculator';
 import { PROGRAM_ID } from '@/lib/constants';
 import { safeParseUserCount } from '@/utils/safeAccountParsing';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
@@ -155,15 +155,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         <div>
           <p className="text-purple-200 text-sm mb-2">Current EQUA Price</p>
           <p className="text-white text-3xl font-bold" data-testid="current-price">
-            ${currentPrice === 0.01 
-              ? '0.01' 
-              : currentPrice < 1 
-                ? currentPrice.toFixed(4) 
-                : currentPrice.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  })
-            }
+            {formatEquaPrice(currentPrice)}
           </p>
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">{getPhaseLabel(currentPhase)}</p>
         </div>
