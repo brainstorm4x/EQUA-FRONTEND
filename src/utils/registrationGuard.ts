@@ -133,9 +133,10 @@ export function getRegisteredKeysCount(): number {
 
 /**
  * Validates a public key format
+ * Solana public keys are exactly 44 characters in base58 encoding
  */
 export function isValidPublicKey(publicKey: string): boolean {
-  // Base58 characters used in Solana addresses
-  const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+  // Base58 characters used in Solana addresses (exactly 44 chars)
+  const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{44}$/;
   return base58Regex.test(publicKey);
 }

@@ -274,6 +274,15 @@ const SendModal: FC<SendModalProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const jsQRRef = useRef<typeof import('jsqr').default | null>(null);
+
+  // Lazy load jsQR library once
+  const getJsQR = async () => {
+    if (!jsQRRef.current) {
+      jsQRRef.current = (await import('jsqr')).default;
+    }
+    return jsQRRef.current;
+  };
 
   // Handle QR code image upload using jsQR
   const handleQRUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -282,7 +291,7 @@ const SendModal: FC<SendModalProps> = ({
 
     try {
       setError('');
-      const jsQR = (await import('jsqr')).default;
+      const jsQR = await getJsQR();
       
       // Create an image element to read the file
       const img = document.createElement('img');
@@ -368,7 +377,7 @@ const SendModal: FC<SendModalProps> = ({
   const scanQRCode = async () => {
     if (!videoRef.current || !canvasRef.current) return;
     
-    const jsQR = (await import('jsqr')).default;
+    const jsQR = await getJsQR();
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');

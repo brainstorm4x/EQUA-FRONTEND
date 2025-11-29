@@ -74,14 +74,12 @@ function getUserLocaleCurrency(): string {
   
   try {
     const locale = navigator.language || 'en-US';
-    const formatter = new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD' });
-    const parts = formatter.formatToParts(0);
     
     // Map common locales to currencies
     const localeToCurrency: Record<string, string> = {
       'en-US': 'USD', 'en-GB': 'GBP', 'en-AU': 'AUD', 'en-CA': 'CAD',
       'de-DE': 'EUR', 'fr-FR': 'EUR', 'es-ES': 'EUR', 'it-IT': 'EUR',
-      'ja-JP': 'JPY', 'ko-KR': 'KRW', 'zh-CN': 'CNY', 'zh-TW': 'TWD',
+      'ja-JP': 'JPY', 'ko-KR': 'KRW', 'zh-CN': 'CNY', 'zh-TW': 'USD', // Taiwan - use USD as fallback
       'pt-BR': 'BRL', 'es-MX': 'MXN', 'hi-IN': 'INR', 'ar-AE': 'AED',
       'en-SG': 'SGD', 'en-HK': 'HKD', 'th-TH': 'THB', 'id-ID': 'IDR',
       'en-PH': 'PHP', 'en-ZA': 'ZAR', 'en-NG': 'NGN',
