@@ -17,6 +17,7 @@ interface PriceDisplayProps {
 
 // ============================================================================
 // PERFORMANCE OPTIMIZATION: Cached PDA computation
+// Uses 'global-state' seed from lib/constants.ts (matches Rust backend)
 // ============================================================================
 let cachedGlobalStatePDA: PublicKey | null = null;
 

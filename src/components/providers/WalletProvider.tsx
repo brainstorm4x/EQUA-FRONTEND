@@ -1,11 +1,17 @@
 'use client';
 
-import { FC, ReactNode, useMemo, useCallback, lazy, Suspense } from 'react';
+import { FC, ReactNode, useMemo, useCallback } from 'react';
 import {
   ConnectionProvider,
   WalletProvider as SolanaWalletProvider,
 } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork, WalletError } from '@solana/wallet-adapter-base';
+import {
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
+  TorusWalletAdapter,
+  LedgerWalletAdapter,
+} from '@solana/wallet-adapter-wallets';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 
@@ -57,28 +63,8 @@ const getPhantomStoreUrl = (() => {
   };
 })();
 
-/**
- * Lazy-load wallet adapters to reduce initial bundle size
- * Only load the adapters when actually needed
- */
-async function loadWalletAdapters() {
-  const { 
-    PhantomWalletAdapter, 
-    SolflareWalletAdapter, 
-    TorusWalletAdapter, 
-    LedgerWalletAdapter 
-  } = await import('@solana/wallet-adapter-wallets');
-  
-  return [
-    new PhantomWalletAdapter(),
-    new SolflareWalletAdapter(),
-    new TorusWalletAdapter(),
-    new LedgerWalletAdapter(),
-  ];
-}
-
 // Cached wallet adapters to avoid re-creating on each render
-let cachedWallets: any[] | null = null;
+let cachedWallets: (PhantomWalletAdapter | SolflareWalletAdapter | TorusWalletAdapter | LedgerWalletAdapter)[] | null = null;
 
 export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   // Use Devnet (change to Mainnet when ready for production)
@@ -87,17 +73,8 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   // Memoize endpoint to prevent recreation on every render
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
-  // Lazy-load and cache wallet adapters
+  // Memoize wallet adapters with caching
   const wallets = useMemo(() => {
-    // Import wallet adapters synchronously for SSR compatibility
-    // but tree-shake unused code through the optimizePackageImports config
-    const { 
-      PhantomWalletAdapter, 
-      SolflareWalletAdapter, 
-      TorusWalletAdapter, 
-      LedgerWalletAdapter 
-    } = require('@solana/wallet-adapter-wallets');
-    
     if (cachedWallets) return cachedWallets;
     
     cachedWallets = [

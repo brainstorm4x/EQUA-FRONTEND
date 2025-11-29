@@ -95,15 +95,26 @@ body {
 
 /* ============================================================================
    Reduced motion preference for accessibility and performance
+   More selective targeting to avoid breaking essential UI functionality
    ============================================================================ */
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  /* Only target decorative/non-essential animations */
+  .animate-pulse,
+  .animate-bounce,
+  .animate-spin,
+  .animate-fade-in,
+  .skeleton-pulse {
+    animation: none !important;
+  }
+  
+  /* Reduce but don't eliminate transitions for UI feedback */
+  .smooth-transition {
+    transition-duration: 0.1s !important;
+  }
+  
+  /* Disable scroll behavior animations */
+  html {
     scroll-behavior: auto !important;
   }
 }

@@ -5,8 +5,7 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  // Enable JIT mode for faster builds and smaller CSS bundles
-  mode: 'jit',
+  // Note: JIT mode is now the default in Tailwind CSS v3+ and doesn't need to be specified
   theme: {
     extend: {
       colors: {
