@@ -95,7 +95,7 @@ export async function getUserBalance(
       "le"
     );
 
-    // Return raw balance in base units (Gajbhiyes)
+    // Return raw balance in base units (smallest unit, called Gajbhiye)
     // Formatting should be handled by tokenFormat.ts utilities
     return balanceRaw.toNumber();
   } catch (error) {
@@ -116,7 +116,7 @@ export async function getSPLTokenBalance(
     // SPL Token account: amount is at bytes 64-72 (u64 little-endian)
     const amount = new BN(tokenAccountInfo.data.slice(64, 72), "le");
 
-    // Return raw balance in base units (Gajbhiyes)
+    // Return raw balance in base units (smallest unit, called Gajbhiye)
     // EQUA token uses 9 decimals (1,000,000,000 base units = 1 EQUA)
     // Formatting should be handled by tokenFormat.ts utilities
     return amount.toNumber();

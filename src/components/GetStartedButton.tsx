@@ -91,8 +91,18 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
 
   // Listen for registration completion events
   useEffect(() => {
+    // Track last event time to debounce
+    let lastEventTime = 0;
+    const DEBOUNCE_MS = 1000; // 1 second debounce
+
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === REGISTRATION_EVENT_KEY) {
+        const now = Date.now();
+        if (now - lastEventTime < DEBOUNCE_MS) {
+          return; // Debounce duplicate events
+        }
+        lastEventTime = now;
+        
         // Clear cache and re-check registration status
         cacheRef.current = null;
         checkRegistrationStatus(true);
@@ -104,6 +114,12 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
     
     // Also check for custom event within the same tab
     const handleRegistrationComplete = () => {
+      const now = Date.now();
+      if (now - lastEventTime < DEBOUNCE_MS) {
+        return; // Debounce duplicate events
+      }
+      lastEventTime = now;
+      
       cacheRef.current = null;
       checkRegistrationStatus(true);
     };

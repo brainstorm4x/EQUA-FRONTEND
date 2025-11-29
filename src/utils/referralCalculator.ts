@@ -30,12 +30,21 @@ export interface ReferralRewardInfo {
   isRecurring: boolean;
 }
 
+/**
+ * Information about a percentage-based referral reward calculation
+ */
 export interface PercentageBasedRewardInfo {
+  /** The amount of EQUA being minted by the referee (in base units / Gajbhiyes) */
   mintAmount: number;
+  /** The type of account being referred */
   accountType: AccountType;
+  /** The referral percentage applied (1% for individuals, 2% for businesses) */
   referralPercent: number;
+  /** The calculated reward in human-readable EQUA tokens */
   rewardAmount: number;
+  /** The calculated reward in base units (Gajbhiyes) - 9 decimals precision */
   rewardAmountRaw: bigint;
+  /** Whether this is a recurring reward (true = earned on each mint by referee) */
   isRecurring: boolean;
 }
 
@@ -60,7 +69,9 @@ export class ReferralRewardCalculator {
     accountType: AccountType
   ): PercentageBasedRewardInfo {
     const referralPercent = this.getReferralPercent(accountType);
-    const rewardAmountRaw = BigInt(Math.floor(mintAmount * referralPercent / 100));
+    // Use integer arithmetic to avoid floating-point precision issues
+    // Calculate: (mintAmount * referralPercent) / 100
+    const rewardAmountRaw = BigInt(Math.floor(mintAmount)) * BigInt(referralPercent) / 100n;
     const rewardAmount = Number(rewardAmountRaw) / EQUA_DECIMAL_MULTIPLIER;
 
     return {

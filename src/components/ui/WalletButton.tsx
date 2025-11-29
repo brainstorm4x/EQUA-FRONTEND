@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useEffect, useState, useCallback } from 'react';
+import { FC, useEffect, useState, useCallback, useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
@@ -15,6 +15,10 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
   const { wallet, connected, connecting, disconnect } = useWallet();
   const [mounted, setMounted] = useState(false);
   const [connectionTimedOut, setConnectionTimedOut] = useState(false);
+  
+  // Use ref to track connecting state to avoid stale closure issues
+  const connectingRef = useRef(connecting);
+  connectingRef.current = connecting;
 
   // Only render on client side
   useEffect(() => {
@@ -29,7 +33,8 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
     }
 
     const timeoutId = setTimeout(() => {
-      if (connecting) {
+      // Use ref to get current connecting state, avoiding stale closure
+      if (connectingRef.current) {
         console.warn('Wallet connection timed out after', CONNECTION_TIMEOUT_MS, 'ms');
         setConnectionTimedOut(true);
       }
