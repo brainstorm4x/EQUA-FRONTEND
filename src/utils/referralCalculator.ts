@@ -1,84 +1,146 @@
 /**
  * EQUA Token Referral Reward Calculator
  * 
- * Calculates referral rewards based on user tier:
- * - Users 1-100: 1,000 EQUA
- * - Users 101-1,000: 500 EQUA
- * - Users 1,001-10,000: 100 EQUA
- * - Users 10,001+: 50 EQUA
+ * Calculates referral rewards as a percentage of minted tokens:
+ * - Individual referrals: 1% of referred user's minted tokens (one-time on each mint)
+ * - Business referrals: 2% of referred user's minted tokens (one-time on each mint)
+ * 
+ * Note: These are recurring rewards - the referrer gets a percentage each time
+ * their referee mints tokens.
  */
 
 import { formatEquaRaw } from './tokenFormat';
+import { AccountType } from './registration';
+
+// Referral reward percentages
+export const INDIVIDUAL_REFERRAL_PERCENT = 1;  // 1% for referring individuals
+export const BUSINESS_REFERRAL_PERCENT = 2;    // 2% for referring businesses
+
+// EQUA token decimals (9 decimals)
+const EQUA_DECIMALS = 9;
+const EQUA_DECIMAL_MULTIPLIER = 10 ** EQUA_DECIMALS;
 
 export interface ReferralRewardInfo {
   userIndex: number;
-  tier: string;
+  accountType: AccountType;
+  referralPercent: number;
   rewardAmount: number;
-  rewardAmountRaw: bigint; // With 6 decimals
+  rewardAmountRaw: bigint;
   description: string;
+  isRecurring: boolean;
+}
+
+/**
+ * Information about a percentage-based referral reward calculation
+ */
+export interface PercentageBasedRewardInfo {
+  /** The amount of EQUA being minted by the referee (in base units / Gajbhiyes) */
+  mintAmount: number;
+  /** The type of account being referred */
+  accountType: AccountType;
+  /** The referral percentage applied (1% for individuals, 2% for businesses) */
+  referralPercent: number;
+  /** The calculated reward in human-readable EQUA tokens */
+  rewardAmount: number;
+  /** The calculated reward in base units (Gajbhiyes) - 9 decimals precision */
+  rewardAmountRaw: bigint;
+  /** Whether this is a recurring reward (true = earned on each mint by referee) */
+  isRecurring: boolean;
 }
 
 export class ReferralRewardCalculator {
-  // Reward amounts (in EQUA, stored with 6 decimals)
-  private static readonly TIER_1_REWARD = 1_000_000_000n; // 1,000 EQUA
-  private static readonly TIER_2_REWARD = 500_000_000n;   // 500 EQUA
-  private static readonly TIER_3_REWARD = 100_000_000n;   // 100 EQUA
-  private static readonly TIER_4_REWARD = 50_000_000n;    // 50 EQUA
-
-  private static readonly DECIMALS = 6;
-  private static readonly DECIMAL_MULTIPLIER = 10 ** this.DECIMALS;
+  /**
+   * Get the referral percentage based on account type
+   */
+  static getReferralPercent(accountType: AccountType): number {
+    return accountType === 'business' ? BUSINESS_REFERRAL_PERCENT : INDIVIDUAL_REFERRAL_PERCENT;
+  }
 
   /**
-   * Calculate referral reward for a given user index
+   * Calculate referral reward as a percentage of minted amount
+   * This is the primary reward calculation method for the new percentage-based system
+   * 
+   * @param mintAmount - The amount of EQUA being minted by the referee (in base units)
+   * @param accountType - The type of account being referred ('individual' or 'business')
+   * @returns PercentageBasedRewardInfo with calculated reward
    */
-  static calculateReward(userIndex: number): ReferralRewardInfo {
-    let rewardAmountRaw: bigint;
-    let tier: string;
-    let description: string;
+  static calculatePercentageReward(
+    mintAmount: number,
+    accountType: AccountType
+  ): PercentageBasedRewardInfo {
+    const referralPercent = this.getReferralPercent(accountType);
+    // Use integer arithmetic to avoid floating-point precision issues
+    // Calculate: (mintAmount * referralPercent) / 100
+    const rewardAmountRaw = BigInt(Math.floor(mintAmount)) * BigInt(referralPercent) / 100n;
+    const rewardAmount = Number(rewardAmountRaw) / EQUA_DECIMAL_MULTIPLIER;
 
+    return {
+      mintAmount,
+      accountType,
+      referralPercent,
+      rewardAmount,
+      rewardAmountRaw,
+      isRecurring: true, // Rewards are recurring (on each mint)
+    };
+  }
+
+  /**
+   * Calculate referral reward for a given user index (legacy method for backward compatibility)
+   * Now uses percentage-based calculation with a default mint amount
+   */
+  static calculateReward(userIndex: number, accountType: AccountType = 'individual'): ReferralRewardInfo {
+    const referralPercent = this.getReferralPercent(accountType);
+    
+    // For legacy compatibility, calculate based on default mint amounts per tier
+    let defaultMintAmount: number;
+    let description: string;
+    
     if (userIndex <= 100) {
-      rewardAmountRaw = this.TIER_1_REWARD;
-      tier = "Tier 1 (1-100)";
-      description = "Early Adopter Premium";
+      defaultMintAmount = 100_000 * EQUA_DECIMAL_MULTIPLIER; // 100,000 EQUA for early adopters
+      description = "Early Adopter Referral";
     } else if (userIndex <= 1_000) {
-      rewardAmountRaw = this.TIER_2_REWARD;
-      tier = "Tier 2 (101-1,000)";
-      description = "Pioneer Reward";
+      defaultMintAmount = 10_000 * EQUA_DECIMAL_MULTIPLIER; // 10,000 EQUA for pioneers
+      description = "Pioneer Referral";
     } else if (userIndex <= 10_000) {
-      rewardAmountRaw = this.TIER_3_REWARD;
-      tier = "Tier 3 (1,001-10,000)";
-      description = "Community Builder";
+      defaultMintAmount = 1_000 * EQUA_DECIMAL_MULTIPLIER; // 1,000 EQUA for community builders
+      description = "Community Builder Referral";
     } else {
-      rewardAmountRaw = this.TIER_4_REWARD;
-      tier = "Tier 4 (10,001+)";
+      defaultMintAmount = 100 * EQUA_DECIMAL_MULTIPLIER; // 100 EQUA for standard users
       description = "Standard Referral";
     }
 
-    const rewardAmount = Number(rewardAmountRaw) / this.DECIMAL_MULTIPLIER;
+    const rewardAmountRaw = BigInt(Math.floor(defaultMintAmount * referralPercent / 100));
+    const rewardAmount = Number(rewardAmountRaw) / EQUA_DECIMAL_MULTIPLIER;
 
     return {
       userIndex,
-      tier,
+      accountType,
+      referralPercent,
       rewardAmount,
       rewardAmountRaw,
       description,
+      isRecurring: true, // Rewards are recurring
     };
   }
 
   /**
    * Calculate total rewards for multiple referrals
    */
-  static calculateTotalRewards(userIndices: number[]): {
+  static calculateTotalRewards(
+    referrals: Array<{ userIndex: number; accountType: AccountType }>
+  ): {
     totalReward: number;
     totalRewardRaw: bigint;
     breakdown: ReferralRewardInfo[];
   } {
-    const breakdown = userIndices.map((index) => this.calculateReward(index));
+    const breakdown = referrals.map(({ userIndex, accountType }) => 
+      this.calculateReward(userIndex, accountType)
+    );
     const totalRewardRaw = breakdown.reduce(
       (sum, info) => sum + info.rewardAmountRaw,
       0n
     );
-    const totalReward = Number(totalRewardRaw) / this.DECIMAL_MULTIPLIER;
+    const totalReward = Number(totalRewardRaw) / EQUA_DECIMAL_MULTIPLIER;
 
     return {
       totalReward,
@@ -99,77 +161,73 @@ export class ReferralRewardCalculator {
    */
   static fromRaw(rawAmount: bigint | number): number {
     const raw = typeof rawAmount === 'bigint' ? rawAmount : BigInt(rawAmount);
-    return Number(raw) / this.DECIMAL_MULTIPLIER;
+    return Number(raw) / EQUA_DECIMAL_MULTIPLIER;
   }
 
   /**
    * Convert human-readable to raw amount
    */
   static toRaw(amount: number): bigint {
-    return BigInt(Math.floor(amount * this.DECIMAL_MULTIPLIER));
+    return BigInt(Math.floor(amount * EQUA_DECIMAL_MULTIPLIER));
   }
 
   /**
-   * Get all tier information
+   * Get referral tier information
    */
   static getTierInfo(): Array<{
     tier: string;
     userRange: string;
-    reward: number;
+    individualPercent: number;
+    businessPercent: number;
     description: string;
+    isRecurring: boolean;
   }> {
     return [
       {
-        tier: "Tier 1",
-        userRange: "1-100",
-        reward: Number(this.TIER_1_REWARD) / this.DECIMAL_MULTIPLIER,
-        description: "Early Adopter Premium",
+        tier: "Individual",
+        userRange: "All users",
+        individualPercent: INDIVIDUAL_REFERRAL_PERCENT,
+        businessPercent: 0,
+        description: "1% of referred user's minted tokens",
+        isRecurring: true,
       },
       {
-        tier: "Tier 2",
-        userRange: "101-1,000",
-        reward: Number(this.TIER_2_REWARD) / this.DECIMAL_MULTIPLIER,
-        description: "Pioneer Reward",
-      },
-      {
-        tier: "Tier 3",
-        userRange: "1,001-10,000",
-        reward: Number(this.TIER_3_REWARD) / this.DECIMAL_MULTIPLIER,
-        description: "Community Builder",
-      },
-      {
-        tier: "Tier 4",
-        userRange: "10,001+",
-        reward: Number(this.TIER_4_REWARD) / this.DECIMAL_MULTIPLIER,
-        description: "Standard Referral",
+        tier: "Business",
+        userRange: "All users",
+        individualPercent: 0,
+        businessPercent: BUSINESS_REFERRAL_PERCENT,
+        description: "2% of referred user's minted tokens",
+        isRecurring: true,
       },
     ];
   }
 
   /**
-   * Estimate future rewards
+   * Estimate future rewards based on expected mint amounts
    */
   static estimateRewards(
-    currentUserCount: number,
-    projectedNewUsers: number
+    estimatedMintAmount: number,
+    numberOfReferrals: number,
+    accountType: AccountType = 'individual'
   ): number {
-    let totalRewards = 0;
-
-    for (let i = 1; i <= projectedNewUsers; i++) {
-      const userIndex = currentUserCount + i;
-      const info = this.calculateReward(userIndex);
-      totalRewards += info.rewardAmount;
-    }
-
-    return totalRewards;
+    const referralPercent = this.getReferralPercent(accountType);
+    return (estimatedMintAmount * numberOfReferrals * referralPercent) / 100;
   }
 }
 
 // Export convenience functions
-export function calculateReferralReward(userIndex: number): ReferralRewardInfo {
-  return ReferralRewardCalculator.calculateReward(userIndex);
+export function calculateReferralReward(userIndex: number, accountType: AccountType = 'individual'): ReferralRewardInfo {
+  return ReferralRewardCalculator.calculateReward(userIndex, accountType);
+}
+
+export function calculatePercentageReferralReward(mintAmount: number, accountType: AccountType): PercentageBasedRewardInfo {
+  return ReferralRewardCalculator.calculatePercentageReward(mintAmount, accountType);
 }
 
 export function formatReferralReward(rewardAmountRaw: bigint): string {
   return ReferralRewardCalculator.formatReward(rewardAmountRaw);
+}
+
+export function getReferralPercent(accountType: AccountType): number {
+  return ReferralRewardCalculator.getReferralPercent(accountType);
 }

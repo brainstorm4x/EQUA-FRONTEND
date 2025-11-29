@@ -3,7 +3,7 @@
 import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import Link from 'next/link';
-import { isUserRegistered, getOrCreateKeypair } from '@/lib/program';
+import { isUserRegistered, getOrCreateKeypair, loadKeypair } from '@/lib/program';
 
 interface GetStartedButtonProps {
   className?: string;
@@ -12,6 +12,9 @@ interface GetStartedButtonProps {
 
 // Cache duration in milliseconds (5 minutes)
 const REGISTRATION_CACHE_DURATION = 5 * 60 * 1000;
+
+// Key used to trigger re-check when registration completes
+const REGISTRATION_EVENT_KEY = 'equa_registration_complete';
 
 /**
  * GetStartedButton - Smart CTA button that changes based on user registration status
@@ -32,7 +35,7 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
   // Cache to prevent excessive network calls
   const cacheRef = useRef<{ pubkey: string; registered: boolean; timestamp: number } | null>(null);
 
-  const checkRegistrationStatus = useCallback(async () => {
+  const checkRegistrationStatus = useCallback(async (forceRefresh = false) => {
     if (!publicKey || !connected) {
       setIsRegistered(false);
       return;
@@ -40,8 +43,8 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
 
     const pubkeyStr = publicKey.toBase58();
     
-    // Check cache first
-    if (cacheRef.current && 
+    // Check cache first (unless forced refresh)
+    if (!forceRefresh && cacheRef.current && 
         cacheRef.current.pubkey === pubkeyStr && 
         Date.now() - cacheRef.current.timestamp < REGISTRATION_CACHE_DURATION) {
       setIsRegistered(cacheRef.current.registered);
@@ -50,17 +53,30 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
 
     setIsLoading(true);
     try {
-      // Get the user's keypair from localStorage (same keypair used in registration)
-      const userAccountKeypair = getOrCreateKeypair();
-      const registered = await isUserRegistered(connection, userAccountKeypair.publicKey);
-      setIsRegistered(registered);
+      // Only check if there's an existing keypair in localStorage
+      // This prevents creating a new keypair on every page load
+      const existingKeypair = loadKeypair();
       
-      // Update cache
-      cacheRef.current = {
-        pubkey: pubkeyStr,
-        registered,
-        timestamp: Date.now()
-      };
+      if (existingKeypair) {
+        // Check if the keypair's user account is registered on-chain
+        const registered = await isUserRegistered(connection, existingKeypair.publicKey);
+        setIsRegistered(registered);
+        
+        // Update cache
+        cacheRef.current = {
+          pubkey: pubkeyStr,
+          registered,
+          timestamp: Date.now()
+        };
+      } else {
+        // No keypair exists yet - user hasn't started registration
+        setIsRegistered(false);
+        cacheRef.current = {
+          pubkey: pubkeyStr,
+          registered: false,
+          timestamp: Date.now()
+        };
+      }
     } catch (error) {
       console.error('Error checking registration status:', error);
       setIsRegistered(false);
@@ -71,6 +87,49 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
 
   useEffect(() => {
     checkRegistrationStatus();
+  }, [checkRegistrationStatus]);
+
+  // Listen for registration completion events
+  useEffect(() => {
+    // Track last event time to debounce
+    let lastEventTime = 0;
+    const DEBOUNCE_MS = 1000; // 1 second debounce
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === REGISTRATION_EVENT_KEY) {
+        const now = Date.now();
+        if (now - lastEventTime < DEBOUNCE_MS) {
+          return; // Debounce duplicate events
+        }
+        lastEventTime = now;
+        
+        // Clear cache and re-check registration status
+        cacheRef.current = null;
+        checkRegistrationStatus(true);
+      }
+    };
+
+    // Listen for storage events from other tabs
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check for custom event within the same tab
+    const handleRegistrationComplete = () => {
+      const now = Date.now();
+      if (now - lastEventTime < DEBOUNCE_MS) {
+        return; // Debounce duplicate events
+      }
+      lastEventTime = now;
+      
+      cacheRef.current = null;
+      checkRegistrationStatus(true);
+    };
+    
+    window.addEventListener('equa_registration_complete', handleRegistrationComplete);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('equa_registration_complete', handleRegistrationComplete);
+    };
   }, [checkRegistrationStatus]);
 
   // Determine button text based on connection and registration status

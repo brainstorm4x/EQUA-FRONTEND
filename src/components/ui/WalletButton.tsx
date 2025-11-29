@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState, useCallback, useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
@@ -8,14 +8,50 @@ interface WalletButtonProps {
   testId?: string;
 }
 
+// Connection timeout in milliseconds
+const CONNECTION_TIMEOUT_MS = 30000; // 30 seconds
+
 export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
-  const { wallet, connected } = useWallet();
+  const { wallet, connected, connecting, disconnect } = useWallet();
   const [mounted, setMounted] = useState(false);
+  const [connectionTimedOut, setConnectionTimedOut] = useState(false);
+  
+  // Use ref to track connecting state to avoid stale closure issues
+  const connectingRef = useRef(connecting);
+  connectingRef.current = connecting;
 
   // Only render on client side
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Handle connection timeout
+  useEffect(() => {
+    if (!connecting) {
+      setConnectionTimedOut(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      // Use ref to get current connecting state, avoiding stale closure
+      if (connectingRef.current) {
+        console.warn('Wallet connection timed out after', CONNECTION_TIMEOUT_MS, 'ms');
+        setConnectionTimedOut(true);
+      }
+    }, CONNECTION_TIMEOUT_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [connecting]);
+
+  // Handle disconnect when connection times out
+  const handleTimeoutDisconnect = useCallback(async () => {
+    try {
+      await disconnect();
+      setConnectionTimedOut(false);
+    } catch (error) {
+      console.error('Error disconnecting:', error);
+    }
+  }, [disconnect]);
 
   if (!mounted) {
     return (
@@ -24,6 +60,20 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
         data-testid={testId}
       >
         <span className="text-white font-semibold">Loading...</span>
+      </div>
+    );
+  }
+
+  // Show timeout message if connection is stuck
+  if (connectionTimedOut) {
+    return (
+      <div className="flex items-center gap-2" data-testid={testId}>
+        <button
+          onClick={handleTimeoutDisconnect}
+          className="bg-red-500 hover:bg-red-600 rounded-lg px-4 py-2 text-white font-semibold transition-all"
+        >
+          Connection Failed - Retry
+        </button>
       </div>
     );
   }

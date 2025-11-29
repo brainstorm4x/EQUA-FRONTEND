@@ -117,7 +117,7 @@ export default function HomePage() {
               <div className="text-4xl mb-4">🎁</div>
               <h3 className="text-xl font-bold text-white mb-2">Referral Rewards</h3>
               <p className="text-purple-200">
-                Share your public key to refer others and earn 1% of their minted EQUA
+                Refer others and earn 1% for individuals, 2% for businesses (recurring on each mint)
               </p>
             </div>
           </div>

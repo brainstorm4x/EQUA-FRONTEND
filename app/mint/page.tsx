@@ -574,6 +574,12 @@ export default function MintPage() {
           localStorage.setItem(`equa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
           console.log('🔐 Device fingerprint stored for Sybil prevention');
         }
+        
+        // Notify other components that registration is complete
+        // This triggers GetStartedButton to update its state
+        localStorage.setItem('equa_registration_complete', Date.now().toString());
+        window.dispatchEvent(new CustomEvent('equa_registration_complete'));
+        console.log('📢 Registration complete event dispatched');
       }
       
       // Call the metadata callback for referral/registration recording
@@ -915,6 +921,7 @@ export default function MintPage() {
                   onRegister={handleRegisterWithForm}
                   isLoading={isLoading}
                   validateReferrer={validateReferrer}
+                  userWalletAddress={publicKey?.toBase58()}
                 />
               </>
             ) : (

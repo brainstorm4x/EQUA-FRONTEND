@@ -167,7 +167,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           </div>
         </div>
         <p className="text-purple-200 text-sm mb-4">
-          Share your public key to refer others and earn 1% of their minted EQUA!
+          Share your referral to earn rewards: 1% for individuals, 2% for businesses!
         </p>
         
         <div className="bg-black/20 rounded-xl p-3 mb-4">
@@ -679,7 +679,7 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
 
         <div className="text-center">
           <p className="text-purple-200 text-sm mb-6">
-            Share your referral link and earn 1% of the EQUA tokens your friends mint!
+            Share your referral link and earn rewards: 1% for individuals, 2% for businesses!
           </p>
 
           {/* Referral Link Preview */}
