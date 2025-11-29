@@ -921,6 +921,7 @@ export default function MintPage() {
                   onRegister={handleRegisterWithForm}
                   isLoading={isLoading}
                   validateReferrer={validateReferrer}
+                  userWalletAddress={publicKey?.toBase58()}
                 />
               </>
             ) : (
