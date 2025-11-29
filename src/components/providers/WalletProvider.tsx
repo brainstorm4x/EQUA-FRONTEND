@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, ReactNode, useMemo, useCallback } from 'react';
+import { FC, ReactNode, useMemo, useCallback, useRef } from 'react';
 import {
   ConnectionProvider,
   WalletProvider as SolanaWalletProvider,
@@ -63,8 +63,8 @@ const getPhantomStoreUrl = (() => {
   };
 })();
 
-// Cached wallet adapters to avoid re-creating on each render
-let cachedWallets: (PhantomWalletAdapter | SolflareWalletAdapter | TorusWalletAdapter | LedgerWalletAdapter)[] | null = null;
+// Type for wallet adapters
+type WalletAdapterList = (PhantomWalletAdapter | SolflareWalletAdapter | TorusWalletAdapter | LedgerWalletAdapter)[];
 
 export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   // Use Devnet (change to Mainnet when ready for production)
@@ -73,18 +73,21 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   // Memoize endpoint to prevent recreation on every render
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
-  // Memoize wallet adapters with caching
+  // Use ref to cache wallets per instance, avoiding shared state across components
+  const walletsRef = useRef<WalletAdapterList | null>(null);
+
+  // Memoize wallet adapters with per-instance caching
   const wallets = useMemo(() => {
-    if (cachedWallets) return cachedWallets;
+    if (walletsRef.current) return walletsRef.current;
     
-    cachedWallets = [
+    walletsRef.current = [
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
       new TorusWalletAdapter(),
       new LedgerWalletAdapter(),
     ];
     
-    return cachedWallets;
+    return walletsRef.current;
   }, []);
 
   // Memoized error handler

@@ -28,8 +28,10 @@ export const PROGRAM_ID = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow
 export const NETWORK = 'devnet' as const;
 export const COMMITMENT = 'confirmed' as const;
 
-// Global state PDA seeds - freeze to prevent accidental mutation
-export const GLOBAL_STATE_SEED = 'global_state' as const;
+// NOTE: PDA seeds should be imported from lib/constants.ts to maintain consistency
+// The following are deprecated - use lib/constants.ts instead
+// Global state PDA seed - matches lib/constants.ts (must match Rust backend exactly)
+export const GLOBAL_STATE_SEED = 'global-state' as const;
 
 // User account seed
 export const USER_ACCOUNT_SEED = 'user_account' as const;

@@ -4,7 +4,7 @@ import { FC, useEffect, useState, useRef, useCallback } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { EquaPriceCalculator, PricePhase, formatEquaPrice } from '@/utils/priceCalculator';
-import { PROGRAM_ID } from '@/lib/constants';
+import { PROGRAM_ID, GLOBAL_STATE_SEED } from '@/lib/constants';
 import { safeParseUserCount } from '@/utils/safeAccountParsing';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import * as anchor from '@coral-xyz/anchor';
@@ -17,14 +17,14 @@ interface PriceDisplayProps {
 
 // ============================================================================
 // PERFORMANCE OPTIMIZATION: Cached PDA computation
-// Uses 'global-state' seed from lib/constants.ts (matches Rust backend)
+// Uses GLOBAL_STATE_SEED from lib/constants.ts (matches Rust backend)
 // ============================================================================
 let cachedGlobalStatePDA: PublicKey | null = null;
 
 function getGlobalStatePDA(): PublicKey {
   if (!cachedGlobalStatePDA) {
     [cachedGlobalStatePDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from('global-state')],
+      [Buffer.from(GLOBAL_STATE_SEED)],
       PROGRAM_ID
     );
   }

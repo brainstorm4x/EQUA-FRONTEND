@@ -72,8 +72,8 @@ export function useProgram() {
   useEffect(() => {
     const currentWalletKey = wallet.publicKey?.toBase58() || null;
     
-    // Skip if wallet hasn't changed
-    if (currentWalletKey === prevWalletKeyRef.current && program !== null) {
+    // Skip if wallet hasn't changed and we already have a program
+    if (currentWalletKey === prevWalletKeyRef.current) {
       return;
     }
     
@@ -109,7 +109,7 @@ export function useProgram() {
       cancelled = true;
     };
     
-  }, [connection, wallet, program]);
+  }, [connection, wallet]);
 
   // Compute isReady based on both keypair and program initialization
   const isReady = useMemo(() => {
