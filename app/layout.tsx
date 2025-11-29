@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { WalletProvider } from "@/components/WalletProvider";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "EQUA Token - Solana DApp",
@@ -24,9 +25,43 @@ export default function RootLayout({
       <head>
         {/* Preload critical assets for faster loading */}
         <link rel="preload" href="/equa-logo.svg" as="image" type="image/svg+xml" />
+        {/* DNS prefetch for external services */}
+        <link rel="dns-prefetch" href="https://api.devnet.solana.com" />
+        {/* Preconnect for wallet adapter resources */}
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
       </head>
       <body className="font-sans antialiased">
         <WalletProvider>{children}</WalletProvider>
+        {/* Initialize Web Vitals tracking - loaded after page render */}
+        <Script
+          id="web-vitals"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Lightweight Web Vitals initialization
+              if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
+                try {
+                  // Track LCP
+                  new PerformanceObserver((list) => {
+                    const entries = list.getEntries();
+                    const last = entries[entries.length - 1];
+                    if (last && process.env.NODE_ENV === 'development') {
+                      console.log('[WebVital] LCP:', last.startTime.toFixed(0), 'ms');
+                    }
+                  }).observe({ type: 'largest-contentful-paint', buffered: true });
+                  
+                  // Track CLS
+                  let cls = 0;
+                  new PerformanceObserver((list) => {
+                    for (const entry of list.getEntries()) {
+                      if (!entry.hadRecentInput && entry.value) cls += entry.value;
+                    }
+                  }).observe({ type: 'layout-shift', buffered: true });
+                } catch(e) {}
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

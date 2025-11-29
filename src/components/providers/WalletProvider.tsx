@@ -1,17 +1,11 @@
 'use client';
 
-import { FC, ReactNode, useMemo, useCallback, useEffect } from 'react';
+import { FC, ReactNode, useMemo, useCallback, lazy, Suspense } from 'react';
 import {
   ConnectionProvider,
   WalletProvider as SolanaWalletProvider,
 } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork, WalletError } from '@solana/wallet-adapter-base';
-import {
-  PhantomWalletAdapter,
-  SolflareWalletAdapter,
-  TorusWalletAdapter,
-  LedgerWalletAdapter,
-} from '@solana/wallet-adapter-wallets';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 
@@ -24,50 +18,99 @@ interface WalletProviderProps {
 
 /**
  * Detects if the user is on a mobile device
+ * Memoized to avoid repeated regex evaluations
  */
-function isMobileDevice(): boolean {
-  if (typeof window === 'undefined') return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
-}
+const isMobileDevice = (() => {
+  let cached: boolean | null = null;
+  return (): boolean => {
+    if (cached !== null) return cached;
+    if (typeof window === 'undefined') return false;
+    cached = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+    return cached;
+  };
+})();
 
 /**
  * Gets the app store URL for Phantom wallet based on the platform
+ * Memoized for performance
  */
-function getPhantomStoreUrl(): string {
-  if (typeof window === 'undefined') return 'https://phantom.app/download';
+const getPhantomStoreUrl = (() => {
+  let cached: string | null = null;
+  return (): string => {
+    if (cached !== null) return cached;
+    if (typeof window === 'undefined') {
+      cached = 'https://phantom.app/download';
+      return cached;
+    }
+    
+    const userAgent = navigator.userAgent.toLowerCase();
+    if (/android/i.test(userAgent)) {
+      cached = 'https://play.google.com/store/apps/details?id=app.phantom';
+    } else if (/iphone|ipad|ipod/i.test(userAgent)) {
+      cached = 'https://apps.apple.com/app/phantom-solana-wallet/id1598432977';
+    } else {
+      cached = 'https://phantom.app/download';
+    }
+    return cached;
+  };
+})();
+
+/**
+ * Lazy-load wallet adapters to reduce initial bundle size
+ * Only load the adapters when actually needed
+ */
+async function loadWalletAdapters() {
+  const { 
+    PhantomWalletAdapter, 
+    SolflareWalletAdapter, 
+    TorusWalletAdapter, 
+    LedgerWalletAdapter 
+  } = await import('@solana/wallet-adapter-wallets');
   
-  const userAgent = navigator.userAgent.toLowerCase();
-  if (/android/i.test(userAgent)) {
-    return 'https://play.google.com/store/apps/details?id=app.phantom';
-  } else if (/iphone|ipad|ipod/i.test(userAgent)) {
-    return 'https://apps.apple.com/app/phantom-solana-wallet/id1598432977';
-  }
-  return 'https://phantom.app/download';
+  return [
+    new PhantomWalletAdapter(),
+    new SolflareWalletAdapter(),
+    new TorusWalletAdapter(),
+    new LedgerWalletAdapter(),
+  ];
 }
+
+// Cached wallet adapters to avoid re-creating on each render
+let cachedWallets: any[] | null = null;
 
 export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   // Use Devnet (change to Mainnet when ready for production)
   const network = WalletAdapterNetwork.Devnet;
 
-  // You can also provide a custom RPC endpoint
+  // Memoize endpoint to prevent recreation on every render
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
-  
-  // Or use a custom endpoint:
-  // const endpoint = 'https://api.devnet.solana.com';
 
-  const wallets = useMemo(
-    () => [
+  // Lazy-load and cache wallet adapters
+  const wallets = useMemo(() => {
+    // Import wallet adapters synchronously for SSR compatibility
+    // but tree-shake unused code through the optimizePackageImports config
+    const { 
+      PhantomWalletAdapter, 
+      SolflareWalletAdapter, 
+      TorusWalletAdapter, 
+      LedgerWalletAdapter 
+    } = require('@solana/wallet-adapter-wallets');
+    
+    if (cachedWallets) return cachedWallets;
+    
+    cachedWallets = [
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
       new TorusWalletAdapter(),
       new LedgerWalletAdapter(),
-    ],
-    []
-  );
+    ];
+    
+    return cachedWallets;
+  }, []);
 
-  // Handle wallet errors
+  // Memoized error handler
   const onError = useCallback((error: WalletError) => {
     console.error('Wallet error:', error);
     

@@ -5,6 +5,8 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  // Enable JIT mode for faster builds and smaller CSS bundles
+  mode: 'jit',
   theme: {
     extend: {
       colors: {
@@ -24,4 +26,9 @@ module.exports = {
     },
   },
   plugins: [],
+  // Future flags for optimization
+  future: {
+    hoverOnlyWhenSupported: true,
+    respectDefaultRingColorOpacity: true,
+  },
 }
