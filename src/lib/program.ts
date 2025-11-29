@@ -10,24 +10,52 @@ import {
   MINT_SEED,
   MINT_AUTHORITY_SEED,
 } from "./constants";
-// PDA Helper Functions
-export function getGlobalStatePDA(): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from(GLOBAL_STATE_SEED)],
-    PROGRAM_ID
-  );
-}
-export function getMintPDA(): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync([Buffer.from(MINT_SEED)], PROGRAM_ID);
-}
-export function getMintAuthorityPDA(): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from(MINT_AUTHORITY_SEED)],
-    PROGRAM_ID
-  );
+
+// ============================================================================
+// PERFORMANCE OPTIMIZATION: Memoized PDA Calculations
+// PDAs are deterministic - cache them to avoid repeated computation
+// ============================================================================
+
+// Cache for PDA computations
+const pdaCache = new Map<string, [PublicKey, number]>();
+
+/**
+ * Get cached PDA or compute and cache it
+ * @param key - Cache key identifier
+ * @param seeds - Seeds for PDA derivation
+ * @returns Cached or newly computed [PublicKey, bump] tuple
+ */
+function getCachedPDA(key: string, seeds: Buffer[]): [PublicKey, number] {
+  if (pdaCache.has(key)) {
+    return pdaCache.get(key)!;
+  }
+  const pda = PublicKey.findProgramAddressSync(seeds, PROGRAM_ID);
+  pdaCache.set(key, pda);
+  return pda;
 }
 
-// Create Anchor Program Instance
+// PDA Helper Functions with memoization
+export function getGlobalStatePDA(): [PublicKey, number] {
+  return getCachedPDA('global_state', [Buffer.from(GLOBAL_STATE_SEED)]);
+}
+
+export function getMintPDA(): [PublicKey, number] {
+  return getCachedPDA('mint', [Buffer.from(MINT_SEED)]);
+}
+
+export function getMintAuthorityPDA(): [PublicKey, number] {
+  return getCachedPDA('mint_authority', [Buffer.from(MINT_AUTHORITY_SEED)]);
+}
+
+// ============================================================================
+// PERFORMANCE OPTIMIZATION: Cached Program Instance
+// Avoid re-fetching IDL on every call
+// ============================================================================
+
+let cachedProgram: Program | null = null;
+let cachedIdl: any = null;
+
+// Create Anchor Program Instance with caching
 export async function createProgram(
   connection: Connection,
   wallet: any
@@ -39,44 +67,85 @@ export async function createProgram(
   });
 
   try {
-    const response = await fetch("/idl/equa_token.json");
-    if (!response.ok) {
-      throw new Error("Failed to load IDL: " + response.statusText);
+    // Use cached IDL if available
+    if (!cachedIdl) {
+      const response = await fetch("/idl/equa_token.json");
+      if (!response.ok) {
+        throw new Error("Failed to load IDL: " + response.statusText);
+      }
+      cachedIdl = await response.json();
+      console.log(
+        "✅ IDL loaded, creating program with ID:",
+        PROGRAM_ID.toBase58()
+      );
     }
 
-    let idlData = await response.json();
-
-    // ✅ DON'T DELETE - Just log that we have the IDL
-    console.log(
-      "✅ IDL loaded, creating program with ID:",
-      PROGRAM_ID.toBase58()
-    );
-
     // Create program with 2-parameter constructor (IDL contains the program ID)
-    return new Program(idlData, provider);
+    return new Program(cachedIdl, provider);
   } catch (error) {
     console.error("❌ Error creating program:", error);
     throw error;
   }
 }
 
-// Check if user is registered
+// ============================================================================
+// PERFORMANCE OPTIMIZATION: RPC Response Caching
+// Cache frequently accessed data with TTL
+// ============================================================================
+
+interface CacheEntry<T> {
+  value: T;
+  timestamp: number;
+}
+
+const rpcCache = new Map<string, CacheEntry<any>>();
+const CACHE_TTL_MS = 5000; // 5 second TTL for RPC responses
+
+function getCachedRpcResponse<T>(key: string): T | null {
+  const entry = rpcCache.get(key);
+  if (!entry) return null;
+  
+  // Check if cache is still valid
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+    rpcCache.delete(key);
+    return null;
+  }
+  
+  return entry.value;
+}
+
+function setCachedRpcResponse<T>(key: string, value: T): void {
+  rpcCache.set(key, { value, timestamp: Date.now() });
+}
+
+// Check if user is registered with caching
 export async function isUserRegistered(
   connection: Connection,
   userAccountPubkey: PublicKey
 ): Promise<boolean> {
+  const cacheKey = `registered:${userAccountPubkey.toBase58()}`;
+  const cached = getCachedRpcResponse<boolean>(cacheKey);
+  if (cached !== null) return cached;
+  
   try {
     const accountInfo = await connection.getAccountInfo(userAccountPubkey);
-    return accountInfo !== null && accountInfo.data.length > 0;
+    const result = accountInfo !== null && accountInfo.data.length > 0;
+    setCachedRpcResponse(cacheKey, result);
+    return result;
   } catch (error) {
     return false;
   }
 }
+
 // Get user's minted amount from user account (returns RAW amount in base units)
 export async function getUserBalance(
   connection: Connection,
   userAccountPubkey: PublicKey
 ): Promise<number> {
+  const cacheKey = `balance:${userAccountPubkey.toBase58()}`;
+  const cached = getCachedRpcResponse<number>(cacheKey);
+  if (cached !== null) return cached;
+  
   try {
     const accountInfo = await connection.getAccountInfo(userAccountPubkey);
     if (!accountInfo || accountInfo.data.length === 0) return 0;
@@ -97,17 +166,24 @@ export async function getUserBalance(
 
     // Return RAW amount (not divided by decimals)
     // Formatting should be done in the UI layer
-    return balanceRaw.toNumber();
+    const result = balanceRaw.toNumber();
+    setCachedRpcResponse(cacheKey, result);
+    return result;
   } catch (error) {
     console.error("Error getting balance:", error);
     return 0;
   }
 }
+
 // Get SPL token balance directly from token account (returns RAW amount in base units)
 export async function getSPLTokenBalance(
   connection: Connection,
   tokenAccountAddress: PublicKey
 ): Promise<number> {
+  const cacheKey = `splBalance:${tokenAccountAddress.toBase58()}`;
+  const cached = getCachedRpcResponse<number>(cacheKey);
+  if (cached !== null) return cached;
+  
   try {
     const tokenAccountInfo = await connection.getAccountInfo(
       tokenAccountAddress
@@ -118,34 +194,45 @@ export async function getSPLTokenBalance(
 
     // Return RAW amount (not divided by decimals)
     // Formatting should be done in the UI layer
-    return amount.toNumber();
+    const result = amount.toNumber();
+    setCachedRpcResponse(cacheKey, result);
+    return result;
   } catch (error) {
     console.error("Error getting SPL token balance:", error);
     return 0;
   }
 }
+
 // Get global state - NOT AVAILABLE due to incomplete IDL
 // Use raw account data reading if needed
 export async function getGlobalState(
   connection: Connection,
   globalStatePDA: PublicKey
 ): Promise<any | null> {
+  const cacheKey = `globalState:${globalStatePDA.toBase58()}`;
+  const cached = getCachedRpcResponse<any>(cacheKey);
+  if (cached !== null) return cached;
+  
   try {
     const accountInfo = await connection.getAccountInfo(globalStatePDA);
     if (!accountInfo) return null;
     // Return basic info - full deserialization not available
-    return {
+    const result = {
       exists: true,
       dataLength: accountInfo.data.length,
       owner: accountInfo.owner.toBase58(),
     };
+    setCachedRpcResponse(cacheKey, result);
+    return result;
   } catch (error) {
     console.error("Error fetching global state:", error);
     return null;
   }
 }
+
 // Keypair storage helpers
 const KEYPAIR_STORAGE_KEY = "equa_user_keypair";
+
 export function loadKeypair(): Keypair | null {
   if (typeof window === "undefined") return null;
   try {
@@ -158,6 +245,7 @@ export function loadKeypair(): Keypair | null {
     return null;
   }
 }
+
 export function saveKeypair(keypair: Keypair): void {
   if (typeof window === "undefined") return;
   try {
@@ -167,7 +255,16 @@ export function saveKeypair(keypair: Keypair): void {
     console.error("Error saving keypair:", error);
   }
 }
+
+// Cached keypair for performance
+let cachedKeypair: Keypair | null = null;
+
 export function getOrCreateKeypair(): Keypair {
+  // Return cached keypair if available
+  if (cachedKeypair) {
+    return cachedKeypair;
+  }
+  
   let keypair = loadKeypair();
   if (!keypair) {
     keypair = Keypair.generate();
@@ -182,8 +279,12 @@ export function getOrCreateKeypair(): Keypair {
       keypair.publicKey.toBase58()
     );
   }
+  
+  // Cache the keypair
+  cachedKeypair = keypair;
   return keypair;
 }
+
 // ✅ Create initialize_user instruction
 export function createInitializeUserInstruction(
   userAccount: PublicKey,
@@ -260,6 +361,25 @@ export function createMintEquaInstruction(
     programId: PROGRAM_ID,
     data,
   });
+}
+
+/**
+ * Clear all cached RPC responses
+ * Call this after mutations (registration, minting, transfers)
+ */
+export function clearRpcCache(): void {
+  rpcCache.clear();
+}
+
+/**
+ * Invalidate specific cache entries
+ * @param userPubkey - User's public key to invalidate
+ */
+export function invalidateUserCache(userPubkey: PublicKey): void {
+  const base58 = userPubkey.toBase58();
+  rpcCache.delete(`registered:${base58}`);
+  rpcCache.delete(`balance:${base58}`);
+  rpcCache.delete(`splBalance:${base58}`);
 }
 
 export { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };

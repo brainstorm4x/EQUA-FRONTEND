@@ -5,6 +5,7 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  // Note: JIT mode is now the default in Tailwind CSS v3+ and doesn't need to be specified
   theme: {
     extend: {
       colors: {
@@ -24,4 +25,9 @@ module.exports = {
     },
   },
   plugins: [],
+  // Future flags for optimization
+  future: {
+    hoverOnlyWhenSupported: true,
+    respectDefaultRingColorOpacity: true,
+  },
 }
