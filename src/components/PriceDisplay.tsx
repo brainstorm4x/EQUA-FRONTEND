@@ -10,6 +10,7 @@ import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import * as anchor from '@coral-xyz/anchor';
 import { getRegistrationStats } from '@/utils/registrationStats';
 import { getTotalTransfers } from '@/utils/transferTracking';
+import { getUserLocaleCurrency, formatLocalCurrency } from '@/utils/localeCurrency';
 
 interface PriceDisplayProps {
   className?: string;
@@ -30,84 +31,6 @@ function getGlobalStatePDA(): PublicKey {
     );
   }
   return cachedGlobalStatePDA;
-}
-
-// ============================================================================
-// Local Currency Conversion
-// ============================================================================
-interface CurrencyInfo {
-  code: string;
-  symbol: string;
-  rate: number; // Rate relative to USD
-}
-
-// Default exchange rates (fallback if API fails)
-// These are approximate rates as of late 2024
-const DEFAULT_RATES: Record<string, CurrencyInfo> = {
-  USD: { code: 'USD', symbol: '$', rate: 1 },
-  EUR: { code: 'EUR', symbol: '€', rate: 0.92 },
-  GBP: { code: 'GBP', symbol: '£', rate: 0.79 },
-  JPY: { code: 'JPY', symbol: '¥', rate: 149.5 },
-  INR: { code: 'INR', symbol: '₹', rate: 83.5 },
-  CNY: { code: 'CNY', symbol: '¥', rate: 7.24 },
-  KRW: { code: 'KRW', symbol: '₩', rate: 1320 },
-  BRL: { code: 'BRL', symbol: 'R$', rate: 4.97 },
-  MXN: { code: 'MXN', symbol: '$', rate: 17.15 },
-  AUD: { code: 'AUD', symbol: 'A$', rate: 1.53 },
-  CAD: { code: 'CAD', symbol: 'C$', rate: 1.36 },
-  CHF: { code: 'CHF', symbol: 'CHF', rate: 0.88 },
-  NGN: { code: 'NGN', symbol: '₦', rate: 1550 },
-  ZAR: { code: 'ZAR', symbol: 'R', rate: 18.5 },
-  AED: { code: 'AED', symbol: 'د.إ', rate: 3.67 },
-  SGD: { code: 'SGD', symbol: 'S$', rate: 1.34 },
-  HKD: { code: 'HKD', symbol: 'HK$', rate: 7.82 },
-  PHP: { code: 'PHP', symbol: '₱', rate: 56 },
-  THB: { code: 'THB', symbol: '฿', rate: 35.5 },
-  IDR: { code: 'IDR', symbol: 'Rp', rate: 15700 },
-};
-
-/**
- * Gets user's local currency based on browser locale
- */
-function getUserLocaleCurrency(): string {
-  if (typeof window === 'undefined') return 'USD';
-  
-  try {
-    const locale = navigator.language || 'en-US';
-    
-    // Map common locales to currencies
-    const localeToCurrency: Record<string, string> = {
-      'en-US': 'USD', 'en-GB': 'GBP', 'en-AU': 'AUD', 'en-CA': 'CAD',
-      'de-DE': 'EUR', 'fr-FR': 'EUR', 'es-ES': 'EUR', 'it-IT': 'EUR',
-      'ja-JP': 'JPY', 'ko-KR': 'KRW', 'zh-CN': 'CNY', 'zh-TW': 'USD', // Taiwan - use USD as fallback
-      'pt-BR': 'BRL', 'es-MX': 'MXN', 'hi-IN': 'INR', 'ar-AE': 'AED',
-      'en-SG': 'SGD', 'en-HK': 'HKD', 'th-TH': 'THB', 'id-ID': 'IDR',
-      'en-PH': 'PHP', 'en-ZA': 'ZAR', 'en-NG': 'NGN',
-    };
-    
-    return localeToCurrency[locale] || 'USD';
-  } catch {
-    return 'USD';
-  }
-}
-
-/**
- * Formats a price in local currency
- */
-function formatLocalCurrency(usdPrice: number, currencyCode: string): string {
-  const currencyInfo = DEFAULT_RATES[currencyCode] || DEFAULT_RATES.USD;
-  const localPrice = usdPrice * currencyInfo.rate;
-  
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: currencyCode,
-      minimumFractionDigits: localPrice < 1 ? 4 : 2,
-      maximumFractionDigits: localPrice < 1 ? 4 : 2,
-    }).format(localPrice);
-  } catch {
-    return `${currencyInfo.symbol}${localPrice.toFixed(localPrice < 1 ? 4 : 2)}`;
-  }
 }
 
 // ============================================================================
