@@ -169,3 +169,124 @@ export function formatLocalCurrency(usdPrice: number, currencyCode: string): str
     return `${currencyInfo.symbol}${localPrice.toFixed(localPrice < 1 ? 4 : 2)}`;
   }
 }
+
+// =============================================================================
+// EQX (EQUA INDEX) FORMATTING UTILITIES
+// =============================================================================
+
+/**
+ * Format a price in EQX (EQUA Index) units
+ * 
+ * @param eqxPrice - The price in EQX units
+ * @returns Formatted EQX price string
+ */
+export function formatEqxPrice(eqxPrice: number): string {
+  if (eqxPrice < 1) {
+    return `${eqxPrice.toFixed(4)} EQX`;
+  }
+  return `${eqxPrice.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })} EQX`;
+}
+
+/**
+ * EQUA price display in multiple formats
+ */
+export interface EquaPriceDisplay {
+  /** Formatted EQX price string */
+  eqx: string;
+  /** Formatted USD price string */
+  usd: string;
+  /** Formatted local currency price string */
+  local: string;
+  /** Local currency code */
+  localCode: string;
+  /** Raw values for calculations */
+  raw: {
+    eqx: number;
+    usd: number;
+    local: number;
+  };
+}
+
+/**
+ * Format EQUA price for display in all three formats (EQX, USD, local currency)
+ * 
+ * @param eqxPrice - EQUA price in EQX units
+ * @param usdPrice - EQUA price in USD
+ * @param localCurrencyCode - Local currency code (e.g., 'INR', 'EUR')
+ * @returns Formatted prices in all three formats
+ */
+export function formatEquaPriceDisplay(
+  eqxPrice: number,
+  usdPrice: number,
+  localCurrencyCode?: string
+): EquaPriceDisplay {
+  const currencyCode = localCurrencyCode || getUserLocaleCurrency();
+  const currencyInfo = DEFAULT_RATES[currencyCode] || DEFAULT_RATES.USD;
+  const localPrice = usdPrice * currencyInfo.rate;
+  
+  return {
+    eqx: formatEqxPrice(eqxPrice),
+    usd: formatUsdPrice(usdPrice),
+    local: formatLocalCurrency(usdPrice, currencyCode),
+    localCode: currencyCode,
+    raw: {
+      eqx: eqxPrice,
+      usd: usdPrice,
+      local: localPrice,
+    },
+  };
+}
+
+/**
+ * Format USD price for display
+ * 
+ * @param usdPrice - Price in USD
+ * @returns Formatted USD price string
+ */
+export function formatUsdPrice(usdPrice: number): string {
+  if (usdPrice < 1) {
+    return `$${usdPrice.toFixed(4)}`;
+  }
+  return `$${usdPrice.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+/**
+ * Get the exchange rate for a currency relative to USD
+ * 
+ * @param currencyCode - The currency code
+ * @returns Exchange rate (how many units of local currency per USD)
+ */
+export function getExchangeRate(currencyCode: string): number {
+  const currencyInfo = DEFAULT_RATES[currencyCode];
+  return currencyInfo ? currencyInfo.rate : 1;
+}
+
+/**
+ * Convert USD to local currency
+ * 
+ * @param usdAmount - Amount in USD
+ * @param currencyCode - Target currency code
+ * @returns Amount in local currency
+ */
+export function convertUsdToLocal(usdAmount: number, currencyCode: string): number {
+  const rate = getExchangeRate(currencyCode);
+  return usdAmount * rate;
+}
+
+/**
+ * Convert local currency to USD
+ * 
+ * @param localAmount - Amount in local currency
+ * @param currencyCode - Source currency code
+ * @returns Amount in USD
+ */
+export function convertLocalToUsd(localAmount: number, currencyCode: string): number {
+  const rate = getExchangeRate(currencyCode);
+  return localAmount / rate;
+}
