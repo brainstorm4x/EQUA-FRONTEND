@@ -2,15 +2,18 @@
  * EQUA Frontend Supabase Client
  * 
  * Initializes and exports the Supabase client for database operations.
- * Uses environment variables for configuration with fallback to hardcoded values.
+ * Uses environment variables for configuration.
+ * 
+ * Required environment variables:
+ * - NEXT_PUBLIC_SUPABASE_URL: Your Supabase project URL
+ * - NEXT_PUBLIC_SUPABASE_ANON_KEY: Your Supabase anon/public key
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Supabase configuration
-// In production, use environment variables
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qpmpybciyqdoxctvlyqn.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwbXB5YmNpeXFkb3hjdHZseXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODQxMzYsImV4cCI6MjA4MDA2MDEzNn0.D35XUatnJqnlpM7G3pWcECYXHV-pDdGweQLf5MPEChc';
+// Supabase configuration from environment variables
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Singleton client instance
 let supabaseClient: SupabaseClient | null = null;
@@ -20,6 +23,10 @@ let supabaseClient: SupabaseClient | null = null;
  */
 export function getSupabaseClient(): SupabaseClient {
   if (!supabaseClient) {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.warn('[EQUA DB] Supabase credentials not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.');
+    }
+    
     supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         persistSession: false, // We handle auth separately with wallet
@@ -44,6 +51,10 @@ export const supabase = getSupabaseClient();
  * Check if Supabase is available/online
  */
 export async function isSupabaseAvailable(): Promise<boolean> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return false;
+  }
+  
   try {
     const { error } = await supabase.from('global_state').select('id').limit(1);
     return !error;
@@ -53,10 +64,9 @@ export async function isSupabaseAvailable(): Promise<boolean> {
 }
 
 /**
- * Export configuration for reference
+ * Export configuration status for reference
  */
 export const supabaseConfig = {
-  url: SUPABASE_URL,
-  // Don't expose the key in logs/errors
-  hasKey: !!SUPABASE_ANON_KEY,
+  isConfigured: !!(SUPABASE_URL && SUPABASE_ANON_KEY),
+  url: SUPABASE_URL ? SUPABASE_URL.replace(/https?:\/\//, '').split('.')[0] + '...' : 'not configured',
 };

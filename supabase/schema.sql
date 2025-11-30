@@ -49,8 +49,10 @@ CREATE POLICY "Anyone can register" ON users
     FOR INSERT WITH CHECK (true);
 
 -- Users can only update their own record
+-- Note: For wallet-based auth, you would need to implement custom JWT claims
+-- or use a different auth mechanism. For now, updates are restricted.
 CREATE POLICY "Users can update own record" ON users
-    FOR UPDATE USING (wallet_address = current_setting('request.jwt.claims', true)::json->>'wallet_address');
+    FOR UPDATE USING (false);  -- Disable updates by default for security
 
 -- ============================================================================
 -- TRANSFERS TABLE

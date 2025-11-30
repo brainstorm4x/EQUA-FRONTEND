@@ -8,21 +8,28 @@ This directory contains the Supabase integration for the EQUA Frontend applicati
 
 Run the SQL in `supabase/schema.sql` in your Supabase SQL editor:
 
-1. Go to your Supabase dashboard: https://qpmpybciyqdoxctvlyqn.supabase.co
+1. Go to your Supabase dashboard
 2. Navigate to **SQL Editor**
 3. Paste the contents of `supabase/schema.sql`
 4. Click **Run** to execute
 
 This will create all necessary tables, indexes, RLS policies, functions, and views.
 
-### 2. Environment Variables (Optional)
+### 2. Environment Variables
 
-The Supabase credentials are already configured, but for better security in production, set these environment variables:
+Copy `.env.example` to `.env.local` and configure your Supabase credentials:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://qpmpybciyqdoxctvlyqn.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+cp .env.example .env.local
 ```
+
+Edit `.env.local`:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+**Note**: Never commit `.env.local` or expose your production keys.
 
 ## Database Schema
 

@@ -32,14 +32,26 @@ const SYNC_STATE_KEY = 'equa_sync_state';
 const PENDING_OPS_KEY = 'equa_pending_operations';
 const MAX_RETRY_COUNT = 3;
 
+// PostgreSQL error codes
+const POSTGRES_UNIQUE_VIOLATION = '23505';
+
+// Rate limiting configuration (can be overridden via environment)
+const RATE_LIMIT_WINDOW_MS = parseInt(process.env.NEXT_PUBLIC_RATE_LIMIT_WINDOW_MS || String(24 * 60 * 60 * 1000), 10);
+const REFERRAL_RATE_LIMIT = parseInt(process.env.NEXT_PUBLIC_REFERRAL_RATE_LIMIT || '10', 10);
+
 // ============================================================================
 // Utility Functions
 // ============================================================================
 
 /**
- * Generates a UUID v4
+ * Generates a UUID v4 using crypto API when available
  */
 function generateUUID(): string {
+  // Use crypto.randomUUID() if available (modern browsers)
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older environments
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
@@ -179,7 +191,7 @@ export async function registerUser(data: UserInsert): Promise<{ success: boolean
 
       if (error) {
         // If it's a unique constraint violation, the user is already registered
-        if (error.code === '23505') {
+        if (error.code === POSTGRES_UNIQUE_VIOLATION) {
           return { success: false, error: 'User already registered' };
         }
         throw error;
@@ -439,8 +451,6 @@ export function recordRegistrationStats(accountType: 'individual' | 'business'):
 // ============================================================================
 
 const REFERRAL_REGISTRY_KEY = 'equa_referral_rate_limit_registry';
-const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
-const REFERRAL_RATE_LIMIT = 10;
 
 /**
  * Records a referral
@@ -454,7 +464,7 @@ export async function recordReferral(data: ReferralInsert): Promise<{ success: b
     const isOnline = await isSupabaseAvailable();
     if (isOnline) {
       const { error } = await supabase.from('referrals').insert(data);
-      if (error && error.code !== '23505') throw error; // Ignore duplicate
+      if (error && error.code !== POSTGRES_UNIQUE_VIOLATION) throw error; // Ignore duplicate
       return { success: true };
     }
 
@@ -603,7 +613,7 @@ export async function recordDeviceFingerprint(data: DeviceFingerprintInsert): Pr
     const isOnline = await isSupabaseAvailable();
     if (isOnline) {
       const { error } = await supabase.from('device_fingerprints').insert(data);
-      if (error && error.code !== '23505') throw error;
+      if (error && error.code !== POSTGRES_UNIQUE_VIOLATION) throw error;
       return { success: true };
     }
 
