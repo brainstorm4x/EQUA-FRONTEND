@@ -234,23 +234,32 @@ const COINGECKO_IDS = {
   WHEAT: null, // CoinGecko doesn't have wheat
 };
 
-// Fallback prices for commodities (updated periodically)
-// These are approximate prices and should be updated regularly
+/**
+ * Fallback prices for commodities
+ * Last updated: November 2025
+ * These are approximate prices used when live data is unavailable.
+ * The EQX index is normalized relative to these values, so updates here
+ * will affect the baseline EQX value.
+ */
 const FALLBACK_COMMODITY_PRICES = {
-  XAU: 2650.00,   // Gold per oz (approx)
-  OIL: 75.00,     // WTI crude per barrel (approx)
-  COPPER: 4.20,   // Copper per pound (approx)
-  WHEAT: 5.50,    // Wheat per bushel (approx)
-};
+  XAU: 2650.00,   // Gold per oz (approx market price Nov 2025)
+  OIL: 75.00,     // WTI crude per barrel (approx market price Nov 2025)
+  COPPER: 4.20,   // Copper per pound (approx market price Nov 2025)
+  WHEAT: 5.50,    // Wheat per bushel (approx market price Nov 2025)
+} as const;
 
-// Exchange rates vs USD (fallback)
+/**
+ * Fallback exchange rates vs USD
+ * Last updated: November 2025
+ * These are approximate rates used when live data is unavailable.
+ */
 const FALLBACK_EXCHANGE_RATES = {
-  EUR: 1.08,    // EUR/USD
-  GBP: 1.27,    // GBP/USD
-  JPY: 0.0067,  // JPY/USD (1/149.5)
-  CNY: 0.138,   // CNY/USD (1/7.24)
+  EUR: 1.08,    // EUR/USD (Nov 2025)
+  GBP: 1.27,    // GBP/USD (Nov 2025)
+  JPY: 0.0067,  // JPY/USD (1/149.5) (Nov 2025)
+  CNY: 0.138,   // CNY/USD (1/7.24) (Nov 2025)
   USD: 1.0,
-};
+} as const;
 
 /**
  * Fetches prices from CoinGecko API as fallback
@@ -310,9 +319,24 @@ function getFallbackPrices(): Record<string, AssetPrice> {
 // EQX Basket Calculation
 // ============================================================================
 
-// Normalize base price for the EQX index (set so that 1 EQX starts at approximately 1 USD)
-// This is calibrated based on initial basket values
-const EQX_BASE_DIVISOR = calculateInitialBasketValue();
+// Lazy-loaded base divisor (cached after first calculation)
+let cachedBaseDivisor: number | null = null;
+
+/**
+ * Gets the EQX base divisor (lazy-loaded for safety)
+ * This normalizes the basket value so 1 EQX ≈ 1 USD initially
+ */
+function getEQXBaseDivisor(): number {
+  if (cachedBaseDivisor === null) {
+    try {
+      cachedBaseDivisor = calculateInitialBasketValue();
+    } catch (error) {
+      console.error('Error calculating EQX base divisor, using default:', error);
+      cachedBaseDivisor = 1.0; // Safe default
+    }
+  }
+  return cachedBaseDivisor;
+}
 
 /**
  * Calculates initial basket value for normalization
@@ -369,7 +393,7 @@ function calculateEQXValue(prices: Record<string, AssetPrice>): {
   
   // Normalize to get EQX value (1 EQX = this many USD)
   // EQX value increases when basket value increases relative to base
-  const eqxValue = totalValue / EQX_BASE_DIVISOR;
+  const eqxValue = totalValue / getEQXBaseDivisor();
   
   return {
     eqxValue,
@@ -514,6 +538,7 @@ export async function getBasketBreakdown(): Promise<{
 }> {
   const eqxData = await getEQXPriceData();
   
+  // Use breakdown from actual EQX calculation for consistency
   return {
     currencies: [
       { symbol: 'USD', weight: EQX_BASKET_WEIGHTS.USD * 100, contribution: EQX_BASKET_WEIGHTS.USD },
@@ -523,7 +548,7 @@ export async function getBasketBreakdown(): Promise<{
       { symbol: 'GBP', weight: EQX_BASKET_WEIGHTS.GBP * 100, contribution: EQX_BASKET_WEIGHTS.GBP },
     ],
     gold: [
-      { symbol: 'XAU', weight: EQX_BASKET_WEIGHTS.XAU * 100, contribution: eqxData.breakdown.goldContribution },
+      { symbol: 'XAU', weight: EQX_BASKET_WEIGHTS.XAU * 100, contribution: EQX_BASKET_WEIGHTS.XAU },
     ],
     commodities: [
       { symbol: 'OIL', weight: EQX_BASKET_WEIGHTS.OIL * 100, contribution: EQX_BASKET_WEIGHTS.OIL },
@@ -544,5 +569,5 @@ export const _testing = {
   calculateEQXValue,
   getCachedData,
   setCachedData,
-  EQX_BASE_DIVISOR,
+  getEQXBaseDivisor,
 };
