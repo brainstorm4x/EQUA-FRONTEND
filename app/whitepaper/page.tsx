@@ -326,9 +326,127 @@ export default function WhitepaperPage() {
               </div>
             </section>
 
-            {/* Part V */}
+            {/* Part V - Basket for EQUA */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V: How EQUA Protects Against Exploitation</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V: Basket for EQUA—Protection Beyond the Chain</h2>
+              
+              <p className="text-purple-200 leading-relaxed">
+                EQUA&apos;s reference value is anchored, not to a single currency like the US dollar, but to a <strong className="text-white">basket of major currencies, gold, and essential commodities</strong>—so people are not forced to trust the fate of any one government or market.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Problem This Solves</h3>
+              <p className="text-purple-200 leading-relaxed">
+                People don&apos;t live in abstract charts; they live in rent, groceries, school fees, and medicines. When a single currency weakens, it quietly steals from all of those things at once. If EQUA&apos;s value were tied only to USD, anyone saving in EQUA would still be exposed to the long, slow erosion of that one currency&apos;s purchasing power.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">A basket changes that</strong>: it spreads risk across multiple real-world anchors so that your effort today still means something tomorrow, even if one nation&apos;s money stumbles.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What the Basket Is</h3>
+              <p className="text-purple-200 leading-relaxed">
+                In simple terms, the &quot;Basket for EQUA&quot; is like a weighted reference mix of:
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
+                <li><strong className="text-white">Widely used global currencies</strong> (USD, EUR, CNY, JPY, GBP)</li>
+                <li><strong className="text-white">A slice of gold</strong>, which has historically been used as a long-term store of value across civilizations</li>
+                <li><strong className="text-white">A slice of essential commodities</strong> (oil, copper, wheat) that track the real cost of living</li>
+              </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                EQUA does not require users to hold these assets directly. Instead, the system uses this mixed basket as a <strong className="text-white">reference lens</strong>: when it calculates EQUA&apos;s fair value, it looks at how this basket is moving, rather than blindly following any one currency&apos;s decline.
+              </p>
+
+              {/* EQX Basket Composition */}
+              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
+                <h4 className="text-lg font-bold text-yellow-400 mb-4">EQX (EQUA Index) Basket Composition</h4>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/30">
+                    <h5 className="text-blue-300 font-semibold mb-2">Currencies (50%)</h5>
+                    <ul className="text-purple-200 text-sm space-y-1">
+                      <li>USD: 20%</li>
+                      <li>EUR: 15%</li>
+                      <li>CNY: 8%</li>
+                      <li>JPY: 4%</li>
+                      <li>GBP: 3%</li>
+                    </ul>
+                  </div>
+                  <div className="bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/30">
+                    <h5 className="text-yellow-300 font-semibold mb-2">Gold (30%)</h5>
+                    <ul className="text-purple-200 text-sm space-y-1">
+                      <li>XAU (Gold): 30%</li>
+                    </ul>
+                    <p className="text-yellow-200 text-xs mt-2">Long-term store of value</p>
+                  </div>
+                  <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/30">
+                    <h5 className="text-green-300 font-semibold mb-2">Commodities (20%)</h5>
+                    <ul className="text-purple-200 text-sm space-y-1">
+                      <li>Oil (WTI): 7%</li>
+                      <li>Copper: 7%</li>
+                      <li>Wheat: 6%</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <h3 className="text-xl font-semibold text-white mt-8 mb-3">How This Protects EQUA&apos;s Value</h3>
+              
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">If the Dollar Slides, the Basket Holds the Line</h4>
+              <p className="text-purple-200 leading-relaxed">
+                When USD loses value, the basket does not fall as fast because other components—gold, other currencies, and commodities—may stay stable or even rise. That means EQUA&apos;s reference value can stay closer to what real people actually need to buy in their lives, instead of following the dollar down.
+              </p>
+
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">If One Economy Shakes, People&apos;s Lives Don&apos;t Have To</h4>
+              <p className="text-purple-200 leading-relaxed">
+                In many countries, people are hit twice: their local currency weakens, and their savings in a &quot;strong&quot; foreign currency can also be eroded by inflation in that foreign country. By tying EQUA&apos;s reference to a blend of global value signals instead of a single flag, the system reduces the chance that one political decision or one central bank&apos;s policy quietly eats away years of someone&apos;s work.
+              </p>
+
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">Closer to Real Purchasing Power</h4>
+              <p className="text-purple-200 leading-relaxed">
+                Because the basket includes both money (currencies) and things people ultimately care about (gold and key commodities), EQUA can stay more aligned with the cost of real life—food, energy, safety—rather than just financial market noise. Over time, this means a person holding EQUA is aiming to preserve their ability to live, not just to watch a chart.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">How It Works with EQUA&apos;s Appreciation Model</h3>
+              <p className="text-purple-200 leading-relaxed">
+                The basket does not replace EQUA&apos;s transaction-based appreciation; <strong className="text-white">it guides it</strong>.
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
+                <li>The price growth rules (driven by number of transactions and epochs) still determine how EQUA appreciates as the network is used.</li>
+                <li>The basket acts like an underlying &quot;reality check&quot;: if a single currency in the basket is inflating away, the other components help keep EQUA&apos;s reference tied to a more honest picture of global value.</li>
+              </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">For users, this means:</strong>
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
+                <li>The more EQUA is used, the more it appreciates.</li>
+                <li>The more the world changes, the more the basket helps EQUA stay connected to what actually matters—what your money can buy.</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What This Means for Ordinary People</h3>
+              <div className="space-y-4 mt-4">
+                <div className="bg-white/5 rounded-xl p-4 border border-purple-500/20">
+                  <p className="text-purple-200">
+                    <strong className="text-white">For a shopkeeper in a small town:</strong> &quot;If my local currency or the dollar goes crazy, EQUA is not chained to that alone.&quot;
+                  </p>
+                </div>
+                <div className="bg-white/5 rounded-xl p-4 border border-purple-500/20">
+                  <p className="text-purple-200">
+                    <strong className="text-white">For a family saving for their children:</strong> &quot;I am not betting everything on one country&apos;s promise. My effort is tied to a mix of real-world anchors.&quot;
+                  </p>
+                </div>
+                <div className="bg-white/5 rounded-xl p-4 border border-purple-500/20">
+                  <p className="text-purple-200">
+                    <strong className="text-white">For someone who has seen bank failures, devaluations, or sudden capital controls:</strong> &quot;At least one part of my life is built on rules and a basket of real value, not on panic decisions made overnight.&quot;
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
+                EQUA was always designed to reward real participation and protect believers from speculation. The Basket for EQUA extends that same protection to the world beyond crypto: it recognizes that people don&apos;t just need a fair system inside the chain—they need protection from the unfairness outside it too.
+              </p>
+            </section>
+
+            {/* Part VI */}
+            <section className="mb-12">
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VI: How EQUA Protects Against Exploitation</h2>
               
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Immutable Fairness Through Code</h3>
               <p className="text-purple-200 leading-relaxed">
@@ -342,9 +460,9 @@ export default function WhitepaperPage() {
               </ul>
             </section>
 
-            {/* Part VI */}
+            {/* Part VII */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VI: The Deeper Vision—A Fair Economy</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VII: The Deeper Vision—A Fair Economy</h2>
               
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Economic Empowerment Through Participation</h3>
               <p className="text-purple-200 leading-relaxed">
@@ -365,9 +483,9 @@ export default function WhitepaperPage() {
               </ul>
             </section>
 
-            {/* Part VII - Technical Summary */}
+            {/* Part VIII - Technical Summary */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VII: Technical Summary</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VIII: Technical Summary</h2>
               
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">For the Technically Curious</h3>
               <p className="text-purple-200 leading-relaxed">

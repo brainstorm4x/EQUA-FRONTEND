@@ -824,6 +824,49 @@ export function clearAllLocalData(): void {
 }
 
 /**
+ * Resets all EQUA-related state to start from 0
+ * This clears all localStorage keys related to EQUA and resets them
+ */
+export function resetAllEquaState(): void {
+  if (typeof window === 'undefined') return;
+  
+  const equaKeys = [
+    // Database sync keys
+    SYNC_STATE_KEY,
+    PENDING_OPS_KEY,
+    REGISTERED_KEYS_KEY,
+    TRANSFER_STATS_KEY,
+    REGISTRATION_STATS_KEY,
+    REFERRAL_REGISTRY_KEY,
+    FINGERPRINTS_KEY,
+    // Other EQUA-related keys
+    'equa_user_keypair',
+    'equa_user_number',
+    'equa_registration_complete',
+    'equa_registered_fingerprints',
+    'equa_referral_registry',
+    'equa_referral_codes',
+    'equa_transfer_stats',
+  ];
+
+  // Also clear any keys that start with 'equa_'
+  const allKeys = Object.keys(localStorage);
+  const equaPatternKeys = allKeys.filter(key => key.startsWith('equa_'));
+
+  const allEquaKeys = [...new Set([...equaKeys, ...equaPatternKeys])];
+
+  allEquaKeys.forEach(key => {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Ignore errors
+    }
+  });
+
+  logInfo(`Reset complete: Cleared ${allEquaKeys.length} EQUA-related keys`);
+}
+
+/**
  * Gets pending operations count
  */
 export function getPendingOperationsCount(): number {
@@ -870,6 +913,7 @@ export const db = {
   
   // Cleanup
   clearAllLocalData,
+  resetAllEquaState,
 };
 
 export default db;

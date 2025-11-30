@@ -131,8 +131,67 @@ export function getCurrencyFromLocale(locale: string): string {
 }
 
 /**
+ * Map timezones to their typical currency
+ * This provides a fallback when browser locale is not specific enough
+ */
+export const TIMEZONE_TO_CURRENCY: Record<string, string> = {
+  // India
+  'Asia/Kolkata': 'INR',
+  'Asia/Calcutta': 'INR',
+  
+  // UK
+  'Europe/London': 'GBP',
+  
+  // US timezones
+  'America/New_York': 'USD',
+  'America/Chicago': 'USD',
+  'America/Denver': 'USD',
+  'America/Los_Angeles': 'USD',
+  
+  // Europe
+  'Europe/Paris': 'EUR',
+  'Europe/Berlin': 'EUR',
+  'Europe/Rome': 'EUR',
+  'Europe/Madrid': 'EUR',
+  'Europe/Amsterdam': 'EUR',
+  
+  // Japan
+  'Asia/Tokyo': 'JPY',
+  
+  // China
+  'Asia/Shanghai': 'CNY',
+  'Asia/Beijing': 'CNY',
+  
+  // Australia
+  'Australia/Sydney': 'AUD',
+  'Australia/Melbourne': 'AUD',
+  
+  // Singapore
+  'Asia/Singapore': 'SGD',
+  
+  // Hong Kong
+  'Asia/Hong_Kong': 'HKD',
+};
+
+/**
+ * Gets currency from timezone
+ * Used as a secondary detection method when locale is ambiguous
+ */
+export function getCurrencyFromTimezone(): string | null {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return TIMEZONE_TO_CURRENCY[timezone] || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Gets user's local currency based on browser locale
  * Uses the country code from the locale to determine currency
+ * Falls back to timezone detection for ambiguous cases
  * 
  * @returns The currency code for the user's locale
  */
@@ -141,7 +200,25 @@ export function getUserLocaleCurrency(): string {
   
   try {
     const locale = navigator.language || 'en-US';
-    return getCurrencyFromLocale(locale);
+    const currencyFromLocale = getCurrencyFromLocale(locale);
+    
+    // If the locale resolved to USD but might be ambiguous (e.g., just "en"),
+    // check the timezone as a secondary signal
+    if (currencyFromLocale === 'USD') {
+      // Check if the locale is ambiguous (no specific country code)
+      const parts = locale.split('-');
+      const hasCountryCode = parts.length > 1 && parts[parts.length - 1].length === 2;
+      
+      if (!hasCountryCode) {
+        // Try timezone-based detection
+        const currencyFromTimezone = getCurrencyFromTimezone();
+        if (currencyFromTimezone && currencyFromTimezone !== 'USD') {
+          return currencyFromTimezone;
+        }
+      }
+    }
+    
+    return currencyFromLocale;
   } catch {
     return 'USD';
   }
