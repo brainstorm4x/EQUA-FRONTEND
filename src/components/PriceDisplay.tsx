@@ -10,7 +10,8 @@ import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import * as anchor from '@coral-xyz/anchor';
 import { getRegistrationStats } from '@/utils/registrationStats';
 import { getTotalTransfers } from '@/utils/transferTracking';
-import { getUserLocaleCurrency, formatLocalCurrency } from '@/utils/localeCurrency';
+import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
+import { getEquaPriceMultiFormat, formatEQXPrice, MultiFormatEquaPrice } from '@/utils/eqxOracle';
 
 interface PriceDisplayProps {
   className?: string;
@@ -45,6 +46,10 @@ interface PriceData {
   individualUsers: number;
   businessUsers: number;
   mintingRate: string;
+  // EQX-related fields
+  eqxPrice: number;
+  eqxValue: number;
+  priceSource: 'pyth' | 'coingecko' | 'fallback';
 }
 
 const DEFAULT_PRICE_DATA: PriceData = {
@@ -56,6 +61,9 @@ const DEFAULT_PRICE_DATA: PriceData = {
   individualUsers: 0,
   businessUsers: 0,
   mintingRate: '100,000',
+  eqxPrice: 0.01,
+  eqxValue: 1.0,
+  priceSource: 'fallback',
 };
 
 export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats = false }) => {
@@ -127,6 +135,24 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           ? currentTier.equaPerAttempt.toLocaleString() 
           : '100';
         
+        // Get EQX price data (from Pyth Network with fallback)
+        const currencyCode = getUserLocaleCurrency();
+        const exchangeRate = DEFAULT_RATES[currencyCode]?.rate || 1;
+        let eqxPriceData: MultiFormatEquaPrice;
+        try {
+          eqxPriceData = await getEquaPriceMultiFormat(price, currencyCode, exchangeRate);
+        } catch (eqxError) {
+          console.warn('Error fetching EQX price, using defaults:', eqxError);
+          eqxPriceData = {
+            eqx: price,
+            usd: price,
+            localCurrency: price * exchangeRate,
+            localCurrencyCode: currencyCode,
+            eqxValue: 1.0,
+            source: 'fallback',
+          };
+        }
+        
         if (isMountedRef.current) {
           setPriceData({
             totalUsers: users,
@@ -137,6 +163,9 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
             individualUsers: stats.individualCount,
             businessUsers: stats.businessCount,
             mintingRate,
+            eqxPrice: eqxPriceData.eqx,
+            eqxValue: eqxPriceData.eqxValue,
+            priceSource: eqxPriceData.source,
           });
         }
       } else if (isMountedRef.current) {
@@ -213,7 +242,12 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
       <div className={`grid ${showStats ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'} gap-6`}>
         <div>
           <p className="text-purple-200 text-sm mb-2">Current EQUA Price</p>
-          <p className="text-white text-3xl font-bold" data-testid="current-price">
+          {/* EQX Price (Primary) */}
+          <p className="text-yellow-300 text-2xl font-bold" data-testid="eqx-price">
+            {formatEQXPrice(priceData.eqxPrice)}
+          </p>
+          {/* USD Price */}
+          <p className="text-white text-lg font-semibold mt-1" data-testid="current-price">
             {formatEquaPrice(priceData.currentPrice)}
           </p>
           {/* Local currency equivalent */}
@@ -222,7 +256,12 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
               ≈ {formatLocalCurrency(priceData.currentPrice, localCurrency)}
             </p>
           )}
-          <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">{getPhaseLabel(priceData.currentPhase)}</p>
+          <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
+            {getPhaseLabel(priceData.currentPhase)}
+            <span className="ml-2 text-purple-400">
+              ({priceData.priceSource === 'pyth' ? '🟢 Live' : priceData.priceSource === 'coingecko' ? '🟡 API' : '⚪ Fallback'})
+            </span>
+          </p>
         </div>
         
         <div>

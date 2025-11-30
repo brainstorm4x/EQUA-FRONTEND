@@ -10,6 +10,8 @@ import {
   formatLocalCurrency,
   DEFAULT_RATES,
   COUNTRY_TO_CURRENCY,
+  getCurrencyFromTimezone,
+  TIMEZONE_TO_CURRENCY,
 } from '@/utils/localeCurrency';
 
 describe('Local Currency Utilities', () => {
@@ -293,6 +295,34 @@ describe('Local Currency Utilities', () => {
       expect(COUNTRY_TO_CURRENCY.ES).toBe('EUR');
       expect(COUNTRY_TO_CURRENCY.IT).toBe('EUR');
       expect(COUNTRY_TO_CURRENCY.NL).toBe('EUR');
+    });
+  });
+
+  describe('TIMEZONE_TO_CURRENCY', () => {
+    it('should map Asia/Kolkata to INR (India)', () => {
+      expect(TIMEZONE_TO_CURRENCY['Asia/Kolkata']).toBe('INR');
+    });
+
+    it('should map Asia/Calcutta to INR (India legacy)', () => {
+      expect(TIMEZONE_TO_CURRENCY['Asia/Calcutta']).toBe('INR');
+    });
+
+    it('should map Europe/London to GBP', () => {
+      expect(TIMEZONE_TO_CURRENCY['Europe/London']).toBe('GBP');
+    });
+
+    it('should map US timezones to USD', () => {
+      expect(TIMEZONE_TO_CURRENCY['America/New_York']).toBe('USD');
+      expect(TIMEZONE_TO_CURRENCY['America/Los_Angeles']).toBe('USD');
+    });
+
+    it('should map Asia/Tokyo to JPY', () => {
+      expect(TIMEZONE_TO_CURRENCY['Asia/Tokyo']).toBe('JPY');
+    });
+
+    it('should map European timezones to EUR', () => {
+      expect(TIMEZONE_TO_CURRENCY['Europe/Paris']).toBe('EUR');
+      expect(TIMEZONE_TO_CURRENCY['Europe/Berlin']).toBe('EUR');
     });
   });
 });

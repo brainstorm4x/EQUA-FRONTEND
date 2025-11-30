@@ -31,6 +31,7 @@ import {
   isPublicKeyRegistered, 
   recordRegisteredKey,
 } from '@/utils/registrationGuard';
+import { db } from '@/lib/supabase/database';
 
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
@@ -397,10 +398,24 @@ export default function MintPage() {
       
       // Check if public key has already been registered (prevent duplicate registrations)
       const publicKeyBase58 = publicKey.toBase58();
+      
+      // Check localStorage first (fast)
       if (isPublicKeyRegistered(publicKeyBase58)) {
-        console.error('🚫 Duplicate public key detected - blocking duplicate registration');
+        console.error('🚫 Duplicate public key detected in localStorage - blocking duplicate registration');
         throw new Error(
           'Registration blocked: This wallet address has already been registered. ' +
+          'Each wallet can only register once.'
+        );
+      }
+      
+      // Check database for persistent duplicate prevention
+      const isRegisteredInDb = await db.isWalletRegistered(publicKeyBase58);
+      if (isRegisteredInDb) {
+        console.error('🚫 Duplicate public key detected in database - blocking duplicate registration');
+        // Also record locally for faster future checks
+        recordRegisteredKey(publicKeyBase58);
+        throw new Error(
+          'Registration blocked: This wallet address has already been registered in our system. ' +
           'Each wallet can only register once.'
         );
       }
@@ -409,8 +424,13 @@ export default function MintPage() {
       const existingAccount = await connection.getAccountInfo(userAccountKeypair.publicKey);
       if (existingAccount && existingAccount.data.length > 0) {
         console.error('🚫 User account already exists on-chain');
-        // Record this public key as registered
+        // Record this public key as registered in both localStorage and database
         recordRegisteredKey(publicKeyBase58);
+        await db.registerUser({
+          wallet_address: publicKeyBase58,
+          account_type: accountType,
+          device_fingerprint: metadata?.fingerprint?.fingerprint || null,
+        });
         throw new Error(
           'Registration blocked: A user account already exists for this wallet. ' +
           'You may already be registered. Please refresh the page.'
@@ -420,12 +440,21 @@ export default function MintPage() {
       // Log fingerprint metadata for Sybil prevention
       if (metadata?.fingerprint) {
         console.log('🔐 Device fingerprint:', metadata.fingerprint.fingerprint);
+        // Check fingerprint in database for persistent Sybil prevention
+        const isFingerprintUsed = await db.isFingerprintRegistered(metadata.fingerprint.fingerprint);
+        if (isFingerprintUsed) {
+          console.error('🚫 Duplicate fingerprint detected in database - blocking Sybil attempt');
+          throw new Error(
+            'Registration blocked: This device has already been used to register an account. ' +
+            'Each device can only register one account to prevent abuse.'
+          );
+        }
         // Store fingerprint in localStorage for duplicate detection
         if (typeof window !== 'undefined') {
           const existingFingerprints = JSON.parse(localStorage.getItem('equa_registered_fingerprints') || '[]');
           if (existingFingerprints.includes(metadata.fingerprint.fingerprint)) {
             // Block registration for duplicate fingerprints (Sybil prevention)
-            console.error('🚫 Duplicate fingerprint detected - blocking Sybil attempt');
+            console.error('🚫 Duplicate fingerprint detected in localStorage - blocking Sybil attempt');
             throw new Error(
               'Registration blocked: This device has already been used to register an account. ' +
               'Each device can only register one account to prevent abuse.'
@@ -587,6 +616,38 @@ export default function MintPage() {
       const registrationNumber = totalUsers + 1;
       setUserNumber(registrationNumber);
       console.log(`📝 Set user number to: ${registrationNumber}`);
+      
+      // Persist to database for permanent duplicate prevention
+      const dbResult = await db.registerUser({
+        wallet_address: publicKey.toBase58(),
+        account_type: accountType,
+        device_fingerprint: metadata?.fingerprint?.fingerprint || null,
+        referrer_wallet: referrer || undefined,
+        user_number: registrationNumber,
+        registration_metadata: {
+          transactionSignature: tx,
+          registeredAt: Date.now(),
+          fingerprint: metadata?.fingerprint ? JSON.stringify(metadata.fingerprint) : undefined,
+        },
+      });
+      
+      if (dbResult.success) {
+        console.log('✅ Registration persisted to database');
+      } else {
+        console.warn('⚠️ Failed to persist registration to database:', dbResult.error);
+        // Registration is still valid on-chain, this is just a warning
+      }
+      
+      // Record fingerprint to database
+      if (metadata?.fingerprint) {
+        await db.recordDeviceFingerprint({
+          fingerprint_hash: metadata.fingerprint.fingerprint,
+          wallet_address: publicKey.toBase58(),
+          user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+          fingerprint_metadata: metadata.fingerprint as unknown as Record<string, unknown>,
+        });
+        console.log('🔐 Device fingerprint persisted to database');
+      }
       
       if (typeof window !== 'undefined') {
         localStorage.setItem('equa_user_number', registrationNumber.toString());
