@@ -12,7 +12,8 @@ export interface CurrencyInfo {
 }
 
 // Default exchange rates (fallback if API fails)
-// These are approximate rates as of late 2024
+// Note: These are approximate rates for display purposes only.
+// For actual transactions, always use real-time exchange rates.
 export const DEFAULT_RATES: Record<string, CurrencyInfo> = {
   USD: { code: 'USD', symbol: '$', rate: 1 },
   EUR: { code: 'EUR', symbol: '€', rate: 0.92 },
@@ -69,18 +70,25 @@ export const DEFAULT_RATES: Record<string, CurrencyInfo> = {
  * This ensures correct currency regardless of language preference
  */
 export const COUNTRY_TO_CURRENCY: Record<string, string> = {
-  US: 'USD', GB: 'GBP', AU: 'AUD', CA: 'CAD',
-  DE: 'EUR', FR: 'EUR', ES: 'EUR', IT: 'EUR', NL: 'EUR', BE: 'EUR', AT: 'EUR', PT: 'EUR', IE: 'EUR', FI: 'EUR', GR: 'EUR',
-  JP: 'JPY', KR: 'KRW', CN: 'CNY', TW: 'TWD',
-  BR: 'BRL', MX: 'MXN', IN: 'INR', AE: 'AED',
-  SG: 'SGD', HK: 'HKD', TH: 'THB', ID: 'IDR',
-  PH: 'PHP', ZA: 'ZAR', NG: 'NGN', CH: 'CHF',
-  MY: 'MYR', VN: 'VND', PK: 'PKR', BD: 'BDT',
-  EG: 'EGP', SA: 'SAR', KW: 'KWD', QA: 'QAR',
-  NZ: 'NZD', SE: 'SEK', NO: 'NOK', DK: 'DKK', PL: 'PLN', CZ: 'CZK', HU: 'HUF', RO: 'RON',
-  RU: 'RUB', UA: 'UAH', TR: 'TRY', IL: 'ILS',
+  // Americas
+  US: 'USD', CA: 'CAD', MX: 'MXN', BR: 'BRL',
   AR: 'ARS', CL: 'CLP', CO: 'COP', PE: 'PEN',
-  KE: 'KES', GH: 'GHS', TZ: 'TZS',
+  // Europe
+  GB: 'GBP', CH: 'CHF',
+  DE: 'EUR', FR: 'EUR', ES: 'EUR', IT: 'EUR', NL: 'EUR',
+  BE: 'EUR', AT: 'EUR', PT: 'EUR', IE: 'EUR', FI: 'EUR', GR: 'EUR',
+  SE: 'SEK', NO: 'NOK', DK: 'DKK', PL: 'PLN',
+  CZ: 'CZK', HU: 'HUF', RO: 'RON', RU: 'RUB', UA: 'UAH', TR: 'TRY',
+  // Asia Pacific
+  JP: 'JPY', KR: 'KRW', CN: 'CNY', TW: 'TWD', HK: 'HKD',
+  IN: 'INR', PK: 'PKR', BD: 'BDT',
+  SG: 'SGD', MY: 'MYR', TH: 'THB', ID: 'IDR', PH: 'PHP', VN: 'VND',
+  // Middle East
+  AE: 'AED', SA: 'SAR', KW: 'KWD', QA: 'QAR', IL: 'ILS', EG: 'EGP',
+  // Africa
+  ZA: 'ZAR', NG: 'NGN', KE: 'KES', GH: 'GHS', TZ: 'TZS',
+  // Oceania
+  AU: 'AUD', NZ: 'NZD',
 };
 
 /**
@@ -96,21 +104,24 @@ export const LANGUAGE_FALLBACK: Record<string, string> = {
 /**
  * Gets currency code from a locale string
  * Uses country code to determine currency (e.g., 'en-IN' -> 'INR', 'hi-IN' -> 'INR')
+ * Handles locale strings with script codes (e.g., 'zh-Hans-CN' -> 'CNY')
  * 
- * @param locale - The locale string (e.g., 'en-IN', 'hi-IN', 'en-US')
- * @returns The currency code (e.g., 'INR', 'USD')
+ * @param locale - The locale string (e.g., 'en-IN', 'hi-IN', 'en-US', 'zh-Hans-CN')
+ * @returns The currency code (e.g., 'INR', 'USD', 'CNY')
  */
 export function getCurrencyFromLocale(locale: string): string {
   if (!locale) return 'USD';
   
   const parts = locale.split('-');
   
-  // Extract country code from locale (e.g., 'en-IN' -> 'IN', 'hi-IN' -> 'IN')
-  if (parts.length >= 2) {
-    const countryCode = parts[parts.length - 1].toUpperCase();
-    const currency = COUNTRY_TO_CURRENCY[countryCode];
-    if (currency) {
-      return currency;
+  // Try to find a country code in the locale parts
+  // Country codes are 2 uppercase letters (ISO 3166-1 alpha-2)
+  // This handles both 'en-IN' and 'zh-Hans-CN' formats
+  for (let i = parts.length - 1; i >= 1; i--) {
+    const part = parts[i].toUpperCase();
+    // Check if this looks like a country code (2 letters) and is in our mapping
+    if (part.length === 2 && COUNTRY_TO_CURRENCY[part]) {
+      return COUNTRY_TO_CURRENCY[part];
     }
   }
   

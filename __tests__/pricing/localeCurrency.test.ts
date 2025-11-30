@@ -218,6 +218,15 @@ describe('Local Currency Utilities', () => {
         expect(getCurrencyFromLocale('EN-IN')).toBe('INR');
         expect(getCurrencyFromLocale('En-In')).toBe('INR');
       });
+
+      it('should handle locale strings with script codes', () => {
+        // zh-Hans-CN (Simplified Chinese - China)
+        expect(getCurrencyFromLocale('zh-Hans-CN')).toBe('CNY');
+        // zh-Hant-TW (Traditional Chinese - Taiwan)
+        expect(getCurrencyFromLocale('zh-Hant-TW')).toBe('TWD');
+        // sr-Latn-RS (Serbian Latin - Serbia) - unknown country, should fallback
+        expect(getCurrencyFromLocale('sr-Latn-RS')).toBe('USD');
+      });
     });
   });
 
