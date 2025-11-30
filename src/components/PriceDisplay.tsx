@@ -9,6 +9,7 @@ import { safeParseUserCount } from '@/utils/safeAccountParsing';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import * as anchor from '@coral-xyz/anchor';
 import { getRegistrationStats } from '@/utils/registrationStats';
+import { getTotalTransfers } from '@/utils/transferTracking';
 
 interface PriceDisplayProps {
   className?: string;
@@ -29,6 +30,84 @@ function getGlobalStatePDA(): PublicKey {
     );
   }
   return cachedGlobalStatePDA;
+}
+
+// ============================================================================
+// Local Currency Conversion
+// ============================================================================
+interface CurrencyInfo {
+  code: string;
+  symbol: string;
+  rate: number; // Rate relative to USD
+}
+
+// Default exchange rates (fallback if API fails)
+// These are approximate rates as of late 2024
+const DEFAULT_RATES: Record<string, CurrencyInfo> = {
+  USD: { code: 'USD', symbol: '$', rate: 1 },
+  EUR: { code: 'EUR', symbol: '€', rate: 0.92 },
+  GBP: { code: 'GBP', symbol: '£', rate: 0.79 },
+  JPY: { code: 'JPY', symbol: '¥', rate: 149.5 },
+  INR: { code: 'INR', symbol: '₹', rate: 83.5 },
+  CNY: { code: 'CNY', symbol: '¥', rate: 7.24 },
+  KRW: { code: 'KRW', symbol: '₩', rate: 1320 },
+  BRL: { code: 'BRL', symbol: 'R$', rate: 4.97 },
+  MXN: { code: 'MXN', symbol: '$', rate: 17.15 },
+  AUD: { code: 'AUD', symbol: 'A$', rate: 1.53 },
+  CAD: { code: 'CAD', symbol: 'C$', rate: 1.36 },
+  CHF: { code: 'CHF', symbol: 'CHF', rate: 0.88 },
+  NGN: { code: 'NGN', symbol: '₦', rate: 1550 },
+  ZAR: { code: 'ZAR', symbol: 'R', rate: 18.5 },
+  AED: { code: 'AED', symbol: 'د.إ', rate: 3.67 },
+  SGD: { code: 'SGD', symbol: 'S$', rate: 1.34 },
+  HKD: { code: 'HKD', symbol: 'HK$', rate: 7.82 },
+  PHP: { code: 'PHP', symbol: '₱', rate: 56 },
+  THB: { code: 'THB', symbol: '฿', rate: 35.5 },
+  IDR: { code: 'IDR', symbol: 'Rp', rate: 15700 },
+};
+
+/**
+ * Gets user's local currency based on browser locale
+ */
+function getUserLocaleCurrency(): string {
+  if (typeof window === 'undefined') return 'USD';
+  
+  try {
+    const locale = navigator.language || 'en-US';
+    
+    // Map common locales to currencies
+    const localeToCurrency: Record<string, string> = {
+      'en-US': 'USD', 'en-GB': 'GBP', 'en-AU': 'AUD', 'en-CA': 'CAD',
+      'de-DE': 'EUR', 'fr-FR': 'EUR', 'es-ES': 'EUR', 'it-IT': 'EUR',
+      'ja-JP': 'JPY', 'ko-KR': 'KRW', 'zh-CN': 'CNY', 'zh-TW': 'USD', // Taiwan - use USD as fallback
+      'pt-BR': 'BRL', 'es-MX': 'MXN', 'hi-IN': 'INR', 'ar-AE': 'AED',
+      'en-SG': 'SGD', 'en-HK': 'HKD', 'th-TH': 'THB', 'id-ID': 'IDR',
+      'en-PH': 'PHP', 'en-ZA': 'ZAR', 'en-NG': 'NGN',
+    };
+    
+    return localeToCurrency[locale] || 'USD';
+  } catch {
+    return 'USD';
+  }
+}
+
+/**
+ * Formats a price in local currency
+ */
+function formatLocalCurrency(usdPrice: number, currencyCode: string): string {
+  const currencyInfo = DEFAULT_RATES[currencyCode] || DEFAULT_RATES.USD;
+  const localPrice = usdPrice * currencyInfo.rate;
+  
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: localPrice < 1 ? 4 : 2,
+      maximumFractionDigits: localPrice < 1 ? 4 : 2,
+    }).format(localPrice);
+  } catch {
+    return `${currencyInfo.symbol}${localPrice.toFixed(localPrice < 1 ? 4 : 2)}`;
+  }
 }
 
 // ============================================================================
@@ -60,12 +139,18 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
   const { connection } = useConnection();
   const [priceData, setPriceData] = useState<PriceData>(DEFAULT_PRICE_DATA);
   const [isLoading, setIsLoading] = useState(true);
+  const [localCurrency, setLocalCurrency] = useState<string>('USD');
   
   // Track mounted state to prevent state updates after unmount
   const isMountedRef = useRef(true);
   // Track last fetch time for throttling
   const lastFetchRef = useRef<number>(0);
   const FETCH_THROTTLE_MS = 10000; // Minimum 10 seconds between fetches
+
+  // Detect local currency on mount
+  useEffect(() => {
+    setLocalCurrency(getUserLocaleCurrency());
+  }, []);
 
   const fetchPriceData = useCallback(async () => {
     // Throttle fetches to reduce RPC calls
@@ -85,19 +170,26 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         // Parse global state data
         const users = safeParseUserCount(accountInfo.data);
         
-        // Parse total_transactions at offset 12 (8 discriminator + 4 user_count)
-        const totalTx = new anchor.BN(
+        // Get locally tracked transfers (more accurate than on-chain estimate)
+        const localTransfers = getTotalTransfers();
+        
+        // Also parse on-chain total_transactions as fallback
+        const onChainTx = new anchor.BN(
           accountInfo.data.slice(12, 20),
           'le'
         ).toNumber();
         
-        // Estimate transfers
-        const estimatedTransfers = Math.max(0, totalTx - users * 2);
+        // Estimate on-chain transfers (subtract registrations + mints)
+        const estimatedOnChainTransfers = Math.max(0, onChainTx - users * 2);
         
-        // Calculate price based on TRANSFERS only
-        const price = EquaPriceCalculator.calculatePrice(estimatedTransfers);
-        const phase = EquaPriceCalculator.getPhase(estimatedTransfers);
-        const epoch = EquaPriceCalculator.getCurrentEpoch(estimatedTransfers);
+        // Use the higher of local tracking or on-chain estimate
+        // (local tracking is more accurate for user transfers)
+        const totalTransfers = Math.max(localTransfers, estimatedOnChainTransfers);
+        
+        // Calculate price based on transfers
+        const price = EquaPriceCalculator.calculatePrice(totalTransfers);
+        const phase = EquaPriceCalculator.getPhase(totalTransfers);
+        const epoch = EquaPriceCalculator.getCurrentEpoch(totalTransfers);
         
         // Get registration stats from localStorage
         const stats = getRegistrationStats();
@@ -115,7 +207,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         if (isMountedRef.current) {
           setPriceData({
             totalUsers: users,
-            totalTransactions: estimatedTransfers,
+            totalTransactions: totalTransfers,
             currentPrice: price,
             currentPhase: phase,
             currentEpoch: epoch,
@@ -147,9 +239,23 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
     // Refresh every 30 seconds (reduced frequency for performance)
     const interval = setInterval(fetchPriceData, 30000);
     
+    // Listen for transfer events to update immediately
+    const handleTransferRecorded = () => {
+      // Force immediate refresh on transfer
+      lastFetchRef.current = 0;
+      fetchPriceData();
+    };
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('equa_transfer_recorded', handleTransferRecorded);
+    }
+    
     return () => {
       isMountedRef.current = false;
       clearInterval(interval);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('equa_transfer_recorded', handleTransferRecorded);
+      }
     };
   }, [fetchPriceData]);
 
@@ -187,6 +293,12 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           <p className="text-white text-3xl font-bold" data-testid="current-price">
             {formatEquaPrice(priceData.currentPrice)}
           </p>
+          {/* Local currency equivalent */}
+          {localCurrency !== 'USD' && (
+            <p className="text-green-300 text-sm mt-1" data-testid="local-currency-price">
+              ≈ {formatLocalCurrency(priceData.currentPrice, localCurrency)}
+            </p>
+          )}
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">{getPhaseLabel(priceData.currentPhase)}</p>
         </div>
         

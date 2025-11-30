@@ -16,6 +16,7 @@ import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance } from '@/utils/tokenFormat';
 import { getReferrerData } from '@/utils/referralRateLimit';
+import { recordTransfer } from '@/utils/transferTracking';
 
 interface WalletDashboardProps {
   className?: string;
@@ -267,22 +268,171 @@ const SendModal: FC<SendModalProps> = ({
   const [error, setError] = useState('');
   const [txSignature, setTxSignature] = useState('');
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [scannerError, setScannerError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const jsQRRef = useRef<typeof import('jsqr').default | null>(null);
 
-  // Handle QR code image upload - placeholder for future implementation
-  // Note: Full QR parsing would require a library like jsQR
+  // Lazy load jsQR library once
+  const getJsQR = async () => {
+    if (!jsQRRef.current) {
+      jsQRRef.current = (await import('jsqr')).default;
+    }
+    return jsQRRef.current;
+  };
+
+  // Handle QR code image upload using jsQR
   const handleQRUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // For now, inform user about the limitation
-    setError('QR scanning coming soon! Please paste the address manually for now.');
+    try {
+      setError('');
+      const jsQR = await getJsQR();
+      
+      // Create an image element to read the file
+      const img = document.createElement('img');
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        img.onload = () => {
+          // Create a canvas to get image data
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            setError('Could not process image');
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          
+          // Decode QR code
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+          
+          if (code) {
+            // Validate as Solana address
+            try {
+              new PublicKey(code.data.trim());
+              setRecipientAddress(code.data.trim());
+              setError('');
+            } catch {
+              setError('QR code does not contain a valid Solana address');
+            }
+          } else {
+            setError('No QR code found in image');
+          }
+        };
+        
+        img.src = reader.result as string;
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('QR upload error:', err);
+      setError('Failed to read QR code from image');
+    }
     
     // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
+
+  // Start camera for QR scanning
+  const startCameraScanner = async () => {
+    try {
+      setScannerError('');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
+        await videoRef.current.play();
+        setShowQRScanner(true);
+        scanQRCode();
+      }
+    } catch (err: any) {
+      console.error('Camera error:', err);
+      if (err.name === 'NotAllowedError') {
+        setScannerError('Camera permission denied. Please allow camera access to scan QR codes.');
+      } else if (err.name === 'NotFoundError') {
+        setScannerError('No camera found on this device.');
+      } else {
+        setScannerError('Could not access camera. Try uploading a QR image instead.');
+      }
+    }
+  };
+
+  // Scan QR code from video stream
+  const scanQRCode = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const jsQR = await getJsQR();
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) return;
+    
+    const tick = () => {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        
+        if (code) {
+          // Validate as Solana address
+          try {
+            new PublicKey(code.data.trim());
+            setRecipientAddress(code.data.trim());
+            stopCameraScanner();
+            return;
+          } catch {
+            // Not a valid Solana address, continue scanning
+          }
+        }
+      }
+      
+      animationFrameRef.current = requestAnimationFrame(tick);
+    };
+    
+    tick();
+  };
+
+  // Stop camera scanner
+  const stopCameraScanner = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    setShowQRScanner(false);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopCameraScanner();
+    };
+  }, []);
 
   // Handle paste from clipboard
   const handlePaste = async () => {
@@ -393,6 +543,10 @@ const SendModal: FC<SendModalProps> = ({
       }, 'confirmed');
 
       setTxSignature(signature);
+      
+      // Record the transfer for statistics tracking
+      recordTransfer();
+      
       setTimeout(onSuccess, 2000);
     } catch (err: any) {
       console.error('Send error:', err);
@@ -431,6 +585,28 @@ const SendModal: FC<SendModalProps> = ({
               View on Explorer
             </a>
           </div>
+        ) : showQRScanner ? (
+          <div className="text-center">
+            <p className="text-purple-200 text-sm mb-4">Point your camera at a QR code</p>
+            <div className="relative bg-black rounded-xl overflow-hidden mb-4">
+              <video
+                ref={videoRef}
+                className="w-full max-h-64 object-cover"
+                playsInline
+                muted
+              />
+              <canvas ref={canvasRef} className="hidden" />
+              <div className="absolute inset-0 border-2 border-purple-500 pointer-events-none">
+                <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 border-2 border-green-400 rounded-lg" />
+              </div>
+            </div>
+            <button
+              onClick={stopCameraScanner}
+              className="w-full bg-red-500/30 hover:bg-red-500/50 text-white font-bold py-3 px-6 rounded-xl transition-all"
+            >
+              ✕ Cancel Scanning
+            </button>
+          </div>
         ) : (
           <>
             <div className="mb-4">
@@ -451,8 +627,14 @@ const SendModal: FC<SendModalProps> = ({
                 >
                   📋 Paste
                 </button>
+                <button
+                  onClick={startCameraScanner}
+                  className="flex-1 bg-green-500/20 hover:bg-green-500/40 text-green-200 py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
+                >
+                  📸 Scan QR
+                </button>
                 <label className="flex-1 bg-purple-500/20 hover:bg-purple-500/40 text-purple-200 py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1 cursor-pointer">
-                  📷 Upload QR
+                  📷 Upload
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -462,6 +644,11 @@ const SendModal: FC<SendModalProps> = ({
                   />
                 </label>
               </div>
+              
+              {/* Scanner error message */}
+              {scannerError && (
+                <p className="text-yellow-400 text-xs mt-2">{scannerError}</p>
+              )}
             </div>
 
             <div className="mb-4">

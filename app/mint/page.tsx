@@ -27,6 +27,10 @@ import {
   getUserMintTier,
 } from '@/utils/registration';
 import { safeParseUserCount, safeParseTimestamp } from '@/utils/safeAccountParsing';
+import { 
+  isPublicKeyRegistered, 
+  recordRegisteredKey,
+} from '@/utils/registrationGuard';
 
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
@@ -391,6 +395,28 @@ export default function MintPage() {
       console.log('Account type:', accountType);
       console.log('Referrer:', referrer || 'None');
       
+      // Check if public key has already been registered (prevent duplicate registrations)
+      const publicKeyBase58 = publicKey.toBase58();
+      if (isPublicKeyRegistered(publicKeyBase58)) {
+        console.error('🚫 Duplicate public key detected - blocking duplicate registration');
+        throw new Error(
+          'Registration blocked: This wallet address has already been registered. ' +
+          'Each wallet can only register once.'
+        );
+      }
+      
+      // Also check on-chain if the user account already exists
+      const existingAccount = await connection.getAccountInfo(userAccountKeypair.publicKey);
+      if (existingAccount && existingAccount.data.length > 0) {
+        console.error('🚫 User account already exists on-chain');
+        // Record this public key as registered
+        recordRegisteredKey(publicKeyBase58);
+        throw new Error(
+          'Registration blocked: A user account already exists for this wallet. ' +
+          'You may already be registered. Please refresh the page.'
+        );
+      }
+      
       // Log fingerprint metadata for Sybil prevention
       if (metadata?.fingerprint) {
         console.log('🔐 Device fingerprint:', metadata.fingerprint.fingerprint);
@@ -565,6 +591,10 @@ export default function MintPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('equa_user_number', registrationNumber.toString());
         console.log(`📝 Saved user registration number to localStorage: ${registrationNumber}`);
+        
+        // Record the public key as registered (prevent duplicate registration)
+        recordRegisteredKey(publicKey.toBase58(), metadata?.fingerprint?.fingerprint);
+        console.log('🔑 Public key recorded to prevent duplicate registration');
         
         // Store fingerprint AFTER successful registration (Sybil prevention)
         if (metadata?.fingerprint) {
