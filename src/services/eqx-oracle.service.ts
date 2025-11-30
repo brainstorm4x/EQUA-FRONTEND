@@ -81,6 +81,11 @@ export const EQX_CATEGORY_WEIGHTS = {
 export const PRICE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 /**
+ * Request timeout in milliseconds (10 seconds)
+ */
+export const REQUEST_TIMEOUT_MS = 10 * 1000;
+
+/**
  * Pyth Hermes API endpoint (mainnet)
  */
 export const PYTH_HERMES_API = 'https://hermes.pyth.network';
@@ -260,7 +265,7 @@ async function fetchPythPrice(feedId: string, symbol: string): Promise<AssetPric
         params: {
           ids: [feedId.replace('0x', '')],
         },
-        timeout: 10000,
+        timeout: REQUEST_TIMEOUT_MS,
       }
     );
 
@@ -329,7 +334,7 @@ async function fetchAllPythPrices(): Promise<Partial<BasketPrices>> {
         params: {
           ids: feedIds.map(id => id.replace('0x', '')),
         },
-        timeout: 10000,
+        timeout: REQUEST_TIMEOUT_MS,
       }
     );
 
@@ -395,7 +400,7 @@ async function fetchCoinGeckoPrice(symbol: string): Promise<AssetPrice | null> {
           ids: coinId,
           vs_currencies: 'usd',
         },
-        timeout: 10000,
+        timeout: REQUEST_TIMEOUT_MS,
       }
     );
 
