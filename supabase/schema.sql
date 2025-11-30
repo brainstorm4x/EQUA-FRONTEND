@@ -302,7 +302,9 @@ CREATE TRIGGER update_global_state_updated_at
 -- ============================================================================
 
 -- View for total statistics
-CREATE OR REPLACE VIEW stats_overview AS
+CREATE OR REPLACE VIEW stats_overview
+WITH (security_invoker = true)
+AS
 SELECT 
     (SELECT COUNT(*) FROM users) AS total_users,
     (SELECT COUNT(*) FROM users WHERE account_type = 'individual') AS individual_users,
@@ -312,7 +314,9 @@ SELECT
     (SELECT COUNT(*) FROM referrals) AS total_referrals;
 
 -- View for recent activity
-CREATE OR REPLACE VIEW recent_activity AS
+CREATE OR REPLACE VIEW recent_activity
+WITH (security_invoker = true)
+AS
 SELECT 
     'registration' AS activity_type,
     wallet_address AS wallet,
