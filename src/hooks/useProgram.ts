@@ -125,8 +125,10 @@ export function useProgram() {
     const currentWalletKey = wallet.publicKey?.toBase58() || null;
     
     // Skip if wallet hasn't changed and we already have a program
-    // Note: program is intentionally excluded from deps to prevent infinite loops
-    // The prevWalletKeyRef tracks actual wallet changes
+    // Note: `program` is intentionally excluded from deps to prevent infinite loops.
+    // Including `program` would cause: initProgram() sets program → triggers effect → calls initProgram() again
+    // Instead, we use prevWalletKeyRef to track when the wallet actually changes.
+    // The `connection` dependency is handled via `initializeProgram` which includes it.
     if (currentWalletKey === prevWalletKeyRef.current && program !== null) {
       return;
     }
@@ -152,7 +154,7 @@ export function useProgram() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- program excluded to prevent infinite loop; connection handled via initializeProgram dependency
   }, [wallet.publicKey, wallet.signTransaction, initializeProgram]);
 
   // Compute isReady based on both keypair and program initialization
