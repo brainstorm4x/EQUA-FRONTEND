@@ -269,6 +269,34 @@ CREATE POLICY "Anyone can modify global state" ON global_state
     FOR UPDATE USING (true);
 
 -- ============================================================================
+-- EQX_PRICES TABLE
+-- Tracks EQX token price history for oracle functionality
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS eqx_prices (
+    id SERIAL PRIMARY KEY,
+    collected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    eqx_price_usd DECIMAL(20, 9) NOT NULL,
+    usd_index DECIMAL(20, 9),
+    source TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Create indexes for efficient queries
+CREATE INDEX IF NOT EXISTS idx_eqx_prices_collected_at ON eqx_prices(collected_at);
+CREATE INDEX IF NOT EXISTS idx_eqx_prices_source ON eqx_prices(source);
+
+-- Enable RLS
+ALTER TABLE eqx_prices ENABLE ROW LEVEL SECURITY;
+
+-- Allow read access to everyone
+CREATE POLICY "EQX prices are viewable by everyone" ON eqx_prices
+    FOR SELECT USING (true);
+
+-- Allow insert for anyone
+CREATE POLICY "Anyone can record EQX prices" ON eqx_prices
+    FOR INSERT WITH CHECK (true);
+
+-- ============================================================================
 -- FUNCTIONS
 -- ============================================================================
 

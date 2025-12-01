@@ -200,12 +200,12 @@ export class SQLiteAdapter implements DatabaseAdapter {
     const db = this.db;
     if (!db) return;
 
-    // Minimal inline schema for testing
+    // Complete inline schema matching Supabase schema
     const tables = [
       `CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         wallet_address TEXT NOT NULL UNIQUE,
-        account_type TEXT NOT NULL DEFAULT 'individual',
+        account_type TEXT NOT NULL DEFAULT 'individual' CHECK (account_type IN ('individual', 'business')),
         device_fingerprint TEXT,
         referrer_wallet TEXT,
         user_number INTEGER,
@@ -231,6 +231,35 @@ export class SQLiteAdapter implements DatabaseAdapter {
         is_rate_limited INTEGER DEFAULT 0,
         referral_metadata TEXT DEFAULT '{}',
         created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS referral_rate_limits (
+        id TEXT PRIMARY KEY,
+        referrer_wallet TEXT NOT NULL,
+        referral_count INTEGER NOT NULL DEFAULT 1,
+        window_start TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now')),
+        window_end TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', datetime('now', '+24 hours'))),
+        is_rate_limited INTEGER DEFAULT 0,
+        rate_limit_metadata TEXT DEFAULT '{}',
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS analytics (
+        id TEXT PRIMARY KEY,
+        metric_name TEXT NOT NULL,
+        metric_value REAL NOT NULL DEFAULT 0,
+        metric_type TEXT NOT NULL DEFAULT 'counter' CHECK (metric_type IN ('counter', 'gauge', 'histogram')),
+        dimensions TEXT DEFAULT '{}',
+        recorded_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now')),
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS price_history (
+        id TEXT PRIMARY KEY,
+        price_usd REAL NOT NULL,
+        epoch_number INTEGER NOT NULL,
+        phase TEXT NOT NULL,
+        total_transactions INTEGER NOT NULL DEFAULT 0,
+        price_metadata TEXT DEFAULT '{}',
+        recorded_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now'))
       )`,
       `CREATE TABLE IF NOT EXISTS device_fingerprints (
         id TEXT PRIMARY KEY,

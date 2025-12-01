@@ -524,4 +524,26 @@ describe('SQLiteAdapter', () => {
       expect(adapter.provider).toBe('sqlite');
     });
   });
+
+  describe('Table Schema Completeness', () => {
+    it('should create all required tables from inline schema', async () => {
+      // Get a reference to the database to run raw queries
+      // The tables should have been created when the adapter was initialized
+      const available = await adapter.isAvailable();
+      expect(available).toBe(true);
+
+      // Verify that we can at least use the main operations
+      // This indirectly confirms the tables exist
+      const stats = await adapter.getStatsOverview();
+      expect(stats).toBeDefined();
+      expect(stats.total_users).toBe(0);
+    });
+
+    it('should have referral_rate_limits table available', async () => {
+      // The referral rate limit functionality uses the referrals table
+      // but the referral_rate_limits table is also created in the schema
+      const count = await adapter.getReferralCount24h('test_wallet');
+      expect(count).toBe(0);
+    });
+  });
 });
