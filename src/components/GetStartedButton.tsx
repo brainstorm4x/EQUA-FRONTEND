@@ -3,7 +3,8 @@
 import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import Link from 'next/link';
-import { isUserRegistered, getOrCreateKeypair, loadKeypair } from '@/lib/program';
+import { isUserRegistered, loadKeypair } from '@/lib/program';
+import { db } from '@/lib/supabase/database';
 
 interface GetStartedButtonProps {
   className?: string;
@@ -22,6 +23,10 @@ const REGISTRATION_EVENT_KEY = 'equa_registration_complete';
  * - Unconnected wallet: Shows "Get Started →" (links to /mint)
  * - Connected but not registered: Shows "Get Started →" (links to /mint for registration)
  * - Connected and registered: Shows "Mint EQUA →" (links to /mint for minting)
+ * 
+ * Registration is checked in multiple layers:
+ * 1. Local keypair + on-chain account (fastest)
+ * 2. Database record by wallet address (persisted across device/browser)
  */
 export const GetStartedButton: FC<GetStartedButtonProps> = ({ 
   className = '', 
@@ -53,30 +58,35 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
 
     setIsLoading(true);
     try {
-      // Only check if there's an existing keypair in localStorage
-      // This prevents creating a new keypair on every page load
+      let registered = false;
+      
+      // First, check if there's an existing keypair in localStorage
       const existingKeypair = loadKeypair();
       
       if (existingKeypair) {
         // Check if the keypair's user account is registered on-chain
-        const registered = await isUserRegistered(connection, existingKeypair.publicKey);
-        setIsRegistered(registered);
-        
-        // Update cache
-        cacheRef.current = {
-          pubkey: pubkeyStr,
-          registered,
-          timestamp: Date.now()
-        };
-      } else {
-        // No keypair exists yet - user hasn't started registration
-        setIsRegistered(false);
-        cacheRef.current = {
-          pubkey: pubkeyStr,
-          registered: false,
-          timestamp: Date.now()
-        };
+        registered = await isUserRegistered(connection, existingKeypair.publicKey);
       }
+      
+      // If not found via keypair, check the database by wallet address
+      // This handles the case where user cleared cache/cookies but is still registered
+      if (!registered) {
+        try {
+          registered = await db.isWalletRegistered(pubkeyStr);
+        } catch (dbError) {
+          // Database check failed, but we shouldn't block the UI
+          // Silently continue - the on-chain check is the authoritative source
+        }
+      }
+      
+      setIsRegistered(registered);
+      
+      // Update cache
+      cacheRef.current = {
+        pubkey: pubkeyStr,
+        registered,
+        timestamp: Date.now()
+      };
     } catch (error) {
       console.error('Error checking registration status:', error);
       setIsRegistered(false);
