@@ -155,6 +155,9 @@ export default function MintPage() {
     publicKey,
     userAccountKeypair,
     isReady,
+    isProgramLoading,
+    programError,
+    retryProgramInit,
     globalStatePDA,
     mintPDA,
     mintAuthority,
@@ -926,8 +929,69 @@ export default function MintPage() {
     );
   }
 
-  // ADD THIS NEW CHECK
+  // Check for program initialization - show loading or error states
   if (!program) {
+    // If there's an error, show the error with retry option
+    if (programError) {
+      return (
+        <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
+          <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex items-center justify-between">
+                <Link href="/" className="flex items-center gap-3">
+                  <Logo size={40} />
+                  <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+                </Link>
+                <WalletButton />
+              </div>
+            </div>
+          </header>
+          <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
+            <div className="text-center max-w-md">
+              <div className="text-6xl mb-4">⚠️</div>
+              <p className="text-white text-xl mb-2">Failed to Initialize</p>
+              <p className="text-red-300 text-sm mb-6">{programError}</p>
+              <button
+                onClick={retryProgramInit}
+                disabled={isProgramLoading}
+                className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all"
+              >
+                {isProgramLoading ? 'Retrying...' : 'Try Again'}
+              </button>
+            </div>
+          </div>
+        </main>
+      );
+    }
+
+    // If program is loading, show loading state
+    if (isProgramLoading) {
+      return (
+        <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
+          <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex items-center justify-between">
+                <Link href="/" className="flex items-center gap-3">
+                  <Logo size={40} />
+                  <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+                </Link>
+                <WalletButton />
+              </div>
+            </div>
+          </header>
+          <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
+            <div className="text-center">
+              <div className="text-6xl mb-4">⚙️</div>
+              <p className="text-white text-xl">Initializing program...</p>
+              <p className="text-purple-300 text-sm mt-2">Please wait a moment</p>
+            </div>
+          </div>
+        </main>
+      );
+    }
+
+    // Program is null but not loading and no error - this shouldn't happen normally
+    // but show a loading state with retry as a fallback
     return (
       <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
         <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
@@ -944,8 +1008,14 @@ export default function MintPage() {
         <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
           <div className="text-center">
             <div className="text-6xl mb-4">⚙️</div>
-            <p className="text-white text-xl">Initializing program...</p>
-            <p className="text-purple-300 text-sm mt-2">Please wait a moment</p>
+            <p className="text-white text-xl mb-2">Setting up...</p>
+            <p className="text-purple-300 text-sm mb-6">Connecting to the Solana network</p>
+            <button
+              onClick={retryProgramInit}
+              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all"
+            >
+              Retry Connection
+            </button>
           </div>
         </div>
       </main>
