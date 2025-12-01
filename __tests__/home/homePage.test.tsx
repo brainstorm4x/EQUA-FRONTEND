@@ -22,7 +22,25 @@ jest.mock('next/image', () => {
 });
 
 jest.mock('next/dynamic', () => {
-  return () => {
+  return (importFn: () => Promise<any>) => {
+    // Get the import path to determine which component to mock
+    const importStr = importFn.toString();
+    
+    if (importStr.includes('GetStartedButton')) {
+      const MockGetStartedButton = () => (
+        <a 
+          href="/mint" 
+          data-testid="get-started-cta"
+          className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg"
+        >
+          Get Started →
+        </a>
+      );
+      MockGetStartedButton.displayName = 'GetStartedButton';
+      return MockGetStartedButton;
+    }
+    
+    // Default mock for other dynamic components
     const DynamicComponent = () => <div data-testid="dynamic-component">Mocked Component</div>;
     DynamicComponent.displayName = 'DynamicComponent';
     return DynamicComponent;

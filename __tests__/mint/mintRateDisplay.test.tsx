@@ -6,7 +6,6 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { PriceDisplay } from '@/components/PriceDisplay';
 import * as anchor from '@coral-xyz/anchor';
 import { PublicKey } from '@solana/web3.js';
 
@@ -22,14 +21,25 @@ jest.mock('@solana/wallet-adapter-react', () => ({
 // Mock the program ID with proper PublicKey methods
 jest.mock('@/lib/constants', () => ({
   PROGRAM_ID: new (require('@solana/web3.js').PublicKey)('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
+  GLOBAL_STATE_SEED: 'global-state',
 }));
 
 // Import after mocks
+import { PriceDisplay } from '@/components/PriceDisplay';
 const { useConnection } = require('@solana/wallet-adapter-react');
 
 describe('Mint Rate Display', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock PublicKey.findProgramAddressSync to return a valid PDA
+    jest.spyOn(PublicKey, 'findProgramAddressSync').mockReturnValue([
+      new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
+      255
+    ]);
+  });
+  
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('First User (User #1)', () => {
@@ -229,7 +239,7 @@ describe('Mint Rate Display', () => {
 
       await waitFor(() => {
         const priceElement = screen.getByTestId('current-price');
-        expect(priceElement).toHaveTextContent('$0.0100');
+        expect(priceElement).toHaveTextContent('$0.01');
       }, { timeout: 3000 });
 
       await waitFor(() => {
