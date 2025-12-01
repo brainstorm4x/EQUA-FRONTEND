@@ -118,3 +118,49 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================================
+   Mobile Touch Event Optimization
+   Fixes for button states getting stuck on touch devices
+   ============================================================================ */
+
+/* Optimize touch handling for all interactive elements */
+@layer utilities {
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+}
+
+/* Fix for wallet adapter button stuck states on mobile */
+.wallet-button-wrapper button,
+.wallet-adapter-button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* Remove stuck :active states on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .wallet-button-wrapper button:active,
+  .wallet-adapter-button:active,
+  button:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease-out;
+  }
+  
+  /* Ensure button returns to normal state after touch */
+  .wallet-button-wrapper button,
+  .wallet-adapter-button,
+  button {
+    transition: background-color 0.15s ease-out, transform 0.1s ease-out;
+  }
+}
+
+/* Prevent text selection on buttons during touch */
+button {
+  -webkit-user-select: none;
+  user-select: none;
+}
