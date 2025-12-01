@@ -47,3 +47,10 @@ test-format.mjs
 /test-results/
 /playwright/.cache/
 /playwright-artifacts/.last-run.json
+
+# Local SQLite database
+/.data/
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm

@@ -175,6 +175,58 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Database Setup
+
+The EQUA frontend supports two database providers:
+- **SQLite** (default for development) - Local file-based database
+- **Supabase** (for production) - Cloud-hosted PostgreSQL
+
+### Local Development with SQLite
+
+By default, the app uses SQLite for local development. This allows you to develop offline without needing Supabase credentials.
+
+1. **Initialize the database:**
+   ```bash
+   npm run db:setup
+   ```
+
+2. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+
+The SQLite database is stored at `.data/equa.sqlite` and is automatically gitignored.
+
+### Switching to Supabase
+
+To use Supabase instead of SQLite:
+
+1. **Set environment variables in `.env.local`:**
+   ```bash
+   DB_PROVIDER=supabase
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+   ```
+
+2. **Restart the development server**
+
+### Database Schema
+
+See [docs/DB_SCHEMA.md](docs/DB_SCHEMA.md) for the complete database schema documentation.
+
+### Running Tests
+
+```bash
+# Run all tests (uses SQLite by default)
+npm test
+
+# Run database-specific tests
+npm run test:db
+
+# Run tests with coverage
+npm run test:coverage
+```
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
