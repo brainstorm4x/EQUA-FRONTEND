@@ -31,7 +31,7 @@ import {
   isPublicKeyRegistered, 
   recordRegisteredKey,
 } from '@/utils/registrationGuard';
-import { db } from '@/lib/supabase/database';
+import { db } from '@/lib/db/client';
 
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;

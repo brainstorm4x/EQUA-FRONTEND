@@ -4,7 +4,7 @@ import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import Link from 'next/link';
 import { isUserRegistered, loadKeypair } from '@/lib/program';
-import { db } from '@/lib/supabase/database';
+import { db } from '@/lib/db/client';
 
 interface GetStartedButtonProps {
   className?: string;
