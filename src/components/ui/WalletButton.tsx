@@ -21,22 +21,8 @@ function isMobileDevice(): boolean {
   );
 }
 
-/**
- * Gets the Phantom deep link URL for mobile
- */
-function getPhantomDeepLink(): string {
-  if (typeof window === 'undefined') return '';
-  
-  // Encode the current URL for the redirect
-  const encodedUrl = encodeURIComponent(window.location.href);
-  const encodedRef = encodeURIComponent(window.location.origin);
-  
-  // Phantom mobile deep link format
-  return `https://phantom.app/ul/browse/${encodedUrl}?ref=${encodedRef}`;
-}
-
 export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
-  const { wallet, connected, connecting, disconnect, select } = useWallet();
+  const { wallet, connected, connecting, disconnect } = useWallet();
   const [mounted, setMounted] = useState(false);
   const [connectionTimedOut, setConnectionTimedOut] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -113,15 +99,6 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
       console.error('Error disconnecting:', error);
     }
   }, [disconnect]);
-
-  // Handle mobile wallet connection - opens Phantom app directly
-  const handleMobileConnect = useCallback(() => {
-    const deepLink = getPhantomDeepLink();
-    if (deepLink) {
-      // On mobile, try to open the Phantom app directly
-      window.location.href = deepLink;
-    }
-  }, []);
 
   if (!mounted) {
     return (
