@@ -196,7 +196,8 @@ export function getCurrencyFromTimezone(): string | null {
  * 2. If timezone is available and maps to a currency, use it
  * 3. Otherwise, use locale-based detection with country code
  * 4. If no clear signal, check if locale's country doesn't match timezone's expected region
- *    and prefer timezone in that case (handles en-GB users in India)
+ *    and prefer timezone in that case (handles users who keep their language preference
+ *    different from their geographic location)
  * 
  * @returns The currency code for the user's locale
  */
@@ -210,7 +211,7 @@ export function getUserLocaleCurrency(): string {
     const currencyFromLocale = getCurrencyFromLocale(locale);
     
     // If we have a timezone signal, it's generally more reliable for geographic location
-    // because users often keep their language preference as en-US or en-GB regardless of location
+    // because users often keep their language preference different from their actual location
     if (currencyFromTimezone) {
       // If timezone gives us a non-USD currency, prefer it
       // This handles cases like Indian users with 'en-GB' browser locale
@@ -219,7 +220,7 @@ export function getUserLocaleCurrency(): string {
       }
       
       // Timezone says USD - check if locale also says USD or is ambiguous
-      // If locale is just 'en' or 'en-US', use timezone result
+      // If locale is just a language code or indicates US, use timezone result
       const parts = locale.split('-');
       const hasCountryCode = parts.length > 1 && parts[parts.length - 1].length === 2;
       const localeCountry = hasCountryCode ? parts[parts.length - 1].toUpperCase() : null;

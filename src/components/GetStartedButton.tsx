@@ -73,12 +73,9 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
       if (!registered) {
         try {
           registered = await db.isWalletRegistered(pubkeyStr);
-          if (registered) {
-            console.log('✅ User found in database (wallet previously registered)');
-          }
         } catch (dbError) {
           // Database check failed, but we shouldn't block the UI
-          console.warn('Database registration check failed:', dbError);
+          // Silently continue - the on-chain check is the authoritative source
         }
       }
       

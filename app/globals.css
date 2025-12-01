@@ -124,6 +124,12 @@ body {
    Fixes for button states getting stuck on touch devices
    ============================================================================ */
 
+:root {
+  /* Touch interaction constants */
+  --button-active-scale: 0.98;
+  --button-transition-duration: 0.1s;
+}
+
 /* Optimize touch handling for all interactive elements */
 @layer utilities {
   .touch-manipulation {
@@ -147,15 +153,15 @@ body {
   .wallet-button-wrapper button:active,
   .wallet-adapter-button:active,
   button:active {
-    transform: scale(0.98);
-    transition: transform 0.1s ease-out;
+    transform: scale(var(--button-active-scale));
+    transition: transform var(--button-transition-duration) ease-out;
   }
   
   /* Ensure button returns to normal state after touch */
   .wallet-button-wrapper button,
   .wallet-adapter-button,
   button {
-    transition: background-color 0.15s ease-out, transform 0.1s ease-out;
+    transition: background-color 0.15s ease-out, transform var(--button-transition-duration) ease-out;
   }
 }
 

@@ -11,14 +11,17 @@ interface WalletButtonProps {
 // Connection timeout in milliseconds
 const CONNECTION_TIMEOUT_MS = 30000; // 30 seconds
 
+// Delay before blurring active element after touch (allows click to register)
+const TOUCH_BLUR_DELAY_MS = 100;
+
 /**
- * Detects if the current device is mobile
+ * Detects if the current device is a touch device using CSS media query
+ * More reliable than User-Agent detection
  */
-function isMobileDevice(): boolean {
+function isTouchDevice(): boolean {
   if (typeof window === 'undefined') return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
+  // Use matchMedia to check for touch capability
+  return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 }
 
 export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
@@ -32,10 +35,10 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
   const connectingRef = useRef(connecting);
   connectingRef.current = connecting;
 
-  // Only render on client side and detect mobile
+  // Only render on client side and detect touch device
   useEffect(() => {
     setMounted(true);
-    setIsMobile(isMobileDevice());
+    setIsMobile(isTouchDevice());
   }, []);
 
   // Handle connection timeout
@@ -64,18 +67,17 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
     const wrapper = buttonWrapperRef.current;
     
     // Force blur on touchend to prevent stuck active states
-    const handleTouchEnd = (e: TouchEvent) => {
-      // Small delay to allow click to register
+    // Uses a small delay to ensure the click event registers before blur
+    const handleTouchEnd = () => {
       setTimeout(() => {
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
         }
-      }, 100);
+      }, TOUCH_BLUR_DELAY_MS);
     };
 
-    // Prevent default on touchmove to avoid scroll-triggered stuck states
-    const handleTouchMove = (e: TouchEvent) => {
-      // If we're scrolling, blur any focused button
+    // Blur on touchmove to avoid scroll-triggered stuck states
+    const handleTouchMove = () => {
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
