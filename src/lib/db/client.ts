@@ -77,25 +77,28 @@ export function getDbAdapter(): DatabaseAdapter {
         'Using Supabase adapter instead. SQLite is only available on the server.'
       );
       // Fall back to Supabase in browser
+      // eslint-disable-next-line no-restricted-syntax
       const { supabaseAdapter } = require('./providers/supabase-adapter');
       cachedAdapter = supabaseAdapter;
       cachedProvider = 'supabase';
-      return cachedAdapter;
+      return supabaseAdapter as DatabaseAdapter;
     }
 
     // Server-side: use SQLite
+    // eslint-disable-next-line no-restricted-syntax
     const { getSQLiteAdapter } = require('./providers/sqlite-adapter');
-    cachedAdapter = getSQLiteAdapter();
+    const sqliteAdapter = getSQLiteAdapter();
+    cachedAdapter = sqliteAdapter;
     cachedProvider = provider;
+    return sqliteAdapter as DatabaseAdapter;
   } else {
     // Supabase works in both environments
+    // eslint-disable-next-line no-restricted-syntax
     const { supabaseAdapter } = require('./providers/supabase-adapter');
     cachedAdapter = supabaseAdapter;
     cachedProvider = provider;
+    return supabaseAdapter as DatabaseAdapter;
   }
-
-  console.log(`[EQUA DB] Using ${cachedProvider} database adapter`);
-  return cachedAdapter;
 }
 
 /**

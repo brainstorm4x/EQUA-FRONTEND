@@ -54,12 +54,19 @@ interface RunResult {
 const RATE_LIMIT_WINDOW_MS = parseInt(process.env.NEXT_PUBLIC_RATE_LIMIT_WINDOW_MS || String(24 * 60 * 60 * 1000), 10);
 const REFERRAL_RATE_LIMIT = parseInt(process.env.NEXT_PUBLIC_REFERRAL_RATE_LIMIT || '10', 10);
 
+// SQLite error codes for constraint violations
+const SQLITE_CONSTRAINT_UNIQUE = 'SQLITE_CONSTRAINT_UNIQUE';
+
 // ============================================================================
 // Utility Functions
 // ============================================================================
 
 function generateUUID(): string {
-  // Generate UUID v4
+  // Use crypto.randomUUID() if available (Node.js 14.17+), otherwise fallback
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback for older environments
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
@@ -73,6 +80,22 @@ function toISOString(date?: Date): string {
 
 function parseISOString(str: string): Date {
   return new Date(str);
+}
+
+/**
+ * Check if an error is a SQLite unique constraint violation
+ */
+function isUniqueConstraintError(error: unknown): boolean {
+  if (error && typeof error === 'object') {
+    // Check for SQLite error code
+    if ('code' in error && error.code === SQLITE_CONSTRAINT_UNIQUE) {
+      return true;
+    }
+    // Fallback to message check for compatibility
+    const errStr = String(error);
+    return errStr.includes('UNIQUE constraint failed');
+  }
+  return false;
 }
 
 // ============================================================================
@@ -96,7 +119,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
   private getDatabase(): Database {
     if (!this.db) {
       // Dynamic import to prevent bundling in client-side code
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      // eslint-disable-next-line no-restricted-syntax
       const BetterSqlite3 = require('better-sqlite3');
       this.db = new BetterSqlite3(this.dbPath) as Database;
       
@@ -126,7 +149,9 @@ export class SQLiteAdapter implements DatabaseAdapter {
     }
 
     // Read and execute schema
+    // eslint-disable-next-line no-restricted-syntax
     const fs = require('fs');
+    // eslint-disable-next-line no-restricted-syntax
     const path = require('path');
     
     // Try multiple possible schema locations
@@ -308,8 +333,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
       return { success: true, data: user };
     } catch (error) {
       console.error('[SQLiteAdapter] Failed to register user:', error);
-      const errMsg = String(error);
-      if (errMsg.includes('UNIQUE constraint failed')) {
+      if (isUniqueConstraintError(error)) {
         return { success: false, error: 'User already registered' };
       }
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
@@ -461,9 +485,8 @@ export class SQLiteAdapter implements DatabaseAdapter {
       return { success: true };
     } catch (error) {
       console.error('[SQLiteAdapter] Failed to record referral:', error);
-      const errMsg = String(error);
       // Ignore unique constraint violations (duplicate referrals)
-      if (errMsg.includes('UNIQUE constraint failed')) {
+      if (isUniqueConstraintError(error)) {
         return { success: true };
       }
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
