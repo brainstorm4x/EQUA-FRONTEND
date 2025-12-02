@@ -140,3 +140,44 @@ export function manualClearEquaData(): void {
     }
   }
 }
+
+/**
+ * Reset localStorage caches when switching to a new Solana program ID.
+ * This should be called when mounting components to ensure clean state.
+ * 
+ * @param currentProgramId - The current program ID (as base58 string)
+ * 
+ * Example usage:
+ * ```typescript
+ * resetForNewProgramId(PROGRAM_ID.toBase58())
+ * ```
+ */
+export function resetForNewProgramId(currentProgramId: string): void {
+  if (typeof window === 'undefined') return;
+  
+  const storedProgramId = getStoredProgramId();
+  
+  // If no stored program ID, this is first run or after manual clear
+  if (!storedProgramId) {
+    console.log('📝 First run with program ID:', currentProgramId);
+    storeProgramId(currentProgramId);
+    return;
+  }
+  
+  // If program ID changed, clear old data
+  if (storedProgramId !== currentProgramId) {
+    console.log('🔄 Program ID changed - resetting local state');
+    console.log(`   Old: ${storedProgramId}`);
+    console.log(`   New: ${currentProgramId}`);
+    
+    clearEquaLocalStorage();
+    storeProgramId(currentProgramId);
+    
+    // Dispatch event to notify components
+    window.dispatchEvent(new CustomEvent('equa_program_id_changed', {
+      detail: { oldProgramId: storedProgramId, newProgramId: currentProgramId }
+    }));
+    
+    console.log('✅ Local state reset complete');
+  }
+}

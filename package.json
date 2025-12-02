@@ -12,7 +12,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "db:setup": "npx ts-node --esm scripts/db-setup.ts",
+    "db:setup": "bash scripts/turso/setup-turso.sh",
+    "db:migrate": "npx tsx scripts/turso/migrate.ts",
+    "db:reset": "npx tsx scripts/turso/reset.ts",
     "db:sync:turso": "npx ts-node --esm scripts/db-sync-turso.ts",
     "test:turso": "npx ts-node --esm scripts/test-turso-connection.ts",
     "test:db": "DB_PROVIDER=sqlite jest --testPathPattern=__tests__/db"

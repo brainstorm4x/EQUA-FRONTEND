@@ -790,6 +790,39 @@ export class SQLiteAdapter implements DatabaseAdapter {
       return [];
     }
   }
+
+  // ============================================================================
+  // Database Reset
+  // ============================================================================
+
+  async resetAll(): Promise<OperationResult> {
+    try {
+      const db = this.getDatabase();
+      
+      // Truncate all tables
+      const tables = [
+        'users',
+        'transfers',
+        'referrals',
+        'referral_rate_limits',
+        'device_fingerprints',
+        'analytics',
+        'price_history',
+        'global_state',
+        'eqx_prices',
+      ];
+
+      for (const table of tables) {
+        db.prepare(`DELETE FROM ${table}`).run();
+      }
+
+      console.log('[SQLiteAdapter] All tables reset successfully');
+      return { success: true };
+    } catch (error) {
+      console.error('[SQLiteAdapter] Failed to reset database:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
 }
 
 // Export factory function to create instances

@@ -217,6 +217,9 @@ export const db = {
   getEqxPriceHistory: (...args: Parameters<DatabaseAdapter['getEqxPriceHistory']>) => 
     getDbAdapter().getEqxPriceHistory(...args),
 
+  // Database reset
+  resetAll: () => getDbAdapter().resetAll(),
+
   // Provider info
   isAvailable: () => getDbAdapter().isAvailable(),
   get provider() {

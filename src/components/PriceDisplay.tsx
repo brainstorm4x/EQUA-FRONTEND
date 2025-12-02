@@ -13,6 +13,7 @@ import { getTotalTransfers } from '@/utils/transferTracking';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat, formatEQXPrice, MultiFormatEquaPrice } from '@/utils/eqxOracle';
 import { db } from '@/lib/db/client';
+import { resetForNewProgramId } from '@/utils/programIdMigration';
 
 interface PriceDisplayProps {
   className?: string;
@@ -206,6 +207,9 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
 
   useEffect(() => {
     isMountedRef.current = true;
+    
+    // Reset local state if program ID has changed
+    resetForNewProgramId(PROGRAM_ID.toBase58());
     
     fetchPriceData();
     

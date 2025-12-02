@@ -391,6 +391,41 @@ export class SupabaseAdapter implements DatabaseAdapter {
       return [];
     }
   }
+
+  // ============================================================================
+  // Database Reset
+  // ============================================================================
+
+  async resetAll(): Promise<OperationResult> {
+    try {
+      // Delete from all tables
+      const tables = [
+        'users',
+        'transfers',
+        'referrals',
+        'referral_rate_limits',
+        'device_fingerprints',
+        'analytics',
+        'price_history',
+        'global_state',
+        'eqx_prices',
+      ];
+
+      // Delete all rows from each table
+      for (const table of tables) {
+        const { error } = await supabase.from(table).delete().neq('id', '');
+        if (error) {
+          console.warn(`[SupabaseAdapter] Failed to reset ${table}:`, error);
+        }
+      }
+
+      console.log('[SupabaseAdapter] All tables reset successfully');
+      return { success: true };
+    } catch (error) {
+      console.error('[SupabaseAdapter] Failed to reset database:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
 }
 
 // Export singleton instance

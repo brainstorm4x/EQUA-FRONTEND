@@ -20,17 +20,37 @@
 import axios from 'axios';
 
 // ============================================================================
-// Pyth Feed IDs (on Solana mainnet/devnet)
+// Configuration
 // ============================================================================
+
+// Check if Pyth Network is enabled (default: true)
+// Set NEXT_PUBLIC_ENABLE_PYTH=false in .env.local to disable Pyth price feeds
+const isPythEnabled = (): boolean => {
+  if (typeof window === 'undefined') {
+    // Server-side: check process.env
+    return process.env.NEXT_PUBLIC_ENABLE_PYTH !== 'false';
+  }
+  // Client-side: Next.js inlines NEXT_PUBLIC_* vars at build time
+  return process.env.NEXT_PUBLIC_ENABLE_PYTH !== 'false';
+};
+
+// Track if we've already warned about Pyth errors (warn only once)
+let pythErrorWarned = false;
+
+// ============================================================================
+// Pyth Feed IDs (Hermes hex IDs from official documentation)
+// ============================================================================
+// These are the correct Hermes API feed IDs for mainnet/devnet
+// Source: https://pyth.network/developers/price-feed-ids
 export const PYTH_FEED_IDS = {
-  XAU_USD: '0x765d2ba906dbc32ca17cc11f5310a89e9ee1f6420d3a674090221e80d2ffb69f',
-  WTI_USD: '0x5875cb5df6a67b4d79a1a09e8f9038a52d21ba5fb8e8eca1b96a69bb5f9dff6f',
-  COPPER_USD: '0x3dd9286e6c3b509b5ff7439ef18722e088a96b7fb29eefb103d8798f2d37c5f5',
-  WHEAT_USD: '0xec5d399846a9209f3fe3881d87c43dac0aedd198de854066da373bde2dd440c2',
-  EUR_USD: '0x2b89b9dc8fdf9f34709a5b106b472f0f39bb6ca9ce04b0d3d3bec0f26b3bd62e',
-  CNY_USD: '0x132d3c0b603eee992d53674ba3c30ac1f38a571a6c1bc269fb251cadbe926e88',
-  JPY_USD: '0xef2c98c804ba503c6a707e38be4dfb16684ce99c5e41615f56ce631b5b605b63',
-  GBP_USD: '0x84c2dde129ada19c6800e6f4ee73b63e43741dd8d874b6fd5e367f4e9587fb88',
+  XAU_USD: '0x765de816845861e75a25fca122bb6898a63d49e6fa51a6f8b4303c61cb1fc1b9',
+  WTI_USD: '0x925c4ef7ee2b7b4c19a23b04d80187b3e687b3e6e65a97cf93bf3cce8db3b8a2',  // USOILSPOT (WTI/USD)
+  COPPER_USD: '0x1ff1261f8c1aef0e8736e26a28e1330a645e3e21203d1e609f87df918d6af510',
+  WHEAT_USD: '0xb1830a04e1e59bf3cbd0f93a2e6b321acd5e7d89892c0becc49b265eada2c694',
+  EUR_USD: '0x2d0366e8361c110a1fcf6b3023a1d4e17f63b3a2e10b8ca8bb144dbe7b8a7de0',
+  CNY_USD: '0x60964c6f8ec3a8283bbc2fa9a5a321d996bb099c7ccafca443c1a89fa919e05d',
+  JPY_USD: '0xac5c83fbd5b1b125d7d4aa5e7ddf14e354ae3836e47ac5b2e87fea9cb7c9b7af',
+  GBP_USD: '0xcf094b0624b532422629f3cffe918d512a529bbc1794cb15d3a0128c541f71b8',
   BTC_USD: '0xc9d8b075a5c69303365ae23d7190c565b5ead26888fe7722529c1ce66b91bb32',
 } as const;
 
@@ -140,6 +160,15 @@ const PYTH_HERMES_API = 'https://hermes.pyth.network/api/latest_price_feeds';
  * Fetches prices from Pyth Network using the Hermes API
  */
 async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
+  // Check if Pyth is enabled
+  if (!isPythEnabled()) {
+    if (!pythErrorWarned) {
+      console.log('[EQX Oracle] Pyth Network is disabled via NEXT_PUBLIC_ENABLE_PYTH=false');
+      pythErrorWarned = true;
+    }
+    return null;
+  }
+
   try {
     const feedIds = [
       PYTH_FEED_IDS.XAU_USD,
@@ -160,7 +189,10 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
     });
 
     if (!response.data || !Array.isArray(response.data)) {
-      console.warn('Invalid Pyth response format');
+      if (!pythErrorWarned) {
+        console.warn('[EQX Oracle] Invalid Pyth response format');
+        pythErrorWarned = true;
+      }
       return null;
     }
 
@@ -208,13 +240,19 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
     const hasAllPrices = requiredSymbols.every(s => prices[s] !== undefined);
 
     if (!hasAllPrices) {
-      console.warn('Pyth did not return all required prices');
+      if (!pythErrorWarned) {
+        console.warn('[EQX Oracle] Pyth did not return all required prices');
+        pythErrorWarned = true;
+      }
       return null;
     }
 
     return prices;
   } catch (error) {
-    console.error('Error fetching Pyth prices:', error);
+    if (!pythErrorWarned) {
+      console.warn('[EQX Oracle] Error fetching Pyth prices:', error);
+      pythErrorWarned = true;
+    }
     return null;
   }
 }
