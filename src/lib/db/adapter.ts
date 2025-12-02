@@ -68,7 +68,7 @@ export interface OperationResult<T = void> {
 
 export interface DatabaseAdapter {
   // Provider info
-  readonly provider: 'sqlite' | 'supabase';
+  readonly provider: 'sqlite' | 'supabase' | 'turso';
   
   // Connection check
   isAvailable(): Promise<boolean>;
