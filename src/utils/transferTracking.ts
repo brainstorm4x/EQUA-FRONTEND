@@ -54,6 +54,14 @@ export function saveTransferStats(stats: TransferStats): void {
 /**
  * Records a new transfer
  * Also attempts to persist to database for better tracking across sessions
+ * 
+ * @param senderWallet - Optional sender wallet address
+ * @param recipientWallet - Optional recipient wallet address  
+ * @param amount - Optional transfer amount
+ * @param transactionSignature - Optional transaction signature
+ * 
+ * Note: If wallet addresses and amount are not provided, only localStorage
+ * tracking will be updated. Database persistence requires all parameters.
  */
 export async function recordTransfer(
   senderWallet?: string,
@@ -67,7 +75,7 @@ export async function recordTransfer(
   stats.lastUpdated = Date.now();
   saveTransferStats(stats);
   
-  // Attempt to persist to database if connection details are provided
+  // Attempt to persist to database only if all required data is provided
   if (senderWallet && recipientWallet && amount !== undefined) {
     try {
       const { db } = await import('@/lib/db/client');
@@ -82,6 +90,8 @@ export async function recordTransfer(
       console.warn('Failed to record transfer to database:', error);
       // Continue - localStorage tracking is already done
     }
+  } else {
+    console.log('ℹ Transfer recorded to localStorage only (missing database parameters)');
   }
   
   // Dispatch event for real-time UI updates

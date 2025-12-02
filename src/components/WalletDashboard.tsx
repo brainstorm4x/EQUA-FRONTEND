@@ -29,6 +29,9 @@ interface WalletDashboardProps {
 const EQUA_DECIMALS = 9;
 const EQUA_MULTIPLIER = Math.pow(10, EQUA_DECIMALS);
 
+// Default EQUA price in USD (used as fallback if price fetch fails)
+const DEFAULT_EQUA_PRICE_USD = 0.01;
+
 // Shared constants for referral messages
 const EQUA_SHARE_BASE_URL = 'https://equa.live/mint';
 
@@ -87,11 +90,12 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         // Get referral count from database first, fallback to localStorage
         let count = 0;
         try {
-          // For now, use the 24h count as we don't have a total count method yet
-          // TODO: Add a getTotalReferralCount method to database adapter
+          // TODO: Implement getTotalReferralCount method in database adapter
+          // Currently using 24h count as a temporary workaround
+          // This may show lower numbers than actual total referrals
           const dbCount = await db.adapter.getReferralCount24h(publicKey.toBase58());
           count = dbCount;
-          console.log('✓ Referral count from database:', count);
+          console.log('✓ Referral count (24h) from database:', count);
         } catch (dbError) {
           console.warn('Failed to get referral count from database, using localStorage:', dbError);
           const referrerData = getReferrerData(publicKey.toBase58());
@@ -306,12 +310,11 @@ const SendModal: FC<SendModalProps> = ({
         
         // Get current EQUA price from global state
         // For now, use a default price - in production, fetch from blockchain
-        const defaultPrice = 0.01;
-        const priceData = await getEquaPriceMultiFormat(defaultPrice, currencyCode, exchangeRate);
+        const priceData = await getEquaPriceMultiFormat(DEFAULT_EQUA_PRICE_USD, currencyCode, exchangeRate);
         setEquaPrice(priceData.localCurrency);
       } catch (err) {
         console.warn('Failed to fetch EQUA price:', err);
-        setEquaPrice(0.01);
+        setEquaPrice(DEFAULT_EQUA_PRICE_USD);
       } finally {
         setIsLoadingPrice(false);
       }

@@ -87,6 +87,9 @@ function clearEquaLocalStorage(): void {
  * Should be called on app initialization.
  * 
  * @param currentProgramId - The current program ID from environment
+ * 
+ * Note: This function only works in browser environments as it uses localStorage.
+ * It will safely no-op in server-side rendering contexts.
  */
 export function checkAndMigrateForProgramIdChange(currentProgramId: string): void {
   const storedProgramId = getStoredProgramId();
