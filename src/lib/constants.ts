@@ -1,7 +1,9 @@
 import { PublicKey } from '@solana/web3.js'; 
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
-export const PROGRAM_ID = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
+export const PROGRAM_ID = new PublicKey(
+  process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID || '7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP'
+);
 
 // Standard SPL Token Program (not Token-2022)
 // The smart contract on-chain expects the standard SPL Token program

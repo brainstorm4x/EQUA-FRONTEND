@@ -163,7 +163,9 @@ export { TOKEN_PROGRAM_ID };
 
 ### Program Addresses
 
-- **Program ID:** `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL`
+> **NOTE (December 2025):** This document reflects the historical program ID. The program has been redeployed to `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`. All code and documentation has been updated accordingly.
+
+- **Program ID (Historical):** `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL`
 - **Mint PDA:** `3xhEgm7rubPZyHrmgSWF8bzJvfon9WJG2g7WzDjjvNC4`
 - **Global State PDA:** `4dt3EfdbD63e4vCDz5CiK2ee14v7hotet7tJt5GGi6Kf`
 - **Mint Authority PDA:** `FU1bDqbYxdz7KwhyFgi1sB4R2Dp7JA5f5NLtCQEfeSe3`

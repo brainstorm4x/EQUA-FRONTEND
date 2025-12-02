@@ -104,7 +104,7 @@ Current metadata files are located at:
 | Symbol | EQUA |
 | Decimals | 6 |
 | Network | Solana Devnet |
-| Program ID | BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL |
+| Program ID | 7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP |
 
 ## Logo Requirements
 

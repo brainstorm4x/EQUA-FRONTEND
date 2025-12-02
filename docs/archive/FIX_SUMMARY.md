@@ -1,5 +1,7 @@
 # Fix Summary: Mint 1000 EQUA Transaction Errors
 
+> **HISTORICAL NOTE (December 2025):** This archived document references the original program ID `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL`. The program has been redeployed to `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`. Please refer to current documentation for up-to-date information.
+
 ## What Was Fixed
 
 I've successfully fixed the "Token account creation failed during simulation" error you were experiencing when clicking "Mint 1000 EQUA". The issue has been resolved through improved account management and comprehensive validation.

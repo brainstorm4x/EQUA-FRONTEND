@@ -138,8 +138,9 @@ formatEquaRaw(123_456, { trimTrailingZeros: true }) // "0.123456"
 
 - **Network**: Solana Devnet
 - **Token Standard**: SPL Token (Standard) - *See note below*
-- **Program ID**: `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL`
+- **Program ID**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
 
+> **Note:** The program ID can be overridden using the `NEXT_PUBLIC_EQUA_PROGRAM_ID` environment variable.
 > **Note:** The codebase is currently configured for Standard SPL Token Program. If your deployed mint uses Token-2022, see [AUDIT_REPORT.md](AUDIT_REPORT.md#16-how-to-switch-to-token-2022-if-needed) for configuration instructions.
 
 ## Documentation
