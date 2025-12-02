@@ -29,8 +29,8 @@ export const COMMON_QUERIES = {
   // User queries
   CHECK_WALLET_EXISTS: `SELECT id FROM ${TABLE_NAMES.USERS} WHERE wallet_address = ?`,
   GET_USER_BY_WALLET: `SELECT * FROM ${TABLE_NAMES.USERS} WHERE wallet_address = ?`,
-  COUNT_USERS_BY_TYPE: (type: 'individual' | 'business') =>
-    `SELECT COUNT(*) as count FROM ${TABLE_NAMES.USERS} WHERE account_type = '${type}'`,
+  COUNT_USERS_BY_TYPE_INDIVIDUAL: `SELECT COUNT(*) as count FROM ${TABLE_NAMES.USERS} WHERE account_type = 'individual'`,
+  COUNT_USERS_BY_TYPE_BUSINESS: `SELECT COUNT(*) as count FROM ${TABLE_NAMES.USERS} WHERE account_type = 'business'`,
   
   // Transfer queries
   COUNT_TRANSFERS: `SELECT COUNT(*) as count FROM ${TABLE_NAMES.TRANSFERS}`,

@@ -93,10 +93,10 @@ export class TursoAdapter implements DatabaseAdapter {
     this.authToken = authToken ?? process.env.TURSO_AUTH_TOKEN ?? '';
 
     if (!this.databaseUrl) {
-      throw new Error('[TursoAdapter] TURSO_DATABASE_URL is required');
+      throw new Error('[TursoAdapter] Database URL is required but not configured');
     }
     if (!this.authToken) {
-      throw new Error('[TursoAdapter] TURSO_AUTH_TOKEN is required');
+      throw new Error('[TursoAdapter] Authentication token is required but not configured');
     }
   }
 
@@ -274,8 +274,8 @@ export class TursoAdapter implements DatabaseAdapter {
     try {
       const client = this.getClient();
       
-      const individualResult = await client.execute(COMMON_QUERIES.COUNT_USERS_BY_TYPE('individual'));
-      const businessResult = await client.execute(COMMON_QUERIES.COUNT_USERS_BY_TYPE('business'));
+      const individualResult = await client.execute(COMMON_QUERIES.COUNT_USERS_BY_TYPE_INDIVIDUAL);
+      const businessResult = await client.execute(COMMON_QUERIES.COUNT_USERS_BY_TYPE_BUSINESS);
 
       return {
         individualCount: individualResult.rows.length > 0 ? Number(individualResult.rows[0].count) || 0 : 0,

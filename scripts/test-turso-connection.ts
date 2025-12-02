@@ -25,14 +25,16 @@ const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN;
 // ============================================================================
 
 if (!TURSO_DATABASE_URL) {
-  console.error('❌ Error: TURSO_DATABASE_URL environment variable is required');
-  console.error('   Example: export TURSO_DATABASE_URL=libsql://your-db.turso.io');
+  console.error('❌ Error: Database URL is required but not configured');
+  console.error('   Set TURSO_DATABASE_URL environment variable');
+  console.error('   Example: export TURSO_DATABASE_URL=libsql://your-database.turso.io');
   process.exit(1);
 }
 
 if (!TURSO_AUTH_TOKEN) {
-  console.error('❌ Error: TURSO_AUTH_TOKEN environment variable is required');
-  console.error('   Get your token with: turso db tokens create <db-name>');
+  console.error('❌ Error: Authentication token is required but not configured');
+  console.error('   Set TURSO_AUTH_TOKEN environment variable');
+  console.error('   Generate token with: turso db tokens create <database-name>');
   process.exit(1);
 }
 
