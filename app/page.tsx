@@ -135,7 +135,7 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="text-purple-300 text-sm mb-2">Program ID</p>
-                <p className="text-white text-sm font-mono">BgNRq...6aDtL</p>
+                <p className="text-white text-sm font-mono">7QYUb...MaFdP</p>
               </div>
             </div>
           </div>

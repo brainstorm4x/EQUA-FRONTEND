@@ -90,9 +90,36 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
     return walletsRef.current;
   }, []);
 
-  // Memoized error handler
+  // Memoized error handler with detailed logging
   const onError = useCallback((error: WalletError) => {
-    console.error('Wallet error:', error);
+    // Structured error logging for better debugging
+    const errorDetails = {
+      name: error.name,
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Add development-only context
+    if (process.env.NODE_ENV === 'development') {
+      console.error('═══════════════════════════════════════════════════════');
+      console.error('🔴 Wallet Connection Error (Development)');
+      console.error('═══════════════════════════════════════════════════════');
+      console.error('Error Details:', errorDetails);
+      console.error('Stack:', error.stack);
+      
+      // Additional debug context (development only)
+      if (typeof window !== 'undefined') {
+        console.error('Debug Context:', {
+          pathname: window.location.pathname,
+          isMobile: isMobileDevice(),
+          userAgentPrefix: navigator.userAgent.substring(0, 50) + '...',
+        });
+      }
+      console.error('═══════════════════════════════════════════════════════');
+    } else {
+      // Production: Simple structured logging
+      console.error('[Wallet Error]', errorDetails);
+    }
     
     // On mobile, if Phantom is not detected, redirect to app store
     if (isMobileDevice() && error.name === 'WalletNotReadyError') {

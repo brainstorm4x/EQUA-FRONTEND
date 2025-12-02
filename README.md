@@ -140,8 +140,156 @@ formatEquaRaw(123_456, { trimTrailingZeros: true }) // "0.123456"
 - **Token Standard**: SPL Token (Standard) - *See note below*
 - **Program ID**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
 
-> **Note:** The program ID can be overridden using the `NEXT_PUBLIC_EQUA_PROGRAM_ID` environment variable.
+> **Note:** The program ID can be overridden using the `NEXT_PUBLIC_PROGRAM_ID` or `NEXT_PUBLIC_EQUA_PROGRAM_ID` (legacy) environment variable.
 > **Note:** The codebase is currently configured for Standard SPL Token Program. If your deployed mint uses Token-2022, see [AUDIT_REPORT.md](AUDIT_REPORT.md#16-how-to-switch-to-token-2022-if-needed) for configuration instructions.
+
+### Environment Variables
+
+The frontend supports the following environment variables for configuration:
+
+```bash
+# Program ID Configuration (choose one)
+NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP        # Preferred
+NEXT_PUBLIC_EQUA_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP  # Legacy (still supported)
+
+# Network Configuration
+NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com  # Optional, defaults to devnet
+NEXT_PUBLIC_NETWORK=devnet                               # Optional, defaults to devnet
+
+# Oracle Configuration
+NEXT_PUBLIC_ENABLE_PYTH=true                            # Optional, defaults to true
+```
+
+Copy `.env.example` to `.env.local` and customize as needed.
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+#### Wallet Connection Failures
+
+**Symptom:** "Connection Failed – Retry" error when attempting to connect a wallet.
+
+**Possible Causes and Solutions:**
+
+1. **Wallet Extension Not Installed**
+   - Ensure Phantom, Solflare, or another supported wallet extension is installed in your browser
+   - For mobile: Install the wallet app from the App Store or Google Play
+
+2. **Wrong Network Selected**
+   - Check that your wallet is connected to **Devnet**, not Mainnet
+   - In Phantom: Settings → Developer Settings → Testnet Mode → Enable
+   - In Solflare: Settings → Network → Devnet
+
+3. **RPC Endpoint Issues**
+   - The default RPC endpoint (api.devnet.solana.com) may be rate-limited or temporarily down
+   - Try using a custom RPC endpoint in `.env.local`:
+     ```bash
+     NEXT_PUBLIC_RPC_ENDPOINT=https://your-custom-rpc.com
+     ```
+
+4. **Browser Extension Conflicts**
+   - Disable other wallet extensions to prevent conflicts
+   - Try connecting in an incognito/private browsing window
+
+5. **Check Console Logs**
+   - Open browser DevTools (F12) → Console tab
+   - Look for detailed error messages that start with "🔴 Wallet Connection Error"
+   - Error logs include error name, message, and additional context
+
+#### Stale Homepage Values
+
+**Symptom:** Homepage shows old Program ID or outdated price/user count values.
+
+**Solutions:**
+
+1. **Hard Refresh the Page**
+   - Press Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac)
+   - This clears cached JavaScript and CSS
+
+2. **Verify Environment Variables**
+   - Check that `.env.local` exists and contains:
+     ```bash
+     NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+     ```
+   - Restart the development server after changing environment variables:
+     ```bash
+     npm run dev
+     ```
+
+3. **Clear Browser Storage**
+   - Open DevTools (F12) → Application tab → Storage
+   - Clear localStorage, sessionStorage, and cache
+   - Reload the page
+
+4. **Check Program ID in Use**
+   - Open DevTools Console and run:
+     ```javascript
+     localStorage.getItem('equa_current_program_id')
+     ```
+   - Should show: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+
+5. **Verify RPC Connection**
+   - Check that the RPC endpoint is responding:
+     ```bash
+     curl https://api.devnet.solana.com -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getVersion"}'
+     ```
+   - Should return a valid JSON response with version info
+
+#### Program ID Mismatch
+
+**Symptom:** Transactions fail with "Invalid Program ID" or similar errors.
+
+**Solutions:**
+
+1. **Update Environment Variables**
+   - Ensure your `.env.local` has the correct Program ID
+   - The current Program ID is: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+
+2. **Clear Cached Program Data**
+   - Run in browser console:
+     ```javascript
+     localStorage.clear()
+     sessionStorage.clear()
+     location.reload()
+     ```
+
+3. **Verify Backend Deployment**
+   - Confirm the backend smart contract is deployed with the same Program ID
+   - Check on Solana Explorer: https://explorer.solana.com/address/YOUR_PROGRAM_ID?cluster=devnet
+
+#### Build or Type Errors
+
+**Symptom:** Build fails or TypeScript errors appear.
+
+**Solutions:**
+
+1. **Clean Install Dependencies**
+   ```bash
+   rm -rf node_modules package-lock.json
+   npm install --legacy-peer-deps
+   ```
+
+2. **Type Check**
+   ```bash
+   npm run typecheck
+   ```
+
+3. **Clear Next.js Cache**
+   ```bash
+   rm -rf .next
+   npm run build
+   ```
+
+### Getting More Help
+
+If you're still experiencing issues:
+
+1. Check the [CHANGELOG.md](CHANGELOG.md) for recent changes
+2. Review [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for additional guidance
+3. Check the browser console for detailed error messages
+4. Verify your environment matches the [requirements](#installation)
+
 
 ## Documentation
 

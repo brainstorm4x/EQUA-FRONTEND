@@ -43,7 +43,7 @@ export function getCurrentProgramId(): string {
  * Check if an environment override is being used
  */
 export function isUsingProgramIdOverride(): boolean {
-  return !!process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID;
+  return !!(process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID);
 }
 
 /**
@@ -65,7 +65,7 @@ export function logProgramIdConfig(): void {
   console.log(`  Program ID: ${programId}`);
   
   if (source === 'environment') {
-    console.log(`  Override: ${process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID}`);
+    console.log(`  Override: ${process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID}`);
   }
 }
 
