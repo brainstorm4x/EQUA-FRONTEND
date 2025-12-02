@@ -14,6 +14,7 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { RPC_ENDPOINT } from '@/lib/constants';
 
 import '@solana/wallet-adapter-react-ui/styles.css';
+import { ProgramIdMigration } from '@/components/ProgramIdMigration';
 
 interface WalletProviderProps {
   children: ReactNode;
@@ -75,7 +76,10 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   return (
     <ConnectionProvider endpoint={RPC_ENDPOINT}>
       <SolanaWalletProvider wallets={wallets} autoConnect onError={onError}>
-        <WalletModalProvider>{children}</WalletModalProvider>
+        <WalletModalProvider>
+          <ProgramIdMigration />
+          {children}
+        </WalletModalProvider>
       </SolanaWalletProvider>
     </ConnectionProvider>
   );

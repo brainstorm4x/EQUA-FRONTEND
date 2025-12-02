@@ -17,6 +17,9 @@ import Image from 'next/image';
 import { formatEquaBalance } from '@/utils/tokenFormat';
 import { getReferrerData } from '@/utils/referralRateLimit';
 import { recordTransfer } from '@/utils/transferTracking';
+import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
+import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
+import { db } from '@/lib/db/client';
 
 interface WalletDashboardProps {
   className?: string;
@@ -25,6 +28,9 @@ interface WalletDashboardProps {
 // EQUA Token has 9 decimals
 const EQUA_DECIMALS = 9;
 const EQUA_MULTIPLIER = Math.pow(10, EQUA_DECIMALS);
+
+// Default EQUA price in USD (used as fallback if price fetch fails)
+const DEFAULT_EQUA_PRICE_USD = 0.01;
 
 // Shared constants for referral messages
 const EQUA_SHARE_BASE_URL = 'https://equa.live/mint';
@@ -81,9 +87,22 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         const bal = await getSPLTokenBalance(connection, tokenAccount);
         setBalance(bal);
         
-        // Get referral count
-        const referrerData = getReferrerData(publicKey.toBase58());
-        setReferralCount(referrerData?.totalReferrals || 0);
+        // Get referral count from database first, fallback to localStorage
+        let count = 0;
+        try {
+          // TODO: Implement getTotalReferralCount method in database adapter
+          // Currently using 24h count as a temporary workaround
+          // This may show lower numbers than actual total referrals
+          const dbCount = await db.adapter.getReferralCount24h(publicKey.toBase58());
+          count = dbCount;
+          console.log('✓ Referral count (24h) from database:', count);
+        } catch (dbError) {
+          console.warn('Failed to get referral count from database, using localStorage:', dbError);
+          const referrerData = getReferrerData(publicKey.toBase58());
+          count = referrerData?.totalReferrals || 0;
+        }
+        
+        setReferralCount(count);
       } catch (error) {
         console.error('Error fetching EQUA balance:', error);
         setBalance(0);
@@ -264,6 +283,10 @@ const SendModal: FC<SendModalProps> = ({
 }) => {
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('');
+  const [localCurrencyAmount, setLocalCurrencyAmount] = useState('');
+  const [equaPrice, setEquaPrice] = useState<number>(0.01);
+  const [localCurrency, setLocalCurrency] = useState('USD');
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [txSignature, setTxSignature] = useState('');
@@ -275,6 +298,57 @@ const SendModal: FC<SendModalProps> = ({
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const jsQRRef = useRef<typeof import('jsqr').default | null>(null);
+
+  // Fetch EQUA price on mount
+  useEffect(() => {
+    const fetchPrice = async () => {
+      setIsLoadingPrice(true);
+      try {
+        const currencyCode = getUserLocaleCurrency();
+        setLocalCurrency(currencyCode);
+        const exchangeRate = DEFAULT_RATES[currencyCode]?.rate || 1;
+        
+        // Get current EQUA price from global state
+        // For now, use a default price - in production, fetch from blockchain
+        const priceData = await getEquaPriceMultiFormat(DEFAULT_EQUA_PRICE_USD, currencyCode, exchangeRate);
+        setEquaPrice(priceData.localCurrency);
+      } catch (err) {
+        console.warn('Failed to fetch EQUA price:', err);
+        setEquaPrice(DEFAULT_EQUA_PRICE_USD);
+      } finally {
+        setIsLoadingPrice(false);
+      }
+    };
+    fetchPrice();
+  }, []);
+
+  // Handle local currency amount change
+  const handleLocalCurrencyChange = (value: string) => {
+    setLocalCurrencyAmount(value);
+    
+    // Convert to EQUA
+    if (value && !isNaN(parseFloat(value)) && equaPrice > 0) {
+      const localAmount = parseFloat(value);
+      const equaAmount = localAmount / equaPrice;
+      setAmount(equaAmount.toFixed(6));
+    } else {
+      setAmount('');
+    }
+  };
+
+  // Handle EQUA amount change
+  const handleEquaAmountChange = (value: string) => {
+    setAmount(value);
+    
+    // Convert to local currency
+    if (value && !isNaN(parseFloat(value)) && equaPrice > 0) {
+      const equaAmount = parseFloat(value);
+      const localAmount = equaAmount * equaPrice;
+      setLocalCurrencyAmount(localAmount.toFixed(2));
+    } else {
+      setLocalCurrencyAmount('');
+    }
+  };
 
   // Lazy load jsQR library once
   const getJsQR = async () => {
@@ -544,8 +618,13 @@ const SendModal: FC<SendModalProps> = ({
 
       setTxSignature(signature);
       
-      // Record the transfer for statistics tracking
-      recordTransfer();
+      // Record the transfer for statistics tracking (in both localStorage and database)
+      await recordTransfer(
+        publicKey.toBase58(),
+        recipientPubkey.toBase58(),
+        sendAmount,
+        signature
+      );
       
       setTimeout(onSuccess, 2000);
     } catch (err: any) {
@@ -652,19 +731,42 @@ const SendModal: FC<SendModalProps> = ({
             </div>
 
             <div className="mb-4">
+              <label className="block text-purple-200 text-sm mb-2">
+                Amount ({DEFAULT_RATES[localCurrency]?.symbol || '$'} {localCurrency})
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={localCurrencyAmount}
+                  onChange={(e) => handleLocalCurrencyChange(e.target.value)}
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                  className="w-full bg-white/10 border-2 border-purple-500/30 rounded-xl px-4 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+              <p className="text-purple-400 text-xs mt-1">
+                Enter amount in your local currency
+              </p>
+            </div>
+
+            <div className="mb-4">
               <label className="block text-purple-200 text-sm mb-2">Amount (EQUA)</label>
               <div className="relative">
                 <input
                   type="number"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => handleEquaAmountChange(e.target.value)}
                   placeholder="0.00"
                   min="0"
                   step="0.000001"
                   className="w-full bg-white/10 border-2 border-purple-500/30 rounded-xl px-4 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:border-purple-500"
                 />
                 <button
-                  onClick={() => setAmount(balance.toString())}
+                  onClick={() => {
+                    setAmount(balance.toString());
+                    handleEquaAmountChange(balance.toString());
+                  }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-white text-sm"
                 >
                   MAX
