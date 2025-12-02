@@ -88,7 +88,7 @@ async function testConnection() {
   if (tablesResult.rows.length > 0) {
     console.log('📊 Table statistics:\n');
     
-    for (const row of result.rows) {
+    for (const row of tablesResult.rows) {
       const tableName = row.name as string;
       try {
         const countResult = await client.execute(`SELECT COUNT(*) as count FROM ${tableName}`);
