@@ -254,11 +254,34 @@ Inserts or updates a global state entry.
 The database provider is configured via the `DB_PROVIDER` environment variable:
 
 - `sqlite` - Use local SQLite database (default for development/CI)
-- `supabase` - Use Supabase cloud database (for production)
+- `supabase` - Use Supabase cloud database (for production PostgreSQL)
+- `turso` - Use Turso cloud database (for production SQLite-compatible with edge replication)
 
 ```bash
 # .env.local
-DB_PROVIDER=sqlite  # or 'supabase'
+DB_PROVIDER=sqlite  # or 'supabase' or 'turso'
 ```
 
+### SQLite Provider
 When using SQLite, the database file is stored at `.data/equa.sqlite` (gitignored).
+- Best for: Local development, testing, offline work
+- Setup: `npm run db:setup`
+
+### Supabase Provider
+When using Supabase, configure with:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+- Best for: Production with PostgreSQL features, real-time subscriptions
+- Setup: Create tables via Supabase Dashboard
+
+### Turso Provider
+When using Turso, configure with:
+```bash
+TURSO_DATABASE_URL=libsql://your-db.turso.io
+TURSO_AUTH_TOKEN=your-auth-token
+```
+- Best for: Production with SQLite compatibility, edge replication
+- Setup: `npm run db:sync:turso`
+- See: `docs/DB_TURSO_NOTES.md` for detailed setup

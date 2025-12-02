@@ -138,8 +138,9 @@ formatEquaRaw(123_456, { trimTrailingZeros: true }) // "0.123456"
 
 - **Network**: Solana Devnet
 - **Token Standard**: SPL Token (Standard) - *See note below*
-- **Program ID**: `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL`
+- **Program ID**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
 
+> **Note:** The program ID can be overridden using the `NEXT_PUBLIC_EQUA_PROGRAM_ID` environment variable.
 > **Note:** The codebase is currently configured for Standard SPL Token Program. If your deployed mint uses Token-2022, see [AUDIT_REPORT.md](AUDIT_REPORT.md#16-how-to-switch-to-token-2022-if-needed) for configuration instructions.
 
 ## Documentation
@@ -177,38 +178,84 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Database Setup
 
-The EQUA frontend supports two database providers:
-- **SQLite** (default for development) - Local file-based database
-- **Supabase** (for production) - Cloud-hosted PostgreSQL
+The EQUA Frontend supports three database providers:
 
-### Local Development with SQLite
+### Option 1: SQLite (Local Development)
 
-By default, the app uses SQLite for local development. This allows you to develop offline without needing Supabase credentials.
+Best for offline-first development and testing.
 
-1. **Initialize the database:**
-   ```bash
-   npm run db:setup
-   ```
+```bash
+# Set environment variable (optional, SQLite is default)
+echo "DB_PROVIDER=sqlite" >> .env.local
 
-2. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
+# Initialize database (auto-creates schema)
+npm run db:setup
 
-The SQLite database is stored at `.data/equa.sqlite` and is automatically gitignored.
+# Start development
+npm run dev
+```
 
-### Switching to Supabase
+Database file is stored at `.data/equa.sqlite` (gitignored).
 
-To use Supabase instead of SQLite:
+### Option 2: Supabase (Cloud PostgreSQL)
 
-1. **Set environment variables in `.env.local`:**
-   ```bash
-   DB_PROVIDER=supabase
-   NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-   ```
+Best for production deployments with PostgreSQL features.
 
-2. **Restart the development server**
+**Setup:**
+```bash
+# Add to .env.local
+DB_PROVIDER=supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+
+# Create tables via Supabase Dashboard > SQL Editor
+# Start development
+npm run dev
+```
+
+### Option 3: Turso (Cloud SQLite with Edge Replication)
+
+Best for production deployments with SQLite compatibility and global edge distribution.
+
+**Prerequisites:**
+```bash
+# Install Turso CLI
+curl -sSfL https://get.tur.so/install.sh | bash
+
+# Create account and database
+turso auth signup
+turso db create equa-db
+turso db tokens create equa-db
+turso db show equa-db --url
+```
+
+**Setup:**
+```bash
+# Add to .env.local
+DB_PROVIDER=turso
+TURSO_DATABASE_URL=libsql://your-db.turso.io
+TURSO_AUTH_TOKEN=your-auth-token-here
+
+# Synchronize schema to Turso
+npm run db:sync:turso
+
+# Test connection (optional)
+npm run test:turso
+
+# Start development
+npm run dev
+```
+
+For detailed Turso setup and troubleshooting, see **[docs/DB_TURSO_NOTES.md](docs/DB_TURSO_NOTES.md)**.
+
+### Provider Comparison
+
+| Feature | SQLite | Supabase | Turso |
+|---------|--------|----------|-------|
+| **Use Case** | Local dev | Production (Postgres) | Production (SQLite) |
+| **Offline** | ✅ Yes | ❌ No | ❌ No |
+| **Real-time** | ❌ No | ✅ Yes | ❌ No |
+| **Edge Replication** | ❌ No | ❌ No | ✅ Yes |
 
 ### Database Schema
 

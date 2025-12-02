@@ -1180,7 +1180,7 @@ export default function MintPage() {
             <p className="text-purple-300 text-sm">
               Program ID:{' '}
               <span className="text-purple-100 font-mono">
-                BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL
+                7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
               </span>
             </p>
           </div>

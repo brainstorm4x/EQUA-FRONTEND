@@ -1,5 +1,7 @@
 # Creating EQUA Token Mint with SPL Token-2022
 
+> **HISTORICAL NOTE (December 2025):** This archived document references the original program ID `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL`. The program has been redeployed to `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`. Please refer to current documentation for up-to-date information.
+
 This guide provides step-by-step instructions for creating the EQUA token mint using the SPL Token-2022 program.
 
 ## Prerequisites

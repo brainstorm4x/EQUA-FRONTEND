@@ -19,18 +19,18 @@ import type { DatabaseAdapter } from './adapter';
 // Provider Selection Logic
 // ============================================================================
 
-type DBProvider = 'sqlite' | 'supabase';
+type DBProvider = 'sqlite' | 'supabase' | 'turso';
 
 function getProvider(): DBProvider {
   // Explicit environment variable takes precedence
   const envProvider = process.env.DB_PROVIDER?.toLowerCase();
-  if (envProvider === 'sqlite' || envProvider === 'supabase') {
+  if (envProvider === 'sqlite' || envProvider === 'supabase' || envProvider === 'turso') {
     return envProvider;
   }
 
   // Check for NEXT_PUBLIC variant (for client-side awareness)
   const publicProvider = process.env.NEXT_PUBLIC_DB_PROVIDER?.toLowerCase();
-  if (publicProvider === 'sqlite' || publicProvider === 'supabase') {
+  if (publicProvider === 'sqlite' || publicProvider === 'supabase' || publicProvider === 'turso') {
     return publicProvider;
   }
 
@@ -58,7 +58,7 @@ let cachedProvider: DBProvider | null = null;
 /**
  * Get the database adapter based on current configuration.
  * 
- * IMPORTANT: SQLite adapter should only be used in server-side code.
+ * IMPORTANT: SQLite and Turso adapters should only be used in server-side code.
  * For client-side code, use the Supabase adapter hooks or a server action.
  */
 export function getDbAdapter(): DatabaseAdapter {
@@ -91,6 +91,28 @@ export function getDbAdapter(): DatabaseAdapter {
     cachedAdapter = sqliteAdapter;
     cachedProvider = provider;
     return sqliteAdapter as DatabaseAdapter;
+  } else if (provider === 'turso') {
+    // Check if we're in a server environment
+    if (typeof window !== 'undefined') {
+      console.warn(
+        '[EQUA DB] Turso adapter requested in browser environment. ' +
+        'Using Supabase adapter instead. Turso credentials should only be used server-side.'
+      );
+      // Fall back to Supabase in browser
+      // eslint-disable-next-line no-restricted-syntax
+      const { supabaseAdapter } = require('./providers/supabase-adapter');
+      cachedAdapter = supabaseAdapter;
+      cachedProvider = 'supabase';
+      return supabaseAdapter as DatabaseAdapter;
+    }
+
+    // Server-side: use Turso
+    // eslint-disable-next-line no-restricted-syntax
+    const { getTursoAdapter } = require('./providers/turso-adapter');
+    const tursoAdapter = getTursoAdapter();
+    cachedAdapter = tursoAdapter;
+    cachedProvider = provider;
+    return tursoAdapter as DatabaseAdapter;
   } else {
     // Supabase works in both environments
     // eslint-disable-next-line no-restricted-syntax
@@ -120,6 +142,13 @@ export function isUsingSQLite(): boolean {
  */
 export function isUsingSupabase(): boolean {
   return getProvider() === 'supabase';
+}
+
+/**
+ * Check if Turso is the current provider
+ */
+export function isUsingTurso(): boolean {
+  return getProvider() === 'turso';
 }
 
 /**
