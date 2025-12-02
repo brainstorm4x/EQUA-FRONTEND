@@ -60,22 +60,22 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
     try {
       let registered = false;
       
-      // First, check if there's an existing keypair in localStorage
-      const existingKeypair = loadKeypair();
-      
-      if (existingKeypair) {
-        // Check if the keypair's user account is registered on-chain
-        registered = await isUserRegistered(connection, existingKeypair.publicKey);
-      }
-      
-      // If not found via keypair, check the database by wallet address
-      // This handles the case where user cleared cache/cookies but is still registered
-      if (!registered) {
-        try {
-          registered = await db.isWalletRegistered(pubkeyStr);
-        } catch (dbError) {
-          // Database check failed, but we shouldn't block the UI
-          // Silently continue - the on-chain check is the authoritative source
+      // IMPORTANT: First check the database by wallet address
+      // This is the authoritative source for registration status
+      // This prevents users from registering multiple times with the same wallet
+      try {
+        registered = await db.isWalletRegistered(pubkeyStr);
+        console.log(`✓ Database check for ${pubkeyStr}: ${registered ? 'registered' : 'not registered'}`);
+      } catch (dbError) {
+        console.warn('Database check failed, falling back to on-chain check:', dbError);
+        
+        // Fallback: Check if there's an existing keypair in localStorage
+        const existingKeypair = loadKeypair();
+        
+        if (existingKeypair) {
+          // Check if the keypair's user account is registered on-chain
+          registered = await isUserRegistered(connection, existingKeypair.publicKey);
+          console.log(`✓ On-chain check via keypair: ${registered ? 'registered' : 'not registered'}`);
         }
       }
       

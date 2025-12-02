@@ -19,6 +19,7 @@ import { getReferrerData } from '@/utils/referralRateLimit';
 import { recordTransfer } from '@/utils/transferTracking';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
+import { db } from '@/lib/db/client';
 
 interface WalletDashboardProps {
   className?: string;
@@ -83,9 +84,21 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         const bal = await getSPLTokenBalance(connection, tokenAccount);
         setBalance(bal);
         
-        // Get referral count
-        const referrerData = getReferrerData(publicKey.toBase58());
-        setReferralCount(referrerData?.totalReferrals || 0);
+        // Get referral count from database first, fallback to localStorage
+        let count = 0;
+        try {
+          // For now, use the 24h count as we don't have a total count method yet
+          // TODO: Add a getTotalReferralCount method to database adapter
+          const dbCount = await db.adapter.getReferralCount24h(publicKey.toBase58());
+          count = dbCount;
+          console.log('✓ Referral count from database:', count);
+        } catch (dbError) {
+          console.warn('Failed to get referral count from database, using localStorage:', dbError);
+          const referrerData = getReferrerData(publicKey.toBase58());
+          count = referrerData?.totalReferrals || 0;
+        }
+        
+        setReferralCount(count);
       } catch (error) {
         console.error('Error fetching EQUA balance:', error);
         setBalance(0);
@@ -602,8 +615,13 @@ const SendModal: FC<SendModalProps> = ({
 
       setTxSignature(signature);
       
-      // Record the transfer for statistics tracking
-      recordTransfer();
+      // Record the transfer for statistics tracking (in both localStorage and database)
+      await recordTransfer(
+        publicKey.toBase58(),
+        recipientPubkey.toBase58(),
+        sendAmount,
+        signature
+      );
       
       setTimeout(onSuccess, 2000);
     } catch (err: any) {

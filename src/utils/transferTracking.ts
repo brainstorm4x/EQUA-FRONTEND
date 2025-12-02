@@ -53,12 +53,36 @@ export function saveTransferStats(stats: TransferStats): void {
 
 /**
  * Records a new transfer
+ * Also attempts to persist to database for better tracking across sessions
  */
-export function recordTransfer(): void {
+export async function recordTransfer(
+  senderWallet?: string,
+  recipientWallet?: string,
+  amount?: number,
+  transactionSignature?: string
+): Promise<void> {
+  // Update localStorage for immediate UI feedback
   const stats = getTransferStats();
   stats.totalTransfers += 1;
   stats.lastUpdated = Date.now();
   saveTransferStats(stats);
+  
+  // Attempt to persist to database if connection details are provided
+  if (senderWallet && recipientWallet && amount !== undefined) {
+    try {
+      const { db } = await import('@/lib/db/client');
+      await db.recordTransfer({
+        sender_wallet: senderWallet,
+        recipient_wallet: recipientWallet,
+        amount: amount,
+        transaction_signature: transactionSignature,
+      });
+      console.log('✓ Transfer recorded to database');
+    } catch (error) {
+      console.warn('Failed to record transfer to database:', error);
+      // Continue - localStorage tracking is already done
+    }
+  }
   
   // Dispatch event for real-time UI updates
   if (typeof window !== 'undefined') {
