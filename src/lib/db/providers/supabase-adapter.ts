@@ -413,7 +413,8 @@ export class SupabaseAdapter implements DatabaseAdapter {
 
       // Delete all rows from each table
       for (const table of tables) {
-        const { error } = await supabase.from(table).delete().neq('id', '');
+        // Use a condition that always evaluates to true to delete all rows
+        const { error } = await supabase.from(table).delete().not('id', 'is', null);
         if (error) {
           console.warn(`[SupabaseAdapter] Failed to reset ${table}:`, error);
         }

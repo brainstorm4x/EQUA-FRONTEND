@@ -44,7 +44,7 @@ let pythErrorWarned = false;
 // Source: https://pyth.network/developers/price-feed-ids
 export const PYTH_FEED_IDS = {
   XAU_USD: '0x765de816845861e75a25fca122bb6898a63d49e6fa51a6f8b4303c61cb1fc1b9',
-  WTI_USD: '0x925c4ef7ee2b7b4c19a23b04d80187b3e687b3e6e65a97cf93bf3cce8db3b8a2',  // USOILSPOT (WTI/USD)
+  WTI_USD: '0x925c4ef7ee2b7b4c19a23b04d80187b3e687b3e6e65a97cf93bf3cce8db3b8a2', // USOILSPOT (WTI/USD)
   COPPER_USD: '0x1ff1261f8c1aef0e8736e26a28e1330a645e3e21203d1e609f87df918d6af510',
   WHEAT_USD: '0xb1830a04e1e59bf3cbd0f93a2e6b321acd5e7d89892c0becc49b265eada2c694',
   EUR_USD: '0x2d0366e8361c110a1fcf6b3023a1d4e17f63b3a2e10b8ca8bb144dbe7b8a7de0',
