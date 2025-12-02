@@ -10,8 +10,8 @@ export const PROGRAM_ID = new PublicKey(
 export { TOKEN_PROGRAM_ID };
 
 // Network configuration
-export const NETWORK = 'devnet';
-export const RPC_ENDPOINT = 'https://api.devnet.solana.com';
+export const NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'devnet';
+export const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT || 'https://api.devnet.solana.com';
 
 // PDA Seeds (must match Rust backend exactly)
 export const GLOBAL_STATE_SEED = 'global-state';

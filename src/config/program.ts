@@ -10,12 +10,12 @@ let _programId: PublicKey | null = null;
 
 /**
  * Get the deployed program ID on Devnet (memoized)
- * Supports environment variable override via NEXT_PUBLIC_EQUA_PROGRAM_ID
+ * Supports environment variable override via NEXT_PUBLIC_PROGRAM_ID or NEXT_PUBLIC_EQUA_PROGRAM_ID (legacy)
  * @returns Cached PublicKey instance
  */
 export function getProgramId(): PublicKey {
   if (!_programId) {
-    const programIdStr = process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID || '7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP';
+    const programIdStr = process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID || '7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP';
     _programId = new PublicKey(programIdStr);
   }
   return _programId;
@@ -24,9 +24,9 @@ export function getProgramId(): PublicKey {
 // Export as constant for backward compatibility
 // Note: This is still evaluated once at module load time, but accessing
 // it multiple times won't create new PublicKey instances
-// Can be overridden via NEXT_PUBLIC_EQUA_PROGRAM_ID environment variable
+// Can be overridden via NEXT_PUBLIC_PROGRAM_ID or NEXT_PUBLIC_EQUA_PROGRAM_ID (legacy) environment variable
 export const PROGRAM_ID = new PublicKey(
-  process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID || '7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP'
+  process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID || '7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP'
 );
 
 // Devnet configuration - these are primitive values, no optimization needed

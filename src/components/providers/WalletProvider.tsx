@@ -90,9 +90,22 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
     return walletsRef.current;
   }, []);
 
-  // Memoized error handler
+  // Memoized error handler with detailed logging
   const onError = useCallback((error: WalletError) => {
-    console.error('Wallet error:', error);
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('🔴 Wallet Connection Error');
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('═══════════════════════════════════════════════════════');
+    
+    // Log additional context
+    if (typeof window !== 'undefined') {
+      console.error('Current URL:', window.location.href);
+      console.error('User agent:', navigator.userAgent);
+      console.error('Mobile device:', isMobileDevice());
+    }
     
     // On mobile, if Phantom is not detected, redirect to app store
     if (isMobileDevice() && error.name === 'WalletNotReadyError') {

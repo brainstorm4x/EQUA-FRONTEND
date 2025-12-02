@@ -5,8 +5,10 @@ import { AnchorProvider, Program } from '@coral-xyz/anchor';
 import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { useMemo } from 'react';
 import * as anchor from '@coral-xyz/anchor';
+import { PROGRAM_ID } from '@/config/program';
 
-const PROGRAM_ID_STRING = 'G6yZUuyumRxcKbvWjaDVURJzShfeBW1zpde1BHzCr6si';
+// Use the centralized Program ID from config
+const PROGRAM_ID_STRING = PROGRAM_ID.toBase58();
 
 // Create a minimal IDL structure that works
 const MINIMAL_IDL = {
