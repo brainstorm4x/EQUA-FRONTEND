@@ -588,6 +588,35 @@ export class TursoAdapter implements DatabaseAdapter {
       return [];
     }
   }
+
+  // ============================================================================
+  // Database Reset
+  // ============================================================================
+
+  async resetAll(): Promise<OperationResult> {
+    try {
+      const client = this.getClient();
+      
+      // Truncate all relevant tables
+      await client.batch([
+        `DELETE FROM ${TABLE_NAMES.USERS}`,
+        `DELETE FROM ${TABLE_NAMES.TRANSFERS}`,
+        `DELETE FROM ${TABLE_NAMES.REFERRALS}`,
+        `DELETE FROM ${TABLE_NAMES.REFERRAL_RATE_LIMITS}`,
+        `DELETE FROM ${TABLE_NAMES.DEVICE_FINGERPRINTS}`,
+        `DELETE FROM ${TABLE_NAMES.ANALYTICS}`,
+        `DELETE FROM ${TABLE_NAMES.PRICE_HISTORY}`,
+        `DELETE FROM ${TABLE_NAMES.GLOBAL_STATE}`,
+        `DELETE FROM ${TABLE_NAMES.EQX_PRICES}`,
+      ], 'write');
+
+      console.log('[TursoAdapter] All tables reset successfully');
+      return { success: true };
+    } catch (error) {
+      console.error('[TursoAdapter] Failed to reset database:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
 }
 
 // ============================================================================

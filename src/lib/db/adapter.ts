@@ -114,6 +114,9 @@ export interface DatabaseAdapter {
   ): Promise<OperationResult<EqxPrice>>;
   getLatestEqxPrice(): Promise<EqxPriceResult | null>;
   getEqxPriceHistory(options?: EqxPriceHistoryOptions): Promise<EqxPriceResult[]>;
+  
+  // Database reset (for migrations and testing)
+  resetAll(): Promise<OperationResult>;
 }
 
 // ============================================================================
