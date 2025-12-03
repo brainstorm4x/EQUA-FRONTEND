@@ -66,7 +66,7 @@ Turso is a distributed SQLite database built on libSQL. It provides SQLite compa
 
 2. **Create a database file** (optional):
    ```bash
-   turso dev --db-file ./equa-local.db --port 8080
+   turso dev --db-file ./equa-db.db --port 8080
    ```
 
 3. **Run the setup SQL script**:
@@ -77,7 +77,7 @@ Turso is a distributed SQLite database built on libSQL. It provides SQLite compa
    sqlite3 equa-local.db < scripts/turso/turso-setup.sql
    
    # Or use the turso CLI
-   turso db shell --db-file equa-local.db < scripts/turso/turso-setup.sql
+   turso db shell equa-db < scripts/turso/turso-setup.sql
    ```
 
 4. **Configure environment variables** in `.env.local`:
@@ -152,7 +152,7 @@ Turso is a distributed SQLite database built on libSQL. It provides SQLite compa
 2. **Check tables were created**:
    ```bash
    # For local development
-   turso db shell --db-file equa-local.db "SELECT name FROM sqlite_master WHERE type='table';"
+   turso db shell equa-db "SELECT name FROM sqlite_master WHERE type='table';"
    
    # For Turso Cloud
    turso db shell equa-production "SELECT name FROM sqlite_master WHERE type='table';"
