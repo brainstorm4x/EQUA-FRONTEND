@@ -271,4 +271,12 @@ TURSO_DATABASE_URL=libsql://your-db.turso.io
 TURSO_AUTH_TOKEN=your-token
 ```
 
+**⚠️ SECURITY WARNING:**
+- Never commit `.env.local` or `.env` files to version control
+- Add `.env*.local` to your `.gitignore` (already done in this project)
+- Never share production database credentials
+- Use different credentials for development and production
+- Rotate credentials regularly, especially after team member changes
+- Consider using a secrets manager (AWS Secrets Manager, HashiCorp Vault) for production
+
 The application will automatically use the configured provider without code changes.

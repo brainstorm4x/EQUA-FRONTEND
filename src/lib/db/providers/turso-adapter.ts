@@ -105,7 +105,11 @@ export class TursoAdapter implements DatabaseAdapter {
 
   private getClient(): Client {
     if (!this.client) {
-      const config: any = {
+      interface ClientConfig {
+        url: string;
+        authToken?: string;
+      }
+      const config: ClientConfig = {
         url: this.databaseUrl,
       };
       // Only add authToken if it's provided (local dev doesn't need it)

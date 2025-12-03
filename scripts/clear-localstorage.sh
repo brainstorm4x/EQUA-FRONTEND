@@ -5,6 +5,11 @@
 # This script provides instructions and commands to clear localStorage
 # for the EQUA frontend application.
 # 
+# NOTE: This script intentionally provides instructions rather than
+# executing commands, as localStorage clearing requires browser access
+# and we want users to understand what data will be cleared before doing so.
+# For automated clearing, see the programmatic examples below.
+# 
 # Usage:
 #   bash scripts/clear-localstorage.sh
 # ============================================================================
