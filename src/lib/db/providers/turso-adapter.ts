@@ -95,9 +95,8 @@ export class TursoAdapter implements DatabaseAdapter {
     if (!this.databaseUrl) {
       throw new Error('[TursoAdapter] Database URL is required but not configured');
     }
-    if (!this.authToken) {
-      throw new Error('[TursoAdapter] Authentication token is required but not configured');
-    }
+    // Auth token is optional for local development (turso dev doesn't require auth)
+    // For production (turso cloud), an auth token is required
   }
 
   // ============================================================================
@@ -106,10 +105,18 @@ export class TursoAdapter implements DatabaseAdapter {
 
   private getClient(): Client {
     if (!this.client) {
-      this.client = createClient({
+      interface ClientConfig {
+        url: string;
+        authToken?: string;
+      }
+      const config: ClientConfig = {
         url: this.databaseUrl,
-        authToken: this.authToken,
-      });
+      };
+      // Only add authToken if it's provided (local dev doesn't need it)
+      if (this.authToken) {
+        config.authToken = this.authToken;
+      }
+      this.client = createClient(config);
     }
     return this.client;
   }
