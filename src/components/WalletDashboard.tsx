@@ -14,7 +14,7 @@ import { BN } from '@coral-xyz/anchor';
 import { getMintPDA, getSPLTokenBalance } from '@/lib/program';
 import { Logo } from './Logo';
 import Image from 'next/image';
-import { formatEquaBalance } from '@/utils/tokenFormat';
+import { formatEquaBalance, rawToDecimal } from '@/utils/tokenFormat';
 import { getReferrerData } from '@/utils/referralRateLimit';
 import { recordTransfer } from '@/utils/transferTracking';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
@@ -29,8 +29,8 @@ interface WalletDashboardProps {
 const EQUA_DECIMALS = 9;
 const EQUA_MULTIPLIER = Math.pow(10, EQUA_DECIMALS);
 
-// Default EQUA price in USD (used as fallback if price fetch fails)
-const DEFAULT_EQUA_PRICE_USD = 0.01;
+// Default EQUA price in USD per 1 EQUA token (used as fallback if price fetch fails)
+const DEFAULT_EQUA_PRICE_USD = 1.00;
 
 // Shared constants for referral messages
 const EQUA_SHARE_BASE_URL = 'https://equa.live/mint';
@@ -546,7 +546,8 @@ const SendModal: FC<SendModalProps> = ({
       if (isNaN(sendAmount) || sendAmount <= 0) {
         throw new Error('Invalid amount');
       }
-      if (sendAmount > balance) {
+      const balanceInEqua = rawToDecimal(balance);
+      if (sendAmount > balanceInEqua) {
         throw new Error('Insufficient balance');
       }
 
@@ -764,8 +765,9 @@ const SendModal: FC<SendModalProps> = ({
                 />
                 <button
                   onClick={() => {
-                    setAmount(balance.toString());
-                    handleEquaAmountChange(balance.toString());
+                    const maxEqua = rawToDecimal(balance);
+                    setAmount(maxEqua.toString());
+                    handleEquaAmountChange(maxEqua.toString());
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-white text-sm"
                 >
@@ -773,7 +775,7 @@ const SendModal: FC<SendModalProps> = ({
                 </button>
               </div>
               <p className="text-purple-400 text-xs mt-1">
-                Available: {balance.toLocaleString()} EQUA
+                Available: {formatEquaBalance(balance)} EQUA
               </p>
             </div>
 
