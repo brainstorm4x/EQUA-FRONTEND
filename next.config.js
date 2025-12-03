@@ -67,6 +67,7 @@ const nextConfig = {
       config.resolve.fallback = {
         fs: false,
         'pino-pretty': false,
+        'better-sqlite3': false,
       };
       
       // Optimize chunk splitting for better caching
