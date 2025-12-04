@@ -70,7 +70,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
     }
   }, [referralResolution.referrerPubkey]);
 
-  // Validate referrer when it changes
+  // Validate referrer when it changes (now uses onchain validation)
   const validateReferrerInput = useCallback(async (value: string) => {
     if (!value.trim()) {
       setReferrerError(referralRequired ? 'Referrer is required' : '');
@@ -92,18 +92,18 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
       return;
     }
 
-    // Validate referrer exists
+    // Validate referrer exists on-chain (no database check)
     if (validateReferrer) {
       setIsValidatingReferrer(true);
       try {
         const isValid = await validateReferrer(value);
         if (!isValid) {
-          setReferrerError('This address is not a registered user');
+          setReferrerError('This address is not a registered user on-chain');
         } else {
           setReferrerError('');
         }
       } catch (error) {
-        setReferrerError('Failed to validate referrer');
+        setReferrerError('Failed to validate referrer on-chain');
       } finally {
         setIsValidatingReferrer(false);
       }
