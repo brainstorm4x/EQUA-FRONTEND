@@ -31,7 +31,7 @@ import {
   isPublicKeyRegistered, 
   recordRegisteredKey,
 } from '@/utils/registrationGuard';
-import { db } from '@/lib/db/client';
+import { isUserAccountRegisteredOnchain } from '@/utils/onchainRegistration';
 
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
@@ -356,16 +356,17 @@ export default function MintPage() {
     return () => clearInterval(interval);
   }, [lastMintTime]);
 
-  // Validate referrer address
+  // Validate referrer address on-chain (blockchain is source of truth)
   const validateReferrer = useCallback(async (referrerAddress: string): Promise<boolean> => {
     if (!connection) return false;
     
     try {
       const referrerPubkey = new PublicKey(referrerAddress);
-      // In a real implementation, we would check if the referrer is a registered user
-      // For now, we validate that it's a valid public key that exists on chain
+      // Check if the referrer has a registered user account on-chain
+      // This is the source of truth - no database checks
       const accountInfo = await connection.getAccountInfo(referrerPubkey);
-      return accountInfo !== null;
+      // Check that account exists and has sufficient data to be a UserAccount
+      return accountInfo !== null && accountInfo.data.length >= 144;
     } catch {
       return false;
     }
@@ -400,6 +401,7 @@ export default function MintPage() {
       console.log('Referrer:', referrer || 'None');
       
       // Check if public key has already been registered (prevent duplicate registrations)
+      // Use onchain check as source of truth, with localStorage for fast client-side validation
       const publicKeyBase58 = publicKey.toBase58();
       
       // Check localStorage first (fast)
@@ -411,57 +413,31 @@ export default function MintPage() {
         );
       }
       
-      // Check database for persistent duplicate prevention
-      const isRegisteredInDb = await db.isWalletRegistered(publicKeyBase58);
-      if (isRegisteredInDb) {
-        console.error('🚫 Duplicate public key detected in database - blocking duplicate registration');
-        // Also record locally for faster future checks
-        recordRegisteredKey(publicKeyBase58);
-        throw new Error(
-          'Registration blocked: This wallet address has already been registered in our system. ' +
-          'Each wallet can only register once.'
-        );
-      }
+      // Check on-chain if the user account already exists (source of truth)
+      const isRegisteredOnchain = await isUserAccountRegisteredOnchain(
+        connection,
+        userAccountKeypair.publicKey
+      );
       
-      // Also check on-chain if the user account already exists
-      const existingAccount = await connection.getAccountInfo(userAccountKeypair.publicKey);
-      if (existingAccount && existingAccount.data.length > 0) {
+      if (isRegisteredOnchain) {
         console.error('🚫 User account already exists on-chain');
-        // Record this public key as registered in both localStorage and database
+        // Record this public key as registered in localStorage for faster future checks
         recordRegisteredKey(publicKeyBase58);
-        await db.registerUser({
-          wallet_address: publicKeyBase58,
-          account_type: accountType,
-          device_fingerprint: metadata?.fingerprint?.fingerprint || null,
-        });
         throw new Error(
-          'Registration blocked: A user account already exists for this wallet. ' +
+          'Registration blocked: A user account already exists for this wallet on-chain. ' +
           'You may already be registered. Please refresh the page.'
         );
       }
       
-      // Log fingerprint metadata for Sybil prevention
+      // Log fingerprint metadata for Sybil prevention (informational only, not enforced)
       if (metadata?.fingerprint) {
         console.log('🔐 Device fingerprint:', metadata.fingerprint.fingerprint);
-        // Check fingerprint in database for persistent Sybil prevention
-        const isFingerprintUsed = await db.isFingerprintRegistered(metadata.fingerprint.fingerprint);
-        if (isFingerprintUsed) {
-          console.error('🚫 Duplicate fingerprint detected in database - blocking Sybil attempt');
-          throw new Error(
-            'Registration blocked: This device has already been used to register an account. ' +
-            'Each device can only register one account to prevent abuse.'
-          );
-        }
         // Store fingerprint in localStorage for duplicate detection
         if (typeof window !== 'undefined') {
           const existingFingerprints = JSON.parse(localStorage.getItem('equa_registered_fingerprints') || '[]');
           if (existingFingerprints.includes(metadata.fingerprint.fingerprint)) {
-            // Block registration for duplicate fingerprints (Sybil prevention)
-            console.error('🚫 Duplicate fingerprint detected in localStorage - blocking Sybil attempt');
-            throw new Error(
-              'Registration blocked: This device has already been used to register an account. ' +
-              'Each device can only register one account to prevent abuse.'
-            );
+            // Warn but don't block - fingerprint is informational
+            console.warn('⚠️ Duplicate fingerprint detected in localStorage (informational)');
           }
           // Don't add fingerprint yet - only add after successful registration
         }
@@ -620,37 +596,9 @@ export default function MintPage() {
       setUserNumber(registrationNumber);
       console.log(`📝 Set user number to: ${registrationNumber}`);
       
-      // Persist to database for permanent duplicate prevention
-      const dbResult = await db.registerUser({
-        wallet_address: publicKey.toBase58(),
-        account_type: accountType,
-        device_fingerprint: metadata?.fingerprint?.fingerprint || null,
-        referrer_wallet: referrer || undefined,
-        user_number: registrationNumber,
-        registration_metadata: {
-          transactionSignature: tx,
-          registeredAt: Date.now(),
-          fingerprint: metadata?.fingerprint ? JSON.stringify(metadata.fingerprint) : undefined,
-        },
-      });
-      
-      if (dbResult.success) {
-        console.log('✅ Registration persisted to database');
-      } else {
-        console.warn('⚠️ Failed to persist registration to database:', dbResult.error);
-        // Registration is still valid on-chain, this is just a warning
-      }
-      
-      // Record fingerprint to database
-      if (metadata?.fingerprint) {
-        await db.recordDeviceFingerprint({
-          fingerprint_hash: metadata.fingerprint.fingerprint,
-          wallet_address: publicKey.toBase58(),
-          user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-          fingerprint_metadata: metadata.fingerprint as unknown as Record<string, unknown>,
-        });
-        console.log('🔐 Device fingerprint persisted to database');
-      }
+      // Note: Registration is now persisted on-chain only. No database storage needed.
+      // The blockchain is the source of truth for all registration data.
+      console.log('✅ Registration persisted on-chain (blockchain is source of truth)');
       
       if (typeof window !== 'undefined') {
         localStorage.setItem('equa_user_number', registrationNumber.toString());
