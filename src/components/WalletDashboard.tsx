@@ -11,7 +11,7 @@ import {
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import { BN } from '@coral-xyz/anchor';
-import { getMintPDA, getSPLTokenBalance } from '@/lib/program';
+import { getMintPDA, getSPLTokenBalance, getOrCreateKeypair } from '@/lib/program';
 import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal } from '@/utils/tokenFormat';
@@ -19,7 +19,8 @@ import { getReferrerData } from '@/utils/referralRateLimit';
 import { recordTransfer } from '@/utils/transferTracking';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
-import { db } from '@/lib/db/client';
+import { useUserAccount } from '@/hooks/useUserAccount';
+import { getReferralInfo } from '@/utils/onchainRegistration';
 
 interface WalletDashboardProps {
   className?: string;
@@ -64,12 +65,23 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const [copied, setCopied] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
   const [referralCount, setReferralCount] = useState<number>(0);
+  const [referralRewards, setReferralRewards] = useState<number>(0);
 
-  // Fetch EQUA balance and referral count
+  // Get user account keypair for onchain data fetching
+  const userAccountKeypair = typeof window !== 'undefined' ? getOrCreateKeypair() : null;
+  
+  // Fetch user account data from blockchain (includes referral info)
+  const { data: userAccountData } = useUserAccount(
+    userAccountKeypair?.publicKey,
+    { enabled: connected && !!userAccountKeypair }
+  );
+
+  // Fetch EQUA balance and update referral rewards from onchain data
   useEffect(() => {
     if (!publicKey || !connected) {
       setBalance(0);
       setReferralCount(0);
+      setReferralRewards(0);
       return;
     }
 
@@ -87,22 +99,19 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         const bal = await getSPLTokenBalance(connection, tokenAccount);
         setBalance(bal);
         
-        // Get referral count from database first, fallback to localStorage
-        let count = 0;
-        try {
-          // TODO: Implement getTotalReferralCount method in database adapter
-          // Currently using 24h count as a temporary workaround
-          // This may show lower numbers than actual total referrals
-          const dbCount = await db.adapter.getReferralCount24h(publicKey.toBase58());
-          count = dbCount;
-          console.log('✓ Referral count (24h) from database:', count);
-        } catch (dbError) {
-          console.warn('Failed to get referral count from database, using localStorage:', dbError);
-          const referrerData = getReferrerData(publicKey.toBase58());
-          count = referrerData?.totalReferrals || 0;
+        // Get referral data from onchain UserAccount (source of truth)
+        if (userAccountData) {
+          const referralInfo = getReferralInfo(userAccountData);
+          setReferralRewards(referralInfo.referralRewards);
+          console.log('✓ Referral rewards from onchain:', referralInfo.referralRewards);
         }
         
-        setReferralCount(count);
+        // Note: Referral count would need to be calculated by scanning all user accounts
+        // For now, we use localStorage tracking as an estimate
+        const referrerData = getReferrerData(publicKey.toBase58());
+        const count24h = referrerData?.referrals.length || 0;
+        setReferralCount(count24h);
+        console.log('✓ Referral count (24h estimate):', count24h);
       } catch (error) {
         console.error('Error fetching EQUA balance:', error);
         setBalance(0);
@@ -113,7 +122,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     // Refresh every 30 seconds
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, [publicKey, connected, connection]);
+  }, [publicKey, connected, connection, userAccountData]);
 
   // Copy public key to clipboard
   const copyPublicKey = useCallback(async () => {
@@ -189,6 +198,16 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         <p className="text-purple-200 text-sm mb-4">
           Share your referral to earn rewards: 1% for individuals, 2% for businesses!
         </p>
+        
+        {/* Referral Rewards Display (from onchain data) */}
+        {referralRewards > 0 && (
+          <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-3 mb-4">
+            <p className="text-green-300 text-xs mb-1">Referral Rewards Earned (On-Chain)</p>
+            <p className="text-white text-lg font-bold">
+              {formatEquaBalance(referralRewards)} EQUA
+            </p>
+          </div>
+        )}
         
         <div className="bg-black/20 rounded-xl p-3 mb-4">
           <p className="text-purple-300 text-xs mb-1">Your Referral Key</p>
