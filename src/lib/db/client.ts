@@ -1,154 +1,66 @@
 /**
  * EQUA Database Client
  * 
- * Provides the database adapter based on environment configuration.
- * Defaults to SQLite for development/CI and Supabase for production.
+ * Provides the Turso database adapter.
+ * 
+ * IMPORTANT: 
+ * - Only Turso (libSQL) is supported
+ * - NO PII is stored in the database
+ * - User registration verification is done ON-CHAIN only
  * 
  * Configuration via environment variable:
- * - DB_PROVIDER=sqlite - Use local SQLite database
- * - DB_PROVIDER=supabase - Use Supabase cloud database
- * 
- * If not specified:
- * - Production (NODE_ENV=production): Supabase
- * - Development/CI: SQLite
+ * - TURSO_DATABASE_URL - Turso database URL (required)
+ * - TURSO_AUTH_TOKEN - Turso auth token (optional for local dev)
  */
 
 import type { DatabaseAdapter } from './adapter';
-
-// ============================================================================
-// Provider Selection Logic
-// ============================================================================
-
-type DBProvider = 'sqlite' | 'supabase' | 'turso';
-
-function getProvider(): DBProvider {
-  // Explicit environment variable takes precedence
-  const envProvider = process.env.DB_PROVIDER?.toLowerCase();
-  if (envProvider === 'sqlite' || envProvider === 'supabase' || envProvider === 'turso') {
-    return envProvider;
-  }
-
-  // Check for NEXT_PUBLIC variant (for client-side awareness)
-  const publicProvider = process.env.NEXT_PUBLIC_DB_PROVIDER?.toLowerCase();
-  if (publicProvider === 'sqlite' || publicProvider === 'supabase' || publicProvider === 'turso') {
-    return publicProvider;
-  }
-
-  // Default based on environment
-  // In production, prefer Supabase if credentials are available
-  if (process.env.NODE_ENV === 'production') {
-    const hasSupabaseConfig = !!(
-      process.env.NEXT_PUBLIC_SUPABASE_URL && 
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
-    return hasSupabaseConfig ? 'supabase' : 'sqlite';
-  }
-
-  // Development/test: default to SQLite for offline-first development
-  return 'sqlite';
-}
 
 // ============================================================================
 // Adapter Factory
 // ============================================================================
 
 let cachedAdapter: DatabaseAdapter | null = null;
-let cachedProvider: DBProvider | null = null;
 
 /**
- * Get the database adapter based on current configuration.
+ * Get the Turso database adapter.
  * 
- * IMPORTANT: SQLite and Turso adapters should only be used in server-side code.
- * For client-side code, use the Supabase adapter hooks or a server action.
+ * IMPORTANT: This adapter should only be used in server-side code.
+ * For client-side code, use server actions.
  */
 export function getDbAdapter(): DatabaseAdapter {
-  const provider = getProvider();
-  
-  // Return cached adapter if provider hasn't changed
-  if (cachedAdapter && cachedProvider === provider) {
+  // Return cached adapter if available
+  if (cachedAdapter) {
     return cachedAdapter;
   }
 
-  if (provider === 'sqlite') {
-    // Check if we're in a server environment
-    if (typeof window !== 'undefined') {
-      console.warn(
-        '[EQUA DB] SQLite adapter requested in browser environment. ' +
-        'Using Supabase adapter instead. SQLite is only available on the server.'
-      );
-      // Fall back to Supabase in browser
-      // eslint-disable-next-line no-restricted-syntax
-      const { supabaseAdapter } = require('./providers/supabase-adapter');
-      cachedAdapter = supabaseAdapter;
-      cachedProvider = 'supabase';
-      return supabaseAdapter as DatabaseAdapter;
-    }
-
-    // Server-side: use SQLite
-    // eslint-disable-next-line no-restricted-syntax
-    const { getSQLiteAdapter } = require('./providers/sqlite-adapter');
-    const sqliteAdapter = getSQLiteAdapter();
-    cachedAdapter = sqliteAdapter;
-    cachedProvider = provider;
-    return sqliteAdapter as DatabaseAdapter;
-  } else if (provider === 'turso') {
-    // Check if we're in a server environment
-    if (typeof window !== 'undefined') {
-      console.warn(
-        '[EQUA DB] Turso adapter requested in browser environment. ' +
-        'Using Supabase adapter instead. Turso credentials should only be used server-side.'
-      );
-      // Fall back to Supabase in browser
-      // eslint-disable-next-line no-restricted-syntax
-      const { supabaseAdapter } = require('./providers/supabase-adapter');
-      cachedAdapter = supabaseAdapter;
-      cachedProvider = 'supabase';
-      return supabaseAdapter as DatabaseAdapter;
-    }
-
-    // Server-side: use Turso
-    // eslint-disable-next-line no-restricted-syntax
-    const { getTursoAdapter } = require('./providers/turso-adapter');
-    const tursoAdapter = getTursoAdapter();
-    cachedAdapter = tursoAdapter;
-    cachedProvider = provider;
-    return tursoAdapter as DatabaseAdapter;
-  } else {
-    // Supabase works in both environments
-    // eslint-disable-next-line no-restricted-syntax
-    const { supabaseAdapter } = require('./providers/supabase-adapter');
-    cachedAdapter = supabaseAdapter;
-    cachedProvider = provider;
-    return supabaseAdapter as DatabaseAdapter;
+  // Check if we're in a server environment
+  if (typeof window !== 'undefined') {
+    throw new Error(
+      '[EQUA DB] Database adapter cannot be used in browser environment. ' +
+      'Use server actions or API routes instead.'
+    );
   }
+
+  // Server-side: use Turso
+  // eslint-disable-next-line no-restricted-syntax
+  const { getTursoAdapter } = require('./providers/turso-adapter');
+  const tursoAdapter = getTursoAdapter();
+  cachedAdapter = tursoAdapter;
+  return tursoAdapter as DatabaseAdapter;
 }
 
 /**
- * Get the current database provider name
+ * Get the current database provider name (always 'turso')
  */
-export function getDbProvider(): DBProvider {
-  return getProvider();
+export function getDbProvider(): 'turso' {
+  return 'turso';
 }
 
 /**
- * Check if SQLite is the current provider
- */
-export function isUsingSQLite(): boolean {
-  return getProvider() === 'sqlite';
-}
-
-/**
- * Check if Supabase is the current provider
- */
-export function isUsingSupabase(): boolean {
-  return getProvider() === 'supabase';
-}
-
-/**
- * Check if Turso is the current provider
+ * Check if Turso is the current provider (always true)
  */
 export function isUsingTurso(): boolean {
-  return getProvider() === 'turso';
+  return true;
 }
 
 /**
@@ -156,7 +68,6 @@ export function isUsingTurso(): boolean {
  */
 export function resetDbAdapter(): void {
   cachedAdapter = null;
-  cachedProvider = null;
 }
 
 // ============================================================================
@@ -171,29 +82,21 @@ export const db = {
     return getDbAdapter();
   },
 
-  // User operations
-  registerUser: (...args: Parameters<DatabaseAdapter['registerUser']>) => 
-    getDbAdapter().registerUser(...args),
-  isWalletRegistered: (...args: Parameters<DatabaseAdapter['isWalletRegistered']>) => 
-    getDbAdapter().isWalletRegistered(...args),
-  getUserByWallet: (...args: Parameters<DatabaseAdapter['getUserByWallet']>) => 
-    getDbAdapter().getUserByWallet(...args),
+  // Registration analytics
+  recordRegistrationAnalytics: (...args: Parameters<DatabaseAdapter['recordRegistrationAnalytics']>) => 
+    getDbAdapter().recordRegistrationAnalytics(...args),
+  getRegistrationStats: () => getDbAdapter().getRegistrationStats(),
+  getGeographicStats: () => getDbAdapter().getGeographicStats(),
 
-  // Transfer operations
-  recordTransfer: (...args: Parameters<DatabaseAdapter['recordTransfer']>) => 
-    getDbAdapter().recordTransfer(...args),
+  // Transfer analytics
+  recordTransferAnalytics: (...args: Parameters<DatabaseAdapter['recordTransferAnalytics']>) => 
+    getDbAdapter().recordTransferAnalytics(...args),
   getTotalTransfers: () => getDbAdapter().getTotalTransfers(),
 
-  // Registration stats
-  getRegistrationStats: () => getDbAdapter().getRegistrationStats(),
-
-  // Referral operations
-  recordReferral: (...args: Parameters<DatabaseAdapter['recordReferral']>) => 
-    getDbAdapter().recordReferral(...args),
-  isReferrerRateLimited: (...args: Parameters<DatabaseAdapter['isReferrerRateLimited']>) => 
-    getDbAdapter().isReferrerRateLimited(...args),
-  getReferralCount24h: (...args: Parameters<DatabaseAdapter['getReferralCount24h']>) => 
-    getDbAdapter().getReferralCount24h(...args),
+  // Referral analytics
+  recordReferralAnalytics: (...args: Parameters<DatabaseAdapter['recordReferralAnalytics']>) => 
+    getDbAdapter().recordReferralAnalytics(...args),
+  getTotalReferrals: () => getDbAdapter().getTotalReferrals(),
 
   // Fingerprint operations
   recordDeviceFingerprint: (...args: Parameters<DatabaseAdapter['recordDeviceFingerprint']>) => 

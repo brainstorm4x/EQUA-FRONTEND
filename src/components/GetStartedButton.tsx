@@ -4,7 +4,6 @@ import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import Link from 'next/link';
 import { isUserRegistered, loadKeypair } from '@/lib/program';
-import { db } from '@/lib/db/client';
 
 interface GetStartedButtonProps {
   className?: string;
@@ -24,9 +23,8 @@ const REGISTRATION_EVENT_KEY = 'equa_registration_complete';
  * - Connected but not registered: Shows "Get Started →" (links to /mint for registration)
  * - Connected and registered: Shows "Mint EQUA →" (links to /mint for minting)
  * 
- * Registration is checked in multiple layers:
- * 1. Local keypair + on-chain account (fastest)
- * 2. Database record by wallet address (persisted across device/browser)
+ * Registration is checked ON-CHAIN ONLY (no database lookup).
+ * Uses local keypair + on-chain account verification.
  */
 export const GetStartedButton: FC<GetStartedButtonProps> = ({ 
   className = '', 
@@ -60,23 +58,15 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
     try {
       let registered = false;
       
-      // IMPORTANT: First check the database by wallet address
-      // This is the authoritative source for registration status
-      // This prevents users from registering multiple times with the same wallet
-      try {
-        registered = await db.isWalletRegistered(pubkeyStr);
-        console.log(`✓ Database check for ${pubkeyStr}: ${registered ? 'registered' : 'not registered'}`);
-      } catch (dbError) {
-        console.warn('Database check failed, falling back to on-chain check:', dbError);
-        
-        // Fallback: Check if there's an existing keypair in localStorage
-        const existingKeypair = loadKeypair();
-        
-        if (existingKeypair) {
-          // Check if the keypair's user account is registered on-chain
-          registered = await isUserRegistered(connection, existingKeypair.publicKey);
-          console.log(`✓ On-chain check via keypair: ${registered ? 'registered' : 'not registered'}`);
-        }
+      // Check if there's an existing keypair in localStorage
+      const existingKeypair = loadKeypair();
+      
+      if (existingKeypair) {
+        // Check if the keypair's user account is registered on-chain
+        registered = await isUserRegistered(connection, existingKeypair.publicKey);
+        console.log(`✓ On-chain check via keypair: ${registered ? 'registered' : 'not registered'}`);
+      } else {
+        console.log('✓ No local keypair found - user not registered');
       }
       
       setIsRegistered(registered);

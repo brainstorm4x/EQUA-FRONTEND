@@ -16,9 +16,11 @@ CREATE TABLE IF NOT EXISTS uuid_helper (
 );
 
 -- ============================================================================
--- USERS TABLE
+-- REGISTRATION ANALYTICS TABLE
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS users (
+-- Stores anonymous registration analytics with geographic data (NO PII)
+-- Registration verification is done on-chain only
+CREATE TABLE IF NOT EXISTS registration_analytics (
     id TEXT PRIMARY KEY DEFAULT (
       LOWER(HEX(RANDOMBLOB(4))) || '-' ||
       LOWER(HEX(RANDOMBLOB(2))) || '-' ||
@@ -26,26 +28,26 @@ CREATE TABLE IF NOT EXISTS users (
       LOWER(HEX(RANDOMBLOB(2))) || '-' ||
       LOWER(HEX(RANDOMBLOB(6)))
     ),
-    wallet_address TEXT NOT NULL UNIQUE,
     account_type TEXT NOT NULL DEFAULT 'individual' CHECK (account_type IN ('individual', 'business')),
+    state TEXT,  -- User's state/province (for analytics)
+    country TEXT,  -- User's country (for analytics)
     device_fingerprint TEXT,
-    referrer_wallet TEXT,
-    user_number INTEGER,
     registration_metadata JSON DEFAULT '{}',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_users_wallet_address ON users(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_users_referrer ON users(referrer_wallet);
-CREATE INDEX IF NOT EXISTS idx_users_account_type ON users(account_type);
-CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
+CREATE INDEX IF NOT EXISTS idx_registration_analytics_account_type ON registration_analytics(account_type);
+CREATE INDEX IF NOT EXISTS idx_registration_analytics_state ON registration_analytics(state);
+CREATE INDEX IF NOT EXISTS idx_registration_analytics_country ON registration_analytics(country);
+CREATE INDEX IF NOT EXISTS idx_registration_analytics_created_at ON registration_analytics(created_at);
 
 -- ============================================================================
--- TRANSFERS TABLE
+-- TRANSFER ANALYTICS TABLE
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS transfers (
+-- Stores anonymous transfer statistics (NO PII - no wallet addresses)
+CREATE TABLE IF NOT EXISTS transfer_analytics (
     id TEXT PRIMARY KEY DEFAULT (
       LOWER(HEX(RANDOMBLOB(4))) || '-' ||
       LOWER(HEX(RANDOMBLOB(2))) || '-' ||
@@ -53,24 +55,21 @@ CREATE TABLE IF NOT EXISTS transfers (
       LOWER(HEX(RANDOMBLOB(2))) || '-' ||
       LOWER(HEX(RANDOMBLOB(6)))
     ),
-    sender_wallet TEXT NOT NULL,
-    recipient_wallet TEXT NOT NULL,
     amount NUMERIC NOT NULL,
-    transaction_signature TEXT UNIQUE,
+    transaction_signature TEXT UNIQUE,  -- For deduplication only
     transfer_metadata JSON DEFAULT '{}',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_transfers_sender ON transfers(sender_wallet);
-CREATE INDEX IF NOT EXISTS idx_transfers_recipient ON transfers(recipient_wallet);
-CREATE INDEX IF NOT EXISTS idx_transfers_created_at ON transfers(created_at);
-CREATE INDEX IF NOT EXISTS idx_transfers_signature ON transfers(transaction_signature);
+CREATE INDEX IF NOT EXISTS idx_transfer_analytics_created_at ON transfer_analytics(created_at);
+CREATE INDEX IF NOT EXISTS idx_transfer_analytics_signature ON transfer_analytics(transaction_signature);
 
 -- ============================================================================
--- REFERRALS TABLE
+-- REFERRAL ANALYTICS TABLE
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS referrals (
+-- Stores anonymous referral statistics (NO PII - no wallet addresses or codes)
+CREATE TABLE IF NOT EXISTS referral_analytics (
     id TEXT PRIMARY KEY DEFAULT (
       LOWER(HEX(RANDOMBLOB(4))) || '-' ||
       LOWER(HEX(RANDOMBLOB(2))) || '-' ||
@@ -78,20 +77,16 @@ CREATE TABLE IF NOT EXISTS referrals (
       LOWER(HEX(RANDOMBLOB(2))) || '-' ||
       LOWER(HEX(RANDOMBLOB(6)))
     ),
-    referrer_wallet TEXT NOT NULL,
-    referee_wallet TEXT NOT NULL UNIQUE,
-    referral_code TEXT,
     referral_metadata JSON DEFAULT '{}',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_wallet);
-CREATE INDEX IF NOT EXISTS idx_referrals_referee ON referrals(referee_wallet);
-CREATE INDEX IF NOT EXISTS idx_referrals_created_at ON referrals(created_at);
+CREATE INDEX IF NOT EXISTS idx_referral_analytics_created_at ON referral_analytics(created_at);
 
 -- ============================================================================
 -- DEVICE FINGERPRINTS TABLE
 -- ============================================================================
+-- Stores device fingerprints for Sybil prevention (NO PII)
 CREATE TABLE IF NOT EXISTS device_fingerprints (
     id TEXT PRIMARY KEY DEFAULT (
       LOWER(HEX(RANDOMBLOB(4))) || '-' ||
@@ -101,23 +96,22 @@ CREATE TABLE IF NOT EXISTS device_fingerprints (
       LOWER(HEX(RANDOMBLOB(6)))
     ),
     fingerprint_hash TEXT NOT NULL UNIQUE,
-    wallet_address TEXT,
     fingerprint_metadata JSON DEFAULT '{}',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_device_fingerprints_wallet ON device_fingerprints(wallet_address);
 CREATE INDEX IF NOT EXISTS idx_device_fingerprints_created_at ON device_fingerprints(created_at);
 
 -- ============================================================================
 -- STATS OVERVIEW TABLE
 -- ============================================================================
 -- Aggregated counters used by the UI (getStatsOverview, getRegistrationStats)
+-- NOTE: Registration verification is done on-chain, this is just for analytics
 CREATE TABLE IF NOT EXISTS stats_overview (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    total_users INTEGER NOT NULL DEFAULT 0,
-    individual_users INTEGER NOT NULL DEFAULT 0,
-    business_users INTEGER NOT NULL DEFAULT 0,
+    total_registrations INTEGER NOT NULL DEFAULT 0,  -- Anonymous count
+    individual_registrations INTEGER NOT NULL DEFAULT 0,
+    business_registrations INTEGER NOT NULL DEFAULT 0,
     total_transfers INTEGER NOT NULL DEFAULT 0,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -156,12 +150,12 @@ CREATE INDEX IF NOT EXISTS idx_eqx_prices_collected_at ON eqx_prices(collected_a
 -- ============================================================================
 -- TRIGGERS (updated_at management)
 -- ============================================================================
--- Users updated_at
-CREATE TRIGGER IF NOT EXISTS trg_users_updated_at
-AFTER UPDATE ON users
+-- Registration analytics updated_at
+CREATE TRIGGER IF NOT EXISTS trg_registration_analytics_updated_at
+AFTER UPDATE ON registration_analytics
 FOR EACH ROW
 BEGIN
-  UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+  UPDATE registration_analytics SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
 -- Global state updated_at

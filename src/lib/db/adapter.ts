@@ -1,23 +1,27 @@
 /**
  * EQUA Database Adapter Interface
  * 
- * Defines the contract for database operations that both
- * SupabaseAdapter and SQLiteAdapter must implement.
+ * Defines the contract for database operations.
+ * 
+ * IMPORTANT: This database stores NO PII (Personally Identifiable Information).
+ * - Registration verification is done ON-CHAIN only
+ * - Database is used for anonymous analytics and statistics only
+ * - No wallet addresses or user-identifying information is stored
  */
 
 import type {
-  User,
-  UserInsert,
-  Transfer,
-  TransferInsert,
-  Referral,
-  ReferralInsert,
+  RegistrationAnalytics,
+  RegistrationAnalyticsInsert,
+  TransferAnalytics,
+  TransferAnalyticsInsert,
+  ReferralAnalytics,
+  ReferralAnalyticsInsert,
   DeviceFingerprint,
   DeviceFingerprintInsert,
   StatsOverview,
-  GlobalState,
   LocalRegistrationStats,
-} from '@/lib/supabase/types';
+  GeographicStats,
+} from './types';
 
 // ============================================================================
 // EQX Price Types (new feature)
@@ -68,29 +72,25 @@ export interface OperationResult<T = void> {
 
 export interface DatabaseAdapter {
   // Provider info
-  readonly provider: 'sqlite' | 'supabase' | 'turso';
+  readonly provider: 'turso';
   
   // Connection check
   isAvailable(): Promise<boolean>;
   
-  // User operations
-  registerUser(data: UserInsert): Promise<OperationResult<User>>;
-  isWalletRegistered(walletAddress: string): Promise<boolean>;
-  getUserByWallet(walletAddress: string): Promise<User | null>;
+  // Registration analytics (NO PII - just anonymous statistics)
+  recordRegistrationAnalytics(data: RegistrationAnalyticsInsert): Promise<OperationResult<RegistrationAnalytics>>;
+  getRegistrationStats(): Promise<LocalRegistrationStats>;
+  getGeographicStats(): Promise<GeographicStats[]>;
   
-  // Transfer operations
-  recordTransfer(data: TransferInsert): Promise<OperationResult>;
+  // Transfer analytics (NO PII - anonymous statistics)
+  recordTransferAnalytics(data: TransferAnalyticsInsert): Promise<OperationResult>;
   getTotalTransfers(): Promise<number>;
   
-  // Registration stats
-  getRegistrationStats(): Promise<LocalRegistrationStats>;
+  // Referral analytics (NO PII - anonymous count)
+  recordReferralAnalytics(data: ReferralAnalyticsInsert): Promise<OperationResult>;
+  getTotalReferrals(): Promise<number>;
   
-  // Referral operations
-  recordReferral(data: ReferralInsert): Promise<OperationResult>;
-  isReferrerRateLimited(referrerWallet: string): Promise<boolean>;
-  getReferralCount24h(referrerWallet: string): Promise<number>;
-  
-  // Fingerprint operations
+  // Device fingerprint operations (for Sybil prevention, NO wallet linkage)
   recordDeviceFingerprint(data: DeviceFingerprintInsert): Promise<OperationResult>;
   isFingerprintRegistered(fingerprintHash: string): Promise<boolean>;
   
@@ -105,7 +105,7 @@ export interface DatabaseAdapter {
     expiresAt?: Date
   ): Promise<OperationResult>;
   
-  // EQX Price operations (new)
+  // EQX Price operations (unchanged)
   addEqxPrice(
     priceUsd: number,
     usdIndex?: number,
@@ -124,9 +124,9 @@ export interface DatabaseAdapter {
 // ============================================================================
 
 export const defaultStatsOverview: StatsOverview = {
-  total_users: 0,
-  individual_users: 0,
-  business_users: 0,
+  total_registrations: 0,
+  individual_registrations: 0,
+  business_registrations: 0,
   total_transfers: 0,
   total_volume: 0,
   total_referrals: 0,
