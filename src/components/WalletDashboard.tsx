@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState, useEffect, useCallback, useRef } from 'react';
+import { FC, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import { 
@@ -67,8 +67,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const [referralCount, setReferralCount] = useState<number>(0);
   const [referralRewards, setReferralRewards] = useState<number>(0);
 
-  // Get user account keypair for onchain data fetching
-  const userAccountKeypair = typeof window !== 'undefined' ? getOrCreateKeypair() : null;
+  // Get user account keypair for onchain data fetching (memoized to prevent repeated calls)
+  const userAccountKeypair = useMemo(() => {
+    return typeof window !== 'undefined' ? getOrCreateKeypair() : null;
+  }, []); // Empty deps array - only compute once on mount
   
   // Fetch user account data from blockchain (includes referral info)
   const { data: userAccountData } = useUserAccount(

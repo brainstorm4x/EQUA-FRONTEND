@@ -103,6 +103,9 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
     const mintStart = new BN(accountData.slice(offset, offset + 8), 'le');
     offset += 8;
     
+    // Note: mintStart, lockedUntil, and lastMintTime are i64 (signed) in the IDL,
+    // but for timestamp values, we treat them as unsigned since timestamps are always positive.
+    // If negative values are encountered, they would wrap around in the BN representation.
     const lockedUntil = new BN(accountData.slice(offset, offset + 8), 'le');
     offset += 8;
     

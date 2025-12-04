@@ -4,7 +4,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { PublicKey, Connection } from '@solana/web3.js';
-import { getUserAccountData, UserAccountData } from '@/utils/onchainRegistration';
+import { 
+  getUserAccountData, 
+  UserAccountData,
+  isUserAccountRegisteredOnchain,
+  validateReferrerOnchain
+} from '@/utils/onchainRegistration';
 import { useConnection } from '@solana/wallet-adapter-react';
 
 interface UseUserAccountOptions {
@@ -104,13 +109,8 @@ export function useIsUserRegistered(
         return false;
       }
       
-      try {
-        const accountInfo = await connection.getAccountInfo(userAccountPubkey);
-        return accountInfo !== null && accountInfo.data.length > 0;
-      } catch (error) {
-        console.error('Error checking registration:', error);
-        return false;
-      }
+      // Reuse utility function to maintain consistency
+      return await isUserAccountRegisteredOnchain(connection, userAccountPubkey);
     },
     enabled: enabled && !!userAccountPubkey,
     refetchInterval,
@@ -152,14 +152,8 @@ export function useValidateReferrer(
         return false;
       }
       
-      try {
-        const accountInfo = await connection.getAccountInfo(referrerPubkey);
-        // Check that account exists and has sufficient data to be a UserAccount
-        return accountInfo !== null && accountInfo.data.length >= 144;
-      } catch (error) {
-        console.error('Error validating referrer:', error);
-        return false;
-      }
+      // Reuse utility function to maintain consistency
+      return await validateReferrerOnchain(connection, referrerPubkey);
     },
     enabled: enabled && !!referrerPubkey,
     staleTime: 60000, // Referrer validity can be cached longer (1 minute)
