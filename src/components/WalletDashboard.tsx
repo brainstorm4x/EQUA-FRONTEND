@@ -640,10 +640,8 @@ const SendModal: FC<SendModalProps> = ({
 
       setTxSignature(signature);
       
-      // Record the transfer for statistics tracking (in both localStorage and database)
+      // Record the transfer for anonymous analytics tracking (NO PII stored)
       await recordTransfer(
-        publicKey.toBase58(),
-        recipientPubkey.toBase58(),
         sendAmount,
         signature
       );

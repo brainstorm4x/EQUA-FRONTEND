@@ -1,14 +1,12 @@
 /**
  * Transfer Tracking Utility
  * 
- * Tracks EQUA token transfers between users locally.
- * Since SPL token transfers don't increment the on-chain global state counter,
- * we track transfers locally for UI display purposes.
+ * Tracks EQUA token transfers for UI display purposes.
  * 
- * Note: This is client-side tracking. In production, consider using:
- * - On-chain event subscriptions
- * - Backend service with database
- * - Solana RPC signature history queries
+ * IMPORTANT: NO PII is stored in the database.
+ * - Transfer analytics are recorded anonymously (no wallet addresses)
+ * - Only transaction signatures and amounts are stored for deduplication
+ * - localStorage is used for immediate UI feedback
  */
 
 const STORAGE_KEY = 'equa_transfer_stats';
@@ -53,20 +51,15 @@ export function saveTransferStats(stats: TransferStats): void {
 
 /**
  * Records a new transfer
- * Also attempts to persist to database for better tracking across sessions
+ * Also attempts to persist anonymous analytics to database
  * 
- * @param senderWallet - Optional sender wallet address
- * @param recipientWallet - Optional recipient wallet address  
- * @param amount - Optional transfer amount
- * @param transactionSignature - Optional transaction signature
+ * @param amount - Transfer amount
+ * @param transactionSignature - Optional transaction signature (for deduplication)
  * 
- * Note: If wallet addresses and amount are not provided, only localStorage
- * tracking will be updated. Database persistence requires all parameters.
+ * NOTE: Wallet addresses are NOT stored (privacy-preserving)
  */
 export async function recordTransfer(
-  senderWallet?: string,
-  recipientWallet?: string,
-  amount?: number,
+  amount: number,
   transactionSignature?: string
 ): Promise<void> {
   // Update localStorage for immediate UI feedback
@@ -75,23 +68,20 @@ export async function recordTransfer(
   stats.lastUpdated = Date.now();
   saveTransferStats(stats);
   
-  // Attempt to persist to database only if all required data is provided
-  if (senderWallet && recipientWallet && amount !== undefined) {
-    try {
-      const { db } = await import('@/lib/db/client');
-      await db.recordTransfer({
-        sender_wallet: senderWallet,
-        recipient_wallet: recipientWallet,
-        amount: amount,
-        transaction_signature: transactionSignature,
-      });
-      console.log('✓ Transfer recorded to database');
-    } catch (error) {
-      console.warn('Failed to record transfer to database:', error);
-      // Continue - localStorage tracking is already done
-    }
-  } else {
-    console.log('ℹ Transfer recorded to localStorage only (missing database parameters)');
+  // Attempt to persist anonymous analytics to database
+  try {
+    const { db } = await import('@/lib/db/client');
+    await db.recordTransferAnalytics({
+      amount: amount,
+      transaction_signature: transactionSignature,
+      transfer_metadata: {
+        timestamp: Date.now(),
+      },
+    });
+    console.log('✓ Transfer analytics recorded to database (no PII)');
+  } catch (error) {
+    console.warn('Failed to record transfer analytics to database:', error);
+    // Continue - localStorage tracking is already done
   }
   
   // Dispatch event for real-time UI updates
