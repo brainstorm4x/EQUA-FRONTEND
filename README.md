@@ -4,6 +4,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 A decentralized application for minting and managing EQUA tokens on the Solana blockchain.
 
+**Privacy-First Architecture:**
+- User registration verification is done **ON-CHAIN ONLY**  
+- NO wallet addresses or PII stored in database
+- Database used for anonymous analytics only (state/country statistics)
+
 ## Installation
 
 Due to peer dependency conflicts with Solana wallet adapters, install dependencies using:
@@ -26,7 +31,8 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 ## Features
 
-- **Solana Integration**: Built on Solana blockchain using Token-2022 standard
+- **Solana Integration**: Built on Solana blockchain using Standard SPL Token Program
+- **Privacy-First**: On-chain registration verification, no PII stored in database
 - **Wallet Support**: Phantom, Solflare, and other popular Solana wallets
 - **Token Minting**: Mint EQUA tokens with dynamic pricing
 - **Time-Locked Rewards**: First 100 users get special 2-year locked rewards
@@ -34,6 +40,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 - **Account Type Selection**: Register as Individual or Business account
 - **SOL Balance Gate**: Minimum 0.05 SOL required for registration
 - **Elevated Mint Tiers**: Early users get higher mint limits
+- **Anonymous Analytics**: Optional state/country data for community insights (no wallet linkage)
 
 ## Registration Guide
 
@@ -326,50 +333,41 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Database Setup
 
-The EQUA Frontend supports three database providers:
+The EQUA Frontend uses **Turso (libSQL)** as its database provider for anonymous analytics and statistics.
 
-### Option 1: SQLite (Local Development)
+**IMPORTANT PRIVACY PRINCIPLES:**
+- NO PII (Personally Identifiable Information) is stored in the database
+- User registration verification is done **ON-CHAIN ONLY**
+- Database is used for anonymous analytics and statistics only
+- No wallet addresses or user-identifying information is stored
 
-Best for offline-first development and testing.
+### Turso Setup (Local Development)
+
+For local development, use Turso's local development server:
 
 ```bash
-# Set environment variable (optional, SQLite is default)
-echo "DB_PROVIDER=sqlite" >> .env.local
+# Install Turso CLI (if not already installed)
+curl -sSfL https://get.tur.so/install.sh | bash
 
-# Initialize database (auto-creates schema)
-npm run db:setup
+# Start local Turso server
+turso dev --port 8080
+
+# In another terminal, configure environment
+echo "TURSO_DATABASE_URL=http://127.0.0.1:8080" >> .env.local
+
+# Apply database schema
+npm run db:sync:turso
 
 # Start development
 npm run dev
 ```
 
-Database file is stored at `.data/equa.sqlite` (gitignored).
+### Turso Setup (Production/Cloud)
 
-### Option 2: Supabase (Cloud PostgreSQL)
-
-Best for production deployments with PostgreSQL features.
-
-**Setup:**
-```bash
-# Add to .env.local
-DB_PROVIDER=supabase
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-
-# Create tables via Supabase Dashboard > SQL Editor
-# Start development
-npm run dev
-```
-
-### Option 3: Turso (Cloud SQLite with Edge Replication)
-
-Best for production deployments with SQLite compatibility and global edge distribution.
+For production deployments with global edge distribution:
 
 **Prerequisites:**
 ```bash
-# Install Turso CLI
-curl -sSfL https://get.tur.so/install.sh | bash
-
 # Create account and database
 turso auth signup
 turso db create equa-db
@@ -380,7 +378,6 @@ turso db show equa-db --url
 **Setup:**
 ```bash
 # Add to .env.local
-DB_PROVIDER=turso
 TURSO_DATABASE_URL=libsql://your-db.turso.io
 TURSO_AUTH_TOKEN=your-auth-token-here
 
@@ -396,27 +393,23 @@ npm run dev
 
 For detailed Turso setup and troubleshooting, see **[docs/DB_TURSO_NOTES.md](docs/DB_TURSO_NOTES.md)**.
 
-### Provider Comparison
-
-| Feature | SQLite | Supabase | Turso |
-|---------|--------|----------|-------|
-| **Use Case** | Local dev | Production (Postgres) | Production (SQLite) |
-| **Offline** | ✅ Yes | ❌ No | ❌ No |
-| **Real-time** | ❌ No | ✅ Yes | ❌ No |
-| **Edge Replication** | ❌ No | ❌ No | ✅ Yes |
-
 ### Database Schema
 
-See [docs/DB_SCHEMA.md](docs/DB_SCHEMA.md) for the complete database schema documentation.
+The database schema uses anonymous analytics tables:
+- `registration_analytics` - Anonymous registration data with state/country (NO wallet addresses)
+- `transfer_analytics` - Anonymous transfer statistics (NO wallet addresses)
+- `referral_analytics` - Anonymous referral statistics
+- `device_fingerprints` - For Sybil prevention (NO wallet linkage)
+- `eqx_prices` - Price history
+- `global_state` - Key/value store for app state
+
+See the schema file at `db/schema_turso.sql` for complete details.
 
 ### Running Tests
 
 ```bash
-# Run all tests (uses SQLite by default)
+# Run all tests
 npm test
-
-# Run database-specific tests
-npm run test:db
 
 # Run tests with coverage
 npm run test:coverage
