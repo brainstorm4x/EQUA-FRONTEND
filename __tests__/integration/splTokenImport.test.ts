@@ -49,4 +49,3 @@ describe('SPL Token Imports', () => {
     expect(ASSOCIATED_TOKEN_PROGRAM_ID.toBase58()).toBe('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
   });
 });
-
