@@ -8,9 +8,24 @@ set -euo pipefail
 # Works with both local development and Turso Cloud.
 #
 # Usage:
-#   Local dev:  TURSO_DATABASE_URL=http://127.0.0.1:8080 npm run db:sync:turso
+#   Local dev:  npm run db:sync:turso (reads from .env.local)
 #   Production: TURSO_DATABASE_URL=libsql://your-db.turso.io TURSO_AUTH_TOKEN=xxx npm run db:sync:turso
 # ============================================================================
+
+# Source .env.local if it exists (for local development)
+if [[ -f .env.local ]]; then
+  echo "📄 Loading environment from .env.local..."
+  # Export variables from .env.local (ignore comments and empty lines)
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    # Skip comments and empty lines
+    if [[ ! "$line" =~ ^[[:space:]]*# ]] && [[ -n "$line" ]]; then
+      # Remove any trailing whitespace or carriage returns
+      line=$(echo "$line" | sed 's/\r$//' | sed 's/[[:space:]]*$//')
+      # Export the variable
+      export "$line"
+    fi
+  done < .env.local
+fi
 
 SCHEMA_FILE="${SCHEMA_FILE:-db/schema_turso.sql}"
 DB_URL="${TURSO_DATABASE_URL:-}"
@@ -29,11 +44,11 @@ if [[ -z "$DB_URL" ]]; then
   echo "Step 2: Start local Turso server (in a separate terminal)"
   echo "  turso dev --port 8080"
   echo ""
-  echo "Step 3: Set environment variable"
-  echo "  export TURSO_DATABASE_URL=http://127.0.0.1:8080"
-  echo ""
-  echo "  Or add to .env.local:"
+  echo "Step 3: Add to .env.local file (in project root):"
   echo "  TURSO_DATABASE_URL=http://127.0.0.1:8080"
+  echo ""
+  echo "  Or set as environment variable:"
+  echo "  export TURSO_DATABASE_URL=http://127.0.0.1:8080"
   echo ""
   echo "Step 4: Run this script again"
   echo "  npm run db:sync:turso"
@@ -43,7 +58,7 @@ if [[ -z "$DB_URL" ]]; then
   echo "  2. turso db create equa-db"
   echo "  3. turso db show equa-db --url"
   echo "  4. turso db tokens create equa-db"
-  echo "  5. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN"
+  echo "  5. Add TURSO_DATABASE_URL and TURSO_AUTH_TOKEN to .env.local"
   echo ""
   exit 1
 fi
