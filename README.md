@@ -340,65 +340,69 @@ The EQUA Frontend uses **Turso (libSQL)** as its database provider for anonymous
 - User registration verification is done **ON-CHAIN ONLY**
 - Database is used for anonymous analytics and statistics only
 - No wallet addresses or user-identifying information is stored
+- **Referral relationships are stored ON-CHAIN** in the UserAccount structure
 
-### Turso Setup (Local Development)
+### Quick Start (Local Development)
 
-For local development, use Turso's local development server:
-
+**Step 1: Install Turso CLI**
 ```bash
-# Install Turso CLI (if not already installed)
+# macOS/Linux
 curl -sSfL https://get.tur.so/install.sh | bash
 
-# Start local Turso server
-turso dev --port 8080
-
-# In another terminal, configure environment
-echo "TURSO_DATABASE_URL=http://127.0.0.1:8080" >> .env.local
-
-# Apply database schema
-npm run db:sync:turso
-
-# Start development
-npm run dev
+# Restart terminal or run:
+source ~/.bashrc  # or ~/.zshrc
 ```
 
-### Turso Setup (Production/Cloud)
-
-For production deployments with global edge distribution:
-
-**Prerequisites:**
+**Step 2: Start Local Server (in a separate terminal)**
 ```bash
-# Create account and database
-turso auth signup
-turso db create equa-db
-turso db tokens create equa-db
-turso db show equa-db --url
+turso dev --port 8080
+# Keep this running!
 ```
 
-**Setup:**
+**Step 3: Configure Environment**
 ```bash
 # Add to .env.local
-TURSO_DATABASE_URL=libsql://your-db.turso.io
-TURSO_AUTH_TOKEN=your-auth-token-here
+echo "TURSO_DATABASE_URL=http://127.0.0.1:8080" >> .env.local
+```
 
-# Synchronize schema to Turso
+**Step 4: Apply Schema**
+```bash
 npm run db:sync:turso
+```
 
-# Test connection (optional)
-npm run test:turso
-
-# Start development
+**Step 5: Start Development**
+```bash
 npm run dev
 ```
 
-For detailed Turso setup and troubleshooting, see **[docs/DB_TURSO_NOTES.md](docs/DB_TURSO_NOTES.md)**.
+For detailed instructions, troubleshooting, and production setup, see **[docs/TURSO_SETUP_GUIDE.md](docs/TURSO_SETUP_GUIDE.md)**.
+
+### Referral System - On-Chain Tracking
+
+**Important:** Referral relationships are stored **on-chain** in each user's UserAccount:
+
+```
+UserAccount (on Solana blockchain):
+- authority (Pubkey)     ← User's wallet
+- referral (Pubkey)      ← Referrer's wallet (stored on-chain!)
+- token_account (Pubkey)
+- minted_amount (u64)
+```
+
+This means:
+- ✅ Referrals are immutable and verifiable on the blockchain
+- ✅ Query the blockchain to see who referred whom
+- ✅ Calculate referral rewards from on-chain data
+- ✅ No database dependency for referral tracking
+
+The database only stores anonymous referral counts for analytics.
 
 ### Database Schema
 
 The database schema uses anonymous analytics tables:
 - `registration_analytics` - Anonymous registration data with state/country (NO wallet addresses)
 - `transfer_analytics` - Anonymous transfer statistics (NO wallet addresses)
-- `referral_analytics` - Anonymous referral statistics
+- `referral_analytics` - Anonymous referral counts (NO wallet addresses)
 - `device_fingerprints` - For Sybil prevention (NO wallet linkage)
 - `eqx_prices` - Price history
 - `global_state` - Key/value store for app state

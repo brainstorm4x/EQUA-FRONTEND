@@ -1,282 +1,195 @@
-# EQUA Frontend - Setup and Configuration Guide
+# Turso Database Setup Guide
 
-## Repository Structure Question
+This guide provides step-by-step instructions for setting up the Turso database for the EQUA Frontend.
 
-### Should I merge the frontend (EQUA-FRONTEND) and backend (EQUA) repositories?
+## Prerequisites
 
-**Short Answer: No, keep them separate.**
+- Node.js installed
+- Terminal/Command Line access
+- Git (for cloning the repository)
 
-**Reasoning:**
+## Quick Start (Local Development)
 
-1. **Separation of Concerns**: 
-   - The frontend is a Next.js web application
-   - The backend is a Solana smart contract (Anchor program)
-   - These are fundamentally different codebases with different deployment targets
+### Step 1: Install Turso CLI
 
-2. **Deployment Independence**:
-   - Frontend deploys to Vercel/Netlify/hosting service
-   - Backend deploys to Solana blockchain
-   - Separate repos allow independent CI/CD pipelines
-
-3. **Team Workflow**:
-   - Frontend developers can work without touching Solana contracts
-   - Smart contract developers can iterate without affecting frontend builds
-   - Easier to manage permissions and access control
-
-4. **Versioning**:
-   - Frontend and backend have independent release cycles
-   - Breaking changes in contracts don't force frontend redeployment
-
-5. **Best Practices**:
-   - Industry standard for web3 projects (e.g., Uniswap, Aave, Compound)
-   - Monorepos are useful for shared TypeScript types, but your IDL already serves this purpose
-
-**Recommended Approach**:
-- Keep repos separate
-- Use the IDL file (`equa_token.json`) as the interface contract between them
-- Document the integration points clearly in README files
-- Consider a mono-repository tool like Nx or Turborepo only if you have 3+ related repos
-
----
-
-## Turso Database Setup Guide
-
-Turso is a distributed SQLite database built on libSQL. It provides SQLite compatibility with edge replication and HTTP access.
-
-### Prerequisites
-
-1. **Install Turso CLI**:
-   ```bash
-   curl -sSfL https://get.tur.so/install.sh | bash
-   ```
-
-2. **Verify installation**:
-   ```bash
-   turso --version
-   ```
-
-### Option 1: Local Development (Recommended for Testing)
-
-1. **Start local Turso server**:
-   ```bash
-   turso dev --port 8080
-   ```
-   
-   This starts a local SQLite server on `http://127.0.0.1:8080` with no authentication required.
-
-2. **Create a database file** (optional):
-   ```bash
-   turso dev --db-file ./equa-db.db --port 8080
-   ```
-
-3. **Run the setup SQL script**:
-   
-   In a new terminal window:
-   ```bash
-   # If you have sqlite3 installed
-   sqlite3 equa-local.db < scripts/turso/turso-setup.sql
-   
-   # Or use the turso CLI
-   turso db shell equa-db < scripts/turso/turso-setup.sql
-   ```
-
-4. **Configure environment variables** in `.env.local`:
-   ```bash
-   # Copy example env file
-   cp .env.local.example .env.local
-   
-   # Edit .env.local and set:
-   DB_PROVIDER=turso
-   TURSO_DATABASE_URL=libsql://127.0.0.1:8080
-   TURSO_AUTH_TOKEN=
-   ```
-
-5. **Start the development server**:
-   ```bash
-   npm run dev
-   ```
-
-### Option 2: Turso Cloud (Production)
-
-1. **Sign up and login**:
-   ```bash
-   turso auth signup
-   # Follow the prompts to create an account
-   
-   turso auth login
-   ```
-
-2. **Create a database**:
-   ```bash
-   turso db create equa-production
-   ```
-
-3. **Get database URL**:
-   ```bash
-   turso db show equa-production --url
-   ```
-   
-   This will output something like: `libsql://equa-production-yourorg.turso.io`
-
-4. **Create an authentication token**:
-   ```bash
-   turso db tokens create equa-production
-   ```
-   
-   Save this token securely - you'll need it for the environment variables.
-
-5. **Run the setup script** on your Turso database:
-   ```bash
-   turso db shell equa-production < scripts/turso/turso-setup.sql
-   ```
-
-6. **Configure environment variables** in `.env.local`:
-   ```bash
-   DB_PROVIDER=turso
-   TURSO_DATABASE_URL=libsql://equa-production-yourorg.turso.io
-   TURSO_AUTH_TOKEN=your-token-from-step-4
-   ```
-
-7. **Start the development server**:
-   ```bash
-   npm run dev
-   ```
-
-### Verifying Turso Setup
-
-1. **Test the connection**:
-   ```bash
-   npm run test:turso
-   ```
-
-2. **Check tables were created**:
-   ```bash
-   # For local development
-   turso db shell equa-db "SELECT name FROM sqlite_master WHERE type='table';"
-   
-   # For Turso Cloud
-   turso db shell equa-production "SELECT name FROM sqlite_master WHERE type='table';"
-   ```
-
-   You should see tables like:
-   - users
-   - transfers
-   - referrals
-   - referral_rate_limits
-   - analytics
-   - price_history
-   - device_fingerprints
-   - global_state
-   - eqx_prices
-   - registrations
-   - transfer_totals
-
-3. **Verify data insertion**:
-   ```bash
-   # Check default seed data
-   turso db shell equa-production "SELECT * FROM registrations;"
-   turso db shell equa-production "SELECT * FROM transfer_totals;"
-   ```
-
-### Turso Commands Reference
-
+**On macOS/Linux:**
 ```bash
-# List all databases
-turso db list
-
-# Show database info
-turso db show <database-name>
-
-# Open interactive shell
-turso db shell <database-name>
-
-# Execute a query
-turso db shell <database-name> "SELECT * FROM users LIMIT 5;"
-
-# Create a backup
-turso db dump <database-name> > backup.sql
-
-# Delete a database
-turso db destroy <database-name>
-
-# Create additional auth tokens
-turso db tokens create <database-name>
-
-# Invalidate a token
-turso db tokens revoke <database-name> <token>
+curl -sSfL https://get.tur.so/install.sh | bash
 ```
 
-### Migration from SQLite to Turso
-
-If you have existing SQLite data and want to migrate to Turso:
-
-1. **Export SQLite data**:
-   ```bash
-   sqlite3 .data/equa.sqlite .dump > sqlite-export.sql
-   ```
-
-2. **Import to Turso**:
-   ```bash
-   turso db shell equa-production < sqlite-export.sql
-   ```
-
-### Troubleshooting
-
-**Issue: "Failed to connect to database"**
-- Check that `turso dev` is running for local development
-- Verify the DATABASE_URL is correct
-- For cloud: ensure AUTH_TOKEN is valid
-
-**Issue: "Authentication failed"**
-- Regenerate your auth token: `turso db tokens create <database-name>`
-- Update the token in `.env.local`
-
-**Issue: "Table does not exist"**
-- Run the setup script: `turso db shell <database-name> < scripts/turso/turso-setup.sql`
-
-**Issue: "Cannot write to database"**
-- Check that your auth token has write permissions
-- For local dev: ensure you're not running multiple instances of `turso dev`
-
-### Turso Documentation
-
-- Official Docs: https://docs.turso.tech/
-- libSQL: https://github.com/tursodatabase/libsql
-- CLI Reference: https://docs.turso.tech/cli
-
----
-
-## Switching Between Database Providers
-
-The EQUA frontend supports three database providers:
-
-1. **SQLite** (local development, offline-first)
-2. **Supabase** (PostgreSQL in the cloud)
-3. **Turso** (distributed SQLite)
-
-To switch between them, simply change the `DB_PROVIDER` environment variable in `.env.local`:
-
+**On macOS (via Homebrew):**
 ```bash
-# Use SQLite
-DB_PROVIDER=sqlite
-
-# Use Supabase
-DB_PROVIDER=supabase
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-
-# Use Turso
-DB_PROVIDER=turso
-TURSO_DATABASE_URL=libsql://your-db.turso.io
-TURSO_AUTH_TOKEN=your-token
+brew install tursodatabase/tap/turso
 ```
 
-**⚠️ SECURITY WARNING:**
-- Never commit `.env.local` or `.env` files to version control
-- Add `.env*.local` to your `.gitignore` (already done in this project)
-- Never share production database credentials
-- Use different credentials for development and production
-- Rotate credentials regularly, especially after team member changes
-- Consider using a secrets manager (AWS Secrets Manager, HashiCorp Vault) for production
+After installation, restart your terminal or run:
+```bash
+source ~/.bashrc  # or ~/.zshrc on macOS
+```
 
-The application will automatically use the configured provider without code changes.
+Verify installation:
+```bash
+turso --version
+```
+
+### Step 2: Start Local Turso Server
+
+Open a **new terminal window** and run:
+```bash
+turso dev --port 8080
+```
+
+**Keep this terminal running** - it's your local database server.
+
+You should see output like:
+```
+Listening on http://127.0.0.1:8080
+```
+
+### Step 3: Configure Environment Variables
+
+In your project root, create or edit `.env.local`:
+
+```bash
+# Copy the example file
+cp .env.example .env.local
+```
+
+Add/update these lines in `.env.local`:
+```bash
+TURSO_DATABASE_URL=http://127.0.0.1:8080
+# TURSO_AUTH_TOKEN is not needed for local development
+```
+
+### Step 4: Apply Database Schema
+
+In your **main terminal** (not the one running turso dev), run:
+```bash
+npm run db:sync:turso
+```
+
+You should see:
+```
+✅ Schema applied successfully!
+```
+
+### Step 5: Start the Application
+
+```bash
+npm run dev
+```
+
+Visit http://localhost:3000 to see your application!
+
+## Referral System - On-Chain Tracking
+
+### Important: Referrals are Stored On-Chain
+
+When a user registers, their UserAccount on the Solana blockchain contains the referrer's public key:
+
+```
+UserAccount structure (on-chain):
+- authority (Pubkey)          ← User's wallet
+- referral (Pubkey)            ← Referrer's wallet (stored on-chain!)
+- token_account (Pubkey)
+- minted_amount (u64)
+```
+
+**Key Points:**
+
+✅ **Referrer is stored on-chain** - Every user's referrer is permanently recorded in their UserAccount
+✅ **No database needed** - Referral relationships are queryable from the blockchain
+✅ **Immutable and verifiable** - Cannot be changed after registration
+✅ **Rewards can be calculated** - Query the blockchain to find all users referred by an address
+
+### How to Query Referrals
+
+To find all users referred by an address:
+
+```typescript
+// Example: Get referrer from a user account
+const userAccount = await connection.getAccountInfo(userAccountPubkey);
+
+// Parse the referral field (at offset 40, after discriminator and authority)
+// 8 bytes discriminator + 32 bytes authority = 40 bytes offset
+const referralBytes = userAccount.data.slice(40, 72);
+const referralPubkey = new PublicKey(referralBytes);
+
+// Check if user was referred
+if (!referralPubkey.equals(PublicKey.default)) {
+  console.log('User was referred by:', referralPubkey.toBase58());
+  // Calculate and distribute referral rewards
+}
+```
+
+### Database Only Stores Anonymous Counts
+
+The database `referral_analytics` table only stores:
+- Anonymous referral counts (no wallet addresses)
+- Timestamps for analytics
+- Metadata for statistics
+
+All actual referral tracking (who referred whom) is done on-chain.
+
+## Troubleshooting
+
+### Error: "TURSO_DATABASE_URL is not set"
+
+**Solution:** Set the environment variable:
+```bash
+export TURSO_DATABASE_URL=http://127.0.0.1:8080
+```
+
+Or add it to `.env.local`:
+```bash
+echo "TURSO_DATABASE_URL=http://127.0.0.1:8080" >> .env.local
+```
+
+### Error: "Turso CLI is not installed"
+
+**Solution:** Install the Turso CLI:
+```bash
+curl -sSfL https://get.tur.so/install.sh | bash
+```
+
+Then restart your terminal.
+
+### Error: "Connection refused"
+
+**Solution:** Make sure the Turso dev server is running:
+```bash
+# In a separate terminal
+turso dev --port 8080
+```
+
+## Production Setup (Turso Cloud)
+
+For production deployments:
+
+```bash
+# 1. Authenticate
+turso auth login
+
+# 2. Create database
+turso db create equa-db
+
+# 3. Get URL and token
+turso db show equa-db --url
+turso db tokens create equa-db
+
+# 4. Set environment variables
+TURSO_DATABASE_URL=libsql://your-db-name.turso.io
+TURSO_AUTH_TOKEN=your-token-here
+
+# 5. Apply schema
+npm run db:sync:turso
+```
+
+## Summary
+
+✅ **Zero PII stored** - No wallet addresses in database
+✅ **On-chain verification** - Registration verified on Solana
+✅ **On-chain referrals** - Referrer stored in UserAccount on blockchain
+✅ **Anonymous analytics** - Database for statistics only
+
+**The blockchain is the source of truth. The database is just for statistics.**
