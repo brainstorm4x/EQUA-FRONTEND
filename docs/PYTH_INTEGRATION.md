@@ -85,7 +85,7 @@ The implementation has a robust fallback chain:
 
 1. **Primary**: Fetch from Pyth Network (real-time oracle prices)
 2. **Fallback 1**: Fetch from CoinGecko API (limited commodity coverage)
-3. **Fallback 2**: Use hardcoded fallback prices (November 2025 market prices)
+3. **Fallback 2**: Use hardcoded fallback prices (approximate 2024-2025 market prices)
 
 This ensures the application always has price data available, even if external APIs are down.
 

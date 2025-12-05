@@ -141,7 +141,7 @@ All application code remained unchanged because:
 
 If Pyth Network is unavailable:
 1. Falls back to CoinGecko API
-2. Falls back to hardcoded market prices (Nov 2025)
+2. Falls back to hardcoded market prices (approximate 2024-2025 values)
 3. Application always has price data available
 
 ## Testing Instructions
