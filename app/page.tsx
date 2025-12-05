@@ -4,10 +4,26 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Logo } from '@/components/Logo';
 
+// Loading placeholder components
+const WalletButtonLoading = () => (
+  <div className="bg-purple-600 rounded-lg px-6 py-3 animate-pulse">
+    <span className="text-white font-semibold">Loading...</span>
+  </div>
+);
+
+const ButtonLoading = () => (
+  <div className="bg-purple-600 text-white font-bold py-4 px-8 rounded-xl animate-pulse">
+    <span>Loading...</span>
+  </div>
+);
+
 // Dynamically import WalletButton and PriceDisplay with no SSR
 const WalletButton = dynamic(
   () => import('@/components/WalletButton').then((mod) => ({ default: mod.WalletButton })),
-  { ssr: false }
+  { 
+    ssr: false,
+    loading: () => <WalletButtonLoading />
+  }
 );
 
 const PriceDisplay = dynamic(
@@ -22,7 +38,10 @@ const WalletDashboard = dynamic(
 
 const GetStartedButton = dynamic(
   () => import('@/components/GetStartedButton').then((mod) => ({ default: mod.GetStartedButton })),
-  { ssr: false }
+  { 
+    ssr: false,
+    loading: () => <ButtonLoading />
+  }
 );
 
 

@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { Providers } from '@/../../app/providers';
+import { Providers } from '../../app/providers';
 import { useQuery } from '@tanstack/react-query';
 
 // Mock the WalletProvider since it has complex wallet dependencies
