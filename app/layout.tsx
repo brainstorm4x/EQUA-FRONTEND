@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { WalletProvider } from "@/components/WalletProvider";
-import { QueryClientProvider } from "@/components/providers/QueryClientProvider";
-import ClientShim from "./client-shim";
+import { Providers } from "./providers";
 import Script from "next/script";
 
 export const metadata: Metadata = {
@@ -33,12 +31,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
       </head>
       <body className="font-sans antialiased">
-        {/* Client-side process shim to prevent "process is not defined" errors */}
-        <ClientShim />
-        {/* React Query Provider wraps WalletProvider to provide query client context */}
-        <QueryClientProvider>
-          <WalletProvider>{children}</WalletProvider>
-        </QueryClientProvider>
+        {/* Providers component includes process shim, QueryClient, and WalletProvider */}
+        <Providers>{children}</Providers>
         {/* Initialize Web Vitals tracking - loaded after page render */}
         <Script
           id="web-vitals"

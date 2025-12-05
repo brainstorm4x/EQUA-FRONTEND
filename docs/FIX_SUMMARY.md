@@ -6,34 +6,31 @@ The application was experiencing runtime errors preventing the "Get Started" and
 2. **"process is not defined"** - Browser attempting to access Node.js `process` global
 3. **setState during render warnings** - Potential state updates during component render phase
 
-## Solution Implemented
+## Solution Implemented (Updated)
 
-### 1. Added QueryClientProvider ✅
-**File**: `src/components/providers/QueryClientProvider.tsx`
-- Client-side component that wraps the app with React Query context
+### 1. Unified Providers Component ✅
+**File**: `app/providers.tsx`
+- Single client component that combines all providers (QueryClient + WalletProvider)
+- Imports and executes the process shim to prevent "process is not defined" errors
 - Creates a single QueryClient instance using useState to ensure stability across re-renders
 - Configured with sensible defaults:
   - 10-second stale time
   - Retry failed requests twice
   - Disable refetch on window focus
+- **Why this approach**: Next.js 14 App Router works better with a single client provider component rather than multiple nested client components imported into a server component layout
 
-### 2. Added Client Process Shim ✅
+### 2. Client Process Shim ✅
 **File**: `src/lib/clientProcessShim.ts`
 - Prevents "ReferenceError: process is not defined" in browser
 - Safely initializes `window.process.env` only if it doesn't already exist
 - Provides minimal process object compatible with libraries expecting Node.js globals
-
-**File**: `app/client-shim.tsx`
-- Client component that imports and executes the process shim
-- Renders null (no visual impact)
-- Ensures shim loads before other client code
+- Imported at the top of `app/providers.tsx` to ensure early execution
 
 ### 3. Updated App Layout ✅
 **File**: `app/layout.tsx`
-- Added QueryClientProvider wrapping WalletProvider
-- Added ClientShim component at top of body
+- Simplified to import single `Providers` component from `./providers`
+- Provider hierarchy: `Providers` → `QueryClientProvider` → `WalletProvider` → `children`
 - Fixed inline script's process.env.NODE_ENV reference with typeof check
-- Provider hierarchy: `QueryClientProvider` → `WalletProvider` → `children`
 
 ### 4. Verified Component Safety ✅
 All wallet components verified to be client-safe:
@@ -44,9 +41,10 @@ All wallet components verified to be client-safe:
 - **page.tsx**: ✅ Uses dynamic imports with ssr: false for all wallet components
 
 ### 5. Added Tests ✅
-**File**: `__tests__/components/QueryClientProvider.test.tsx`
+**File**: `__tests__/app/providers.test.tsx`
 - Tests provider renders children
 - Tests React Query hooks work within provider
+- Tests WalletProvider is included in tree
 - Tests nested components can use hooks
 
 **File**: `__tests__/lib/clientProcessShim.test.ts`
@@ -82,14 +80,18 @@ npm run dev
 ## Files Changed
 
 ### New Files
-1. `src/components/providers/QueryClientProvider.tsx` - React Query provider component
+1. `app/providers.tsx` - Unified client provider component (QueryClient + WalletProvider + process shim)
 2. `src/lib/clientProcessShim.ts` - Browser process shim
-3. `app/client-shim.tsx` - Client component to load shim
-4. `__tests__/components/QueryClientProvider.test.tsx` - Provider tests
-5. `__tests__/lib/clientProcessShim.test.ts` - Shim tests
+3. `__tests__/app/providers.test.tsx` - Provider tests
+4. `__tests__/lib/clientProcessShim.test.ts` - Shim tests
 
 ### Modified Files
-1. `app/layout.tsx` - Added providers and client shim
+1. `app/layout.tsx` - Simplified to use single Providers component
+
+### Removed Files (Replaced by unified providers.tsx)
+1. `src/components/providers/QueryClientProvider.tsx` - Merged into app/providers.tsx
+2. `app/client-shim.tsx` - Functionality merged into app/providers.tsx
+3. `__tests__/components/QueryClientProvider.test.tsx` - Replaced by __tests__/app/providers.test.tsx
 
 ## Next Steps for Full Verification
 

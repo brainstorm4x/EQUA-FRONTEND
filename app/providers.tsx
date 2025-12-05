@@ -1,23 +1,24 @@
 'use client';
 
-import { FC, ReactNode, useState } from 'react';
-import {
-  QueryClient,
-  QueryClientProvider as TanStackQueryClientProvider,
-} from '@tanstack/react-query';
+import { ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { WalletProvider } from '@/components/WalletProvider';
+import { useState } from 'react';
 
-interface QueryClientProviderProps {
+// Import process shim to execute it
+import '@/lib/clientProcessShim';
+
+interface ProvidersProps {
   children: ReactNode;
 }
 
 /**
- * QueryClientProvider wraps the application with React Query context.
- * This must be a client component and should wrap the entire app tree.
+ * Providers component wraps the application with all necessary context providers.
+ * This is a client component that combines QueryClient and Wallet providers.
  * 
- * The QueryClient is created once per component instance using useState
- * to avoid recreating on every render while ensuring proper cleanup.
+ * The process shim is imported here to ensure it runs before any other client code.
  */
-export const QueryClientProvider: FC<QueryClientProviderProps> = ({ children }) => {
+export function Providers({ children }: ProvidersProps) {
   // Create QueryClient instance once on mount using useState
   // This ensures the instance is stable across re-renders
   const [queryClient] = useState(
@@ -43,8 +44,8 @@ export const QueryClientProvider: FC<QueryClientProviderProps> = ({ children }) 
   );
 
   return (
-    <TanStackQueryClientProvider client={queryClient}>
-      {children}
-    </TanStackQueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <WalletProvider>{children}</WalletProvider>
+    </QueryClientProvider>
   );
-};
+}
