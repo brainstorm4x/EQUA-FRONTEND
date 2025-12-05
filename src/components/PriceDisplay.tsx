@@ -97,7 +97,8 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         // Parse global state data
         const users = safeParseUserCount(accountInfo.data);
         
-        // Get transfers from localStorage (no database dependency)
+        // Get transfers from localStorage (non-authoritative, for UI display only)
+        // The blockchain (GlobalState.total_transactions) is the source of truth
         const totalTransfers = getTotalTransfers();
         console.log('✓ Transfers from localStorage:', totalTransfers);
         

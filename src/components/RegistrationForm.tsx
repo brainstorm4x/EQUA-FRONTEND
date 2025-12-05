@@ -3,7 +3,8 @@
 import { FC, useState, useCallback, useEffect } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { 
-  AccountType, 
+  AccountType,
+  DEFAULT_ACCOUNT_TYPE,
   isReferralRequired, 
   MIN_SOL_BALANCE, 
   REFERRAL_FREE_LIMIT,
@@ -150,8 +151,8 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
         : undefined,
     };
     
-    // Always register as 'individual' - account type distinction removed
-    onRegister('individual', effectiveReferrer, metadata);
+    // Always register with default account type (account type distinction removed for simplicity)
+    onRegister(DEFAULT_ACCOUNT_TYPE, effectiveReferrer, metadata);
   };
 
   // Check if referral code validation has an error state
