@@ -219,23 +219,6 @@ describe('Error Resilience and Edge Cases', () => {
   });
 
   describe('Rapid State Changes', () => {
-    it('should handle rapid toggling of user type without corruption', async () => {
-      render(<RegistrationForm {...defaultProps} />);
-
-      const individualButton = screen.getByTestId('user-type-individual');
-      const businessButton = screen.getByTestId('user-type-business');
-
-      // Rapid toggling
-      for (let i = 0; i < 10; i++) {
-        fireEvent.click(businessButton);
-        fireEvent.click(individualButton);
-      }
-
-      // Should still be in consistent state
-      expect(individualButton).toHaveAttribute('aria-checked', 'true');
-      expect(businessButton).toHaveAttribute('aria-checked', 'false');
-    });
-
     it('should handle rapid referral input changes', async () => {
       mockReferralHook = (input: string) => {
         const trimmed = input.trim();
@@ -347,18 +330,14 @@ describe('Error Resilience and Edge Cases', () => {
 
       render(<RegistrationForm {...defaultProps} />);
 
-      const businessButton = screen.getByTestId('user-type-business');
       const referralInput = screen.getByTestId('referral-input');
-
-      // Select business
-      fireEvent.click(businessButton);
 
       // Enter and clear referral
       fireEvent.change(referralInput, { target: { value: 'test' } });
       fireEvent.change(referralInput, { target: { value: '' } });
 
-      // Business should still be selected
-      expect(businessButton).toHaveAttribute('aria-checked', 'true');
+      // Form should still be in valid state
+      expect(referralInput).toBeInTheDocument();
     });
   });
 

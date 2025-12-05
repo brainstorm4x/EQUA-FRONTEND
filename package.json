@@ -11,16 +11,10 @@
     "check:structure": "bash scripts/check-app-directory.sh",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "db:setup": "bash scripts/turso/setup-turso.sh",
-    "db:migrate": "npx tsx scripts/turso/migrate.ts",
-    "db:reset": "npx tsx scripts/turso/reset.ts",
-    "test:turso": "npx ts-node --esm scripts/test-turso-connection.ts",
-    "db:sync:turso": "bash ./scripts/apply_turso_schema.sh"
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.32.1",
-    "@libsql/client": "^0.15.15",
     "@solana/spl-token": "^0.3.11",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-react": "^0.15.35",
