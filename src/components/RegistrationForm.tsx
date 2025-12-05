@@ -3,7 +3,8 @@
 import { FC, useState, useCallback, useEffect } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { 
-  AccountType, 
+  AccountType,
+  DEFAULT_ACCOUNT_TYPE,
   isReferralRequired, 
   MIN_SOL_BALANCE, 
   REFERRAL_FREE_LIMIT,
@@ -20,7 +21,6 @@ import {
   REFERRAL_RATE_LIMIT,
   REWARD_REDUCTION_PERCENT 
 } from '@/utils/referralRateLimit';
-import { recordRegistration } from '@/utils/registrationStats';
 
 interface RegistrationFormProps {
   totalUsers: number;
@@ -35,8 +35,6 @@ export interface RegistrationMetadata {
   fingerprint: FingerprintMetadata;
   referrerRateLimited?: boolean;
   adjustedRewardMultiplier?: number;
-  state?: string;  // User's state/province (for anonymous analytics)
-  country?: string;  // User's country (for anonymous analytics)
   /** Callback to record the referral - should be called by parent after successful registration */
   onSuccessfulRegistration?: () => void;
 }
@@ -49,13 +47,10 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   validateReferrer,
   userWalletAddress,
 }) => {
-  const [accountType, setAccountType] = useState<AccountType>('individual');
   const [referrer, setReferrer] = useState('');
   const [referrerError, setReferrerError] = useState('');
   const [isValidatingReferrer, setIsValidatingReferrer] = useState(false);
   const [referrerRateLimited, setReferrerRateLimited] = useState(false);
-  const [country, setCountry] = useState('');
-  const [state, setState] = useState('');
   
   // Use the referral resolution hook for code validation
   const referralResolution = useReferralResolution(referrer);
@@ -140,72 +135,24 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
     // Generate fingerprint metadata
     const fingerprint = createFingerprintMetadata();
     
-    // Capture state/country values for the callback
-    const capturedState = state.trim() || undefined;
-    const capturedCountry = country.trim() || undefined;
-    const capturedAccountType = accountType;
-    
-    // Create registration metadata with optional geographic data (for anonymous analytics)
+    // Create registration metadata without geographic data or account type
     // Note: referral recording should be done by the parent component after successful registration
     // The metadata includes a callback for this purpose
     const metadata: RegistrationMetadata = {
       fingerprint,
       referrerRateLimited,
       adjustedRewardMultiplier: referrerRateLimited ? (1 - REWARD_REDUCTION_PERCENT / 100) : 1,
-      state: capturedState,  // Optional for analytics
-      country: capturedCountry,  // Optional for analytics
       // Callback for parent to record referral after successful registration
       onSuccessfulRegistration: effectiveReferrer && userWalletAddress 
         ? async () => {
             recordReferral(effectiveReferrer, userWalletAddress);
-            // Also record the registration type (localStorage)
-            recordRegistration(capturedAccountType);
-            
-            // Record anonymous analytics to database (NO PII)
-            try {
-              const { db } = await import('@/lib/db/client');
-              await db.recordRegistrationAnalytics({
-                account_type: capturedAccountType,
-                state: capturedState,
-                country: capturedCountry,
-                device_fingerprint: fingerprint.fingerprint,
-                registration_metadata: {
-                  timestamp: Date.now(),
-                  hasReferrer: true,
-                },
-              });
-              console.log('✓ Registration analytics recorded (no PII)');
-            } catch (error) {
-              console.warn('Failed to record registration analytics:', error);
-              // Non-critical - continue
-            }
+            console.log('✓ Referral recorded to localStorage');
           }
-        : async () => {
-            // Record registration type even without referrer (localStorage)
-            recordRegistration(capturedAccountType);
-            
-            // Record anonymous analytics to database (NO PII)
-            try {
-              const { db } = await import('@/lib/db/client');
-              await db.recordRegistrationAnalytics({
-                account_type: capturedAccountType,
-                state: capturedState,
-                country: capturedCountry,
-                device_fingerprint: fingerprint.fingerprint,
-                registration_metadata: {
-                  timestamp: Date.now(),
-                  hasReferrer: false,
-                },
-              });
-              console.log('✓ Registration analytics recorded (no PII)');
-            } catch (error) {
-              console.warn('Failed to record registration analytics:', error);
-              // Non-critical - continue
-            }
-          },
+        : undefined,
     };
     
-    onRegister(accountType, effectiveReferrer, metadata);
+    // Always register with default account type (account type distinction removed for simplicity)
+    onRegister(DEFAULT_ACCOUNT_TYPE, effectiveReferrer, metadata);
   };
 
   // Check if referral code validation has an error state
@@ -254,45 +201,6 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
           </div>
         </div>
       )}
-
-      {/* Account Type Selection */}
-      <div className="mb-6" role="radiogroup" aria-label="Account type selection">
-        <label className="block text-white font-medium mb-3">
-          Register as:
-        </label>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setAccountType('individual')}
-            className={`p-4 rounded-xl border-2 transition-all ${
-              accountType === 'individual'
-                ? 'bg-purple-600/30 border-purple-500 text-white'
-                : 'bg-white/5 border-purple-500/30 text-purple-200 hover:bg-white/10'
-            }`}
-            aria-checked={accountType === 'individual'}
-            data-testid="user-type-individual"
-            role="radio"
-          >
-            <span className="text-2xl block mb-2">👤</span>
-            <span className="font-medium">Individual</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setAccountType('business')}
-            className={`p-4 rounded-xl border-2 transition-all ${
-              accountType === 'business'
-                ? 'bg-purple-600/30 border-purple-500 text-white'
-                : 'bg-white/5 border-purple-500/30 text-purple-200 hover:bg-white/10'
-            }`}
-            aria-checked={accountType === 'business'}
-            data-testid="user-type-business"
-            role="radio"
-          >
-            <span className="text-2xl block mb-2">🏢</span>
-            <span className="font-medium">Business</span>
-          </button>
-        </div>
-      </div>
 
       {/* Referral Field */}
       <div className="mb-6">
@@ -364,54 +272,6 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
             {referrerError}
           </p>
         )}
-      </div>
-
-      {/* Geographic Information (Optional - for anonymous analytics) */}
-      <div className="mb-6 space-y-4">
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3 mb-3">
-          <p className="text-blue-200 text-sm">
-            ℹ️ Optional: Help us understand our community better. This information is stored anonymously 
-            and is never linked to your wallet address (no PII stored).
-          </p>
-        </div>
-        
-        <div>
-          <label 
-            htmlFor="country-input"
-            className="block text-white font-medium mb-2"
-          >
-            Country <span className="text-purple-400">(optional)</span>
-          </label>
-          <input
-            id="country-input"
-            data-testid="country-input"
-            type="text"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            placeholder="e.g., United States, Canada, United Kingdom"
-            maxLength={100}
-            className="w-full bg-white/10 border-2 border-purple-500/30 rounded-xl px-4 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-          />
-        </div>
-        
-        <div>
-          <label 
-            htmlFor="state-input"
-            className="block text-white font-medium mb-2"
-          >
-            State/Province <span className="text-purple-400">(optional)</span>
-          </label>
-          <input
-            id="state-input"
-            data-testid="state-input"
-            type="text"
-            value={state}
-            onChange={(e) => setState(e.target.value)}
-            placeholder="e.g., California, Ontario, England"
-            maxLength={100}
-            className="w-full bg-white/10 border-2 border-purple-500/30 rounded-xl px-4 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-          />
-        </div>
       </div>
 
       {/* Register Button */}

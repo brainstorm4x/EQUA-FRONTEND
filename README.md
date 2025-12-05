@@ -4,10 +4,10 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 A decentralized application for minting and managing EQUA tokens on the Solana blockchain.
 
-**Privacy-First Architecture:**
-- User registration verification is done **ON-CHAIN ONLY**  
-- NO wallet addresses or PII stored in database
-- Database used for anonymous analytics only (state/country statistics)
+**On-Chain Architecture:**
+- All user data stored **ON-CHAIN ONLY**
+- NO external database - blockchain is the single source of truth
+- NO PII stored anywhere - complete privacy by design
 
 ## Installation
 
@@ -32,25 +32,15 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 ## Features
 
 - **Solana Integration**: Built on Solana blockchain using Standard SPL Token Program
-- **Privacy-First**: On-chain registration verification, no PII stored in database
+- **On-Chain Only**: All data stored on blockchain - no external database
 - **Wallet Support**: Phantom, Solflare, and other popular Solana wallets
 - **Token Minting**: Mint EQUA tokens with dynamic pricing
 - **Time-Locked Rewards**: First 100 users get special 2-year locked rewards
 - **Referral System**: Earn bonuses for referring new users
-- **Account Type Selection**: Register as Individual or Business account
 - **SOL Balance Gate**: Minimum 0.05 SOL required for registration
 - **Elevated Mint Tiers**: Early users get higher mint limits
-- **Anonymous Analytics**: Optional state/country data for community insights (no wallet linkage)
 
 ## Registration Guide
-
-### Account Types
-
-Users can register as either:
-- **Individual** - Personal user accounts
-- **Business** - Business/organization accounts
-
-> **Note:** KYC (Know Your Customer) for individuals and KYB (Know Your Business) for organizations will be required in a future update but is **not enforced** at this time. Users can register and mint immediately.
 
 ### Referral Requirements
 
@@ -108,7 +98,7 @@ The registration and minting UI displays:
 
 - `/app` - Next.js 14 App Router pages
 - `/src/components` - React components
-  - `RegistrationForm.tsx` - Account registration with type selection and referral
+  - `RegistrationForm.tsx` - Account registration with referral support
   - `MintTierCard.tsx` - Elevated mint tier display
   - `KycKybModal.tsx` - KYC/KYB placeholder modal
 - `/src/hooks` - Custom React hooks
@@ -331,83 +321,39 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Database Setup
+## Data Storage Architecture
 
-The EQUA Frontend uses **Turso (libSQL)** as its database provider for anonymous analytics and statistics.
+All data is stored **on-chain only** - no external database required.
 
-**IMPORTANT PRIVACY PRINCIPLES:**
-- NO PII (Personally Identifiable Information) is stored in the database
-- User registration verification is done **ON-CHAIN ONLY**
-- Database is used for anonymous analytics and statistics only
-- No wallet addresses or user-identifying information is stored
-- **Referral relationships are stored ON-CHAIN** in the UserAccount structure
+### On-Chain Data Structures
 
-### Quick Start (Local Development)
-
-**Step 1: Install Turso CLI**
-```bash
-# macOS/Linux
-curl -sSfL https://get.tur.so/install.sh | bash
-
-# Restart terminal or run:
-source ~/.bashrc  # or ~/.zshrc
+**GlobalState Account:**
+```
+- user_count (u32)               ← Total registered users
+- total_transactions (u64)       ← Total on-chain transactions
+- current_epoch (u64)            ← Current epoch
+- token_mint (Pubkey)            ← EQUA token mint address
 ```
 
-**Step 2: Start Local Server (in a separate terminal)**
-```bash
-turso dev --port 8080
-# Keep this running!
+**UserAccount:**
+```
+- authority (Pubkey)             ← User's wallet address
+- referral (Pubkey)              ← Referrer's wallet (on-chain tracking!)
+- token_account (Pubkey)         ← User's token account
+- minted_amount (u64)            ← Total tokens minted
+- mint_start (i64)               ← Registration timestamp
+- locked_until (i64)             ← Token lock expiry
+- referral_rewards (u64)         ← Referral rewards earned
+- last_mint_time (i64)           ← Last mint timestamp
 ```
 
-**Step 3: Configure Environment**
-```bash
-# Add to .env.local
-echo "TURSO_DATABASE_URL=http://127.0.0.1:8080" >> .env.local
-```
+### Benefits of On-Chain Storage
 
-**Step 4: Apply Schema**
-```bash
-npm run db:sync:turso
-```
-
-**Step 5: Start Development**
-```bash
-npm run dev
-```
-
-For detailed instructions, troubleshooting, and production setup, see **[docs/TURSO_SETUP_GUIDE.md](docs/TURSO_SETUP_GUIDE.md)**.
-
-### Referral System - On-Chain Tracking
-
-**Important:** Referral relationships are stored **on-chain** in each user's UserAccount:
-
-```
-UserAccount (on Solana blockchain):
-- authority (Pubkey)     ← User's wallet
-- referral (Pubkey)      ← Referrer's wallet (stored on-chain!)
-- token_account (Pubkey)
-- minted_amount (u64)
-```
-
-This means:
-- ✅ Referrals are immutable and verifiable on the blockchain
-- ✅ Query the blockchain to see who referred whom
-- ✅ Calculate referral rewards from on-chain data
-- ✅ No database dependency for referral tracking
-
-The database only stores anonymous referral counts for analytics.
-
-### Database Schema
-
-The database schema uses anonymous analytics tables:
-- `registration_analytics` - Anonymous registration data with state/country (NO wallet addresses)
-- `transfer_analytics` - Anonymous transfer statistics (NO wallet addresses)
-- `referral_analytics` - Anonymous referral counts (NO wallet addresses)
-- `device_fingerprints` - For Sybil prevention (NO wallet linkage)
-- `eqx_prices` - Price history
-- `global_state` - Key/value store for app state
-
-See the schema file at `db/schema_turso.sql` for complete details.
+- ✅ **Immutable**: Data cannot be altered or deleted
+- ✅ **Verifiable**: Anyone can verify registration and referral data
+- ✅ **Decentralized**: No central database or single point of failure
+- ✅ **Privacy**: No PII collection or storage
+- ✅ **Transparent**: All transactions visible on Solana Explorer
 
 ### Running Tests
 

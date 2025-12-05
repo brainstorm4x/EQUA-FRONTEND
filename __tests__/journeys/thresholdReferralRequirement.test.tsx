@@ -280,68 +280,6 @@ describe('Threshold Referral Requirement', () => {
     });
   });
 
-  describe('User Type Selection with Threshold', () => {
-    it('should maintain referral requirement when switching user type below threshold', async () => {
-      render(<RegistrationForm {...baseProps} totalUsers={50} />);
-
-      const businessButton = screen.getByTestId('user-type-business');
-      fireEvent.click(businessButton);
-
-      // Still optional
-      expect(screen.getByText(/optional/i)).toBeInTheDocument();
-      
-      const registerButton = screen.getByTestId('register-button');
-      expect(registerButton).not.toBeDisabled();
-    });
-
-    it('should maintain referral requirement when switching user type at threshold', () => {
-      render(<RegistrationForm {...baseProps} totalUsers={100} />);
-
-      const businessButton = screen.getByTestId('user-type-business');
-      fireEvent.click(businessButton);
-
-      // Still required
-      expect(screen.getByText(/required/i)).toBeInTheDocument();
-      
-      const registerButton = screen.getByTestId('register-button');
-      expect(registerButton).toBeDisabled();
-    });
-
-    it('should submit with correct user type and referral above threshold', async () => {
-      const mockOnRegister = jest.fn();
-      
-      render(
-        <RegistrationForm
-          {...baseProps}
-          totalUsers={150}
-          onRegister={mockOnRegister}
-        />
-      );
-
-      // Select business
-      const businessButton = screen.getByTestId('user-type-business');
-      fireEvent.click(businessButton);
-
-      // Enter referral
-      const referralInput = screen.getByTestId('referral-input');
-      fireEvent.change(referralInput, { target: { value: 'ValidCode1' } });
-
-      await waitFor(() => {
-        const registerButton = screen.getByTestId('register-button');
-        expect(registerButton).not.toBeDisabled();
-      });
-
-      const registerButton = screen.getByTestId('register-button');
-      fireEvent.click(registerButton);
-
-      await waitFor(() => {
-        expect(mockOnRegister).toHaveBeenCalled();
-        expect(mockOnRegister.mock.calls[0][0]).toBe('business');
-        expect(mockOnRegister.mock.calls[0][1]).toBe('11111111111111111111111111111112');
-      });
-    });
-  });
-
   describe('Visual Indicators', () => {
     it('should show required indicator with red asterisk at threshold', () => {
       render(<RegistrationForm {...baseProps} totalUsers={100} />);

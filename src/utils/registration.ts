@@ -2,8 +2,11 @@
  * Registration utilities for EQUA Token
  */
 
-// Account type options
+// Account type options (maintained for compatibility, always uses 'individual')
 export type AccountType = 'individual' | 'business';
+
+// Default account type for all registrations
+export const DEFAULT_ACCOUNT_TYPE: AccountType = 'individual';
 
 // Minimum SOL balance required for registration
 export const MIN_SOL_BALANCE = 0.05;
