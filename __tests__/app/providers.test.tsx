@@ -1,11 +1,16 @@
 /**
- * Tests for QueryClientProvider component
+ * Tests for Providers component
  */
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { QueryClientProvider } from '@/components/providers/QueryClientProvider';
+import { Providers } from '@/../../app/providers';
 import { useQuery } from '@tanstack/react-query';
+
+// Mock the WalletProvider since it has complex wallet dependencies
+jest.mock('@/components/WalletProvider', () => ({
+  WalletProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="wallet-provider">{children}</div>
+}));
 
 // Test component that uses useQuery to verify the provider works
 function TestComponent() {
@@ -17,12 +22,12 @@ function TestComponent() {
   return <div data-testid="test-content">{data || 'loading'}</div>;
 }
 
-describe('QueryClientProvider', () => {
+describe('Providers', () => {
   it('should render children', () => {
     render(
-      <QueryClientProvider>
+      <Providers>
         <div data-testid="child">Test Child</div>
-      </QueryClientProvider>
+      </Providers>
     );
     
     expect(screen.getByTestId('child')).toBeInTheDocument();
@@ -31,9 +36,9 @@ describe('QueryClientProvider', () => {
 
   it('should provide QueryClient context to children', async () => {
     render(
-      <QueryClientProvider>
+      <Providers>
         <TestComponent />
-      </QueryClientProvider>
+      </Providers>
     );
     
     // Initially should show loading
@@ -42,6 +47,17 @@ describe('QueryClientProvider', () => {
     // After query resolves, should show data
     const content = await screen.findByText('test-data');
     expect(content).toBeInTheDocument();
+  });
+
+  it('should wrap children with WalletProvider', () => {
+    render(
+      <Providers>
+        <div data-testid="child">Test</div>
+      </Providers>
+    );
+    
+    // Check that WalletProvider is in the tree
+    expect(screen.getByTestId('wallet-provider')).toBeInTheDocument();
   });
 
   it('should allow nested components to use React Query hooks', async () => {
@@ -57,11 +73,11 @@ describe('QueryClientProvider', () => {
     };
 
     render(
-      <QueryClientProvider>
+      <Providers>
         <div>
           <NestedComponent />
         </div>
-      </QueryClientProvider>
+      </Providers>
     );
     
     // Should eventually show the data
