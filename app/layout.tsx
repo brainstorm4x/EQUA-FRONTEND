@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { WalletProvider } from "@/components/WalletProvider";
+import { QueryClientProvider } from "@/components/providers/QueryClientProvider";
+import ClientShim from "./client-shim";
 import Script from "next/script";
 
 export const metadata: Metadata = {
@@ -31,7 +33,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
       </head>
       <body className="font-sans antialiased">
-        <WalletProvider>{children}</WalletProvider>
+        {/* Client-side process shim to prevent "process is not defined" errors */}
+        <ClientShim />
+        {/* React Query Provider wraps WalletProvider to provide query client context */}
+        <QueryClientProvider>
+          <WalletProvider>{children}</WalletProvider>
+        </QueryClientProvider>
         {/* Initialize Web Vitals tracking - loaded after page render */}
         <Script
           id="web-vitals"
@@ -45,7 +52,8 @@ export default function RootLayout({
                   new PerformanceObserver((list) => {
                     const entries = list.getEntries();
                     const last = entries[entries.length - 1];
-                    if (last && process.env.NODE_ENV === 'development') {
+                    // Check if development mode (process should be shimmed at this point)
+                    if (last && typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
                       console.log('[WebVital] LCP:', last.startTime.toFixed(0), 'ms');
                     }
                   }).observe({ type: 'largest-contentful-paint', buffered: true });
