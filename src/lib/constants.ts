@@ -1,14 +1,14 @@
 import { PublicKey } from '@solana/web3.js'; 
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 
 // Support both NEXT_PUBLIC_PROGRAM_ID (preferred) and legacy NEXT_PUBLIC_EQUA_PROGRAM_ID
 export const PROGRAM_ID = new PublicKey(
   process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID || '7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP'
 );
 
-// Standard SPL Token Program (not Token-2022)
-// The smart contract on-chain expects the standard SPL Token program
-export { TOKEN_PROGRAM_ID };
+// Token-2022 Program (newer token extension program)
+// The smart contract on-chain uses the Token-2022 program
+export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
 
 // Network configuration
 export const NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'devnet';

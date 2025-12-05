@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletProvider } from '@/components/WalletProvider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useState } from 'react';
 
 // Import process shim to execute it
@@ -44,8 +45,10 @@ export function Providers({ children }: ProvidersProps) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <WalletProvider>{children}</WalletProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <WalletProvider>{children}</WalletProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

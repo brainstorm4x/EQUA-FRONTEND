@@ -21,7 +21,7 @@
   "dependencies": {
     "@coral-xyz/anchor": "0.32.1",
     "@libsql/client": "^0.15.15",
-    "@solana/spl-token": "0.4.14",
+    "@solana/spl-token": "^0.3.11",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/wallet-adapter-react-ui": "^0.9.35",

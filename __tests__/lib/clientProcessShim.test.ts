@@ -77,7 +77,11 @@ describe('clientProcessShim', () => {
     // Should default to production
     expect((window as any).process.env.NODE_ENV).toBe('production');
     
-    // Restore
-    process.env.NODE_ENV = originalNodeEnv;
+    // Restore (use Object.defineProperty to avoid readonly error)
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: originalNodeEnv,
+      writable: true,
+      configurable: true
+    });
   });
 });
