@@ -1,12 +1,8 @@
 /**
  * Transfer Tracking Utility
  * 
- * Tracks EQUA token transfers for UI display purposes.
- * 
- * IMPORTANT: NO PII is stored in the database.
- * - Transfer analytics are recorded anonymously (no wallet addresses)
- * - Only transaction signatures and amounts are stored for deduplication
- * - localStorage is used for immediate UI feedback
+ * Tracks EQUA token transfers for UI display purposes using localStorage only.
+ * All tracking is done locally without external database dependencies.
  */
 
 const STORAGE_KEY = 'equa_transfer_stats';
@@ -50,39 +46,26 @@ export function saveTransferStats(stats: TransferStats): void {
 }
 
 /**
- * Records a new transfer
- * Also attempts to persist anonymous analytics to database
+ * Records a new transfer to localStorage
  * 
- * @param amount - Transfer amount
- * @param transactionSignature - Optional transaction signature (for deduplication)
- * 
- * NOTE: Wallet addresses are NOT stored (privacy-preserving)
+ * @param amount - Transfer amount (for logging only)
+ * @param transactionSignature - Optional transaction signature (for logging only)
  */
 export async function recordTransfer(
   amount: number,
   transactionSignature?: string
 ): Promise<void> {
-  // Update localStorage for immediate UI feedback
+  // Update localStorage for UI feedback
   const stats = getTransferStats();
   stats.totalTransfers += 1;
   stats.lastUpdated = Date.now();
   saveTransferStats(stats);
   
-  // Attempt to persist anonymous analytics to database
-  try {
-    const { db } = await import('@/lib/db/client');
-    await db.recordTransferAnalytics({
-      amount: amount,
-      transaction_signature: transactionSignature,
-      transfer_metadata: {
-        timestamp: Date.now(),
-      },
-    });
-    console.log('✓ Transfer analytics recorded to database (no PII)');
-  } catch (error) {
-    console.warn('Failed to record transfer analytics to database:', error);
-    // Continue - localStorage tracking is already done
-  }
+  console.log('✓ Transfer recorded to localStorage:', { 
+    amount, 
+    signature: transactionSignature,
+    totalTransfers: stats.totalTransfers 
+  });
   
   // Dispatch event for real-time UI updates
   if (typeof window !== 'undefined') {

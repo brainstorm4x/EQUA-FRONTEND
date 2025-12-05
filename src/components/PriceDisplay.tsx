@@ -8,11 +8,9 @@ import { PROGRAM_ID, GLOBAL_STATE_SEED } from '@/lib/constants';
 import { safeParseUserCount } from '@/utils/safeAccountParsing';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import * as anchor from '@coral-xyz/anchor';
-import { getRegistrationStats } from '@/utils/registrationStats';
 import { getTotalTransfers } from '@/utils/transferTracking';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat, formatEQXPrice, MultiFormatEquaPrice } from '@/utils/eqxOracle';
-import { db } from '@/lib/db/client';
 import { resetForNewProgramId } from '@/utils/programIdMigration';
 
 interface PriceDisplayProps {
@@ -45,8 +43,6 @@ interface PriceData {
   currentPrice: number;
   currentPhase: PricePhase;
   currentEpoch: number;
-  individualUsers: number;
-  businessUsers: number;
   mintingRate: string;
   // EQX-related fields
   eqxPrice: number;
@@ -60,8 +56,6 @@ const DEFAULT_PRICE_DATA: PriceData = {
   currentPrice: 0.01,
   currentPhase: 'phase1',
   currentEpoch: 0,
-  individualUsers: 0,
-  businessUsers: 0,
   mintingRate: '100,000',
   eqxPrice: 0.01,
   eqxValue: 1.0,
@@ -103,49 +97,14 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         // Parse global state data
         const users = safeParseUserCount(accountInfo.data);
         
-        // Get transfers from database (more accurate than localStorage)
-        let totalTransfers = 0;
-        try {
-          totalTransfers = await db.adapter.getTotalTransfers();
-          console.log('✓ Transfers from database:', totalTransfers);
-        } catch (dbError) {
-          console.warn('Failed to get transfers from database, using localStorage fallback:', dbError);
-          // Fallback to localStorage tracking
-          const localTransfers = getTotalTransfers();
-          
-          // Also parse on-chain total_transactions as fallback
-          const onChainTx = new anchor.BN(
-            accountInfo.data.slice(12, 20),
-            'le'
-          ).toNumber();
-          
-          // Estimate on-chain transfers (subtract registrations + mints)
-          const estimatedOnChainTransfers = Math.max(0, onChainTx - users * 2);
-          
-          // Use the higher of local tracking or on-chain estimate
-          totalTransfers = Math.max(localTransfers, estimatedOnChainTransfers);
-        }
+        // Get transfers from localStorage (no database dependency)
+        const totalTransfers = getTotalTransfers();
+        console.log('✓ Transfers from localStorage:', totalTransfers);
         
         // Calculate price based on transfers
         const price = EquaPriceCalculator.calculatePrice(totalTransfers);
         const phase = EquaPriceCalculator.getPhase(totalTransfers);
         const epoch = EquaPriceCalculator.getCurrentEpoch(totalTransfers);
-        
-        // Get registration stats from database (preferred) or localStorage (fallback)
-        let individualCount = 0;
-        let businessCount = 0;
-        try {
-          const dbStats = await db.adapter.getRegistrationStats();
-          individualCount = dbStats.individualCount;
-          businessCount = dbStats.businessCount;
-          console.log('✓ Registration stats from database:', { individualCount, businessCount });
-        } catch (dbError) {
-          console.warn('Failed to get stats from database, using localStorage fallback:', dbError);
-          // Fallback to localStorage
-          const localStats = getRegistrationStats();
-          individualCount = localStats.individualCount;
-          businessCount = localStats.businessCount;
-        }
         
         // Calculate minting rate based on total users
         const nextUserNumber = users + 1;
@@ -182,8 +141,6 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
             currentPrice: price,
             currentPhase: phase,
             currentEpoch: epoch,
-            individualUsers: individualCount,
-            businessUsers: businessCount,
             mintingRate,
             eqxPrice: eqxPriceData.eqx,
             eqxValue: eqxPriceData.eqxValue,
@@ -302,11 +259,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
               <p className="text-white text-3xl font-bold" data-testid="total-users">
                 {priceData.totalUsers.toLocaleString()}
               </p>
-              <p className="text-purple-300 text-xs mt-1">
-                {priceData.individualUsers > 0 || priceData.businessUsers > 0 
-                  ? `👤 ${priceData.individualUsers} | 🏢 ${priceData.businessUsers}`
-                  : 'Total users'}
-              </p>
+              <p className="text-purple-300 text-xs mt-1">Total users</p>
             </div>
 
             <div>
