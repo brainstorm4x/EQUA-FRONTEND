@@ -27,6 +27,11 @@ const nextConfig = {
     ],
   },
   
+  // Transpile ESM-only packages
+  transpilePackages: [
+    '@solana/spl-token',
+  ],
+  
   // Experimental features for performance
   experimental: {
     // Optimize package imports for better tree-shaking
