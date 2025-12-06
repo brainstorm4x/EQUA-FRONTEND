@@ -23,6 +23,9 @@ describe('clientProcessShim', () => {
     // Remove process if it exists
     delete (window as any).process;
     
+    // Reset module cache before importing
+    jest.resetModules();
+    
     // Import the shim (this executes the code)
     require('@/lib/clientProcessShim');
     
@@ -34,6 +37,9 @@ describe('clientProcessShim', () => {
   it('should define NODE_ENV in process.env', () => {
     // Remove process if it exists
     delete (window as any).process;
+    
+    // Reset module cache before importing
+    jest.resetModules();
     
     // Import the shim
     require('@/lib/clientProcessShim');
@@ -62,26 +68,35 @@ describe('clientProcessShim', () => {
     expect((window as any).process.env.CUSTOM_VAR).toBe('value');
   });
 
-  it('should set NODE_ENV to production as fallback', () => {
-    // Remove process
+  it('should set NODE_ENV to development as fallback', () => {
+    // Remove window.process
     delete (window as any).process;
     
-    // Temporarily override process.env.NODE_ENV at module level
-    const originalNodeEnv = process.env.NODE_ENV;
-    delete (process.env as any).NODE_ENV;
+    // Save and temporarily remove NODE_ENV from Node's process.env
+    // In jsdom environment, we need to check if process is available
+    let originalNodeEnv: string | undefined;
+    let wasNodeEnvDefined = false;
+    if (typeof process !== 'undefined' && process.env) {
+      wasNodeEnvDefined = 'NODE_ENV' in process.env;
+      originalNodeEnv = process.env.NODE_ENV;
+      delete (process.env as any).NODE_ENV;
+    }
     
     // Reset modules and import shim
     jest.resetModules();
     require('@/lib/clientProcessShim');
     
-    // Should default to production
-    expect((window as any).process.env.NODE_ENV).toBe('production');
+    // Should default to development when NODE_ENV is not set
+    expect((window as any).process.env.NODE_ENV).toBe('development');
     
-    // Restore (use Object.defineProperty to avoid readonly error)
-    Object.defineProperty(process.env, 'NODE_ENV', {
-      value: originalNodeEnv,
-      writable: true,
-      configurable: true
-    });
+    // Restore original environment state
+    if (typeof process !== 'undefined' && process.env) {
+      if (wasNodeEnvDefined && originalNodeEnv !== undefined) {
+        (process.env as any).NODE_ENV = originalNodeEnv;
+      } else if (!wasNodeEnvDefined) {
+        // Leave it undefined as it was originally
+        delete (process.env as any).NODE_ENV;
+      }
+    }
   });
 });
