@@ -9,22 +9,53 @@ import {
   GLOBAL_STATE_SEED,
   MINT_SEED,
   MINT_AUTHORITY_SEED,
+  USER_ACCOUNT_SEED,
 } from "./constants";
-// PDA Helper Functions
+
+// ============================================================================
+// PERFORMANCE OPTIMIZATION: Memoized PDA Calculations
+// PDAs are deterministic - cache them to avoid repeated computation
+// ============================================================================
+
+// Cache for PDA computations
+const pdaCache = new Map<string, [PublicKey, number]>();
+
+/**
+ * Get cached PDA or compute and cache it
+ * @param key - Cache key identifier
+ * @param seeds - Seeds for PDA derivation
+ * @returns Cached or newly computed [PublicKey, bump] tuple
+ */
+function getCachedPDA(key: string, seeds: Buffer[]): [PublicKey, number] {
+  if (pdaCache.has(key)) {
+    return pdaCache.get(key)!;
+  }
+  const pda = PublicKey.findProgramAddressSync(seeds, PROGRAM_ID);
+  pdaCache.set(key, pda);
+  return pda;
+}
+
+// PDA Helper Functions with memoization
 export function getGlobalStatePDA(): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from(GLOBAL_STATE_SEED)],
-    PROGRAM_ID
-  );
+  return getCachedPDA('global_state', [Buffer.from(GLOBAL_STATE_SEED)]);
 }
+
 export function getMintPDA(): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync([Buffer.from(MINT_SEED)], PROGRAM_ID);
+  return getCachedPDA('mint', [Buffer.from(MINT_SEED)]);
 }
+
 export function getMintAuthorityPDA(): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from(MINT_AUTHORITY_SEED)],
-    PROGRAM_ID
-  );
+  return getCachedPDA('mint_authority', [Buffer.from(MINT_AUTHORITY_SEED)]);
+}
+
+/**
+ * Get user account PDA derived from authority (wallet public key)
+ * @param authority - The wallet's public key
+ * @returns PDA and bump seed
+ */
+export function getUserAccountPDA(authority: PublicKey): [PublicKey, number] {
+  const cacheKey = `user_account:${authority.toBase58()}`;
+  return getCachedPDA(cacheKey, [Buffer.from(USER_ACCOUNT_SEED), authority.toBuffer()]);
 }
 
 // Create Anchor Program Instance
@@ -211,12 +242,12 @@ export function createInitializeUserInstruction(
     lockedUntilBN.toArrayLike(Buffer, 'le', 8),
   ]);
 
-  // ✅ FIX: The on-chain program requires referral_account to ALWAYS be writable per IDL
-  // Per Solana/Anchor design: referral_account must be a real account that can be marked writable
-  // The contract will handle the case where user refers themselves (no actual referrer)
+  // ✅ CRITICAL FIX: user_account is now a PDA derived from authority
+  // PDAs cannot sign transactions, so isSigner must be false
+  // The on-chain program expects: seeds = [b"user-account", authority.key().as_ref()]
   return new TransactionInstruction({
     keys: [
-      { pubkey: userAccount, isSigner: true, isWritable: true },
+      { pubkey: userAccount, isSigner: false, isWritable: true },  // ✅ PDA - not a signer
       { pubkey: authority, isSigner: true, isWritable: true },
       { pubkey: globalState, isSigner: false, isWritable: true },
       { pubkey: referralAccount, isSigner: false, isWritable: true },  // ✅ Always writable per IDL requirement

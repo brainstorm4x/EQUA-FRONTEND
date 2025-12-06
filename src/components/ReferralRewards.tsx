@@ -9,7 +9,7 @@ import {
   formatReferralRewards,
   getReferredUsersDetails,
 } from '@/utils/referralRewards';
-import { loadKeypair } from '@/lib/program';
+import { getUserAccountPDA } from '@/lib/program';
 
 interface ReferralRewardsProps {
   className?: string;
@@ -52,16 +52,13 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
     setError('');
 
     try {
-      // Get the user's account keypair (stored locally)
-      const userKeypair = loadKeypair();
-      if (!userKeypair) {
-        setError('User account not found. Please register first.');
-        setIsLoading(false);
-        return;
-      }
+      // Derive the user account PDA from the connected wallet's public key
+      const [userAccountPDA] = getUserAccountPDA(publicKey);
+      
+      console.log(`✓ Fetching referral stats for PDA: ${userAccountPDA.toBase58()}`);
 
       // Fetch referral statistics
-      const stats = await getReferralStats(connection, userKeypair.publicKey);
+      const stats = await getReferralStats(connection, userAccountPDA);
       
       if (stats) {
         setRewards(stats.referralRewards);

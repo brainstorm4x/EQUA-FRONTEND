@@ -11,7 +11,7 @@ import {
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import { BN } from '@coral-xyz/anchor';
-import { getMintPDA, getSPLTokenBalance, getOrCreateKeypair } from '@/lib/program';
+import { getMintPDA, getSPLTokenBalance, getUserAccountPDA } from '@/lib/program';
 import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal } from '@/utils/tokenFormat';
@@ -67,15 +67,15 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const [referralCount, setReferralCount] = useState<number>(0);
   const [referralRewards, setReferralRewards] = useState<number>(0);
 
-  // Get user account keypair for onchain data fetching (memoized to prevent repeated calls)
-  const userAccountKeypair = useMemo(() => {
-    return typeof window !== 'undefined' ? getOrCreateKeypair() : null;
-  }, []); // Empty deps array - only compute once on mount
+  // Get user account PDA derived from connected wallet (memoized to prevent repeated calls)
+  const userAccountPDA = useMemo(() => {
+    return publicKey ? getUserAccountPDA(publicKey)[0] : null;
+  }, [publicKey]); // Recompute when wallet changes
   
   // Fetch user account data from blockchain (includes referral info)
   const { data: userAccountData } = useUserAccount(
-    userAccountKeypair?.publicKey,
-    { enabled: connected && !!userAccountKeypair }
+    userAccountPDA,
+    { enabled: connected && !!userAccountPDA }
   );
 
   // Fetch EQUA balance and update referral rewards from onchain data
