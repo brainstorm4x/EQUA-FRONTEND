@@ -171,8 +171,7 @@ export type EquaToken = {
       "accounts": [
         {
           "name": "userAccount",
-          "writable": true,
-          "signer": true
+          "writable": true
         },
         {
           "name": "authority",
@@ -635,6 +634,11 @@ export type EquaToken = {
       "code": 6005,
       "name": "insufficientBalance",
       "msg": "Insufficient balance for transfer."
+    },
+    {
+      "code": 6006,
+      "name": "mintCooldown",
+      "msg": "Minting only allowed once every 24 hours."
     }
   ],
   "types": [
@@ -702,6 +706,10 @@ export type EquaToken = {
           {
             "name": "referralRewards",
             "type": "u64"
+          },
+          {
+            "name": "lastMintTime",
+            "type": "i64"
           }
         ]
       }

@@ -33,10 +33,14 @@ export const PROGRAM_ID = new PublicKey(
 export const NETWORK = 'devnet' as const;
 export const COMMITMENT = 'confirmed' as const;
 
-// NOTE: PDA seeds should be imported from lib/constants.ts to maintain consistency
-// The following are deprecated - use lib/constants.ts instead
-// Global state PDA seed - matches lib/constants.ts (must match Rust backend exactly)
+// NOTE: PDA seeds should be imported from lib/constants.ts or src/lib/constants.ts to maintain consistency
+// The following are deprecated - use lib/constants.ts or src/lib/constants.ts instead
+// 
+// ⚠️ DEPRECATED: Use @/lib/constants for PDA seeds
+// These are kept for backward compatibility only
 export const GLOBAL_STATE_SEED = 'global-state' as const;
 
-// User account seed
-export const USER_ACCOUNT_SEED = 'user_account' as const;
+// ⚠️ DEPRECATED: Incorrect seed value - DO NOT USE
+// Correct value is 'user-account' (with dash, not underscore)
+// Import USER_ACCOUNT_SEED from @/lib/constants instead
+export const USER_ACCOUNT_SEED = 'user-account' as const;
