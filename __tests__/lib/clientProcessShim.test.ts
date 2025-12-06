@@ -75,7 +75,9 @@ describe('clientProcessShim', () => {
     // Save and temporarily remove NODE_ENV from Node's process.env
     // In jsdom environment, we need to check if process is available
     let originalNodeEnv: string | undefined;
+    let wasNodeEnvDefined = false;
     if (typeof process !== 'undefined' && process.env) {
+      wasNodeEnvDefined = 'NODE_ENV' in process.env;
       originalNodeEnv = process.env.NODE_ENV;
       delete (process.env as any).NODE_ENV;
     }
@@ -87,9 +89,14 @@ describe('clientProcessShim', () => {
     // Should default to development when NODE_ENV is not set
     expect((window as any).process.env.NODE_ENV).toBe('development');
     
-    // Restore original environment
-    if (typeof process !== 'undefined' && process.env && originalNodeEnv !== undefined) {
-      (process.env as any).NODE_ENV = originalNodeEnv;
+    // Restore original environment state
+    if (typeof process !== 'undefined' && process.env) {
+      if (wasNodeEnvDefined && originalNodeEnv !== undefined) {
+        (process.env as any).NODE_ENV = originalNodeEnv;
+      } else if (!wasNodeEnvDefined) {
+        // Leave it undefined as it was originally
+        delete (process.env as any).NODE_ENV;
+      }
     }
   });
 });
