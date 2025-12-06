@@ -153,7 +153,7 @@ export default function MintPage() {
     connection,
     wallet,
     publicKey,
-    userAccountKeypair,
+    userAccountPDA,
     isReady,
     isProgramLoading,
     programError,
@@ -233,14 +233,14 @@ export default function MintPage() {
   }, [connection, globalStatePDA]);
 
   const checkUserRegistration = useCallback(async () => {
-    if (!publicKey || !isReady || !userAccountKeypair) {
+    if (!publicKey || !isReady || !userAccountPDA) {
       setIsCheckingRegistration(false);
       return;
     }
 
     setIsCheckingRegistration(true);
     try {
-      const isReg = await checkRegistration(userAccountKeypair.publicKey);
+      const isReg = await checkRegistration(userAccountPDA);
       setRegistered(isReg);
 
       if (isReg && publicKey) {
@@ -262,13 +262,13 @@ export default function MintPage() {
         }
         
         // Get last mint time for cooldown
-        const lastMint = await getLastMintTime(connection, userAccountKeypair.publicKey);
+        const lastMint = await getLastMintTime(connection, userAccountPDA);
         setLastMintTime(lastMint);
         console.log('⏰ Last mint time:', lastMint);
 
         // Get user's registration number and total mints from account
         try {
-          const accountInfo = await connection.getAccountInfo(userAccountKeypair.publicKey);
+          const accountInfo = await connection.getAccountInfo(userAccountPDA);
           if (accountInfo && accountInfo.data.length >= 144) {
             // Note: user_number might not be stored in the account structure
             // Check if there's additional data beyond the standard fields
@@ -323,7 +323,7 @@ export default function MintPage() {
     } finally {
       setIsCheckingRegistration(false);
     }
-  }, [publicKey, isReady, userAccountKeypair, checkRegistration, getTokenBalance, mintPDA, connection]);
+  }, [publicKey, isReady, userAccountPDA, checkRegistration, getTokenBalance, mintPDA, connection]);
 
   useEffect(() => {
     checkUserRegistration();
@@ -373,7 +373,7 @@ export default function MintPage() {
   }, [connection]);
 
   const handleRegisterWithForm = async (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => {
-    if (!wallet.connected || !publicKey || !userAccountKeypair) {
+    if (!wallet.connected || !publicKey || !userAccountPDA) {
       setError('Wallet not connected');
       return;
     }
@@ -416,7 +416,7 @@ export default function MintPage() {
       // Check on-chain if the user account already exists (source of truth)
       const isRegisteredOnchain = await isUserAccountRegisteredOnchain(
         connection,
-        userAccountKeypair.publicKey
+        userAccountPDA
       );
       
       if (isRegisteredOnchain) {
@@ -522,14 +522,14 @@ export default function MintPage() {
       const lockUntil = now;
 
       console.log('Accounts:');
-      console.log('- User Account:', userAccountKeypair.publicKey.toBase58());
+      console.log('- User Account (PDA):', userAccountPDA.toBase58());
       console.log('- Authority:', publicKey.toBase58());
       console.log('- Global State:', globalStatePDA.toBase58());
       console.log('- Token Account:', userTokenAccount.toBase58());
       console.log('- Mint:', mintPDA.toBase58());
 
       // Determine referral account - use referrer if provided, otherwise use own account
-      let referralAccountPubkey = userAccountKeypair.publicKey;
+      let referralAccountPubkey = userAccountPDA;
       let referrerPubkey = PublicKey.default;
       
       if (referrer) {
@@ -543,7 +543,7 @@ export default function MintPage() {
       }
 
       const instruction = createInitializeUserInstruction(
-        userAccountKeypair.publicKey,
+        userAccountPDA,
         publicKey,
         globalStatePDA,
         referralAccountPubkey,
@@ -570,8 +570,9 @@ export default function MintPage() {
 
       console.log('📝 Requesting wallet signature...');
       const signed = await wallet.signTransaction!(transaction);
-      signed.partialSign(userAccountKeypair);
-
+      // ✅ REMOVED: User account is now a PDA, not a keypair that can sign
+      // PDAs are derived deterministically and don't have private keys
+      
       console.log('📤 Sending transaction...');
       const rawTx = signed.serialize();
       const tx = await connection.sendRawTransaction(rawTx, {
@@ -647,7 +648,7 @@ export default function MintPage() {
 
 
   const handleMint = async () => {
-    if (!wallet.connected || !publicKey || !userAccountKeypair || !program) {
+    if (!wallet.connected || !publicKey || !userAccountPDA || !program) {
       setError('Wallet not connected or program not ready');
       return;
     }
@@ -695,7 +696,7 @@ export default function MintPage() {
       );
 
       console.log('📝 Accounts:');
-      console.log('  - User Account:', userAccountKeypair.publicKey.toBase58());
+      console.log('  - User Account (PDA):', userAccountPDA.toBase58());
       console.log('  - Token Account:', userTokenAccount.toBase58());
       console.log('  - Mint:', mintPDA.toBase58());
       console.log('  - Mint Authority:', mintAuthority.toBase58());
@@ -770,7 +771,7 @@ export default function MintPage() {
       const tx = await program.methods
         .mintEquaTokens(new anchor.BN(mintAmount))
         .accounts({
-          userAccount: userAccountKeypair.publicKey,
+          userAccount: userAccountPDA,
           userTokenAccount,
           mint: mintPDA,
           mintAuthority,
@@ -790,7 +791,7 @@ export default function MintPage() {
 
       // Refresh balance and last mint time
       await checkUserRegistration();
-      const newLastMintTime = await getLastMintTime(connection, userAccountKeypair.publicKey);
+      const newLastMintTime = await getLastMintTime(connection, userAccountPDA);
       setLastMintTime(newLastMintTime);
       console.log('⏰ Updated last mint time:', newLastMintTime);
 

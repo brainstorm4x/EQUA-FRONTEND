@@ -82,9 +82,10 @@ describe('ReferralRewards Component', () => {
     });
 
     it('should display loading state initially', () => {
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue({
-        publicKey: mockPublicKey,
-      });
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([
+        mockPublicKey,
+        255
+      ]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockImplementation(
         () => new Promise(() => {}) // Never resolves
@@ -96,9 +97,10 @@ describe('ReferralRewards Component', () => {
     });
 
     it('should display referral statistics when loaded', async () => {
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue({
-        publicKey: mockPublicKey,
-      });
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([
+        mockPublicKey,
+        255
+      ]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         referralRewards: new BN(5000000), // 5 EQUA
@@ -121,9 +123,7 @@ describe('ReferralRewards Component', () => {
     });
 
     it('should display zero rewards when no rewards earned', async () => {
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue({
-        publicKey: mockPublicKey,
-      });
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         referralRewards: new BN(0),
@@ -142,9 +142,7 @@ describe('ReferralRewards Component', () => {
     });
 
     it('should enable claim button when rewards > 0', async () => {
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue({
-        publicKey: mockPublicKey,
-      });
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         referralRewards: new BN(1000000),
@@ -161,9 +159,7 @@ describe('ReferralRewards Component', () => {
     });
 
     it('should disable claim button when no rewards', async () => {
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue({
-        publicKey: mockPublicKey,
-      });
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         referralRewards: new BN(0),
@@ -180,9 +176,7 @@ describe('ReferralRewards Component', () => {
     });
 
     it('should show/hide referred users details on button click', async () => {
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue({
-        publicKey: mockPublicKey,
-      });
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       const referredUser1 = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
@@ -210,20 +204,8 @@ describe('ReferralRewards Component', () => {
       expect(screen.getByText(new RegExp(pubkeyShort.slice(0, 8)))).toBeInTheDocument();
     });
 
-    it('should display error when user account not found', async () => {
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue(null);
-
-      render(<ReferralRewards />);
-
-      await waitFor(() => {
-        expect(screen.getByText('User account not found. Please register first.')).toBeInTheDocument();
-      });
-    });
-
     it('should display error when getReferralStats fails', async () => {
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue({
-        publicKey: mockPublicKey,
-      });
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue(null);
 
@@ -237,9 +219,7 @@ describe('ReferralRewards Component', () => {
     it('should handle claim button click', async () => {
       const alertSpy = jest.spyOn(window, 'alert').mockImplementation();
 
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue({
-        publicKey: mockPublicKey,
-      });
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         referralRewards: new BN(1000000),
@@ -265,9 +245,7 @@ describe('ReferralRewards Component', () => {
     });
 
     it('should allow refreshing data', async () => {
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue({
-        publicKey: mockPublicKey,
-      });
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       const getReferralStatsMock = referralRewardsUtils.getReferralStats as jest.Mock;
       getReferralStatsMock.mockResolvedValue({
@@ -292,9 +270,7 @@ describe('ReferralRewards Component', () => {
     });
 
     it('should display info banner about referral rewards', async () => {
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue({
-        publicKey: mockPublicKey,
-      });
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         referralRewards: new BN(0),
@@ -320,9 +296,7 @@ describe('ReferralRewards Component', () => {
         connected: true,
       });
 
-      (programUtils.loadKeypair as jest.Mock).mockReturnValue({
-        publicKey: mockPublicKey,
-      });
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         referralRewards: new BN(0),
