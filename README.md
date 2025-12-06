@@ -17,6 +17,12 @@ Due to peer dependency conflicts with Solana wallet adapters, install dependenci
 npm install --legacy-peer-deps
 ```
 
+## Environment Setup
+
+The repository is pre-configured for **development mode by default**. A `.env.local` file is included with development-optimized settings (Devnet, SQLite, debug logging).
+
+For detailed environment configuration and production deployment, see [Development Environment Setup](./docs/DEVELOPMENT_ENVIRONMENT.md).
+
 ## Getting Started
 
 First, run the development server:
