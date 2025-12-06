@@ -11,28 +11,51 @@ import {
   MINT_AUTHORITY_SEED,
   USER_ACCOUNT_SEED,
 } from "./constants";
-// PDA Helper Functions
-export function getGlobalStatePDA(): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from(GLOBAL_STATE_SEED)],
-    PROGRAM_ID
-  );
-}
-export function getMintPDA(): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync([Buffer.from(MINT_SEED)], PROGRAM_ID);
-}
-export function getMintAuthorityPDA(): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from(MINT_AUTHORITY_SEED)],
-    PROGRAM_ID
-  );
+
+// ============================================================================
+// PERFORMANCE OPTIMIZATION: Memoized PDA Calculations
+// PDAs are deterministic - cache them to avoid repeated computation
+// ============================================================================
+
+// Cache for PDA computations
+const pdaCache = new Map<string, [PublicKey, number]>();
+
+/**
+ * Get cached PDA or compute and cache it
+ * @param key - Cache key identifier
+ * @param seeds - Seeds for PDA derivation
+ * @returns Cached or newly computed [PublicKey, bump] tuple
+ */
+function getCachedPDA(key: string, seeds: Buffer[]): [PublicKey, number] {
+  if (pdaCache.has(key)) {
+    return pdaCache.get(key)!;
+  }
+  const pda = PublicKey.findProgramAddressSync(seeds, PROGRAM_ID);
+  pdaCache.set(key, pda);
+  return pda;
 }
 
+// PDA Helper Functions with memoization
+export function getGlobalStatePDA(): [PublicKey, number] {
+  return getCachedPDA('global_state', [Buffer.from(GLOBAL_STATE_SEED)]);
+}
+
+export function getMintPDA(): [PublicKey, number] {
+  return getCachedPDA('mint', [Buffer.from(MINT_SEED)]);
+}
+
+export function getMintAuthorityPDA(): [PublicKey, number] {
+  return getCachedPDA('mint_authority', [Buffer.from(MINT_AUTHORITY_SEED)]);
+}
+
+/**
+ * Get user account PDA derived from authority (wallet public key)
+ * @param authority - The wallet's public key
+ * @returns PDA and bump seed
+ */
 export function getUserAccountPDA(authority: PublicKey): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from(USER_ACCOUNT_SEED), authority.toBuffer()],
-    PROGRAM_ID
-  );
+  const cacheKey = `user_account:${authority.toBase58()}`;
+  return getCachedPDA(cacheKey, [Buffer.from(USER_ACCOUNT_SEED), authority.toBuffer()]);
 }
 
 // Create Anchor Program Instance
