@@ -12,9 +12,13 @@
 
 if (typeof window !== 'undefined' && typeof window.process === 'undefined') {
   // Define a minimal process object in the browser
+  // Default to 'development' to ensure proper dev tooling and warnings
+  // Check if we're running in a Node.js environment first (e.g., during tests)
+  const nodeEnv = typeof process !== 'undefined' && process.env ? process.env.NODE_ENV : undefined;
+  
   (window as any).process = {
     env: {
-      NODE_ENV: process.env.NODE_ENV || 'production',
+      NODE_ENV: nodeEnv || 'development',
     },
   };
 }

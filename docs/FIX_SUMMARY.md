@@ -51,7 +51,7 @@ All wallet components verified to be client-safe:
 - Tests shim defines window.process
 - Tests shim defines NODE_ENV
 - Tests shim doesn't override existing process
-- Tests fallback to production mode
+- Tests fallback to development mode
 
 ## Verification Results
 
