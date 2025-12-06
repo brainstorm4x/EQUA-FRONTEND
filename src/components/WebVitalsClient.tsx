@@ -41,8 +41,13 @@ export function WebVitalsClient() {
       const clsObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           // Only count layout shifts that weren't caused by user input
-          if (!(entry as any).hadRecentInput && (entry as any).value) {
-            cls += (entry as any).value;
+          // Type cast to access layout shift specific properties
+          const layoutShiftEntry = entry as PerformanceEntry & {
+            hadRecentInput?: boolean;
+            value?: number;
+          };
+          if (!layoutShiftEntry.hadRecentInput && layoutShiftEntry.value) {
+            cls += layoutShiftEntry.value;
           }
         }
       });
@@ -54,8 +59,11 @@ export function WebVitalsClient() {
         clsObserver.disconnect();
       };
     } catch (error) {
-      // Silently fail if PerformanceObserver setup fails
-      // This is optional tracking, shouldn't break the app
+      // Log error in development for debugging, but don't break the app
+      if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
+        console.warn('[WebVital] Failed to initialize performance observers:', error);
+      }
+      // Silently fail in production - this is optional tracking
     }
   }, []);
 
