@@ -171,8 +171,7 @@ export type EquaToken = {
       "accounts": [
         {
           "name": "userAccount",
-          "writable": true,
-          "signer": true
+          "writable": true
         },
         {
           "name": "authority",

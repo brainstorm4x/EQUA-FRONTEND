@@ -165,8 +165,7 @@
       "accounts": [
         {
           "name": "user_account",
-          "writable": true,
-          "signer": true
+          "writable": true
         },
         {
           "name": "authority",

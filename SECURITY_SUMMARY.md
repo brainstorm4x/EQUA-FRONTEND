@@ -46,22 +46,22 @@
 ✅ **Input validation**: Existing validation logic unchanged and verified  
 ✅ **Error handling**: Added proper error type for mint cooldown  
 
-### Potential Security Considerations
+### IDL Correction
 
-#### Known IDL Discrepancy (Documented, Non-Critical)
-**Issue**: IDL shows `user_account` as `signer: true` but code treats it as PDA
+#### IDL Signer Property Fixed (RESOLVED)
+**Issue**: IDL incorrectly showed `user_account` with `"signer": true` in `initialize_user` instruction
 
-**Security Assessment**: ✅ NOT A VULNERABILITY
-- Frontend implementation is consistent throughout codebase
-- PDA derivation properly uses correct seeds
-- All tests pass, indicating correct on-chain interaction
-- This appears to be IDL documentation discrepancy, not security issue
-- Code comments confirm intentional PDA usage
+**Security Assessment**: ✅ CORRECTED - No security vulnerability
+- IDL has been updated to remove incorrect `"signer": true` property
+- Per Anchor v0.29.0+ conventions: omitted `signer` property implies `signer: false`
+- `user_account` is a PDA (not a signer), which is now correctly represented in IDL
+- Frontend implementation was already correct (treating as PDA)
+- This was an IDL documentation error, not a functional or security issue
 
-**Mitigation**: 
-- Discrepancy documented in SYNC_SUMMARY.md
-- Recommendation to update IDL in backend for clarity
-- No action required on frontend (implementation is correct)
+**Fix Applied**: 
+- Removed `"signer": true` from `user_account` in all IDL files
+- Updated TypeScript type definitions to match
+- Documentation updated to reflect Anchor v0.29.0+ conventions
 
 ### Testing Coverage
 - ✅ 388 tests passing (100% pass rate)

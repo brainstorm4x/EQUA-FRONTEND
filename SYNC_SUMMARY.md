@@ -111,28 +111,32 @@
    - ✅ Countdown timer displays correctly
    - ✅ Integration in `src/services/equa.service.ts`
 
-### Known Discrepancy (Non-Blocking)
+### Known Discrepancy (RESOLVED)
 
-**Issue**: IDL shows `user_account` as `signer: true` in `initialize_user` instruction
+**Previous Issue**: IDL incorrectly showed `user_account` as `"signer": true` in `initialize_user` instruction
 
-**Frontend Implementation**: Treats `user_account` as PDA (non-signer)
+**Resolution**: 
+- As per Anchor v0.29.0+ conventions, `"signer": false` is now implied when the `signer` property is omitted
+- The IDL has been corrected to remove `"signer": true` from `user_account` (it's a PDA, not a signer)
+- Frontend implementation was already correct (treating `user_account` as PDA)
+- IDL now accurately reflects that `user_account` is NOT a signer (property omitted = `signer: false` implied)
+
+**Technical Details**:
 ```typescript
-// From lib/program.ts line 330
-{ pubkey: userAccount, isSigner: false, isWritable: true }  // PDA - not a signer
+// CORRECT (after fix):
+{
+  "name": "user_account",
+  "writable": true
+  // No "signer" property = signer: false implied (PDA)
+}
+
+// INCORRECT (before fix):
+{
+  "name": "user_account", 
+  "writable": true,
+  "signer": true  // ❌ Wrong - user_account is a PDA
+}
 ```
-
-**Assessment**: 
-- Frontend implementation appears correct based on:
-  - Code comments: "user_account is now a PDA derived from authority"
-  - PDA derivation function exists: `getUserAccountPDA(authority)`
-  - Seeds match backend pattern: `[b"user-account", authority]`
-  - No `getOrCreateKeypair()` usage in current registration flow
-  - All tests passing with PDA implementation
-
-**Recommendation**: 
-- IDL may need update in backend to mark `user_account` as PDA instead of signer
-- OR this is a known discrepancy where backend accepts both patterns
-- Frontend code is consistent and working correctly
 
 ## Files Modified
 
