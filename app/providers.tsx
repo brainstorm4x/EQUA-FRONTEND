@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletProvider } from '@/components/WalletProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { WebVitalsClient } from '@/components/WebVitalsClient';
 import { useState } from 'react';
 
 // Import process shim to execute it
@@ -18,6 +19,7 @@ interface ProvidersProps {
  * This is a client component that combines QueryClient and Wallet providers.
  * 
  * The process shim is imported here to ensure it runs before any other client code.
+ * WebVitalsClient is rendered after all providers to ensure safe access to process.env.
  */
 export function Providers({ children }: ProvidersProps) {
   // Create QueryClient instance once on mount using useState
@@ -47,7 +49,10 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <WalletProvider>{children}</WalletProvider>
+        <WalletProvider>
+          {children}
+          <WebVitalsClient />
+        </WalletProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

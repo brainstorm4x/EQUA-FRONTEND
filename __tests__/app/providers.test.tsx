@@ -12,6 +12,11 @@ jest.mock('@/components/WalletProvider', () => ({
   WalletProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="wallet-provider">{children}</div>
 }));
 
+// Mock WebVitalsClient since it's not relevant for provider tests
+jest.mock('@/components/WebVitalsClient', () => ({
+  WebVitalsClient: () => null
+}));
+
 // Test component that uses useQuery to verify the provider works
 function TestComponent() {
   const { data } = useQuery({
