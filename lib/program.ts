@@ -9,6 +9,7 @@ import {
   GLOBAL_STATE_SEED,
   MINT_SEED,
   MINT_AUTHORITY_SEED,
+  USER_ACCOUNT_SEED,
 } from "./constants";
 // PDA Helper Functions
 export function getGlobalStatePDA(): [PublicKey, number] {
@@ -23,6 +24,13 @@ export function getMintPDA(): [PublicKey, number] {
 export function getMintAuthorityPDA(): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [Buffer.from(MINT_AUTHORITY_SEED)],
+    PROGRAM_ID
+  );
+}
+
+export function getUserAccountPDA(authority: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from(USER_ACCOUNT_SEED), authority.toBuffer()],
     PROGRAM_ID
   );
 }
@@ -211,12 +219,12 @@ export function createInitializeUserInstruction(
     lockedUntilBN.toArrayLike(Buffer, 'le', 8),
   ]);
 
-  // ✅ FIX: The on-chain program requires referral_account to ALWAYS be writable per IDL
-  // Per Solana/Anchor design: referral_account must be a real account that can be marked writable
-  // The contract will handle the case where user refers themselves (no actual referrer)
+  // ✅ CRITICAL FIX: user_account is now a PDA derived from authority
+  // PDAs cannot sign transactions, so isSigner must be false
+  // The on-chain program expects: seeds = [b"user-account", authority.key().as_ref()]
   return new TransactionInstruction({
     keys: [
-      { pubkey: userAccount, isSigner: true, isWritable: true },
+      { pubkey: userAccount, isSigner: false, isWritable: true },  // ✅ PDA - not a signer
       { pubkey: authority, isSigner: true, isWritable: true },
       { pubkey: globalState, isSigner: false, isWritable: true },
       { pubkey: referralAccount, isSigner: false, isWritable: true },  // ✅ Always writable per IDL requirement

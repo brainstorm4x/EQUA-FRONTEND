@@ -18,3 +18,4 @@ export const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT || 'https://api
 export const GLOBAL_STATE_SEED = 'global-state';
 export const MINT_SEED = 'equa-mint';
 export const MINT_AUTHORITY_SEED = 'mint-authority';
+export const USER_ACCOUNT_SEED = 'user-account';

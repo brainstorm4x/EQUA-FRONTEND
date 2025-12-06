@@ -3,7 +3,7 @@
 import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import Link from 'next/link';
-import { isUserRegistered, loadKeypair } from '@/lib/program';
+import { isUserRegistered, getUserAccountPDA } from '@/lib/program';
 
 interface GetStartedButtonProps {
   className?: string;
@@ -58,16 +58,12 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
     try {
       let registered = false;
       
-      // Check if there's an existing keypair in localStorage
-      const existingKeypair = loadKeypair();
+      // Derive the user account PDA from the connected wallet's public key
+      const [userAccountPDA] = getUserAccountPDA(publicKey);
       
-      if (existingKeypair) {
-        // Check if the keypair's user account is registered on-chain
-        registered = await isUserRegistered(connection, existingKeypair.publicKey);
-        console.log(`✓ On-chain check via keypair: ${registered ? 'registered' : 'not registered'}`);
-      } else {
-        console.log('✓ No local keypair found - user not registered');
-      }
+      // Check if the PDA account exists on-chain
+      registered = await isUserRegistered(connection, userAccountPDA);
+      console.log(`✓ On-chain check via PDA (${userAccountPDA.toBase58()}): ${registered ? 'registered' : 'not registered'}`);
       
       setIsRegistered(registered);
       

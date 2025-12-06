@@ -1,6 +1,6 @@
 'use client';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey, Keypair } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { Program } from '@coral-xyz/anchor';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
@@ -8,11 +8,11 @@ createProgram,
 getGlobalStatePDA,
 getMintPDA,
 getMintAuthorityPDA,
+getUserAccountPDA,
 isUserRegistered,
 getUserBalance,
 getSPLTokenBalance,
 getGlobalState,
-getOrCreateKeypair,
 } from '@/lib/program';
 
 // ============================================================================
@@ -47,7 +47,7 @@ export function useProgram() {
   const { connection } = useConnection();
   const wallet = useWallet();
   const { publicKey } = wallet;
-  const [userAccountKeypair, setUserAccountKeypair] = useState<Keypair | null>(null);
+  const [userAccountPDA, setUserAccountPDA] = useState<PublicKey | null>(null);
   const [program, setProgram] = useState<Program | null>(null);
   const [isProgramLoading, setIsProgramLoading] = useState(false);
   const [programError, setProgramError] = useState<string | null>(null);
@@ -58,19 +58,22 @@ export function useProgram() {
   // Track previous wallet key to detect changes
   const prevWalletKeyRef = useRef<string | null>(null);
 
-  // Initialize user account keypair (runs once on mount)
+  // Derive user account PDA when wallet connects
   useEffect(() => {
     isMountedRef.current = true;
     
-    if (typeof window !== 'undefined') {
-      const keypair = getOrCreateKeypair();
-      setUserAccountKeypair(keypair);
+    if (publicKey) {
+      const [pda] = getUserAccountPDA(publicKey);
+      setUserAccountPDA(pda);
+      console.log('✅ Derived user account PDA:', pda.toBase58(), 'for authority:', publicKey.toBase58());
+    } else {
+      setUserAccountPDA(null);
     }
     
     return () => {
       isMountedRef.current = false;
     };
-  }, []);
+  }, [publicKey]);
 
   // Function to initialize the program (can be called for retry)
   const initializeProgram = useCallback(async () => {
@@ -157,10 +160,10 @@ export function useProgram() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- program excluded to prevent infinite loop; connection handled via initializeProgram dependency
   }, [wallet.publicKey, wallet.signTransaction, initializeProgram]);
 
-  // Compute isReady based on both keypair and program initialization
+  // Compute isReady based on both PDA and program initialization
   const isReady = useMemo(() => {
-    return userAccountKeypair !== null && program !== null;
-  }, [userAccountKeypair, program]);
+    return userAccountPDA !== null && program !== null;
+  }, [userAccountPDA, program]);
 
   // Memoize PDAs - these are deterministic and never change
   const globalStatePDA = useMemo(() => getGlobalStatePDA()[0], []);
@@ -199,7 +202,7 @@ export function useProgram() {
     connection,
     wallet,
     publicKey,
-    userAccountKeypair,
+    userAccountPDA,
     isReady,
     isProgramLoading,
     programError,
@@ -216,7 +219,7 @@ export function useProgram() {
     connection,
     wallet,
     publicKey,
-    userAccountKeypair,
+    userAccountPDA,
     isReady,
     isProgramLoading,
     programError,
