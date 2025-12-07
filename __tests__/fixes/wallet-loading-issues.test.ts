@@ -63,8 +63,9 @@ describe('Fix verification tests', () => {
       // Fill with discriminator (8 bytes)
       validBuffer.fill(0, 0, 8);
       
-      // Fill with test public keys (32 bytes each)
-      const testKey = Buffer.from('11111111111111111111111111111111');
+      // Create a valid 32-byte public key buffer (not base58 encoded)
+      // Using the system program ID as a known valid key
+      const testKey = new PublicKey('11111111111111111111111111111111').toBuffer();
       testKey.copy(validBuffer, 8); // authority
       testKey.copy(validBuffer, 40); // referral
       testKey.copy(validBuffer, 72); // token_account
