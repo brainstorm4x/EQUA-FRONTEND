@@ -71,7 +71,8 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
   try {
     // Check minimum length
     if (accountData.length < 144) {
-      console.error('Account data too short to be a valid UserAccount');
+      // This is a normal case when the user account doesn't exist yet (not registered)
+      // No need to log an error
       return null;
     }
 

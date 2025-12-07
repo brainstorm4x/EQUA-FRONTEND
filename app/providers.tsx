@@ -2,13 +2,19 @@
 
 import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WalletProvider } from '@/components/WalletProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { WebVitalsClient } from '@/components/WebVitalsClient';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 
 // Import process shim to execute it
 import '@/lib/clientProcessShim';
+
+// Dynamically import WalletProvider with no SSR to prevent hydration issues
+const WalletProvider = dynamic(
+  () => import('@/components/WalletProvider').then((mod) => ({ default: mod.WalletProvider })),
+  { ssr: false }
+);
 
 interface ProvidersProps {
   children: ReactNode;
