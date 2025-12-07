@@ -3,13 +3,21 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { Providers } from '../../app/providers';
 import { useQuery } from '@tanstack/react-query';
 
-// Mock the WalletProvider since it has complex wallet dependencies
-jest.mock('@/components/WalletProvider', () => ({
-  WalletProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="wallet-provider">{children}</div>
+// Mock the dynamic import of WalletProvider
+jest.mock('next/dynamic', () => ({
+  __esModule: true,
+  default: (importFunc: any, options: any) => {
+    // Return a component that renders the mocked WalletProvider
+    const Component = ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="wallet-provider">{children}</div>
+    );
+    Component.displayName = 'DynamicWalletProvider';
+    return Component;
+  }
 }));
 
 // Mock WebVitalsClient since it's not relevant for provider tests
@@ -28,14 +36,17 @@ function TestComponent() {
 }
 
 describe('Providers', () => {
-  it('should render children', () => {
+  it('should render children', async () => {
     render(
       <Providers>
         <div data-testid="child">Test Child</div>
       </Providers>
     );
     
-    expect(screen.getByTestId('child')).toBeInTheDocument();
+    // Wait for dynamic import to resolve
+    await waitFor(() => {
+      expect(screen.getByTestId('child')).toBeInTheDocument();
+    });
     expect(screen.getByText('Test Child')).toBeInTheDocument();
   });
 
