@@ -154,7 +154,8 @@ export function getCacheTTL(): number {
 // ============================================================================
 
 // Pyth Hermes API endpoint (works without SDK)
-const PYTH_HERMES_API = 'https://hermes.pyth.network/api/latest_price_feeds';
+// Correct endpoint is /api/get_latest_price_feeds (not /api/latest_price_feeds)
+const PYTH_HERMES_API = 'https://hermes.pyth.network/api/get_latest_price_feeds';
 
 /**
  * Fetches prices from Pyth Network using the Hermes API
