@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useProgram } from '@/hooks/useProgram';
-import { WalletButton } from '@/components/WalletButton';
 import { Logo } from '@/components/Logo';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { 
@@ -32,6 +32,12 @@ import {
   recordRegisteredKey,
 } from '@/utils/registrationGuard';
 import { isUserAccountRegisteredOnchain } from '@/utils/onchainRegistration';
+
+// Dynamically import WalletButton with no SSR
+const WalletButton = dynamic(
+  () => import('@/components/WalletButton').then((mod) => ({ default: mod.WalletButton })),
+  { ssr: false }
+);
 
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
