@@ -12,6 +12,9 @@ import {
   USER_ACCOUNT_SEED,
 } from "./constants";
 
+// Debug flag for instruction building logs (only enabled in development)
+const DEBUG_INSTRUCTIONS = process.env.NODE_ENV === 'development';
+
 // ============================================================================
 // PERFORMANCE OPTIMIZATION: Memoized PDA Calculations
 // PDAs are deterministic - cache them to avoid repeated computation

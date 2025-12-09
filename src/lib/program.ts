@@ -12,6 +12,9 @@ import {
   USER_ACCOUNT_SEED,
 } from "./constants";
 
+// Debug flag for instruction building logs
+const DEBUG_INSTRUCTIONS = process.env.NODE_ENV === 'development';
+
 // ============================================================================
 // PERFORMANCE OPTIMIZATION: Memoized PDA Calculations
 // PDAs are deterministic - cache them to avoid repeated computation
@@ -357,10 +360,12 @@ export function createMintEquaInstruction(
     amountBN.toArrayLike(Buffer, 'le', 8),
   ]);
 
-  console.log('🔧 Building mint_equa instruction:');
-  console.log('  - Discriminator:', Array.from(discriminator).join(', '));
-  console.log('  - Amount (raw base units):', amount);
-  console.log('  - Amount BN:', amountBN.toString());
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Building mint_equa instruction:');
+    console.log('  - Discriminator:', Array.from(discriminator).join(', '));
+    console.log('  - Amount (raw base units):', amount);
+    console.log('  - Amount BN:', amountBN.toString());
+  }
   
   const instruction = new TransactionInstruction({
     keys: [
@@ -371,10 +376,12 @@ export function createMintEquaInstruction(
     data,
   });
   
-  console.log('🔧 Instruction account metas:');
-  instruction.keys.forEach((meta, idx) => {
-    console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
-  });
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Instruction account metas:');
+    instruction.keys.forEach((meta, idx) => {
+      console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
+    });
+  }
 
   return instruction;
 }
@@ -398,10 +405,12 @@ export function createMintEquaTokensInstruction(
     amountBN.toArrayLike(Buffer, 'le', 8),
   ]);
 
-  console.log('🔧 Building mint_equa_tokens instruction:');
-  console.log('  - Discriminator:', Array.from(discriminator).join(', '));
-  console.log('  - Amount (raw base units):', amount);
-  console.log('  - Amount BN:', amountBN.toString());
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Building mint_equa_tokens instruction:');
+    console.log('  - Discriminator:', Array.from(discriminator).join(', '));
+    console.log('  - Amount (raw base units):', amount);
+    console.log('  - Amount BN:', amountBN.toString());
+  }
   
   const instruction = new TransactionInstruction({
     keys: [
@@ -416,10 +425,12 @@ export function createMintEquaTokensInstruction(
     data,
   });
   
-  console.log('🔧 Instruction account metas:');
-  instruction.keys.forEach((meta, idx) => {
-    console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
-  });
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Instruction account metas:');
+    instruction.keys.forEach((meta, idx) => {
+      console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
+    });
+  }
 
   return instruction;
 }

@@ -218,7 +218,8 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
       const symbol = feedIdToSymbol[feedId];
       
       if (symbol && feed.price) {
-        // Pyth V2 API: price is already in the correct format (price * 10^expo)
+        // Pyth V2 API: prices need to be scaled by the exponent
+        // feed.price.price is the raw price, feed.price.expo is the exponent (usually negative)
         const price = parseFloat(feed.price.price) * Math.pow(10, feed.price.expo);
         prices[symbol] = {
           symbol,
