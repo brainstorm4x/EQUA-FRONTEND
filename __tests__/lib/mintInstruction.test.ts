@@ -4,7 +4,7 @@
  */
 
 import { PublicKey } from '@solana/web3.js';
-import { createMintEquaInstruction } from '@/lib/program';
+import { createMintEquaInstruction, createMintTokensInstruction, TOKEN_PROGRAM_ID } from '@/lib/program';
 
 describe('createMintEquaInstruction', () => {
   // Mock public keys for testing (valid base58-encoded addresses)
@@ -84,6 +84,151 @@ describe('createMintEquaInstruction', () => {
       const instruction = createMintEquaInstruction(
         userAccount,
         authority,
+        amount
+      );
+
+      // Verify instruction data length: 8 (discriminator) + 8 (amount u64)
+      expect(instruction.data.length).toBe(16);
+      
+      // Verify amount encoding
+      const amountBytes = instruction.data.slice(8, 16);
+      const buffer = Buffer.from(amountBytes);
+      let decodedAmount = 0;
+      for (let i = 0; i < 8; i++) {
+        decodedAmount += buffer[i] * Math.pow(256, i);
+      }
+      expect(decodedAmount).toBe(amount);
+    });
+  });
+});
+
+describe('createMintTokensInstruction', () => {
+  // Mock public keys for testing (valid base58-encoded addresses)
+  const userAccount = new PublicKey('C3r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const userMetadata = new PublicKey('D4r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const userTokenAccount = new PublicKey('E5r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const mint = new PublicKey('F6r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const mintAuthority = new PublicKey('H8r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const authority = new PublicKey('G7r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+
+  it('should create instruction with correct discriminator for mint_tokens', () => {
+    const amount = 10_000_000_000; // 10,000 EQUA in base units (6 decimals)
+    
+    const instruction = createMintTokensInstruction(
+      userAccount,
+      userMetadata,
+      userTokenAccount,
+      mint,
+      mintAuthority,
+      authority,
+      TOKEN_PROGRAM_ID,
+      amount
+    );
+
+    // Verify discriminator bytes match backend IDL for mint_tokens
+    const expectedDiscriminator = Buffer.from([59, 132, 24, 246, 122, 39, 8, 243]);
+    const actualDiscriminator = instruction.data.slice(0, 8);
+    
+    expect(actualDiscriminator).toEqual(expectedDiscriminator);
+  });
+
+  it('should encode amount correctly as u64 little-endian', () => {
+    const amount = 10_000_000_000; // 10,000 EQUA in base units
+    
+    const instruction = createMintTokensInstruction(
+      userAccount,
+      userMetadata,
+      userTokenAccount,
+      mint,
+      mintAuthority,
+      authority,
+      TOKEN_PROGRAM_ID,
+      amount
+    );
+
+    // Skip discriminator (8 bytes) and read amount (8 bytes)
+    const amountBytes = instruction.data.slice(8, 16);
+    
+    // Convert to number from little-endian
+    const buffer = Buffer.from(amountBytes);
+    let decodedAmount = 0;
+    for (let i = 0; i < 8; i++) {
+      decodedAmount += buffer[i] * Math.pow(256, i);
+    }
+    
+    expect(decodedAmount).toBe(amount);
+  });
+
+  it('should have correct 7 account metas in order per backend IDL', () => {
+    const amount = 1_000_000; // 1 EQUA
+    
+    const instruction = createMintTokensInstruction(
+      userAccount,
+      userMetadata,
+      userTokenAccount,
+      mint,
+      mintAuthority,
+      authority,
+      TOKEN_PROGRAM_ID,
+      amount
+    );
+
+    // Verify account order and flags match backend IDL for mint_tokens
+    expect(instruction.keys).toHaveLength(7);
+    
+    // 0. user_account - writable, not signer
+    expect(instruction.keys[0].pubkey).toEqual(userAccount);
+    expect(instruction.keys[0].isWritable).toBe(true);
+    expect(instruction.keys[0].isSigner).toBe(false);
+    
+    // 1. user_metadata - writable, not signer
+    expect(instruction.keys[1].pubkey).toEqual(userMetadata);
+    expect(instruction.keys[1].isWritable).toBe(true);
+    expect(instruction.keys[1].isSigner).toBe(false);
+    
+    // 2. user_token_account - writable, not signer
+    expect(instruction.keys[2].pubkey).toEqual(userTokenAccount);
+    expect(instruction.keys[2].isWritable).toBe(true);
+    expect(instruction.keys[2].isSigner).toBe(false);
+    
+    // 3. mint - writable, not signer
+    expect(instruction.keys[3].pubkey).toEqual(mint);
+    expect(instruction.keys[3].isWritable).toBe(true);
+    expect(instruction.keys[3].isSigner).toBe(false);
+    
+    // 4. mint_authority - not writable, not signer
+    expect(instruction.keys[4].pubkey).toEqual(mintAuthority);
+    expect(instruction.keys[4].isWritable).toBe(false);
+    expect(instruction.keys[4].isSigner).toBe(false);
+    
+    // 5. authority - not writable, signer
+    expect(instruction.keys[5].pubkey).toEqual(authority);
+    expect(instruction.keys[5].isWritable).toBe(false);
+    expect(instruction.keys[5].isSigner).toBe(true);
+    
+    // 6. token_program - not writable, not signer
+    expect(instruction.keys[6].pubkey).toEqual(TOKEN_PROGRAM_ID);
+    expect(instruction.keys[6].isWritable).toBe(false);
+    expect(instruction.keys[6].isSigner).toBe(false);
+  });
+
+  it('should handle different amount values correctly', () => {
+    const testCases = [
+      100_000_000, // 100 EQUA (standard user)
+      1_000_000_000, // 1,000 EQUA (community builder)
+      10_000_000_000, // 10,000 EQUA (pioneer)
+      100_000_000_000, // 100,000 EQUA (early adopter)
+    ];
+
+    testCases.forEach(amount => {
+      const instruction = createMintTokensInstruction(
+        userAccount,
+        userMetadata,
+        userTokenAccount,
+        mint,
+        mintAuthority,
+        authority,
+        TOKEN_PROGRAM_ID,
         amount
       );
 

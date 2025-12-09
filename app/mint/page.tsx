@@ -14,6 +14,8 @@ import {
   TOKEN_PROGRAM_ID,
   createInitializeUserInstruction,
   createMintEquaInstruction,
+  createMintTokensInstruction,
+  getUserMetadataPDA,
   isUserRegistered,
 } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
@@ -735,6 +737,35 @@ export default function MintPage() {
       }
       console.log('✅ Global state verified');
       
+      // Check for legacy user account (136 bytes vs current 144 bytes)
+      console.log('🔍 Verifying user account size...');
+      const userAccountInfo = await connection.getAccountInfo(userAccountPDA);
+      if (!userAccountInfo) {
+        throw new Error('User account not found. Please register first.');
+      }
+      
+      const MIN_USER_ACCOUNT_SIZE = 144;
+      const LEGACY_USER_ACCOUNT_SIZE = 136;
+      
+      if (userAccountInfo.data.length < MIN_USER_ACCOUNT_SIZE) {
+        console.error('❌ Legacy user account detected:', {
+          actualSize: userAccountInfo.data.length,
+          requiredSize: MIN_USER_ACCOUNT_SIZE,
+          isLegacy: userAccountInfo.data.length === LEGACY_USER_ACCOUNT_SIZE
+        });
+        
+        throw new Error(
+          `⚠️ Legacy Account Detected\n\n` +
+          `Your Devnet account was created with an older version of the EQUA program and cannot be used for minting.\n\n` +
+          `Account size: ${userAccountInfo.data.length} bytes (requires ${MIN_USER_ACCOUNT_SIZE} bytes)\n\n` +
+          `To continue:\n` +
+          `1. Use a different wallet that hasn't been registered yet, or\n` +
+          `2. Contact support for account migration assistance\n\n` +
+          `This is expected on Devnet during development. Your tokens and data are safe.`
+        );
+      }
+      console.log('✅ User account size verified:', userAccountInfo.data.length, 'bytes');
+      
       const userTokenAccount = getAssociatedTokenAddressSync(
         mintPDA,
         publicKey,
@@ -808,7 +839,7 @@ export default function MintPage() {
         console.log('✅ Token account already exists');
       }
 
-      // ✅ Now mint tokens using mint_equa instruction
+      // ✅ Now mint tokens using mint_tokens instruction (7-account version)
       // Calculate mint amount based on user tier (EQUA has 6 decimals)
       const mintUserNumber = userNumber > 0 ? userNumber : Math.max(totalUsers || 0, 1);
       const userTier = getUserMintTier(mintUserNumber);
@@ -817,13 +848,29 @@ export default function MintPage() {
       
       console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${mintUserNumber}`);
       
-      // Build the mint_equa instruction (simplified daily minting)
-      // This instruction internally handles all the token minting logic
-      const mintInstruction = createMintEquaInstruction(
+      // Derive user metadata PDA
+      const [userMetadataPDA] = getUserMetadataPDA(publicKey);
+      
+      // Build the mint_tokens instruction (7-account version for deployed program)
+      const mintInstruction = createMintTokensInstruction(
         userAccountPDA,
+        userMetadataPDA,
+        userTokenAccount,
+        mintPDA,
+        mintAuthority,
         publicKey,
+        TOKEN_PROGRAM_ID,
         mintAmount
       );
+      
+      console.log('📝 Mint instruction accounts:');
+      console.log('  0. user_account:', userAccountPDA.toBase58());
+      console.log('  1. user_metadata:', userMetadataPDA.toBase58());
+      console.log('  2. user_token_account:', userTokenAccount.toBase58());
+      console.log('  3. mint:', mintPDA.toBase58());
+      console.log('  4. mint_authority:', mintAuthority.toBase58());
+      console.log('  5. authority:', publicKey.toBase58());
+      console.log('  6. token_program:', TOKEN_PROGRAM_ID.toBase58());
       
       // Create and send transaction
       const transaction = new Transaction().add(mintInstruction);

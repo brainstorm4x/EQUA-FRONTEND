@@ -10,6 +10,7 @@ import {
   MINT_SEED,
   MINT_AUTHORITY_SEED,
   USER_ACCOUNT_SEED,
+  USER_META_SEED,
 } from "./constants";
 
 // Debug flag for instruction building logs
@@ -59,6 +60,16 @@ export function getMintAuthorityPDA(): [PublicKey, number] {
 export function getUserAccountPDA(authority: PublicKey): [PublicKey, number] {
   const cacheKey = `user_account:${authority.toBase58()}`;
   return getCachedPDA(cacheKey, [Buffer.from(USER_ACCOUNT_SEED), authority.toBuffer()]);
+}
+
+/**
+ * Get user metadata PDA derived from authority (wallet public key)
+ * @param authority - The wallet's public key
+ * @returns PDA and bump seed
+ */
+export function getUserMetadataPDA(authority: PublicKey): [PublicKey, number] {
+  const cacheKey = `user_metadata:${authority.toBase58()}`;
+  return getCachedPDA(cacheKey, [Buffer.from(USER_META_SEED), authority.toBuffer()]);
 }
 
 // ============================================================================
@@ -420,6 +431,58 @@ export function createMintEquaTokensInstruction(
       { pubkey: mintAuthority, isSigner: false, isWritable: false },
       { pubkey: authority, isSigner: true, isWritable: false },
       { pubkey: tokenProgram, isSigner: false, isWritable: false },
+    ],
+    programId: PROGRAM_ID,
+    data,
+  });
+  
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Instruction account metas:');
+    instruction.keys.forEach((meta, idx) => {
+      console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
+    });
+  }
+
+  return instruction;
+}
+
+// ✅ Create mint_tokens instruction (7-account version for deployed program)
+// This is the correct instruction for daily EQUA minting on the deployed program
+export function createMintTokensInstruction(
+  userAccount: PublicKey,
+  userMetadata: PublicKey,
+  userTokenAccount: PublicKey,
+  mint: PublicKey,
+  mintAuthority: PublicKey,
+  authority: PublicKey,
+  tokenProgram: PublicKey,
+  amount: number
+): TransactionInstruction {
+  // Discriminator from backend IDL for mint_tokens instruction
+  const discriminator = Buffer.from([59, 132, 24, 246, 122, 39, 8, 243]);
+  const amountBN = new BN(amount);
+  
+  const data = Buffer.concat([
+    discriminator,
+    amountBN.toArrayLike(Buffer, 'le', 8),
+  ]);
+
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Building mint_tokens instruction:');
+    console.log('  - Discriminator:', Array.from(discriminator).join(', '));
+    console.log('  - Amount (raw base units):', amount);
+    console.log('  - Amount BN:', amountBN.toString());
+  }
+  
+  const instruction = new TransactionInstruction({
+    keys: [
+      { pubkey: userAccount, isSigner: false, isWritable: true },      // 0. user_account
+      { pubkey: userMetadata, isSigner: false, isWritable: true },     // 1. user_metadata
+      { pubkey: userTokenAccount, isSigner: false, isWritable: true }, // 2. user_token_account
+      { pubkey: mint, isSigner: false, isWritable: true },             // 3. mint
+      { pubkey: mintAuthority, isSigner: false, isWritable: false },   // 4. mint_authority
+      { pubkey: authority, isSigner: true, isWritable: false },        // 5. authority
+      { pubkey: tokenProgram, isSigner: false, isWritable: false },    // 6. token_program
     ],
     programId: PROGRAM_ID,
     data,
