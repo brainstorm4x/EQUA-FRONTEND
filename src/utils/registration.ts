@@ -32,8 +32,7 @@ export const ELEVATED_MINT_TIERS: ElevatedMintTier[] = [
   { minUser: 100001, maxUser: 1000000, equaPerAttempt: 0.1, elevatedAttempts: 0 },  // Users #100001-1000000: 0.1 EQUA/day
   { minUser: 1000001, maxUser: 10000000, equaPerAttempt: 0.01, elevatedAttempts: 0 }, // Users #1000001-10000000: 0.01 EQUA/day
   { minUser: 10000001, maxUser: 100000000, equaPerAttempt: 0.001, elevatedAttempts: 0 }, // Users #10000001-100000000: 0.001 EQUA/day
-  { minUser: 100000001, maxUser: 1000000000, equaPerAttempt: 0.0005, elevatedAttempts: 0 }, // Users #100000001-1000000000: 0.0005 EQUA/day
-  { minUser: 1000000001, maxUser: Infinity, equaPerAttempt: 0.0005, elevatedAttempts: 0 }, // Users #1000000001+: 0.0005 EQUA/day (continue at same rate)
+  { minUser: 100000001, maxUser: Infinity, equaPerAttempt: 0.0005, elevatedAttempts: 0 }, // Users #100000001+: 0.0005 EQUA/day (continues at this rate)
 ];
 
 /**

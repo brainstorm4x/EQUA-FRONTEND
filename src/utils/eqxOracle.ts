@@ -219,7 +219,9 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
       
       if (symbol && feed.price) {
         // Pyth V2 API: prices need to be scaled by the exponent
-        // feed.price.price is the raw price, feed.price.expo is the exponent (usually negative)
+        // feed.price.price is the raw price value
+        // feed.price.expo is the exponent (usually negative, e.g., -8 for USD prices)
+        // Example: raw price 123456 with expo -2 becomes 1234.56
         const price = parseFloat(feed.price.price) * Math.pow(10, feed.price.expo);
         prices[symbol] = {
           symbol,
