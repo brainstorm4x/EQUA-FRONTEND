@@ -13,11 +13,12 @@ import {
 import { 
   TOKEN_PROGRAM_ID,
   createInitializeUserInstruction,
+  createMintEquaInstruction,
   isUserRegistered,
 } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
-import { formatEquaBalance } from '@/utils/tokenFormat';
+import { formatEquaBalance, decimalToRaw } from '@/utils/tokenFormat';
 import { RegistrationForm, RegistrationMetadata } from '@/components/RegistrationForm';
 import { MintTierCard } from '@/components/MintTierCard';
 import { 
@@ -41,9 +42,6 @@ const WalletButton = dynamic(
 
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
-
-// EQUA decimal multiplier (9 decimals)
-const EQUA_BASE_UNITS_MULTIPLIER = 1_000_000_000;
 
 // Default EQUA per mint for standard users (100 EQUA) - used as fallback
 const DEFAULT_EQUA_PER_MINT = 100;
@@ -317,7 +315,7 @@ export default function MintPage() {
             // Get the user's tier to know how many EQUA they get per mint
             const userTier = getUserMintTier(currentUserNumber);
             const equaPerMint = userTier?.equaPerAttempt || DEFAULT_EQUA_PER_MINT;
-            const baseUnitsPerMint = equaPerMint * EQUA_BASE_UNITS_MULTIPLIER;
+            const baseUnitsPerMint = decimalToRaw(equaPerMint); // Use decimalToRaw utility
             setTotalMints(Math.floor(mintedAmountRaw.toNumber() / baseUnitsPerMint));
           }
         } catch (e) {
@@ -767,24 +765,50 @@ export default function MintPage() {
       }
 
       // ✅ Now mint tokens
-      // Calculate mint amount based on user tier (EQUA has 9 decimals)
+      // Calculate mint amount based on user tier (EQUA has 6 decimals)
       const userTier = getUserMintTier(userNumber || totalUsers + 1);
       const equaAmount = userTier?.equaPerAttempt || DEFAULT_EQUA_PER_MINT;
-      const mintAmount = equaAmount * EQUA_BASE_UNITS_MULTIPLIER; // Convert to base units (9 decimals)
+      const mintAmount = decimalToRaw(equaAmount); // Convert to base units using utility
       
       console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${userNumber}`);
       
-      const tx = await program.methods
-        .mintEquaTokens(new anchor.BN(mintAmount))
-        .accounts({
-          userAccount: userAccountPDA,
-          userTokenAccount,
-          mint: mintPDA,
-          mintAuthority,
-          authority: publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .rpc();
+      // Build the raw TransactionInstruction instead of using Anchor program.methods
+      const mintInstruction = createMintEquaInstruction(
+        userAccountPDA,
+        userTokenAccount,
+        mintPDA,
+        mintAuthority,
+        publicKey,
+        TOKEN_PROGRAM_ID,
+        mintAmount
+      );
+      
+      // Create and send transaction
+      const transaction = new Transaction().add(mintInstruction);
+      transaction.feePayer = publicKey;
+      
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      transaction.recentBlockhash = blockhash;
+      
+      console.log('📝 Requesting wallet signature for mint transaction...');
+      if (!wallet.signTransaction) {
+        throw new Error('Wallet does not support transaction signing');
+      }
+      
+      const signed = await wallet.signTransaction(transaction);
+      
+      console.log('📤 Sending mint transaction...');
+      const tx = await connection.sendRawTransaction(signed.serialize(), {
+        skipPreflight: false,
+        maxRetries: 3
+      });
+      
+      console.log('⏳ Confirming mint transaction...');
+      await connection.confirmTransaction({
+        signature: tx,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed');
 
       console.log('✅ Minting successful!', tx);
       setTxSignature(tx);

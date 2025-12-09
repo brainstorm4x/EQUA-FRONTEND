@@ -360,7 +360,12 @@ export function createMintEquaInstruction(
     amountBN.toArrayLike(Buffer, 'le', 8),
   ]);
 
-  return new TransactionInstruction({
+  console.log('🔧 Building mint_equa_tokens instruction:');
+  console.log('  - Discriminator:', Array.from(discriminator).join(', '));
+  console.log('  - Amount (raw base units):', amount);
+  console.log('  - Amount BN:', amountBN.toString());
+  
+  const instruction = new TransactionInstruction({
     keys: [
       { pubkey: userAccount, isSigner: false, isWritable: true },
       { pubkey: userTokenAccount, isSigner: false, isWritable: true },
@@ -372,6 +377,13 @@ export function createMintEquaInstruction(
     programId: PROGRAM_ID,
     data,
   });
+  
+  console.log('🔧 Instruction account metas:');
+  instruction.keys.forEach((meta, idx) => {
+    console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
+  });
+
+  return instruction;
 }
 
 /**
