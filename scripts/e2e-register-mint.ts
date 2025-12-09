@@ -4,7 +4,7 @@
  * This script performs an end-to-end test of the EQUA token system:
  * 1. Verifies global state and mint PDA exist
  * 2. Performs user registration with self-referral
- * 3. Mints 1000 EQUA tokens
+ * 3. Mints 1000 EQUA tokens using new 7-account mint_tokens instruction
  * 4. Logs all instruction metas and results
  * 
  * Usage: npx ts-node scripts/e2e-register-mint.ts
@@ -36,8 +36,11 @@ import {
   getGlobalStatePDA,
   getMintPDA,
   getMintAuthorityPDA,
+  getUserAccountPDA,
+  getUserMetadataPDA,
   createInitializeUserInstruction,
   createMintEquaInstruction,
+  createMintTokensInstruction,
   getSPLTokenBalance,
 } from '../lib/program';
 import { formatEquaRaw } from '../src/utils/tokenFormat';
@@ -191,15 +194,26 @@ async function main() {
     process.exit(1);
   }
   
-  // Step 6: Mint 1000 EQUA
+  // Step 6: Mint 1000 EQUA using new 7-account mint_tokens instruction
   console.log('\n🔍 Step 6: Minting 1000 EQUA...');
-  const mintIx = createMintEquaInstruction(
-    userAccountKeypair.publicKey,
-    payer.publicKey,
-    1000_000000 // 1000 EQUA with 6 decimals
+  
+  // Derive user metadata PDA
+  const [userMetadataPDA] = getUserMetadataPDA(payer.publicKey);
+  console.log('  User Metadata PDA:', userMetadataPDA.toBase58());
+  
+  // Use new 7-account mint_tokens instruction
+  const mintIx = createMintTokensInstruction(
+    userAccountKeypair.publicKey,  // user_account
+    userMetadataPDA,               // user_metadata
+    userTokenAccount,              // user_token_account
+    mintPDA,                       // mint
+    mintAuthority,                 // mint_authority
+    payer.publicKey,               // authority
+    TOKEN_PROGRAM_ID,              // token_program
+    1000_000000                    // 1000 EQUA with 6 decimals
   );
   
-  console.log('\n🧪 Mint Instruction Metas:');
+  console.log('\n🧪 Mint Instruction Metas (7-account mint_tokens):');
   mintIx.keys.forEach((k, i) => {
     console.log(`  ${i}. ${k.pubkey.toBase58()}`);
     console.log(`     writable=${k.isWritable} signer=${k.isSigner}`);
