@@ -186,6 +186,9 @@ export default function MintPage() {
   const [userNumber, setUserNumber] = useState<number>(0);
   const [totalMints, setTotalMints] = useState<number>(0);
 
+  // Use a consistent fallback so unknown users default to the first tier (100,000 EQUA)
+  const effectiveUserNumber = userNumber > 0 ? userNumber : Math.max(totalUsers || 0, 1);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -248,8 +251,9 @@ export default function MintPage() {
       setRegistered(isReg);
 
       if (isReg && publicKey) {
-        // Fetch actual SPL token balance (not minted_amount from user account)
-        // This reflects the true current balance after any transfers
+        // Fetch actual SPL token balance directly without cache
+        // Caching can return stale values for newly created token accounts
+        let tokenBalanceRaw = 0;
         try {
           const userTokenAccount = getAssociatedTokenAddressSync(
             mintPDA,
@@ -258,11 +262,17 @@ export default function MintPage() {
             TOKEN_PROGRAM_ID,
             ASSOCIATED_TOKEN_PROGRAM_ID
           );
-          const bal = await getTokenBalance(userTokenAccount);
-          setBalance(bal);
+          const tokenAccountInfo = await connection.getAccountInfo(userTokenAccount);
+          if (tokenAccountInfo) {
+            const amount = new anchor.BN(tokenAccountInfo.data.slice(64, 72), 'le');
+            tokenBalanceRaw = amount.toNumber();
+            console.log('📊 Token account balance (raw):', tokenBalanceRaw, '(formatted:', formatEquaBalance(tokenBalanceRaw), 'EQUA)');
+          } else {
+            console.log('📊 Token account does not exist yet');
+          }
         } catch (tokenErr) {
           console.error('Error fetching token balance:', tokenErr);
-          setBalance(0);
+          tokenBalanceRaw = 0;
         }
         
         // Get last mint time for cooldown
@@ -273,6 +283,11 @@ export default function MintPage() {
         // Get user's registration number and total mints from account
         try {
           const accountInfo = await connection.getAccountInfo(userAccountPDA);
+          console.log('📋 User account data:', {
+            exists: accountInfo !== null,
+            dataLength: accountInfo?.data.length || 0,
+            minRequired: 144
+          });
           if (accountInfo && accountInfo.data.length >= 144) {
             // Note: user_number might not be stored in the account structure
             // Check if there's additional data beyond the standard fields
@@ -305,6 +320,13 @@ export default function MintPage() {
                 currentUserNumber = storedNum;
               }
             }
+
+            // If we still don't have a user number, fall back to the current total user count (includes self)
+            if (currentUserNumber === 0) {
+              const fallbackUserNumber = Math.max(totalUsers || 0, 1);
+              setUserNumber(fallbackUserNumber);
+              currentUserNumber = fallbackUserNumber;
+            }
             
             // Read total_mints from minted_amount offset
             const mintedAmountRaw = new anchor.BN(
@@ -316,10 +338,32 @@ export default function MintPage() {
             const userTier = getUserMintTier(currentUserNumber);
             const equaPerMint = userTier?.equaPerAttempt || DEFAULT_EQUA_PER_MINT;
             const baseUnitsPerMint = decimalToRaw(equaPerMint); // Use decimalToRaw utility
-            setTotalMints(Math.floor(mintedAmountRaw.toNumber() / baseUnitsPerMint));
+            const mintedAmount = mintedAmountRaw.toNumber();
+            const calculatedTotalMints = baseUnitsPerMint > 0
+              ? Math.floor(mintedAmount / baseUnitsPerMint)
+              : 0;
+
+            setTotalMints(calculatedTotalMints);
+
+            // If the on-chain minted amount is zero (never minted), show 0 balance
+            // Even if token account shows balance, a fresh account shouldn't show tokens
+            if (mintedAmount === 0 && lastMint === 0) {
+              console.log('💰 User has never minted. Setting balance to 0 (minted_amount:', mintedAmount, ', last_mint:', lastMint, ')');
+              setBalance(0);
+            } else {
+              // User has minted before, show actual token balance
+              console.log('💰 User has minted before. Setting balance to token balance:', formatEquaBalance(tokenBalanceRaw), 'EQUA');
+              setBalance(tokenBalanceRaw);
+            }
+          } else {
+            // No account data, but user is registered - show 0 balance as safety measure
+            setBalance(0);
           }
         } catch (e) {
           console.error('Error reading user data:', e);
+          // Even on error, set balance based on token balance if token account exists
+          // A new user should default to 0 balance
+          setBalance(tokenBalanceRaw);
         }
       }
     } catch (err) {
@@ -327,7 +371,7 @@ export default function MintPage() {
     } finally {
       setIsCheckingRegistration(false);
     }
-  }, [publicKey, isReady, userAccountPDA, checkRegistration, getTokenBalance, mintPDA, connection]);
+  }, [publicKey, isReady, userAccountPDA, checkRegistration, getTokenBalance, mintPDA, connection, totalUsers]);
 
   useEffect(() => {
     checkUserRegistration();
@@ -766,11 +810,12 @@ export default function MintPage() {
 
       // ✅ Now mint tokens using mint_equa instruction
       // Calculate mint amount based on user tier (EQUA has 6 decimals)
-      const userTier = getUserMintTier(userNumber || totalUsers + 1);
+      const mintUserNumber = userNumber > 0 ? userNumber : Math.max(totalUsers || 0, 1);
+      const userTier = getUserMintTier(mintUserNumber);
       const equaAmount = userTier?.equaPerAttempt || DEFAULT_EQUA_PER_MINT;
       const mintAmount = decimalToRaw(equaAmount); // Convert to base units using utility
       
-      console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${userNumber}`);
+      console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${mintUserNumber}`);
       
       // Build the mint_equa instruction (simplified daily minting)
       // This instruction internally handles all the token minting logic
@@ -833,12 +878,16 @@ export default function MintPage() {
       // Show user-friendly error message
       let errorMessage = err?.message || 'Minting failed. Please try again.';
       
-      // Simplify common error messages for users
-      if (errorMessage.includes('blockhash')) {
+      // Check for program instruction errors
+      if (err?.message?.includes('InstructionFallbackNotFound') || err?.logs?.some?.((log: string) => log.includes('InstructionFallbackNotFound'))) {
+        errorMessage = 'The program does not recognize the mint instruction. This may indicate the smart contract was recently updated. Please try again in a moment or contact support.';
+      } else if (err?.message?.includes('custom program error: 0x65')) {
+        errorMessage = 'Transaction failed due to a program error. Please ensure your account is properly initialized and try again.';
+      } else if (err?.message?.includes('blockhash')) {
         errorMessage = 'Transaction expired. Please try again.';
-      } else if (errorMessage.includes('insufficient funds')) {
+      } else if (err?.message?.includes('insufficient funds')) {
         errorMessage = 'Insufficient SOL balance to complete transaction.';
-      } else if (errorMessage.includes('simulation failed')) {
+      } else if (err?.message?.includes('simulation failed')) {
         errorMessage = 'Transaction simulation failed. Please check your account status and try again.';
       }
       
@@ -1082,7 +1131,7 @@ export default function MintPage() {
                         <>
                           <p className="text-green-100 text-3xl font-bold mb-2">✅ Ready to mint!</p>
                           <p className="text-green-200 text-lg">
-                            Claim your {getUserMintTier(userNumber || totalUsers + 1)?.equaPerAttempt.toLocaleString() || '1,000'} EQUA
+                            Claim your {getUserMintTier(effectiveUserNumber)?.equaPerAttempt.toLocaleString() || '1,000'} EQUA
                           </p>
                         </>
                       ) : (
