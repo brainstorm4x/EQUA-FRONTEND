@@ -152,18 +152,24 @@ async function main() {
   const now = Math.floor(Date.now() / 1000);
   const lockUntil = now + (2 * 365 * 24 * 60 * 60); // 2 years
   
+  // Derive user_metadata PDA
+  const [userMetadataPDA] = getUserMetadataPDA(payer.publicKey);
+  
   const registerIx = createInitializeUserInstruction(
     userAccountKeypair.publicKey,
+    userMetadataPDA,               // user_metadata
     payer.publicKey,
     globalStatePDA,
     userAccountKeypair.publicKey, // Self-referral: use own account
+    userMetadataPDA,              // referrer_metadata (same as user_metadata for self-referral)
     userTokenAccount,
     mintPDA,
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
     now,
     lockUntil,
-    PublicKey.default // No referrer
+    PublicKey.default,            // No referrer
+    0                             // user_type: 0 = Individual
   );
   
   console.log('\n🧪 Registration Instruction Metas:');
@@ -196,9 +202,6 @@ async function main() {
   
   // Step 6: Mint 1000 EQUA using new 7-account mint_tokens instruction
   console.log('\n🔍 Step 6: Minting 1000 EQUA...');
-  
-  // Derive user metadata PDA
-  const [userMetadataPDA] = getUserMetadataPDA(payer.publicKey);
   console.log('  User Metadata PDA:', userMetadataPDA.toBase58());
   
   // Use new 7-account mint_tokens instruction
