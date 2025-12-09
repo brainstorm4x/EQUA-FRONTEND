@@ -42,11 +42,65 @@ describe('Registration Utilities', () => {
       }
     });
 
-    it('should return correct tier for Users #101+ (100 EQUA per attempt, no elevated)', () => {
+    it('should return correct tier for Users #101-1000 (100 EQUA per attempt, no elevated)', () => {
       for (const userNum of [101, 500, 1000]) {
         const tier = getUserMintTier(userNum);
         expect(tier).not.toBeNull();
         expect(tier?.equaPerAttempt).toBe(100);
+        expect(tier?.elevatedAttempts).toBe(0);
+      }
+    });
+
+    it('should return correct tier for Users #1001-10000 (10 EQUA per attempt)', () => {
+      for (const userNum of [1001, 5000, 10000]) {
+        const tier = getUserMintTier(userNum);
+        expect(tier).not.toBeNull();
+        expect(tier?.equaPerAttempt).toBe(10);
+        expect(tier?.elevatedAttempts).toBe(0);
+      }
+    });
+
+    it('should return correct tier for Users #10001-100000 (1 EQUA per attempt)', () => {
+      for (const userNum of [10001, 50000, 100000]) {
+        const tier = getUserMintTier(userNum);
+        expect(tier).not.toBeNull();
+        expect(tier?.equaPerAttempt).toBe(1);
+        expect(tier?.elevatedAttempts).toBe(0);
+      }
+    });
+
+    it('should return correct tier for Users #100001-1000000 (0.1 EQUA per attempt)', () => {
+      for (const userNum of [100001, 500000, 1000000]) {
+        const tier = getUserMintTier(userNum);
+        expect(tier).not.toBeNull();
+        expect(tier?.equaPerAttempt).toBe(0.1);
+        expect(tier?.elevatedAttempts).toBe(0);
+      }
+    });
+
+    it('should return correct tier for Users #1000001-10000000 (0.01 EQUA per attempt)', () => {
+      for (const userNum of [1000001, 5000000, 10000000]) {
+        const tier = getUserMintTier(userNum);
+        expect(tier).not.toBeNull();
+        expect(tier?.equaPerAttempt).toBe(0.01);
+        expect(tier?.elevatedAttempts).toBe(0);
+      }
+    });
+
+    it('should return correct tier for Users #10000001-100000000 (0.001 EQUA per attempt)', () => {
+      for (const userNum of [10000001, 50000000, 100000000]) {
+        const tier = getUserMintTier(userNum);
+        expect(tier).not.toBeNull();
+        expect(tier?.equaPerAttempt).toBe(0.001);
+        expect(tier?.elevatedAttempts).toBe(0);
+      }
+    });
+
+    it('should return correct tier for Users #100000001+ (0.0005 EQUA per attempt)', () => {
+      for (const userNum of [100000001, 500000000, 999999999]) {
+        const tier = getUserMintTier(userNum);
+        expect(tier).not.toBeNull();
+        expect(tier?.equaPerAttempt).toBe(0.0005);
         expect(tier?.elevatedAttempts).toBe(0);
       }
     });
@@ -158,7 +212,7 @@ describe('Registration Utilities', () => {
 
   describe('ELEVATED_MINT_TIERS configuration', () => {
     it('should have correct number of tiers', () => {
-      expect(ELEVATED_MINT_TIERS.length).toBe(4);
+      expect(ELEVATED_MINT_TIERS.length).toBe(10);
     });
 
     it('should have non-overlapping ranges', () => {

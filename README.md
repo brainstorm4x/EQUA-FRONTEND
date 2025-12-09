@@ -77,7 +77,13 @@ Early users benefit from elevated minting rates:
 | 1 | 100,000 EQUA | 100 attempts |
 | 2-10 | 10,000 EQUA | 100 attempts |
 | 11-100 | 1,000 EQUA | 100 attempts |
-| 101+ | 100 EQUA | Standard rate |
+| 101-1,000 | 100 EQUA | Standard rate |
+| 1,001-10,000 | 10 EQUA | Standard rate |
+| 10,001-100,000 | 1 EQUA | Standard rate |
+| 100,001-1,000,000 | 0.1 EQUA | Standard rate |
+| 1,000,001-10,000,000 | 0.01 EQUA | Standard rate |
+| 10,000,001-100,000,000 | 0.001 EQUA | Standard rate |
+| 100,000,001+ | 0.0005 EQUA | Standard rate |
 
 The registration and minting UI displays:
 - Your current mint tier

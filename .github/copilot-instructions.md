@@ -115,10 +115,16 @@ hasMinimumSolBalance(walletBalance) // Validates in lamports
 
 ### Elevated Mint Tiers (Hard-Coded)
 ```typescript
-// User #1: 100,000 EQUA/attempt × 100 attempts
-// Users #2-10: 10,000 EQUA/attempt × 100 attempts
-// Users #11-100: 1,000 EQUA/attempt × 100 attempts
-// Users #101+: 100 EQUA/attempt (standard)
+// User #1: 100,000 EQUA/attempt × 100 attempts (100 days)
+// Users #2-10: 10,000 EQUA/attempt × 100 attempts (100 days)
+// Users #11-100: 1,000 EQUA/attempt × 100 attempts (100 days)
+// Users #101-1000: 100 EQUA/attempt (standard, till user 1001)
+// Users #1001-10000: 10 EQUA/attempt (till user 10001)
+// Users #10001-100000: 1 EQUA/attempt (till user 100001)
+// Users #100001-1000000: 0.1 EQUA/attempt (till user 1000001)
+// Users #1000001-10000000: 0.01 EQUA/attempt (till user 10000001)
+// Users #10000001-100000000: 0.001 EQUA/attempt (till user 100000001)
+// Users #100000001+: 0.0005 EQUA/attempt (continues at this rate)
 getUserMintTier(userNumber) // Returns tier config
 ```
 

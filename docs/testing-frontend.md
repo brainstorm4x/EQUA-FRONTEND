@@ -50,9 +50,15 @@ Validates the landing page CTA behavior:
 #### 3. Mint Rate Display Tests (`__tests__/mint/mintRateDisplay.test.tsx`)
 Validates dynamic mint rate based on user tiers:
 - User #1: 100,000 EQUA/day
-- Users #2-10: Range display
-- Users #11-100: Range display
-- Users #101+: 100 EQUA/day
+- Users #2-10: 10,000 EQUA/day
+- Users #11-100: 1,000 EQUA/day
+- Users #101-1,000: 100 EQUA/day
+- Users #1,001-10,000: 10 EQUA/day
+- Users #10,001-100,000: 1 EQUA/day
+- Users #100,001-1,000,000: 0.1 EQUA/day
+- Users #1,000,001-10,000,000: 0.01 EQUA/day
+- Users #10,000,001-100,000,000: 0.001 EQUA/day
+- Users #100,000,001+: 0.0005 EQUA/day
 - Price and epoch display
 - Loading states
 - Error handling
