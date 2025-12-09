@@ -23,10 +23,17 @@ export interface ElevatedMintTier {
 }
 
 export const ELEVATED_MINT_TIERS: ElevatedMintTier[] = [
-  { minUser: 1, maxUser: 1, equaPerAttempt: 100000, elevatedAttempts: 100 },     // User #1
-  { minUser: 2, maxUser: 10, equaPerAttempt: 10000, elevatedAttempts: 100 },     // Users #2-10
-  { minUser: 11, maxUser: 100, equaPerAttempt: 1000, elevatedAttempts: 100 },    // Users #11-100
-  { minUser: 101, maxUser: Infinity, equaPerAttempt: 100, elevatedAttempts: 0 }, // Standard users
+  { minUser: 1, maxUser: 1, equaPerAttempt: 100000, elevatedAttempts: 100 },        // User #1: 100,000 EQUA/day × 100 days
+  { minUser: 2, maxUser: 10, equaPerAttempt: 10000, elevatedAttempts: 100 },        // Users #2-10: 10,000 EQUA/day × 100 days
+  { minUser: 11, maxUser: 100, equaPerAttempt: 1000, elevatedAttempts: 100 },       // Users #11-100: 1,000 EQUA/day × 100 days
+  { minUser: 101, maxUser: 1000, equaPerAttempt: 100, elevatedAttempts: 0 },        // Users #101-1000: 100 EQUA/day
+  { minUser: 1001, maxUser: 10000, equaPerAttempt: 10, elevatedAttempts: 0 },       // Users #1001-10000: 10 EQUA/day
+  { minUser: 10001, maxUser: 100000, equaPerAttempt: 1, elevatedAttempts: 0 },      // Users #10001-100000: 1 EQUA/day
+  { minUser: 100001, maxUser: 1000000, equaPerAttempt: 0.1, elevatedAttempts: 0 },  // Users #100001-1000000: 0.1 EQUA/day
+  { minUser: 1000001, maxUser: 10000000, equaPerAttempt: 0.01, elevatedAttempts: 0 }, // Users #1000001-10000000: 0.01 EQUA/day
+  { minUser: 10000001, maxUser: 100000000, equaPerAttempt: 0.001, elevatedAttempts: 0 }, // Users #10000001-100000000: 0.001 EQUA/day
+  { minUser: 100000001, maxUser: 1000000000, equaPerAttempt: 0.0005, elevatedAttempts: 0 }, // Users #100000001-1000000000: 0.0005 EQUA/day
+  { minUser: 1000000001, maxUser: Infinity, equaPerAttempt: 0.0005, elevatedAttempts: 0 }, // Users #1000000001+: 0.0005 EQUA/day (continue at same rate)
 ];
 
 /**

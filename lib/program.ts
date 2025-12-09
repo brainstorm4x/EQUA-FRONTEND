@@ -262,8 +262,34 @@ export function createInitializeUserInstruction(
   });
 }
 
-// ✅ Create mint_equa_tokens instruction
+// ✅ Create mint_equa instruction (daily minting with cooldown)
+// This is the correct instruction to use for daily EQUA minting
 export function createMintEquaInstruction(
+  userAccount: PublicKey,
+  authority: PublicKey,
+  amount: number
+): TransactionInstruction {
+  const discriminator = Buffer.from([151, 97, 251, 10, 45, 109, 190, 115]);
+  const amountBN = new BN(amount);
+  
+  const data = Buffer.concat([
+    discriminator,
+    amountBN.toArrayLike(Buffer, 'le', 8),
+  ]);
+
+  return new TransactionInstruction({
+    keys: [
+      { pubkey: userAccount, isSigner: false, isWritable: true },
+      { pubkey: authority, isSigner: true, isWritable: false },
+    ],
+    programId: PROGRAM_ID,
+    data,
+  });
+}
+
+// ✅ Create mint_equa_tokens instruction (low-level token minting)
+// This is used internally by mint_equa, not for direct daily minting
+export function createMintEquaTokensInstruction(
   userAccount: PublicKey,
   userTokenAccount: PublicKey,
   mint: PublicKey,
