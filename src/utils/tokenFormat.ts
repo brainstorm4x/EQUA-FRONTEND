@@ -1,12 +1,12 @@
 /**
  * Token formatting utilities for EQUA token
  * 
- * EQUA token uses 9 decimals (1,000,000,000 base units = 1 EQUA)
+ * EQUA token uses 6 decimals (1,000,000 base units = 1 EQUA)
  * The smallest unit of EQUA is called Gajbhiye (singular) / Gajbhiyes (plural)
  */
 
-const EQUA_DECIMALS = 9;
-const EQUA_DECIMAL_MULTIPLIER = 1_000_000_000;
+const EQUA_DECIMALS = 6;
+const EQUA_DECIMAL_MULTIPLIER = 1_000_000;
 
 /**
  * Name of the smallest unit of EQUA
@@ -32,15 +32,15 @@ export interface FormatOptions {
  * @returns Formatted token amount as a string
  * 
  * @example
- * formatEquaRaw(1_000_000_000_000) // "1,000.000000000"
- * formatEquaRaw(1_000_000_000_000, { decimals: 2 }) // "1,000.00"
- * formatEquaRaw(1_000_000_000_000, { trimTrailingZeros: true }) // "1,000"
- * formatEquaRaw(3_120_045_000, { trimTrailingZeros: true }) // "3.120045"
- * formatEquaRaw(123_456_789) // "0.123456789"
+ * formatEquaRaw(1_000_000_000) // "1,000.000000"
+ * formatEquaRaw(1_000_000_000, { decimals: 2 }) // "1,000.00"
+ * formatEquaRaw(1_000_000_000, { trimTrailingZeros: true }) // "1,000"
+ * formatEquaRaw(3_120_045, { trimTrailingZeros: true }) // "3.120045"
+ * formatEquaRaw(123_456) // "0.123456"
  * 
  * @note This function converts bigint to Number. While this can lose precision for values
- * larger than Number.MAX_SAFE_INTEGER (2^53 - 1 = ~9 quadrillion), with 9 decimal places
- * this means amounts above ~9 million EQUA tokens (in raw base units) may lose precision.
+ * larger than Number.MAX_SAFE_INTEGER (2^53 - 1 = ~9 quadrillion), with 6 decimal places
+ * this means amounts above ~9 billion EQUA tokens (in raw base units) may lose precision.
  * For typical individual holdings and transactions, this precision is more than sufficient.
  * The SPL token program uses u64, which has a maximum value of ~18 quintillion.
  */
@@ -87,9 +87,9 @@ export function formatEquaRaw(
  * @returns Formatted EQUA balance string with appropriate decimals
  * 
  * @example
- * formatEquaBalance(100_000_000_000_000) // "100,000" (whole number, no decimals needed)
- * formatEquaBalance(1_500_000_000) // "1.5" (fractional, shows needed decimals)
- * formatEquaBalance(123_456_789) // "0.123456789" (small amount, shows all decimals)
+ * formatEquaBalance(100_000_000_000) // "100,000" (whole number, no decimals needed)
+ * formatEquaBalance(1_500_000) // "1.5" (fractional, shows needed decimals)
+ * formatEquaBalance(123_456) // "0.123456" (small amount, shows all decimals)
  */
 export function formatEquaBalance(rawAmount: number | string | bigint): string {
   // Convert to number if string or bigint
@@ -136,8 +136,8 @@ export function formatEquaBalance(rawAmount: number | string | bigint): string {
  * @returns Raw token amount in base units (Gajbhiyes)
  * 
  * @example
- * parseEquaFormatted("1,000") // 1_000_000_000_000
- * parseEquaFormatted("0.123456789") // 123_456_789
+ * parseEquaFormatted("1,000") // 1_000_000_000
+ * parseEquaFormatted("0.123456") // 123_456
  * 
  * @note Uses Math.round which can introduce minor rounding errors for edge cases with
  * floating point arithmetic. For precise financial calculations, consider using a
@@ -163,12 +163,12 @@ export function parseEquaFormatted(formattedAmount: string): number {
  * @returns Token amount as a decimal number (EQUA)
  * 
  * @example
- * rawToDecimal(1_000_000_000_000) // 1000
- * rawToDecimal(123_456_789) // 0.123456789
+ * rawToDecimal(1_000_000_000) // 1000
+ * rawToDecimal(123_456) // 0.123456
  * 
  * @note Converting bigint to Number can lose precision for values larger than
- * Number.MAX_SAFE_INTEGER (~9 quadrillion). With 9 decimal places, this means
- * amounts above ~9 million EQUA tokens (in raw base units) may lose precision.
+ * Number.MAX_SAFE_INTEGER (~9 quadrillion). With 6 decimal places, this means
+ * amounts above ~9 billion EQUA tokens (in raw base units) may lose precision.
  * For typical individual holdings, this is more than sufficient.
  */
 export function rawToDecimal(rawAmount: number | string | bigint): number {
@@ -192,8 +192,8 @@ export function rawToDecimal(rawAmount: number | string | bigint): number {
  * @returns Raw token amount in base units (Gajbhiyes)
  * 
  * @example
- * decimalToRaw(1000) // 1_000_000_000_000
- * decimalToRaw(0.123456789) // 123_456_789
+ * decimalToRaw(1000) // 1_000_000_000
+ * decimalToRaw(0.123456) // 123_456
  * 
  * @note Uses Math.round to minimize floating point errors. For typical token amounts
  * within reasonable ranges, the precision is sufficient. Very large or very precise
