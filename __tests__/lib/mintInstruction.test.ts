@@ -5,14 +5,10 @@
 
 import { PublicKey } from '@solana/web3.js';
 import { createMintEquaInstruction } from '@/lib/program';
-import { TOKEN_PROGRAM_ID } from '@/lib/constants';
 
 describe('createMintEquaInstruction', () => {
   // Mock public keys for testing (valid base58-encoded addresses)
   const userAccount = new PublicKey('C3r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
-  const userTokenAccount = new PublicKey('D4r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
-  const mint = new PublicKey('E5r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
-  const mintAuthority = new PublicKey('F6r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
   const authority = new PublicKey('G7r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
 
   it('should create instruction with correct discriminator', () => {
@@ -20,16 +16,12 @@ describe('createMintEquaInstruction', () => {
     
     const instruction = createMintEquaInstruction(
       userAccount,
-      userTokenAccount,
-      mint,
-      mintAuthority,
       authority,
-      TOKEN_PROGRAM_ID,
       amount
     );
 
-    // Verify discriminator bytes match IDL for mint_equa_tokens
-    const expectedDiscriminator = Buffer.from([166, 66, 221, 55, 153, 196, 139, 85]);
+    // Verify discriminator bytes match IDL for mint_equa
+    const expectedDiscriminator = Buffer.from([151, 97, 251, 10, 45, 109, 190, 115]);
     const actualDiscriminator = instruction.data.slice(0, 8);
     
     expect(actualDiscriminator).toEqual(expectedDiscriminator);
@@ -40,11 +32,7 @@ describe('createMintEquaInstruction', () => {
     
     const instruction = createMintEquaInstruction(
       userAccount,
-      userTokenAccount,
-      mint,
-      mintAuthority,
       authority,
-      TOKEN_PROGRAM_ID,
       amount
     );
 
@@ -66,46 +54,22 @@ describe('createMintEquaInstruction', () => {
     
     const instruction = createMintEquaInstruction(
       userAccount,
-      userTokenAccount,
-      mint,
-      mintAuthority,
       authority,
-      TOKEN_PROGRAM_ID,
       amount
     );
 
-    // Verify account order and flags match IDL for mint_equa_tokens
-    expect(instruction.keys).toHaveLength(6);
+    // Verify account order and flags match IDL for mint_equa
+    expect(instruction.keys).toHaveLength(2);
     
     // 0. user_account - writable, not signer
     expect(instruction.keys[0].pubkey).toEqual(userAccount);
     expect(instruction.keys[0].isWritable).toBe(true);
     expect(instruction.keys[0].isSigner).toBe(false);
     
-    // 1. user_token_account - writable, not signer
-    expect(instruction.keys[1].pubkey).toEqual(userTokenAccount);
-    expect(instruction.keys[1].isWritable).toBe(true);
-    expect(instruction.keys[1].isSigner).toBe(false);
-    
-    // 2. mint - writable, not signer
-    expect(instruction.keys[2].pubkey).toEqual(mint);
-    expect(instruction.keys[2].isWritable).toBe(true);
-    expect(instruction.keys[2].isSigner).toBe(false);
-    
-    // 3. mint_authority - not writable, not signer (PDA)
-    expect(instruction.keys[3].pubkey).toEqual(mintAuthority);
-    expect(instruction.keys[3].isWritable).toBe(false);
-    expect(instruction.keys[3].isSigner).toBe(false);
-    
-    // 4. authority - not writable, signer
-    expect(instruction.keys[4].pubkey).toEqual(authority);
-    expect(instruction.keys[4].isWritable).toBe(false);
-    expect(instruction.keys[4].isSigner).toBe(true);
-    
-    // 5. token_program - not writable, not signer
-    expect(instruction.keys[5].pubkey).toEqual(TOKEN_PROGRAM_ID);
-    expect(instruction.keys[5].isWritable).toBe(false);
-    expect(instruction.keys[5].isSigner).toBe(false);
+    // 1. authority - not writable, signer
+    expect(instruction.keys[1].pubkey).toEqual(authority);
+    expect(instruction.keys[1].isWritable).toBe(false);
+    expect(instruction.keys[1].isSigner).toBe(true);
   });
 
   it('should handle different amount values correctly', () => {
@@ -119,11 +83,7 @@ describe('createMintEquaInstruction', () => {
     testCases.forEach(amount => {
       const instruction = createMintEquaInstruction(
         userAccount,
-        userTokenAccount,
-        mint,
-        mintAuthority,
         authority,
-        TOKEN_PROGRAM_ID,
         amount
       );
 

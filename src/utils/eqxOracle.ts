@@ -153,9 +153,9 @@ export function getCacheTTL(): number {
 // Pyth Network Integration
 // ============================================================================
 
-// Pyth Hermes API endpoint (works without SDK)
-// Correct endpoint is /api/get_latest_price_feeds (not /api/latest_price_feeds)
-const PYTH_HERMES_API = 'https://hermes.pyth.network/api/get_latest_price_feeds';
+// Pyth Hermes API endpoint (stable version)
+// Documentation: https://hermes.pyth.network/docs/
+const PYTH_HERMES_API = 'https://hermes.pyth.network/v2/updates/price/latest';
 
 /**
  * Fetches prices from Pyth Network using the Hermes API
@@ -189,7 +189,8 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
       timeout: 10000, // 10 second timeout
     });
 
-    if (!response.data || !Array.isArray(response.data)) {
+    // Hermes V2 API returns: { binary: { data: [...], encoding: "hex" }, parsed: [...] }
+    if (!response.data || !response.data.parsed || !Array.isArray(response.data.parsed)) {
       if (!pythErrorWarned) {
         console.warn('[EQX Oracle] Invalid Pyth response format');
         pythErrorWarned = true;
@@ -212,12 +213,15 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
       [PYTH_FEED_IDS.GBP_USD]: 'GBP',
     };
 
-    for (const feed of response.data) {
+    for (const feed of response.data.parsed) {
       const feedId = feed.id.startsWith('0x') ? feed.id : `0x${feed.id}`;
       const symbol = feedIdToSymbol[feedId];
       
       if (symbol && feed.price) {
-        // Pyth prices need to be scaled by the exponent
+        // Pyth V2 API: prices need to be scaled by the exponent
+        // feed.price.price is the raw price value
+        // feed.price.expo is the exponent (usually negative, e.g., -8 for USD prices)
+        // Example: raw price 123456 with expo -2 becomes 1234.56
         const price = parseFloat(feed.price.price) * Math.pow(10, feed.price.expo);
         prices[symbol] = {
           symbol,

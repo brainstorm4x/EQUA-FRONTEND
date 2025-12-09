@@ -764,7 +764,7 @@ export default function MintPage() {
         console.log('✅ Token account already exists');
       }
 
-      // ✅ Now mint tokens
+      // ✅ Now mint tokens using mint_equa instruction
       // Calculate mint amount based on user tier (EQUA has 6 decimals)
       const userTier = getUserMintTier(userNumber || totalUsers + 1);
       const equaAmount = userTier?.equaPerAttempt || DEFAULT_EQUA_PER_MINT;
@@ -772,14 +772,11 @@ export default function MintPage() {
       
       console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${userNumber}`);
       
-      // Build the raw TransactionInstruction instead of using Anchor program.methods
+      // Build the mint_equa instruction (simplified daily minting)
+      // This instruction internally handles all the token minting logic
       const mintInstruction = createMintEquaInstruction(
         userAccountPDA,
-        userTokenAccount,
-        mintPDA,
-        mintAuthority,
         publicKey,
-        TOKEN_PROGRAM_ID,
         mintAmount
       );
       

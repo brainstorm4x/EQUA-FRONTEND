@@ -195,11 +195,7 @@ async function main() {
   console.log('\n🔍 Step 6: Minting 1000 EQUA...');
   const mintIx = createMintEquaInstruction(
     userAccountKeypair.publicKey,
-    userTokenAccount,
-    mintPDA,
-    mintAuthority,
     payer.publicKey,
-    TOKEN_PROGRAM_ID,
     1000_000000 // 1000 EQUA with 6 decimals
   );
   
