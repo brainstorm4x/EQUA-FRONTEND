@@ -16,9 +16,9 @@ import { AccountType } from './registration';
 export const INDIVIDUAL_REFERRAL_PERCENT = 1;  // 1% for referring individuals
 export const BUSINESS_REFERRAL_PERCENT = 2;    // 2% for referring businesses
 
-// EQUA token decimals (9 decimals)
-const EQUA_DECIMALS = 9;
-const EQUA_DECIMAL_MULTIPLIER = 10 ** EQUA_DECIMALS;
+// EQUA token decimals (6 decimals)
+const EQUA_DECIMALS = 6;
+const EQUA_DECIMAL_MULTIPLIER = 10 ** EQUA_DECIMALS; // 1_000_000
 
 export interface ReferralRewardInfo {
   userIndex: number;
