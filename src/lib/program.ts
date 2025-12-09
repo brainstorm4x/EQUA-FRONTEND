@@ -310,46 +310,51 @@ export function getOrCreateKeypair(): Keypair {
   return keypair;
 }
 
-// ✅ Create initialize_user instruction
+// ✅ Create initialize_user instruction (UPDATED for consolidated backend)
 export function createInitializeUserInstruction(
   userAccount: PublicKey,
+  userMetadata: PublicKey,
   authority: PublicKey,
   globalState: PublicKey,
   referralAccount: PublicKey,
+  referrerMetadata: PublicKey,
   userTokenAccount: PublicKey,
   mint: PublicKey,
   associatedTokenProgram: PublicKey,
   tokenProgram: PublicKey,
   mintStart: number,
   lockedUntil: number,
-  referrer: PublicKey = PublicKey.default
+  referrer: PublicKey = PublicKey.default,
+  userType: number = 0
 ): TransactionInstruction {
   const discriminator = Buffer.from([111, 17, 185, 250, 60, 122, 38, 254]);
   
   const mintStartBN = new BN(mintStart);
   const lockedUntilBN = new BN(lockedUntil);
   
+  // Args order: referral (Pubkey 32 bytes) | mint_start (i64 8 bytes) | locked_until (i64 8 bytes) | user_type (u8 1 byte)
   const data = Buffer.concat([
     discriminator,
     referrer.toBuffer(),
     mintStartBN.toArrayLike(Buffer, 'le', 8),
     lockedUntilBN.toArrayLike(Buffer, 'le', 8),
+    Buffer.from([userType]), // user_type as u8
   ]);
 
-  // ✅ CRITICAL FIX: user_account is now a PDA derived from authority
-  // PDAs cannot sign transactions, so isSigner must be false
-  // The on-chain program expects: seeds = [b"user-account", authority.key().as_ref()]
+  // Account order matches backend InitializeUser context exactly (11 accounts)
   return new TransactionInstruction({
     keys: [
-      { pubkey: userAccount, isSigner: false, isWritable: true },  // ✅ PDA - not a signer
-      { pubkey: authority, isSigner: true, isWritable: true },
-      { pubkey: globalState, isSigner: false, isWritable: true },
-      { pubkey: referralAccount, isSigner: false, isWritable: true },  // ✅ Always writable per IDL requirement
-      { pubkey: userTokenAccount, isSigner: false, isWritable: true },
-      { pubkey: mint, isSigner: false, isWritable: false },
-      { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
-      { pubkey: tokenProgram, isSigner: false, isWritable: false },
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: userAccount, isSigner: false, isWritable: true },        // 0. user_account (PDA)
+      { pubkey: userMetadata, isSigner: false, isWritable: true },       // 1. user_metadata (PDA)
+      { pubkey: authority, isSigner: true, isWritable: true },           // 2. authority (signer)
+      { pubkey: globalState, isSigner: false, isWritable: true },        // 3. global_state
+      { pubkey: referralAccount, isSigner: false, isWritable: true },    // 4. referral_account (unchecked)
+      { pubkey: referrerMetadata, isSigner: false, isWritable: true },   // 5. referrer_metadata (unchecked)
+      { pubkey: userTokenAccount, isSigner: false, isWritable: true },   // 6. user_token_account
+      { pubkey: mint, isSigner: false, isWritable: false },              // 7. mint
+      { pubkey: associatedTokenProgram, isSigner: false, isWritable: false }, // 8. associated_token_program
+      { pubkey: tokenProgram, isSigner: false, isWritable: false },      // 9. token_program (Token-2022)
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // 10. system_program
     ],
     programId: PROGRAM_ID,
     data,

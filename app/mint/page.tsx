@@ -16,6 +16,7 @@ import {
   createMintEquaInstruction,
   createMintTokensInstruction,
   getUserMetadataPDA,
+  getUserAccountPDA,
   isUserRegistered,
 } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
@@ -373,7 +374,8 @@ export default function MintPage() {
     } finally {
       setIsCheckingRegistration(false);
     }
-  }, [publicKey, isReady, userAccountPDA, checkRegistration, getTokenBalance, mintPDA, connection, totalUsers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publicKey, isReady, userAccountPDA, checkRegistration, mintPDA, connection, totalUsers]);
 
   useEffect(() => {
     checkUserRegistration();
@@ -571,39 +573,66 @@ export default function MintPage() {
       // No lock period is needed since EQUA is not being sold and maintains its value
       const lockUntil = now;
 
+      // Derive user_metadata PDA for the registering user
+      const [userMetadataPDA] = getUserMetadataPDA(publicKey);
+
       console.log('Accounts:');
       console.log('- User Account (PDA):', userAccountPDA.toBase58());
+      console.log('- User Metadata (PDA):', userMetadataPDA.toBase58());
       console.log('- Authority:', publicKey.toBase58());
       console.log('- Global State:', globalStatePDA.toBase58());
       console.log('- Token Account:', userTokenAccount.toBase58());
       console.log('- Mint:', mintPDA.toBase58());
 
-      // Determine referral account - use referrer if provided, otherwise use own account
-      let referralAccountPubkey = userAccountPDA;
-      let referrerPubkey = PublicKey.default;
+      // Determine referral accounts - derive PDAs if referrer provided
+      let referralAccountPubkey: PublicKey;
+      let referrerMetadataPubkey: PublicKey;
+      let referrerPubkey: PublicKey;
       
       if (referrer) {
         try {
+          // referrer is the wallet address, derive the user_account and user_metadata PDAs
           referrerPubkey = new PublicKey(referrer);
-          // In a real implementation, you'd look up the referrer's user account PDA
-          referralAccountPubkey = referrerPubkey;
+          const [referrerUserAccountPDA] = getUserAccountPDA(referrerPubkey);
+          const [referrerUserMetaPDA] = getUserMetadataPDA(referrerPubkey);
+          referralAccountPubkey = referrerUserAccountPDA;
+          referrerMetadataPubkey = referrerUserMetaPDA;
+          
+          console.log('- Referrer:', referrerPubkey.toBase58());
+          console.log('- Referral Account (PDA):', referralAccountPubkey.toBase58());
+          console.log('- Referrer Metadata (PDA):', referrerMetadataPubkey.toBase58());
         } catch {
-          console.log('Invalid referrer address, using self-referral');
+          console.log('Invalid referrer address, using default (no referral)');
+          referrerPubkey = PublicKey.default;
+          referralAccountPubkey = PublicKey.default;
+          referrerMetadataPubkey = PublicKey.default;
         }
+      } else {
+        // No referral - use PublicKey.default for all referrer accounts
+        referrerPubkey = PublicKey.default;
+        referralAccountPubkey = PublicKey.default;
+        referrerMetadataPubkey = PublicKey.default;
+        console.log('- No referral provided');
       }
+
+      // User type: 0 = Individual (default), can be extended later for Business/Merchant
+      const userType = 0;
 
       const instruction = createInitializeUserInstruction(
         userAccountPDA,
+        userMetadataPDA,
         publicKey,
         globalStatePDA,
         referralAccountPubkey,
+        referrerMetadataPubkey,
         userTokenAccount,
         mintPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         now,
         lockUntil,
-        referrerPubkey
+        referrerPubkey,
+        userType
       );
 
       // Log instruction metas for debugging
@@ -1124,7 +1153,20 @@ export default function MintPage() {
           {error && (
             <div className="max-w-2xl mx-auto mb-6">
               <div className="bg-red-500/20 border border-red-500 rounded-xl p-4">
-                <p className="text-red-200">{error}</p>
+                <p className="text-red-200 whitespace-pre-line">{error}</p>
+                {error.includes('Legacy Account Detected') && (
+                  <div className="mt-4 pt-4 border-t border-red-400/30">
+                    <p className="text-red-200 text-sm mb-3">
+                      <strong>Need help?</strong> View detailed account diagnostics:
+                    </p>
+                    <Link 
+                      href="/debug/account"
+                      className="inline-block bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-all text-sm"
+                    >
+                      🔍 View Account Diagnostics
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           )}
