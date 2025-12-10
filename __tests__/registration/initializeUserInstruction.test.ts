@@ -31,9 +31,9 @@ describe('createInitializeUserInstruction', () => {
       mint,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
+      referrer,
       now,
-      lockedUntil,
-      referrer
+      lockedUntil
     );
 
     // According to IDL, referral_account is at index 3 and must be writable
@@ -53,9 +53,9 @@ describe('createInitializeUserInstruction', () => {
       mint,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
+      referrer,
       now,
-      lockedUntil,
-      referrer
+      lockedUntil
     );
 
     // Verify discriminator bytes match IDL for initialize_user
@@ -75,9 +75,9 @@ describe('createInitializeUserInstruction', () => {
       mint,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
+      referrer,
       now,
-      lockedUntil,
-      referrer
+      lockedUntil
     );
 
     expect(instruction.keys).toHaveLength(9);
@@ -140,9 +140,9 @@ describe('createInitializeUserInstruction', () => {
       mint,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
+      PublicKey.default, // default referrer for self-referral
       now,
-      lockedUntil,
-      PublicKey.default // default referrer for self-referral
+      lockedUntil
     );
 
     // Verify referral_account (index 3) is writable even for self-referral
@@ -160,9 +160,9 @@ describe('createInitializeUserInstruction', () => {
       mint,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
+      referrer,
       now,
-      lockedUntil,
-      referrer
+      lockedUntil
     );
 
     // Instruction data structure:

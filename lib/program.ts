@@ -230,35 +230,31 @@ export function getOrCreateKeypair(): Keypair {
   }
   return keypair;
 }
-// ✅ Create initialize_user instruction (UPDATED for consolidated backend)
+// ✅ Create initialize_user instruction (MATCHES IDL EXACTLY)
 export function createInitializeUserInstruction(
   userAccount: PublicKey,
-  userMetadata: PublicKey,
   authority: PublicKey,
   globalState: PublicKey,
   referralAccount: PublicKey,
-  referrerMetadata: PublicKey,
   userTokenAccount: PublicKey,
   mint: PublicKey,
   associatedTokenProgram: PublicKey,
   tokenProgram: PublicKey,
+  referrer: PublicKey,
   mintStart: number,
-  lockedUntil: number,
-  referrer: PublicKey = PublicKey.default,
-  userType: number = 0
+  lockedUntil: number
 ): TransactionInstruction {
   const discriminator = Buffer.from([111, 17, 185, 250, 60, 122, 38, 254]);
   
   const mintStartBN = new BN(mintStart);
   const lockedUntilBN = new BN(lockedUntil);
   
-  // Args order: referral (Pubkey 32 bytes) | mint_start (i64 8 bytes) | locked_until (i64 8 bytes) | user_type (u8 1 byte)
+  // Args order from IDL: referral (Pubkey 32 bytes) | mint_start (i64 8 bytes) | locked_until (i64 8 bytes)
   const data = Buffer.concat([
     discriminator,
     referrer.toBuffer(),
     mintStartBN.toArrayLike(Buffer, 'le', 8),
     lockedUntilBN.toArrayLike(Buffer, 'le', 8),
-    Buffer.from([userType]), // user_type as u8
   ]);
 
   if (DEBUG_INSTRUCTIONS) {
@@ -267,23 +263,20 @@ export function createInitializeUserInstruction(
     console.log('  - Referrer:', referrer.toBase58());
     console.log('  - Mint start:', mintStart);
     console.log('  - Locked until:', lockedUntil);
-    console.log('  - User type:', userType);
   }
 
-  // Account order matches backend InitializeUser context exactly (11 accounts)
+  // Account order matches IDL exactly (9 accounts)
   const instruction = new TransactionInstruction({
     keys: [
-      { pubkey: userAccount, isSigner: false, isWritable: true },        // 0. user_account (PDA)
-      { pubkey: userMetadata, isSigner: false, isWritable: true },       // 1. user_metadata (PDA)
-      { pubkey: authority, isSigner: true, isWritable: true },           // 2. authority (signer)
-      { pubkey: globalState, isSigner: false, isWritable: true },        // 3. global_state
-      { pubkey: referralAccount, isSigner: false, isWritable: true },    // 4. referral_account (unchecked)
-      { pubkey: referrerMetadata, isSigner: false, isWritable: true },   // 5. referrer_metadata (unchecked)
-      { pubkey: userTokenAccount, isSigner: false, isWritable: true },   // 6. user_token_account
-      { pubkey: mint, isSigner: false, isWritable: false },              // 7. mint
-      { pubkey: associatedTokenProgram, isSigner: false, isWritable: false }, // 8. associated_token_program
-      { pubkey: tokenProgram, isSigner: false, isWritable: false },      // 9. token_program (Token-2022)
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // 10. system_program
+      { pubkey: userAccount, isSigner: false, isWritable: true },        // 0. user_account
+      { pubkey: authority, isSigner: true, isWritable: true },           // 1. authority
+      { pubkey: globalState, isSigner: false, isWritable: true },        // 2. global_state
+      { pubkey: referralAccount, isSigner: false, isWritable: true },    // 3. referral_account
+      { pubkey: userTokenAccount, isSigner: false, isWritable: true },   // 4. user_token_account
+      { pubkey: mint, isSigner: false, isWritable: false },              // 5. mint
+      { pubkey: associatedTokenProgram, isSigner: false, isWritable: false }, // 6. associated_token_program
+      { pubkey: tokenProgram, isSigner: false, isWritable: false },      // 7. token_program
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // 8. system_program
     ],
     programId: PROGRAM_ID,
     data,

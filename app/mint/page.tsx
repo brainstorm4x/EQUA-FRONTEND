@@ -573,66 +573,50 @@ export default function MintPage() {
       // No lock period is needed since EQUA is not being sold and maintains its value
       const lockUntil = now;
 
-      // Derive user_metadata PDA for the registering user
-      const [userMetadataPDA] = getUserMetadataPDA(publicKey);
-
       console.log('Accounts:');
       console.log('- User Account (PDA):', userAccountPDA.toBase58());
-      console.log('- User Metadata (PDA):', userMetadataPDA.toBase58());
       console.log('- Authority:', publicKey.toBase58());
       console.log('- Global State:', globalStatePDA.toBase58());
       console.log('- Token Account:', userTokenAccount.toBase58());
       console.log('- Mint:', mintPDA.toBase58());
 
-      // Determine referral accounts - derive PDAs if referrer provided
+      // Determine referral account - derive PDA if referrer provided
       let referralAccountPubkey: PublicKey;
-      let referrerMetadataPubkey: PublicKey;
       let referrerPubkey: PublicKey;
       
       if (referrer) {
         try {
-          // referrer is the wallet address, derive the user_account and user_metadata PDAs
+          // referrer is the wallet address, derive the user_account PDA
           referrerPubkey = new PublicKey(referrer);
           const [referrerUserAccountPDA] = getUserAccountPDA(referrerPubkey);
-          const [referrerUserMetaPDA] = getUserMetadataPDA(referrerPubkey);
           referralAccountPubkey = referrerUserAccountPDA;
-          referrerMetadataPubkey = referrerUserMetaPDA;
           
           console.log('- Referrer:', referrerPubkey.toBase58());
           console.log('- Referral Account (PDA):', referralAccountPubkey.toBase58());
-          console.log('- Referrer Metadata (PDA):', referrerMetadataPubkey.toBase58());
         } catch {
           console.log('Invalid referrer address, using default (no referral)');
           referrerPubkey = PublicKey.default;
           referralAccountPubkey = PublicKey.default;
-          referrerMetadataPubkey = PublicKey.default;
         }
       } else {
-        // No referral - use PublicKey.default for all referrer accounts
+        // No referral - use PublicKey.default
         referrerPubkey = PublicKey.default;
         referralAccountPubkey = PublicKey.default;
-        referrerMetadataPubkey = PublicKey.default;
         console.log('- No referral provided');
       }
 
-      // User type: 0 = Individual (default), can be extended later for Business/Merchant
-      const userType = 0;
-
       const instruction = createInitializeUserInstruction(
         userAccountPDA,
-        userMetadataPDA,
         publicKey,
         globalStatePDA,
         referralAccountPubkey,
-        referrerMetadataPubkey,
         userTokenAccount,
         mintPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
-        now,
-        lockUntil,
         referrerPubkey,
-        userType
+        now,
+        lockUntil
       );
 
       // Log instruction metas for debugging
