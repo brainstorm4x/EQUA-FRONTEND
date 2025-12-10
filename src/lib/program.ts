@@ -311,6 +311,7 @@ export function getOrCreateKeypair(): Keypair {
 }
 
 // ✅ Create initialize_user instruction (UPDATED for consolidated backend)
+// Note: locked_until field removed per EQUA Whitepaper 2025
 export function createInitializeUserInstruction(
   userAccount: PublicKey,
   userMetadata: PublicKey,
@@ -323,26 +324,32 @@ export function createInitializeUserInstruction(
   associatedTokenProgram: PublicKey,
   tokenProgram: PublicKey,
   mintStart: number,
-  lockedUntil: number,
   referrer: PublicKey = PublicKey.default,
   userType: number = 0
 ): TransactionInstruction {
   const discriminator = Buffer.from([111, 17, 185, 250, 60, 122, 38, 254]);
   
   const mintStartBN = new BN(mintStart);
-  const lockedUntilBN = new BN(lockedUntil);
   
-  // Args order: referral (Pubkey 32 bytes) | mint_start (i64 8 bytes) | locked_until (i64 8 bytes) | user_type (u8 1 byte)
+  // Args order: referral (Pubkey 32 bytes) | mint_start (i64 8 bytes) | user_type (u8 1 byte)
+  // Note: locked_until removed per EQUA Whitepaper 2025
   const data = Buffer.concat([
     discriminator,
     referrer.toBuffer(),
     mintStartBN.toArrayLike(Buffer, 'le', 8),
-    lockedUntilBN.toArrayLike(Buffer, 'le', 8),
     Buffer.from([userType]), // user_type as u8
   ]);
 
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Building initialize_user instruction:');
+    console.log('  - Discriminator:', Array.from(discriminator).join(', '));
+    console.log('  - Referrer:', referrer.toBase58());
+    console.log('  - Mint start:', mintStart);
+    console.log('  - User type:', userType);
+  }
+
   // Account order matches backend InitializeUser context exactly (11 accounts)
-  return new TransactionInstruction({
+  const instruction = new TransactionInstruction({
     keys: [
       { pubkey: userAccount, isSigner: false, isWritable: true },        // 0. user_account (PDA)
       { pubkey: userMetadata, isSigner: false, isWritable: true },       // 1. user_metadata (PDA)
@@ -359,6 +366,15 @@ export function createInitializeUserInstruction(
     programId: PROGRAM_ID,
     data,
   });
+
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Instruction account metas:');
+    instruction.keys.forEach((meta, idx) => {
+      console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
+    });
+  }
+
+  return instruction;
 }
 
 // ✅ Create mint_equa instruction (daily minting with cooldown)

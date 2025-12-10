@@ -300,10 +300,6 @@
         {
           "name": "mint_start",
           "type": "i64"
-        },
-        {
-          "name": "locked_until",
-          "type": "i64"
         }
       ]
     },
