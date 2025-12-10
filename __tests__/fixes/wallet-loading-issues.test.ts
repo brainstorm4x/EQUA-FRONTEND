@@ -17,13 +17,13 @@ describe('Fix verification tests', () => {
     });
 
     it('should return null for account data that is too short', () => {
-      const shortBuffer = Buffer.alloc(50); // Less than required 144 bytes
+      const shortBuffer = Buffer.alloc(50); // Less than required 136 bytes (locked_until removed)
       const result = parseUserAccountData(shortBuffer);
       expect(result).toBeNull();
     });
 
     it('should return null for account data that is exactly below threshold', () => {
-      const shortBuffer = Buffer.alloc(143); // 1 byte less than required
+      const shortBuffer = Buffer.alloc(135); // 1 byte less than required (136 bytes after locked_until removal)
       const result = parseUserAccountData(shortBuffer);
       expect(result).toBeNull();
     });
@@ -57,8 +57,8 @@ describe('Fix verification tests', () => {
     });
 
     it('should parse valid user account data correctly', () => {
-      // Create a valid buffer with 144 bytes
-      const validBuffer = Buffer.alloc(144);
+      // Create a valid buffer with 136 bytes (locked_until field removed)
+      const validBuffer = Buffer.alloc(136);
       
       // Fill with discriminator (8 bytes)
       validBuffer.fill(0, 0, 8);
@@ -71,8 +71,8 @@ describe('Fix verification tests', () => {
       testKey.copy(validBuffer, 72); // token_account
       
       // Fill with test u64/i64 values (8 bytes each)
-      // minted_amount, mint_start, locked_until, referral_rewards, last_mint_time
-      for (let i = 0; i < 5; i++) {
+      // minted_amount, mint_start, referral_rewards, last_mint_time (locked_until removed)
+      for (let i = 0; i < 4; i++) {
         validBuffer.writeBigUInt64LE(BigInt(i * 1000), 104 + i * 8);
       }
 

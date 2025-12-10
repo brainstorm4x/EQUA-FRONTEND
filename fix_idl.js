@@ -4,6 +4,7 @@ const idlPath = './public/idl/equa_token.json';
 const idl = JSON.parse(fs.readFileSync(idlPath, 'utf8'));
 
 // Add complete type definitions to accounts
+// Note: locked_until field removed per EQUA Whitepaper 2025
 idl.accounts = [
   {
     name: "GlobalState",
@@ -31,7 +32,6 @@ idl.accounts = [
         {name: "token_account", type: "pubkey"},
         {name: "minted_amount", type: "u64"},
         {name: "mint_start", type: "i64"},
-        {name: "locked_until", type: "i64"},
         {name: "referral_rewards", type: "u64"},
         {name: "last_mint_time", type: "i64"}
       ]
