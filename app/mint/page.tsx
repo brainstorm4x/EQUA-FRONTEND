@@ -134,7 +134,8 @@ async function getLastMintTime(connection: any, userPubkey: PublicKey): Promise<
       return 0;
     }
     
-    // Offset based on IDL: 8 discriminator + 32 authority + 32 referral + 32 token_account + 8 minted_amount + 8 mint_start + 8 locked_until = 128
+    // Offset based on IDL: 8 discriminator + 32 authority + 32 referral + 32 token_account + 8 minted_amount + 8 mint_start = 120
+    // Note: locked_until field removed per EQUA Whitepaper 2025
     const LAST_MINT_TIME_OFFSET = 136;
     
     // Use safe parsing to handle overflow, uninitialized, or corrupted values
@@ -289,16 +290,16 @@ export default function MintPage() {
           console.log('📋 User account data:', {
             exists: accountInfo !== null,
             dataLength: accountInfo?.data.length || 0,
-            minRequired: 144
+            minRequired: 136  // Updated: locked_until field removed (was 144)
           });
-          if (accountInfo && accountInfo.data.length >= 144) {
+          if (accountInfo && accountInfo.data.length >= 136) {
             // Note: user_number might not be stored in the account structure
             // Check if there's additional data beyond the standard fields
             let currentUserNumber = 0;
-            if (accountInfo.data.length >= 152) {
-              // Read user_number at offset 144 if it exists
+            if (accountInfo.data.length >= 144) {
+              // Read user_number at offset 136 if it exists (offset reduced by 8 after locked_until removal)
               const userNumRaw = new anchor.BN(
-                accountInfo.data.slice(144, 152),
+                accountInfo.data.slice(136, 144),
                 'le'
               );
               const userNum = userNumRaw.toNumber();
@@ -418,7 +419,8 @@ export default function MintPage() {
       // This is the source of truth - no database checks
       const accountInfo = await connection.getAccountInfo(referrerPubkey);
       // Check that account exists and has sufficient data to be a UserAccount
-      return accountInfo !== null && accountInfo.data.length >= 144;
+      // Note: Size reduced from 144 to 136 after locked_until field removal
+      return accountInfo !== null && accountInfo.data.length >= 136;
     } catch {
       return false;
     }
@@ -569,9 +571,6 @@ export default function MintPage() {
       }
 
       const now = Math.floor(Date.now() / 1000);
-      // Set lock period to zero - EQUA is a utility token for buying/selling goods and services
-      // No lock period is needed since EQUA is not being sold and maintains its value
-      const lockUntil = now;
 
       // Derive user_metadata PDA for the registering user
       const [userMetadataPDA] = getUserMetadataPDA(publicKey);
@@ -630,7 +629,6 @@ export default function MintPage() {
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         now,
-        lockUntil,
         referrerPubkey,
         userType
       );
@@ -766,15 +764,15 @@ export default function MintPage() {
       }
       console.log('✅ Global state verified');
       
-      // Check for legacy user account (136 bytes vs current 144 bytes)
+      // Check user account size (updated after locked_until removal)
       console.log('🔍 Verifying user account size...');
       const userAccountInfo = await connection.getAccountInfo(userAccountPDA);
       if (!userAccountInfo) {
         throw new Error('User account not found. Please register first.');
       }
       
-      const MIN_USER_ACCOUNT_SIZE = 144;
-      const LEGACY_USER_ACCOUNT_SIZE = 136;
+      const MIN_USER_ACCOUNT_SIZE = 136;  // Updated: locked_until field removed (was 144)
+      const LEGACY_USER_ACCOUNT_SIZE = 128;  // Pre-metadata version
       
       if (userAccountInfo.data.length < MIN_USER_ACCOUNT_SIZE) {
         console.error('❌ Legacy user account detected:', {

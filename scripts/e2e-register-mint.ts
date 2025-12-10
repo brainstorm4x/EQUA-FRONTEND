@@ -150,7 +150,6 @@ async function main() {
   // Step 5: Register user (self-referral)
   console.log('\n🔍 Step 5: Registering user...');
   const now = Math.floor(Date.now() / 1000);
-  const lockUntil = now + (2 * 365 * 24 * 60 * 60); // 2 years
   
   // Derive user_metadata PDA
   const [userMetadataPDA] = getUserMetadataPDA(payer.publicKey);
@@ -167,7 +166,6 @@ async function main() {
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
     now,
-    lockUntil,
     PublicKey.default,            // No referrer
     0                             // user_type: 0 = Individual
   );

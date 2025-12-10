@@ -305,10 +305,6 @@ export type EquaToken = {
         {
           "name": "mintStart",
           "type": "i64"
-        },
-        {
-          "name": "lockedUntil",
-          "type": "i64"
         }
       ]
     },
@@ -697,10 +693,6 @@ export type EquaToken = {
           },
           {
             "name": "mintStart",
-            "type": "i64"
-          },
-          {
-            "name": "lockedUntil",
             "type": "i64"
           },
           {

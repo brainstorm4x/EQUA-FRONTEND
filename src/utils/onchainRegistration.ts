@@ -10,6 +10,7 @@ import { BN } from '@coral-xyz/anchor';
 
 /**
  * UserAccount structure from the IDL
+ * Note: locked_until field removed per EQUA Whitepaper 2025
  */
 export interface UserAccountData {
   authority: PublicKey;
@@ -17,7 +18,6 @@ export interface UserAccountData {
   tokenAccount: PublicKey;
   mintedAmount: BN;
   mintStart: BN;
-  lockedUntil: BN;
   referralRewards: BN;
   lastMintTime: BN;
 }
@@ -54,8 +54,9 @@ export async function validateReferrerOnchain(
   try {
     const accountInfo = await connection.getAccountInfo(referrerPubkey);
     // Check that account exists and has sufficient data to be a UserAccount
-    // UserAccount discriminator (8 bytes) + authority (32) + referral (32) + ... = at least 144 bytes
-    return accountInfo !== null && accountInfo.data.length >= 144;
+    // UserAccount discriminator (8 bytes) + authority (32) + referral (32) + ... = at least 136 bytes
+    // Note: Reduced by 8 bytes after locked_until field removal
+    return accountInfo !== null && accountInfo.data.length >= 136;
   } catch (error) {
     console.error('Error validating referrer account:', error);
     return false;
@@ -69,8 +70,9 @@ export async function validateReferrerOnchain(
  */
 export function parseUserAccountData(accountData: Buffer): UserAccountData | null {
   try {
-    // Check minimum length
-    if (accountData.length < 144) {
+    // Check minimum length (reduced by 8 bytes after locked_until removal)
+    // Previous: 144 bytes, Now: 136 bytes
+    if (accountData.length < 136) {
       // This is a normal case when the user account doesn't exist yet (not registered)
       // No need to log an error
       return null;
@@ -83,9 +85,9 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
     // 32 bytes: token_account (Pubkey)
     // 8 bytes: minted_amount (u64)
     // 8 bytes: mint_start (i64)
-    // 8 bytes: locked_until (i64)
     // 8 bytes: referral_rewards (u64)
     // 8 bytes: last_mint_time (i64)
+    // Note: locked_until field removed per EQUA Whitepaper 2025
     
     let offset = 8; // Skip discriminator
     
@@ -104,11 +106,9 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
     const mintStart = new BN(accountData.slice(offset, offset + 8), 'le');
     offset += 8;
     
-    // Note: mintStart, lockedUntil, and lastMintTime are i64 (signed) in the IDL,
+    // Note: mintStart and lastMintTime are i64 (signed) in the IDL,
     // but for timestamp values, we treat them as unsigned since timestamps are always positive.
     // If negative values are encountered, they would wrap around in the BN representation.
-    const lockedUntil = new BN(accountData.slice(offset, offset + 8), 'le');
-    offset += 8;
     
     const referralRewards = new BN(accountData.slice(offset, offset + 8), 'le');
     offset += 8;
@@ -121,7 +121,6 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
       tokenAccount,
       mintedAmount,
       mintStart,
-      lockedUntil,
       referralRewards,
       lastMintTime,
     };
