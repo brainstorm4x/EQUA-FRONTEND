@@ -8,6 +8,17 @@ export type AccountType = 'individual' | 'business';
 // Default account type for all registrations
 export const DEFAULT_ACCOUNT_TYPE: AccountType = 'individual';
 
+// On-chain user type values (u8)
+export const USER_TYPE_INDIVIDUAL = 0;
+export const USER_TYPE_BUSINESS = 1;
+
+/**
+ * Convert AccountType to on-chain user type value
+ */
+export function accountTypeToUserType(accountType: AccountType): number {
+  return accountType === 'business' ? USER_TYPE_BUSINESS : USER_TYPE_INDIVIDUAL;
+}
+
 // Minimum SOL balance required for registration
 export const MIN_SOL_BALANCE = 0.05;
 

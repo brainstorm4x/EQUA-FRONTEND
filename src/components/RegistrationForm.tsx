@@ -47,6 +47,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   validateReferrer,
   userWalletAddress,
 }) => {
+  const [accountType, setAccountType] = useState<AccountType>(DEFAULT_ACCOUNT_TYPE);
   const [referrer, setReferrer] = useState('');
   const [referrerError, setReferrerError] = useState('');
   const [isValidatingReferrer, setIsValidatingReferrer] = useState(false);
@@ -151,8 +152,8 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
         : undefined,
     };
     
-    // Always register with default account type (account type distinction removed for simplicity)
-    onRegister(DEFAULT_ACCOUNT_TYPE, effectiveReferrer, metadata);
+    // Register with selected account type
+    onRegister(accountType, effectiveReferrer, metadata);
   };
 
   // Check if referral code validation has an error state
@@ -201,6 +202,47 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
           </div>
         </div>
       )}
+
+      {/* User Type Selection */}
+      <div className="mb-6">
+        <label className="block text-white font-medium mb-3" id="user-type-label">
+          Register as:
+        </label>
+        <div 
+          className="flex gap-3"
+          role="radiogroup"
+          aria-labelledby="user-type-label"
+        >
+          <button
+            type="button"
+            onClick={() => setAccountType('individual')}
+            className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all ${
+              accountType === 'individual'
+                ? 'bg-purple-600 text-white border-2 border-purple-400'
+                : 'bg-white/10 text-purple-200 border-2 border-purple-500/30 hover:border-purple-400'
+            }`}
+            aria-checked={accountType === 'individual'}
+            data-testid="user-type-individual"
+            role="radio"
+          >
+            👤 Individual
+          </button>
+          <button
+            type="button"
+            onClick={() => setAccountType('business')}
+            className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all ${
+              accountType === 'business'
+                ? 'bg-purple-600 text-white border-2 border-purple-400'
+                : 'bg-white/10 text-purple-200 border-2 border-purple-500/30 hover:border-purple-400'
+            }`}
+            aria-checked={accountType === 'business'}
+            data-testid="user-type-business"
+            role="radio"
+          >
+            🏢 Business
+          </button>
+        </div>
+      </div>
 
       {/* Referral Field */}
       <div className="mb-6">

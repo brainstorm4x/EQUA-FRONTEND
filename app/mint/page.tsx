@@ -579,42 +579,60 @@ export default function MintPage() {
       console.log('- Token Account:', userTokenAccount.toBase58());
       console.log('- Mint:', mintPDA.toBase58());
 
+      // Derive user_metadata PDA for the registering user
+      const [userMetadataPDA] = getUserMetadataPDA(publicKey);
+      console.log('- User Metadata (PDA):', userMetadataPDA.toBase58());
+
       // Determine referral accounts - derive PDAs if referrer provided
       let referralAccountPubkey: PublicKey;
+      let referrerMetadataPubkey: PublicKey;
       let referrerPubkey: PublicKey;
       
       if (referrer) {
         try {
-          // referrer is the wallet address, derive the user_account PDA
+          // referrer is the wallet address, derive the user_account PDA and user_metadata PDA
           referrerPubkey = new PublicKey(referrer);
           const [referrerUserAccountPDA] = getUserAccountPDA(referrerPubkey);
+          const [referrerUserMetadataPDA] = getUserMetadataPDA(referrerPubkey);
           referralAccountPubkey = referrerUserAccountPDA;
+          referrerMetadataPubkey = referrerUserMetadataPDA;
           
           console.log('- Referrer:', referrerPubkey.toBase58());
           console.log('- Referral Account (PDA):', referralAccountPubkey.toBase58());
+          console.log('- Referrer Metadata (PDA):', referrerMetadataPubkey.toBase58());
         } catch {
           console.log('Invalid referrer address, using default (no referral)');
           referrerPubkey = PublicKey.default;
           referralAccountPubkey = PublicKey.default;
+          referrerMetadataPubkey = PublicKey.default;
         }
       } else {
         // No referral - use PublicKey.default for all referrer accounts
         referrerPubkey = PublicKey.default;
         referralAccountPubkey = PublicKey.default;
+        referrerMetadataPubkey = PublicKey.default;
         console.log('- No referral provided');
       }
 
+      // Convert account type to user type value (0 = individual, 1 = business)
+      const { accountTypeToUserType } = await import('@/utils/registration');
+      const userTypeValue = accountTypeToUserType(accountType);
+      console.log('- Account type:', accountType, '→ user_type:', userTypeValue);
+
       const instruction = createInitializeUserInstruction(
         userAccountPDA,
+        userMetadataPDA,
         publicKey,
         globalStatePDA,
         referralAccountPubkey,
+        referrerMetadataPubkey,
         userTokenAccount,
         mintPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         now,
-        referrerPubkey
+        referrerPubkey,
+        userTypeValue
       );
 
       // Log instruction metas for debugging

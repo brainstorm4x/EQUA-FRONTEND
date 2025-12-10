@@ -27,8 +27,9 @@ export class ProgramService {
     return account?.equaBalance.toNumber() || 0;
   }
 
-  async registerUser(referrer?: PublicKey): Promise<string> {
+  async registerUser(referrer?: PublicKey, userType: number = 0): Promise<string> {
     const [userPDA] = program.getUserAccountPDA(this.wallet.publicKey);
+    const [userMetadataPDA] = program.getUserMetadataPDA(this.wallet.publicKey);
     const [globalStatePDA] = program.getGlobalStatePDA();
     const [mintPDA] = program.getMintPDA();
     const userTokenAccount = await getAssociatedTokenAddress(
@@ -39,22 +40,28 @@ export class ProgramService {
     );
     const now = Math.floor(Date.now() / 1000);
 
-    // Derive referral account PDA if referrer provided
+    // Derive referral account PDA and metadata PDA if referrer provided
     const referralAccountPDA = referrer 
       ? program.getUserAccountPDA(referrer)[0]
+      : PublicKey.default;
+    const referrerMetadataPDA = referrer
+      ? program.getUserMetadataPDA(referrer)[0]
       : PublicKey.default;
 
     const instruction = program.createInitializeUserInstruction(
       userPDA,
+      userMetadataPDA,
       this.wallet.publicKey,
       globalStatePDA,
       referralAccountPDA,
+      referrerMetadataPDA,
       userTokenAccount,
       mintPDA,
       ASSOCIATED_TOKEN_PROGRAM_ID,
       program.TOKEN_PROGRAM_ID,
       now,
-      referrer || PublicKey.default
+      referrer || PublicKey.default,
+      userType
     );
 
     const transaction = new Transaction().add(instruction);
