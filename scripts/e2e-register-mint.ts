@@ -104,10 +104,12 @@ async function main() {
   }
   console.log('✅ Mint verified');
   
-  // Step 3: Derive user account PDA from authority (payer's public key)
-  console.log('\n🔍 Step 3: Deriving user account PDA...');
+  // Step 3: Derive user account PDA and user metadata PDA from authority (payer's public key)
+  console.log('\n🔍 Step 3: Deriving user account PDA and user metadata PDA...');
   const [userAccountPDA] = getUserAccountPDA(payer.publicKey);
+  const [userMetadataPDA] = getUserMetadataPDA(payer.publicKey);
   console.log('✅ User account PDA:', userAccountPDA.toBase58());
+  console.log('✅ User metadata PDA:', userMetadataPDA.toBase58());
   
   // Step 4: Create ATA
   console.log('\n🔍 Step 4: Creating Associated Token Account...');
@@ -153,15 +155,18 @@ async function main() {
   
   const registerIx = createInitializeUserInstruction(
     userAccountPDA,
+    userMetadataPDA,
     payer.publicKey,
     globalStatePDA,
     userAccountPDA,               // Self-referral: use own account PDA
+    userMetadataPDA,              // Self-referral: use own metadata PDA
     userTokenAccount,
     mintPDA,
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
     now,
-    PublicKey.default             // No referrer
+    PublicKey.default,            // No referrer
+    0                             // user_type: 0 = Individual
   );
   
   console.log('\n🧪 Registration Instruction Metas:');
