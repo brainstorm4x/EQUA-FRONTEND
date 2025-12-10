@@ -31,7 +31,7 @@ import {
   MINT_SEED,
   MINT_AUTHORITY_SEED,
   RPC_ENDPOINT,
-} from '../lib/constants';
+} from '../src/lib/constants';
 import {
   getGlobalStatePDA,
   getMintPDA,
@@ -42,7 +42,7 @@ import {
   createMintEquaInstruction,
   createMintTokensInstruction,
   getSPLTokenBalance,
-} from '../lib/program';
+} from '../src/lib/program';
 import { formatEquaRaw } from '../src/utils/tokenFormat';
 
 async function main() {
@@ -104,10 +104,10 @@ async function main() {
   }
   console.log('✅ Mint verified');
   
-  // Step 3: Create user account keypair
-  console.log('\n🔍 Step 3: Creating user account...');
-  const userAccountKeypair = Keypair.generate();
-  console.log('✅ User account:', userAccountKeypair.publicKey.toBase58());
+  // Step 3: Derive user account PDA from authority (payer's public key)
+  console.log('\n🔍 Step 3: Deriving user account PDA...');
+  const [userAccountPDA] = getUserAccountPDA(payer.publicKey);
+  console.log('✅ User account PDA:', userAccountPDA.toBase58());
   
   // Step 4: Create ATA
   console.log('\n🔍 Step 4: Creating Associated Token Account...');
@@ -155,11 +155,11 @@ async function main() {
   const [userMetadataPDA] = getUserMetadataPDA(payer.publicKey);
   
   const registerIx = createInitializeUserInstruction(
-    userAccountKeypair.publicKey,
+    userAccountPDA,
     userMetadataPDA,               // user_metadata
     payer.publicKey,
     globalStatePDA,
-    userAccountKeypair.publicKey, // Self-referral: use own account
+    userAccountPDA,               // Self-referral: use own account PDA
     userMetadataPDA,              // referrer_metadata (same as user_metadata for self-referral)
     userTokenAccount,
     mintPDA,
@@ -180,7 +180,7 @@ async function main() {
   const { blockhash: regBlockhash } = await connection.getLatestBlockhash('confirmed');
   registerTx.recentBlockhash = regBlockhash;
   registerTx.feePayer = payer.publicKey;
-  registerTx.sign(payer, userAccountKeypair);
+  registerTx.sign(payer);  // Only payer signs - user account is a PDA (no keypair needed)
   
   try {
     const regSig = await connection.sendRawTransaction(registerTx.serialize(), {
@@ -204,7 +204,7 @@ async function main() {
   
   // Use new 7-account mint_tokens instruction
   const mintIx = createMintTokensInstruction(
-    userAccountKeypair.publicKey,  // user_account
+    userAccountPDA,                // user_account (PDA)
     userMetadataPDA,               // user_metadata
     userTokenAccount,              // user_token_account
     mintPDA,                       // mint
