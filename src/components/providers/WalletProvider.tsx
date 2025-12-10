@@ -68,7 +68,14 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
 
   // Memoize endpoint to prevent recreation on every render
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  // Use environment variable if provided, otherwise fall back to default cluster URL
+  const endpoint = useMemo(() => {
+    const customEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT;
+    if (customEndpoint) {
+      return customEndpoint;
+    }
+    return clusterApiUrl(network);
+  }, [network]);
 
   // Use ref to cache wallets per instance, avoiding shared state across components
   const walletsRef = useRef<WalletAdapterList | null>(null);
