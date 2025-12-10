@@ -1,5 +1,10 @@
 /**
  * Types for the off-chain referral code system
+ * 
+ * Schema Design:
+ * - Backend API and registry use snake_case (referrer_pubkey, created_at, expires_at, used)
+ * - Frontend UI layer uses camelCase (referrerPubkey, expiresInSeconds)
+ * - Transformation between formats happens in utility functions (see src/utils/referral/registry.ts)
  */
 
 /**
@@ -26,6 +31,10 @@ export enum ReferralState {
 
 /**
  * A single referral code entry in the registry
+ * 
+ * NOTE: This interface uses snake_case to match the backend schema defined in 
+ * schemas/referralCode.schema.json. Frontend UI components receive transformed
+ * camelCase versions (e.g., referrerPubkey) via ReferralResolutionResult.
  */
 export interface ReferralCodeEntry {
   /** The referrer's Solana public key (base58 encoded) */
@@ -47,11 +56,14 @@ export interface ReferralRegistry {
 
 /**
  * Result of resolving a referral input (code or public key)
+ * 
+ * NOTE: This interface uses camelCase for UI consumption. The underlying
+ * ReferralCodeEntry uses snake_case to match backend schema.
  */
 export interface ReferralResolutionResult {
   /** The current state of the resolution */
   state: ReferralState;
-  /** The referrer's public key if resolution was successful */
+  /** The referrer's public key if resolution was successful (camelCase for UI) */
   referrerPubkey?: string;
   /** Error message if applicable */
   error?: string;

@@ -1,5 +1,10 @@
 /**
  * Registry utilities for fetching and resolving referral codes
+ * 
+ * Data Flow:
+ * - Backend API uses snake_case (referrer_pubkey, created_at, expires_at, used)
+ * - Frontend transforms to camelCase (referrerPubkey) for UI consumption
+ * - This module handles the transformation between formats
  */
 
 import { PublicKey } from '@solana/web3.js';
@@ -10,6 +15,21 @@ import {
   ReferralState,
 } from '@/types/referral';
 import { CODE_PATTERN, CODE_TTL_SECONDS } from '@/config/referral';
+
+/**
+ * Transforms a backend ReferralCodeEntry to ensure schema consistency
+ * Backend uses snake_case, this ensures we maintain that format
+ * @param entry - Raw entry from backend/registry
+ * @returns Validated entry in backend schema format
+ */
+function normalizeReferralCodeEntry(entry: ReferralCodeEntry): ReferralCodeEntry {
+  return {
+    referrer_pubkey: entry.referrer_pubkey,
+    created_at: entry.created_at,
+    expires_at: entry.expires_at,
+    used: entry.used,
+  };
+}
 
 /**
  * Mock referral registry for development/testing
@@ -49,7 +69,12 @@ export async function fetchReferralRegistry(): Promise<ReferralRegistry> {
   
   // For now, return the mock registry
   // In production, this would fetch from a GitHub JSON file or other source
-  return MOCK_REGISTRY;
+  // Normalize entries to ensure backend schema consistency
+  const normalizedRegistry: ReferralRegistry = {};
+  for (const [code, entry] of Object.entries(MOCK_REGISTRY)) {
+    normalizedRegistry[code] = normalizeReferralCodeEntry(entry);
+  }
+  return normalizedRegistry;
 }
 
 /**
