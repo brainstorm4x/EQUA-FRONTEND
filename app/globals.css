@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Solana Wallet Adapter UI styles */
+@import '@solana/wallet-adapter-react-ui/styles.css';
+
 /* ============================================================================
    PERFORMANCE OPTIMIZATION: Critical CSS & CSS Containment
    ============================================================================ */
