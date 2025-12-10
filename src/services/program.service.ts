@@ -1,4 +1,5 @@
 import { Connection, PublicKey, Transaction } from '@solana/web3.js';
+import { getAssociatedTokenAddress, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import BN from 'bn.js';
 import * as program from '../lib/program';
 
@@ -29,12 +30,31 @@ export class ProgramService {
   async registerUser(referrer?: PublicKey): Promise<string> {
     const [userPDA] = program.getUserAccountPDA(this.wallet.publicKey);
     const [globalStatePDA] = program.getGlobalStatePDA();
+    const [mintPDA] = program.getMintPDA();
+    const userTokenAccount = await getAssociatedTokenAddress(
+      mintPDA,
+      this.wallet.publicKey,
+      false,
+      program.TOKEN_PROGRAM_ID
+    );
+    const now = Math.floor(Date.now() / 1000);
+
+    // Derive referral account PDA if referrer provided
+    const referralAccountPDA = referrer 
+      ? program.getUserAccountPDA(referrer)[0]
+      : PublicKey.default;
 
     const instruction = program.createInitializeUserInstruction(
       userPDA,
       this.wallet.publicKey,
       globalStatePDA,
-      referrer
+      referralAccountPDA,
+      userTokenAccount,
+      mintPDA,
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      program.TOKEN_PROGRAM_ID,
+      now,
+      referrer || PublicKey.default
     );
 
     const transaction = new Transaction().add(instruction);
