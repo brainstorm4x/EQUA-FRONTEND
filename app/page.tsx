@@ -117,6 +117,14 @@ export default function HomePage() {
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-6 mt-16">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
+              <div className="text-4xl mb-4">🎁</div>
+              <h3 className="text-xl font-bold text-white mb-2">Referral Rewards</h3>
+              <p className="text-purple-200">
+                Refer others and earn 1% for individuals, 2% for businesses (recurring on each mint)
+              </p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
               <div className="text-4xl mb-4">⚡</div>
               <h3 className="text-xl font-bold text-white mb-2">Higher-Minting-Rate</h3>
               <p className="text-purple-200">
@@ -129,14 +137,6 @@ export default function HomePage() {
               <h3 className="text-xl font-bold text-white mb-2">Price Appreciation</h3>
               <p className="text-purple-200">
                 Five-phase pricing: 0.1% growth from $0.01 to $100, then 0.01% to $200k, then $100/epoch forever
-              </p>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
-              <div className="text-4xl mb-4">🎁</div>
-              <h3 className="text-xl font-bold text-white mb-2">Referral Rewards</h3>
-              <p className="text-purple-200">
-                Refer others and earn 1% for individuals, 2% for businesses (recurring on each mint)
               </p>
             </div>
           </div>
