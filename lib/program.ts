@@ -234,26 +234,29 @@ export function getOrCreateKeypair(): Keypair {
 // Note: locked_until field removed per EQUA Whitepaper 2025
 export function createInitializeUserInstruction(
   userAccount: PublicKey,
+  userMetadata: PublicKey,
   authority: PublicKey,
   globalState: PublicKey,
   referralAccount: PublicKey,
+  referrerMetadata: PublicKey,
   userTokenAccount: PublicKey,
   mint: PublicKey,
   associatedTokenProgram: PublicKey,
   tokenProgram: PublicKey,
   mintStart: number,
-  referrer: PublicKey = PublicKey.default
+  referrer: PublicKey = PublicKey.default,
+  userType: number = 0
 ): TransactionInstruction {
   const discriminator = Buffer.from([111, 17, 185, 250, 60, 122, 38, 254]);
   
   const mintStartBN = new BN(mintStart);
   
-  // Args order per IDL: referral (Pubkey 32 bytes) | mint_start (i64 8 bytes)
-  // Note: user_type removed to match backend IDL exactly
+  // Args order per IDL: referral (Pubkey 32 bytes) | mint_start (i64 8 bytes) | user_type (u8 1 byte)
   const data = Buffer.concat([
     discriminator,
     referrer.toBuffer(),
     mintStartBN.toArrayLike(Buffer, 'le', 8),
+    Buffer.from([userType]), // u8 user_type
   ]);
 
   if (DEBUG_INSTRUCTIONS) {
@@ -261,22 +264,25 @@ export function createInitializeUserInstruction(
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Referrer:', referrer.toBase58());
     console.log('  - Mint start:', mintStart);
+    console.log('  - User type:', userType);
   }
 
-  // Account order matches backend IDL exactly (9 accounts)
-  // user_account, authority, global_state, referral_account, user_token_account, 
-  // mint, associated_token_program, token_program, system_program
+  // Account order matches backend IDL exactly (11 accounts)
+  // user_account, user_metadata, authority, global_state, referral_account, referrer_metadata,
+  // user_token_account, mint, associated_token_program, token_program, system_program
   const instruction = new TransactionInstruction({
     keys: [
       { pubkey: userAccount, isSigner: false, isWritable: true },        // 0. user_account
-      { pubkey: authority, isSigner: true, isWritable: true },           // 1. authority
-      { pubkey: globalState, isSigner: false, isWritable: true },        // 2. global_state
-      { pubkey: referralAccount, isSigner: false, isWritable: true },    // 3. referral_account
-      { pubkey: userTokenAccount, isSigner: false, isWritable: true },   // 4. user_token_account
-      { pubkey: mint, isSigner: false, isWritable: false },              // 5. mint
-      { pubkey: associatedTokenProgram, isSigner: false, isWritable: false }, // 6. associated_token_program
-      { pubkey: tokenProgram, isSigner: false, isWritable: false },      // 7. token_program
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // 8. system_program
+      { pubkey: userMetadata, isSigner: false, isWritable: true },       // 1. user_metadata
+      { pubkey: authority, isSigner: true, isWritable: true },           // 2. authority
+      { pubkey: globalState, isSigner: false, isWritable: true },        // 3. global_state
+      { pubkey: referralAccount, isSigner: false, isWritable: true },    // 4. referral_account
+      { pubkey: referrerMetadata, isSigner: false, isWritable: true },   // 5. referrer_metadata
+      { pubkey: userTokenAccount, isSigner: false, isWritable: true },   // 6. user_token_account
+      { pubkey: mint, isSigner: false, isWritable: false },              // 7. mint
+      { pubkey: associatedTokenProgram, isSigner: false, isWritable: false }, // 8. associated_token_program
+      { pubkey: tokenProgram, isSigner: false, isWritable: false },      // 9. token_program
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // 10. system_program
     ],
     programId: PROGRAM_ID,
     data,

@@ -174,6 +174,10 @@ export type EquaToken = {
           "writable": true
         },
         {
+          "name": "userMetadata",
+          "writable": true
+        },
+        {
           "name": "authority",
           "writable": true,
           "signer": true
@@ -205,6 +209,10 @@ export type EquaToken = {
         },
         {
           "name": "referralAccount",
+          "writable": true
+        },
+        {
+          "name": "referrerMetadata",
           "writable": true
         },
         {
@@ -305,6 +313,10 @@ export type EquaToken = {
         {
           "name": "mintStart",
           "type": "i64"
+        },
+        {
+          "name": "userType",
+          "type": "u8"
         }
       ]
     },
