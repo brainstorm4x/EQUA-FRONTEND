@@ -12,10 +12,12 @@
    - token_account (Pubkey)       ← User's token account
    - minted_amount (u64)          ← Total minted
    - mint_start (i64)             ← Registration timestamp
-   - locked_until (i64)           ← Lock expiry
+   - (locked_until field removed per EQUA Whitepaper 2025)
    - referral_rewards (u64)       ← Accumulated rewards for this referrer
    - last_mint_time (i64)         ← Last mint timestamp
    ```
+
+> **Note**: The `locked_until` field has been removed as of December 2025.
 
 2. **Referral Rewards Accumulation**: The `referral_rewards` field in each UserAccount tracks how much reward that account has earned from referring others.
 

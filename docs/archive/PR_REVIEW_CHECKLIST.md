@@ -1,5 +1,7 @@
 # Pull Request Review Checklist
 
+> ⚠️ **OUTDATED DOCUMENT**: This checklist references the 9-account initialize_user structure. As of December 2025, the instruction has been updated to **11 accounts**. See `IMPLEMENTATION_NOTES.md` for current structure.
+
 This checklist helps reviewers verify that the audit and documentation are complete and accurate.
 
 ---
