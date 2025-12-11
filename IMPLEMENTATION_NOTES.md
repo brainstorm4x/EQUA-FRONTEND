@@ -1,5 +1,22 @@
 # Implementation Notes: Registration Fix for Consolidated Backend
 
+## ⚠️ BREAKING CHANGE: 11-Account Instruction Structure
+
+**Migration Required:** The `initialize_user` instruction has been updated to match the on-chain IDL. All clients (web, mobile, CLI tools) MUST update to the new signature to avoid Anchor 0x66 InstructionDidNotDeserialize errors.
+
+### What Changed
+- **Accounts:** 9 → 11 (added `user_metadata` and `referrer_metadata` PDAs)
+- **Data:** Added `user_type` byte (0=individual, 1=business)
+- **Account Order:** Updated to match on-chain program exactly
+
+### Migration Checklist
+- [ ] Update instruction builder to pass 11 accounts
+- [ ] Derive `user_metadata` PDA: `["user-meta", authority]`
+- [ ] Derive `referrer_metadata` PDA: `["user-meta", referrer]` (or PublicKey.default if no referrer)
+- [ ] Append `user_type` byte to instruction data
+- [ ] Update tests to expect 11 accounts
+- [ ] Verify transactions succeed without 0x66 error
+
 ## Summary
 Updated frontend to match the consolidated `initialize_user` instruction in the deployed EQUA backend program (7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP on Devnet).
 
@@ -30,18 +47,18 @@ createInitializeUserInstruction(
 createInitializeUserInstruction(
   userAccount,         // 0. user_account PDA
   userMetadata,        // 1. user_metadata PDA ← NEW
-  authority,           // 2. authority (signer)
+  authority,           // 2. authority (signer, writable)
   globalState,         // 3. global_state
-  referralAccount,     // 4. referral_account
-  referrerMetadata,    // 5. referrer_metadata ← NEW
+  referralAccount,     // 4. referral_account (unchecked, writable)
+  referrerMetadata,    // 5. referrer_metadata (unchecked, writable) ← NEW
   userTokenAccount,    // 6. user_token_account
   mint,                // 7. mint
   associatedTokenProgram, // 8. associated_token_program
   tokenProgram,        // 9. token_program (Token-2022)
-  mintStart,
-  lockedUntil,
-  referrer,
-  userType             // 10. user_type (u8) ← NEW
+  systemProgram,       // 10. system_program
+  mintStart,           // arg: i64
+  referrer,            // arg: Pubkey
+  userType             // arg: u8 (0=individual, 1=business) ← NEW
 )
 ```
 
@@ -49,8 +66,9 @@ createInitializeUserInstruction(
 - Discriminator: `[111, 17, 185, 250, 60, 122, 38, 254]` (8 bytes)
 - Referral pubkey: 32 bytes
 - Mint start: i64 (8 bytes)
-- Locked until: i64 (8 bytes)
 - User type: u8 (1 byte) ← NEW
+
+**Total: 8 + 32 + 8 + 1 = 49 bytes**
 
 ### 2. Updated Registration Flow
 **File:** `app/mint/page.tsx`

@@ -155,18 +155,21 @@ async function main() {
   
   const registerIx = createInitializeUserInstruction(
     userAccountPDA,
+    userMetadataPDA,              // user_metadata PDA
     payer.publicKey,
     globalStatePDA,
     userAccountPDA,               // Self-referral: use own account PDA
+    userMetadataPDA,              // Self-referral: use own metadata PDA
     userTokenAccount,
     mintPDA,
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
     now,
-    PublicKey.default             // No referrer
+    PublicKey.default,            // No referrer
+    0                             // userType: 0=individual, 1=business
   );
   
-  console.log('\n🧪 Registration Instruction Metas:');
+  console.log('\n🧪 Registration Instruction Metas (11 accounts):');
   registerIx.keys.forEach((k, i) => {
     console.log(`  ${i}. ${k.pubkey.toBase58()}`);
     console.log(`     writable=${k.isWritable} signer=${k.isSigner}`);
