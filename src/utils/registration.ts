@@ -2,11 +2,22 @@
  * Registration utilities for EQUA Token
  */
 
-// Account type options (maintained for compatibility, always uses 'individual')
+// Account type options
 export type AccountType = 'individual' | 'business';
 
 // Default account type for all registrations
 export const DEFAULT_ACCOUNT_TYPE: AccountType = 'individual';
+
+// User type enum values (as sent to on-chain program)
+export enum UserType {
+  Individual = 0,
+  Business = 1,
+}
+
+// Map account type to user type enum
+export function accountTypeToUserType(accountType: AccountType): UserType {
+  return accountType === 'business' ? UserType.Business : UserType.Individual;
+}
 
 // Minimum SOL balance required for registration
 export const MIN_SOL_BALANCE = 0.05;

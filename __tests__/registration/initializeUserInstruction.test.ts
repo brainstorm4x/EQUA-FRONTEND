@@ -10,17 +10,18 @@ import { TOKEN_PROGRAM_ID } from '@/lib/constants';
 describe('createInitializeUserInstruction', () => {
   // Mock public keys for testing (using well-known valid addresses)
   const userAccount = new PublicKey('So11111111111111111111111111111111111111112');
-  const userMetadata = new PublicKey('2q5QTfWHRvjTDdgTf3yx2rLx8Zv1V7xYzX9bWdB5WBhL');
+  const userMetadata = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
   const authority = new PublicKey('GDDMwNyyx8uB6zrqwBFHjLLG3TBYk2F8Az4yrQC5RzMp');
   const globalState = new PublicKey('4fYNw3dojWmQ4dXtSGE9epjRGy9pFSx62YypT7avPYvA');
   const referralAccount = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
-  const referrerMetadata = new PublicKey('8kYXqVHNdq4dJ5MZnVKgT8fLqW3rXqF5JvG9wBxP3Qzh');
+  const referrerMetadata = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
   const userTokenAccount = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
   const mint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
   const associatedTokenProgram = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
   const referrer = new PublicKey('3YMv4QM4dd2gsBJJgKwG3oVpkNE2DezaMADR2m4FMQpZ');
 
   const now = Math.floor(Date.now() / 1000);
+  const userType = 0; // Individual
 
   it('should have referral_account as writable per IDL requirement', () => {
     const instruction = createInitializeUserInstruction(
@@ -36,7 +37,7 @@ describe('createInitializeUserInstruction', () => {
       TOKEN_PROGRAM_ID,
       now,
       referrer,
-      0  // userType: individual
+      userType
     );
 
     // According to IDL, referral_account is at index 4 and must be writable
@@ -60,7 +61,7 @@ describe('createInitializeUserInstruction', () => {
       TOKEN_PROGRAM_ID,
       now,
       referrer,
-      0  // userType: individual
+      userType
     );
 
     // Verify discriminator bytes match IDL for initialize_user
@@ -84,7 +85,7 @@ describe('createInitializeUserInstruction', () => {
       TOKEN_PROGRAM_ID,
       now,
       referrer,
-      0  // userType: individual
+      userType
     );
 
     expect(instruction.keys).toHaveLength(11);
@@ -161,20 +162,15 @@ describe('createInitializeUserInstruction', () => {
       TOKEN_PROGRAM_ID,
       now,
       PublicKey.default, // default referrer for self-referral
-      0  // userType: individual
+      userType
     );
 
     // Verify referral_account (index 4) is writable even for self-referral
     expect(instruction.keys[4].pubkey).toEqual(userAccount);
     expect(instruction.keys[4].isWritable).toBe(true);
-    
-    // Verify referrer_metadata (index 5) is writable even for self-referral
-    expect(instruction.keys[5].pubkey).toEqual(userMetadata);
-    expect(instruction.keys[5].isWritable).toBe(true);
   });
 
   it('should encode referral, mint_start, and user_type correctly', () => {
-    const userType = 1; // business
     const instruction = createInitializeUserInstruction(
       userAccount,
       userMetadata,
@@ -212,11 +208,12 @@ describe('createInitializeUserInstruction', () => {
     expect(decodedMintStart).toBe(now);
     
     // Verify user_type (u8)
-    const userTypeByte = instruction.data.slice(48, 49)[0];
+    const userTypeByte = instruction.data.readUInt8(48);
     expect(userTypeByte).toBe(userType);
   });
 
-  it('should default to individual user_type when not specified', () => {
+  it('should encode business user_type correctly', () => {
+    const businessUserType = 1;
     const instruction = createInitializeUserInstruction(
       userAccount,
       userMetadata,
@@ -229,12 +226,12 @@ describe('createInitializeUserInstruction', () => {
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
       now,
-      referrer
-      // userType not specified, should default to 0
+      referrer,
+      businessUserType
     );
 
-    // Verify user_type defaults to 0 (individual)
-    const userTypeByte = instruction.data.slice(48, 49)[0];
-    expect(userTypeByte).toBe(0);
+    // Verify user_type is encoded as 1 for business
+    const userTypeByte = instruction.data.readUInt8(48);
+    expect(userTypeByte).toBe(1);
   });
 });

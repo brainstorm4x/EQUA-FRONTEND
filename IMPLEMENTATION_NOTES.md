@@ -54,32 +54,35 @@ createInitializeUserInstruction(
   userTokenAccount,    // 6. user_token_account
   mint,                // 7. mint
   associatedTokenProgram, // 8. associated_token_program
-  tokenProgram,        // 9. token_program (Token-2022)
-  systemProgram,       // 10. system_program
-  mintStart,           // arg: i64
-  referrer,            // arg: Pubkey
-  userType             // arg: u8 (0=individual, 1=business) ← NEW
+  tokenProgram,        // 9. token_program
+  mintStart,
+  referrer,
+  userType             // user_type (u8) ← NEW: 0=individual, 1=business
 )
 ```
 
-**Instruction data layout:**
+**Instruction data layout (updated 2025-12-11):**
 - Discriminator: `[111, 17, 185, 250, 60, 122, 38, 254]` (8 bytes)
 - Referral pubkey: 32 bytes
 - Mint start: i64 (8 bytes)
-- User type: u8 (1 byte) ← NEW
+- User type: u8 (1 byte) ← NEW: 0=individual, 1=business
+- **Note**: `locked_until` field REMOVED per EQUA Whitepaper 2025
 
 **Total: 8 + 32 + 8 + 1 = 49 bytes**
 
 ### 2. Updated Registration Flow
-**File:** `app/mint/page.tsx`
+**Files:** `app/mint/page.tsx`, `src/components/RegistrationForm.tsx`
 
+- **User Type Selection**: Added UI with Individual (👤) and Business (🏢) selection cards
 - Derive `user_metadata` PDA using `getUserMetadataPDA(authority)`
 - For referrals:
   - Derive referrer's `user_account` PDA: `getUserAccountPDA(referrerPubkey)`
   - Derive referrer's `user_metadata` PDA: `getUserMetadataPDA(referrerPubkey)`
 - For self-registration (no referral):
-  - Use `PublicKey.default` for both `referralAccount` and `referrerMetadata`
-- Pass `userType = 0` (Individual) as default
+  - Use `PublicKey.default` for `referralAccount`, `referrerMetadata`, and `referrer`
+- Pass `userType` from UI selection:
+  - `0` = Individual (default)
+  - `1` = Business
 
 ### 3. Created Diagnostics Page
 **File:** `app/debug/account/page.tsx`
@@ -99,11 +102,61 @@ Features:
 - Added link to diagnostics page in error message
 - Show "How to fix" guidance when legacy account detected
 
-### 5. Updated E2E Test Script
+### 5. Enhanced Error Surfacing
+**File:** `app/mint/page.tsx`
+
+- Added `extractAnchorLog()` helper to parse Anchor program logs from transaction errors
+- Enhanced error handling in registration flow to display first Anchor log message
+- Improved user feedback with detailed error messages from on-chain program
+
+### 6. Updated E2E Test Script
 **File:** `scripts/e2e-register-mint.ts`
 
 - Added user_metadata PDA derivation
 - Updated instruction call with new parameters
+
+## Migration Notes
+
+**⚠️ BREAKING CHANGE for Clients**
+
+All clients calling `initialize_user` must update to the new signature:
+
+### Required Changes:
+1. **Add 2 new PDA accounts**: `user_metadata` and `referrer_metadata`
+   - Derive using `["user-meta", authority]` seed
+2. **Add user_type parameter**: u8 value (0=individual, 1=business)
+3. **Remove locked_until parameter**: Field removed from on-chain program
+4. **Update account order**: Now 11 accounts instead of 9
+
+### Before (9 accounts):
+```typescript
+// OLD - DO NOT USE
+createInitializeUserInstruction(
+  userAccount, authority, globalState, referralAccount,
+  userTokenAccount, mint, associatedTokenProgram, tokenProgram,
+  mintStart, referrer
+)
+```
+
+### After (11 accounts + user_type):
+```typescript
+// NEW - REQUIRED
+const [userMetadata] = getUserMetadataPDA(authority);
+const [referrerMetadata] = referrer 
+  ? getUserMetadataPDA(referrerPubkey)
+  : [PublicKey.default, 0];
+
+createInitializeUserInstruction(
+  userAccount, userMetadata, authority, globalState,
+  referralAccount, referrerMetadata, userTokenAccount, mint,
+  associatedTokenProgram, tokenProgram,
+  mintStart, referrer, userType  // userType: 0 or 1
+)
+```
+
+### Testing Migration:
+- All existing tests updated to new signature
+- `__tests__/registration/initializeUserInstruction.test.ts` validates 11 accounts + user_type encoding
 
 ## Testing
 
@@ -160,16 +213,17 @@ npm run build
 
 ## Account Structure
 ```
-UserAccount (144 bytes):
+UserAccount (136 bytes, reduced from 144 after locked_until removal):
   0-7:    discriminator
   8-39:   authority (Pubkey)
   40-71:  referral (Pubkey)
   72-103: token_account (Pubkey)
   104-111: minted_amount (u64)
   112-119: mint_start (i64)
-  120-127: locked_until (i64)
-  128-135: total_mints (u64)
-  136-143: last_mint_time (i64) ← Used for cooldown
+  120-127: referral_rewards (u64)
+  128-135: last_mint_time (i64) ← Used for cooldown
+  
+  Note: locked_until field (i64, 8 bytes) REMOVED per EQUA Whitepaper 2025
 ```
 
 ## Next Steps

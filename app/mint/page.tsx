@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useProgram } from '@/hooks/useProgram';
 import { Logo } from '@/components/Logo';
-import { PublicKey, Transaction } from '@solana/web3.js';
+import { PublicKey, Transaction, Connection } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -29,6 +29,7 @@ import {
   MIN_SOL_BALANCE,
   hasMinimumSolBalance,
   getUserMintTier,
+  accountTypeToUserType,
 } from '@/utils/registration';
 import { safeParseUserCount, safeParseTimestamp } from '@/utils/safeAccountParsing';
 import { 
@@ -57,6 +58,49 @@ const MAX_REASONABLE_USER_NUMBER = 1_000_000;
 
 // Delay for on-chain state propagation after transactions (in milliseconds)
 const CHAIN_STATE_UPDATE_DELAY_MS = 2000;
+
+/**
+ * Extract the first Anchor program log from transaction logs
+ * Anchor logs typically start with "Program log: " followed by the actual error message
+ */
+function extractAnchorLog(logs: string[] | undefined): string | null {
+  if (!logs || logs.length === 0) return null;
+  
+  // Look for Anchor program logs (they start with "Program log: ") or any meaningful error
+  for (const log of logs) {
+    if (log.includes('Program log: ')) {
+      // Extract the message after "Program log: "
+      const match = log.match(/Program log: (.+)/);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+    // Fallback: return first non-system log
+    if (!log.includes('invoke') && !log.includes('success') && log.trim()) {
+      return log.trim();
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Get transaction logs from SendTransactionError
+ */
+async function getTransactionLogs(
+  connection: Connection,
+  signature: string
+): Promise<string[]> {
+  try {
+    const tx = await connection.getTransaction(signature, {
+      maxSupportedTransactionVersion: 0,
+    });
+    return tx?.meta?.logMessages || [];
+  } catch (error) {
+    console.error('Failed to fetch transaction logs:', error);
+    return [];
+  }
+}
 
 // Utility function to handle and format ATA creation errors
 function handleAtaCreationError(ataError: unknown, context: 'registration' | 'minting'): Error {
@@ -590,12 +634,12 @@ export default function MintPage() {
       
       if (referrer) {
         try {
-          // referrer is the wallet address, derive the user_account PDA and metadata PDA
+          // referrer is the wallet address, derive the user_account PDA and user_metadata PDA
           referrerPubkey = new PublicKey(referrer);
           const [referrerUserAccountPDA] = getUserAccountPDA(referrerPubkey);
-          const [referrerMetadataPDA] = getUserMetadataPDA(referrerPubkey);
+          const [referrerUserMetadataPDA] = getUserMetadataPDA(referrerPubkey);
           referralAccountPubkey = referrerUserAccountPDA;
-          referrerMetadataPubkey = referrerMetadataPDA;
+          referrerMetadataPubkey = referrerUserMetadataPDA;
           
           console.log('- Referrer:', referrerPubkey.toBase58());
           console.log('- Referral Account (PDA):', referralAccountPubkey.toBase58());
@@ -614,8 +658,9 @@ export default function MintPage() {
         console.log('- No referral provided');
       }
 
-      // Determine user_type: 0 = individual, 1 = business
-      const userTypeValue = accountType === 'business' ? 1 : 0;
+      // Convert account type to user_type enum
+      const userType = accountTypeToUserType(accountType);
+      console.log('- User Type:', userType, `(${accountType})`);
 
       const instruction = createInitializeUserInstruction(
         userAccountPDA,
@@ -630,7 +675,7 @@ export default function MintPage() {
         TOKEN_PROGRAM_ID,
         now,
         referrerPubkey,
-        userTypeValue
+        userType
       );
 
       // Log instruction metas for debugging
@@ -712,21 +757,15 @@ export default function MintPage() {
     } catch (err: unknown) {
       console.error('Registration error:', err);
       
-      // Enhanced error logging for SendTransactionError
-      if (err && typeof err === 'object' && 'logs' in err) {
-        console.error('Transaction logs:', (err as any).logs);
-      }
+      // Try to extract Anchor log if it's a SendTransactionError
+      let errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      const errorObj = err as any;
       
-      // Try to get detailed error information
-      let errorMessage = 'Registration failed';
-      if (err instanceof Error) {
-        errorMessage = err.message;
-        
-        // Check for specific Anchor errors
-        if (errorMessage.includes('0x66') || errorMessage.includes('InstructionDidNotDeserialize')) {
-          errorMessage = 'Instruction deserialization failed. This may indicate a mismatch between the frontend and smart contract. Please contact support.';
-        } else if (errorMessage.includes('0x0')) {
-          errorMessage = 'Transaction failed with program error. Please check your inputs and try again.';
+      if (errorObj?.logs) {
+        const anchorLog = extractAnchorLog(errorObj.logs);
+        if (anchorLog) {
+          errorMessage = `Transaction failed: ${anchorLog}`;
+          console.log('📋 Anchor program log:', anchorLog);
         }
       }
       

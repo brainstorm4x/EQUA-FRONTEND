@@ -153,9 +153,11 @@ async function main() {
   console.log('\n🔍 Step 5: Registering user...');
   const now = Math.floor(Date.now() / 1000);
   
+  // userMetadataPDA already derived in Step 3
+  
   const registerIx = createInitializeUserInstruction(
     userAccountPDA,
-    userMetadataPDA,              // user_metadata PDA
+    userMetadataPDA,              // User metadata PDA
     payer.publicKey,
     globalStatePDA,
     userAccountPDA,               // Self-referral: use own account PDA
@@ -166,7 +168,7 @@ async function main() {
     TOKEN_PROGRAM_ID,
     now,
     PublicKey.default,            // No referrer
-    0                             // userType: 0=individual, 1=business
+    0                             // userType: 0 = individual, 1 = business
   );
   
   console.log('\n🧪 Registration Instruction Metas (11 accounts):');

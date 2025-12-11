@@ -326,8 +326,8 @@ export function getOrCreateKeypair(): Keypair {
   return keypair;
 }
 
-// ✅ Create initialize_user instruction (UPDATED to match on-chain IDL)
-// On-chain program expects 11 accounts + user_type byte
+// ✅ Create initialize_user instruction (UPDATED for 11 accounts + user_type)
+// Note: locked_until field removed per EQUA Whitepaper 2025
 export function createInitializeUserInstruction(
   userAccount: PublicKey,
   userMetadata: PublicKey,
@@ -347,15 +347,12 @@ export function createInitializeUserInstruction(
   
   const mintStartBN = new BN(mintStart);
   
-  // Args order per on-chain IDL: 
-  // referral (Pubkey 32 bytes) | mint_start (i64 8 bytes) | user_type (u8 1 byte)
-  const userTypeByte = Buffer.from([userType & 0xFF]);
-  
+  // Args order per IDL: referral (Pubkey 32 bytes) | mint_start (i64 8 bytes) | user_type (u8 1 byte)
   const data = Buffer.concat([
     discriminator,
     referrer.toBuffer(),
     mintStartBN.toArrayLike(Buffer, 'le', 8),
-    userTypeByte,
+    Buffer.from([userType]),
   ]);
 
   if (DEBUG_INSTRUCTIONS) {
@@ -363,21 +360,20 @@ export function createInitializeUserInstruction(
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Referrer:', referrer.toBase58());
     console.log('  - Mint start:', mintStart);
-    console.log('  - User type:', userType, '(0=individual, 1=business)');
+    console.log('  - User type:', userType);
   }
 
-  // Account order matches on-chain IDL exactly (11 accounts)
-  // 0: user_account, 1: user_metadata, 2: authority, 3: global_state,
-  // 4: referral_account, 5: referrer_metadata, 6: user_token_account,
-  // 7: mint, 8: associated_token_program, 9: token_program, 10: system_program
+  // Account order matches backend IDL exactly (11 accounts)
+  // user_account, user_metadata, authority, global_state, referral_account, referrer_metadata,
+  // user_token_account, mint, associated_token_program, token_program, system_program
   const instruction = new TransactionInstruction({
     keys: [
       { pubkey: userAccount, isSigner: false, isWritable: true },        // 0. user_account
       { pubkey: userMetadata, isSigner: false, isWritable: true },       // 1. user_metadata
       { pubkey: authority, isSigner: true, isWritable: true },           // 2. authority
       { pubkey: globalState, isSigner: false, isWritable: true },        // 3. global_state
-      { pubkey: referralAccount, isSigner: false, isWritable: true },    // 4. referral_account (unchecked)
-      { pubkey: referrerMetadata, isSigner: false, isWritable: true },   // 5. referrer_metadata (unchecked)
+      { pubkey: referralAccount, isSigner: false, isWritable: true },    // 4. referral_account
+      { pubkey: referrerMetadata, isSigner: false, isWritable: true },   // 5. referrer_metadata
       { pubkey: userTokenAccount, isSigner: false, isWritable: true },   // 6. user_token_account
       { pubkey: mint, isSigner: false, isWritable: false },              // 7. mint
       { pubkey: associatedTokenProgram, isSigner: false, isWritable: false }, // 8. associated_token_program

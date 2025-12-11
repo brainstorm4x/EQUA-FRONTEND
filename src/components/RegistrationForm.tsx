@@ -47,6 +47,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   validateReferrer,
   userWalletAddress,
 }) => {
+  const [accountType, setAccountType] = useState<AccountType>('individual');
   const [referrer, setReferrer] = useState('');
   const [referrerError, setReferrerError] = useState('');
   const [isValidatingReferrer, setIsValidatingReferrer] = useState(false);
@@ -151,8 +152,8 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
         : undefined,
     };
     
-    // Always register with default account type (account type distinction removed for simplicity)
-    onRegister(DEFAULT_ACCOUNT_TYPE, effectiveReferrer, metadata);
+    // Register with selected account type
+    onRegister(accountType, effectiveReferrer, metadata);
   };
 
   // Check if referral code validation has an error state
@@ -178,6 +179,50 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
         <p className="text-purple-200">
           Create your on-chain user account to start minting EQUA tokens
         </p>
+      </div>
+
+      {/* Account Type Selection */}
+      <div className="mb-6">
+        <label className="block text-white font-medium mb-3">
+          Select Account Type
+        </label>
+        <div className="grid grid-cols-2 gap-4">
+          {/* Individual Card */}
+          <button
+            type="button"
+            onClick={() => setAccountType('individual')}
+            className={`relative p-4 rounded-xl border-2 transition-all ${
+              accountType === 'individual'
+                ? 'border-purple-500 bg-purple-500/20'
+                : 'border-purple-500/30 bg-white/5 hover:border-purple-500/50'
+            }`}
+          >
+            <div className="text-4xl mb-2">👤</div>
+            <div className="text-white font-semibold mb-1">Individual</div>
+            <div className="text-purple-300 text-sm">Personal account</div>
+            {accountType === 'individual' && (
+              <div className="absolute top-2 right-2 text-green-400">✓</div>
+            )}
+          </button>
+
+          {/* Business Card */}
+          <button
+            type="button"
+            onClick={() => setAccountType('business')}
+            className={`relative p-4 rounded-xl border-2 transition-all ${
+              accountType === 'business'
+                ? 'border-purple-500 bg-purple-500/20'
+                : 'border-purple-500/30 bg-white/5 hover:border-purple-500/50'
+            }`}
+          >
+            <div className="text-4xl mb-2">🏢</div>
+            <div className="text-white font-semibold mb-1">Business</div>
+            <div className="text-purple-300 text-sm">Company account</div>
+            {accountType === 'business' && (
+              <div className="absolute top-2 right-2 text-green-400">✓</div>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* SOL Balance Warning */}
