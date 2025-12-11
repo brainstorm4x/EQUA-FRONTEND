@@ -153,17 +153,22 @@ async function main() {
   console.log('\n🔍 Step 5: Registering user...');
   const now = Math.floor(Date.now() / 1000);
   
+  // userMetadataPDA already derived in Step 3
+  
   const registerIx = createInitializeUserInstruction(
     userAccountPDA,
+    userMetadataPDA,              // User metadata PDA
     payer.publicKey,
     globalStatePDA,
     userAccountPDA,               // Self-referral: use own account PDA
+    userMetadataPDA,              // Self-referral: use own metadata PDA
     userTokenAccount,
     mintPDA,
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
     now,
-    PublicKey.default             // No referrer
+    PublicKey.default,            // No referrer
+    0                             // userType: 0 = individual, 1 = business
   );
   
   console.log('\n🧪 Registration Instruction Metas:');
