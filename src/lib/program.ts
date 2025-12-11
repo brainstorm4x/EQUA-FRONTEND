@@ -348,14 +348,11 @@ export function createInitializeUserInstruction(
   const mintStartBN = new BN(mintStart);
   
   // Args order per IDL: referral (Pubkey 32 bytes) | mint_start (i64 8 bytes) | user_type (u8 1 byte)
-  const userTypeBuffer = Buffer.alloc(1);
-  userTypeBuffer.writeUInt8(userType, 0);
-  
   const data = Buffer.concat([
     discriminator,
     referrer.toBuffer(),
     mintStartBN.toArrayLike(Buffer, 'le', 8),
-    userTypeBuffer,
+    Buffer.from([userType]),
   ]);
 
   if (DEBUG_INSTRUCTIONS) {

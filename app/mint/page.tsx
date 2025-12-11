@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useProgram } from '@/hooks/useProgram';
 import { Logo } from '@/components/Logo';
-import { PublicKey, Transaction } from '@solana/web3.js';
+import { PublicKey, Transaction, Connection } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -66,7 +66,7 @@ const CHAIN_STATE_UPDATE_DELAY_MS = 2000;
 function extractAnchorLog(logs: string[] | undefined): string | null {
   if (!logs || logs.length === 0) return null;
   
-  // Look for Anchor program logs (they start with "Program log: ")
+  // Look for Anchor program logs (they start with "Program log: ") or any meaningful error
   for (const log of logs) {
     if (log.includes('Program log: ')) {
       // Extract the message after "Program log: "
@@ -75,10 +75,7 @@ function extractAnchorLog(logs: string[] | undefined): string | null {
         return match[1].trim();
       }
     }
-  }
-  
-  // If no Anchor log found, return the first non-system log
-  for (const log of logs) {
+    // Fallback: return first non-system log
     if (!log.includes('invoke') && !log.includes('success') && log.trim()) {
       return log.trim();
     }
@@ -91,7 +88,7 @@ function extractAnchorLog(logs: string[] | undefined): string | null {
  * Get transaction logs from SendTransactionError
  */
 async function getTransactionLogs(
-  connection: any,
+  connection: Connection,
   signature: string
 ): Promise<string[]> {
   try {
