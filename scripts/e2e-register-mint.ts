@@ -107,7 +107,9 @@ async function main() {
   // Step 3: Derive user account PDA from authority (payer's public key)
   console.log('\n🔍 Step 3: Deriving user account PDA...');
   const [userAccountPDA] = getUserAccountPDA(payer.publicKey);
+  const [userMetadataPDA] = getUserMetadataPDA(payer.publicKey);
   console.log('✅ User account PDA:', userAccountPDA.toBase58());
+  console.log('✅ User metadata PDA:', userMetadataPDA.toBase58());
   
   // Step 4: Create ATA
   console.log('\n🔍 Step 4: Creating Associated Token Account...');
