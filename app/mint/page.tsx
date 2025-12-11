@@ -29,6 +29,7 @@ import {
   MIN_SOL_BALANCE,
   hasMinimumSolBalance,
   getUserMintTier,
+  accountTypeToUserType,
 } from '@/utils/registration';
 import { safeParseUserCount, safeParseTimestamp } from '@/utils/safeAccountParsing';
 import { 
@@ -57,6 +58,52 @@ const MAX_REASONABLE_USER_NUMBER = 1_000_000;
 
 // Delay for on-chain state propagation after transactions (in milliseconds)
 const CHAIN_STATE_UPDATE_DELAY_MS = 2000;
+
+/**
+ * Extract the first Anchor program log from transaction logs
+ * Anchor logs typically start with "Program log: " followed by the actual error message
+ */
+function extractAnchorLog(logs: string[] | undefined): string | null {
+  if (!logs || logs.length === 0) return null;
+  
+  // Look for Anchor program logs (they start with "Program log: ")
+  for (const log of logs) {
+    if (log.includes('Program log: ')) {
+      // Extract the message after "Program log: "
+      const match = log.match(/Program log: (.+)/);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+  }
+  
+  // If no Anchor log found, return the first non-system log
+  for (const log of logs) {
+    if (!log.includes('invoke') && !log.includes('success') && log.trim()) {
+      return log.trim();
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Get transaction logs from SendTransactionError
+ */
+async function getTransactionLogs(
+  connection: any,
+  signature: string
+): Promise<string[]> {
+  try {
+    const tx = await connection.getTransaction(signature, {
+      maxSupportedTransactionVersion: 0,
+    });
+    return tx?.meta?.logMessages || [];
+  } catch (error) {
+    console.error('Failed to fetch transaction logs:', error);
+    return [];
+  }
+}
 
 // Utility function to handle and format ATA creation errors
 function handleAtaCreationError(ataError: unknown, context: 'registration' | 'minting'): Error {
@@ -579,42 +626,59 @@ export default function MintPage() {
       console.log('- Token Account:', userTokenAccount.toBase58());
       console.log('- Mint:', mintPDA.toBase58());
 
+      // Derive user_metadata PDA for the registering user
+      const [userMetadataPDA] = getUserMetadataPDA(publicKey);
+      console.log('- User Metadata (PDA):', userMetadataPDA.toBase58());
+
       // Determine referral accounts - derive PDAs if referrer provided
       let referralAccountPubkey: PublicKey;
       let referrerPubkey: PublicKey;
+      let referrerMetadataPubkey: PublicKey;
       
       if (referrer) {
         try {
-          // referrer is the wallet address, derive the user_account PDA
+          // referrer is the wallet address, derive the user_account PDA and user_metadata PDA
           referrerPubkey = new PublicKey(referrer);
           const [referrerUserAccountPDA] = getUserAccountPDA(referrerPubkey);
+          const [referrerUserMetadataPDA] = getUserMetadataPDA(referrerPubkey);
           referralAccountPubkey = referrerUserAccountPDA;
+          referrerMetadataPubkey = referrerUserMetadataPDA;
           
           console.log('- Referrer:', referrerPubkey.toBase58());
           console.log('- Referral Account (PDA):', referralAccountPubkey.toBase58());
+          console.log('- Referrer Metadata (PDA):', referrerMetadataPubkey.toBase58());
         } catch {
           console.log('Invalid referrer address, using default (no referral)');
           referrerPubkey = PublicKey.default;
           referralAccountPubkey = PublicKey.default;
+          referrerMetadataPubkey = PublicKey.default;
         }
       } else {
         // No referral - use PublicKey.default for all referrer accounts
         referrerPubkey = PublicKey.default;
         referralAccountPubkey = PublicKey.default;
+        referrerMetadataPubkey = PublicKey.default;
         console.log('- No referral provided');
       }
 
+      // Convert account type to user_type enum
+      const userType = accountTypeToUserType(accountType);
+      console.log('- User Type:', userType, `(${accountType})`);
+
       const instruction = createInitializeUserInstruction(
         userAccountPDA,
+        userMetadataPDA,
         publicKey,
         globalStatePDA,
         referralAccountPubkey,
+        referrerMetadataPubkey,
         userTokenAccount,
         mintPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         now,
-        referrerPubkey
+        referrerPubkey,
+        userType
       );
 
       // Log instruction metas for debugging
@@ -695,7 +759,19 @@ export default function MintPage() {
       await checkUserRegistration();
     } catch (err: unknown) {
       console.error('Registration error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      
+      // Try to extract Anchor log if it's a SendTransactionError
+      let errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      const errorObj = err as any;
+      
+      if (errorObj?.logs) {
+        const anchorLog = extractAnchorLog(errorObj.logs);
+        if (anchorLog) {
+          errorMessage = `Transaction failed: ${anchorLog}`;
+          console.log('📋 Anchor program log:', anchorLog);
+        }
+      }
+      
       setError(errorMessage);
     } finally {
       setIsLoading(false);
