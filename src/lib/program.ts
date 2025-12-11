@@ -326,30 +326,36 @@ export function getOrCreateKeypair(): Keypair {
   return keypair;
 }
 
-// ✅ Create initialize_user instruction (UPDATED for consolidated backend)
-// Note: locked_until field removed per EQUA Whitepaper 2025
+// ✅ Create initialize_user instruction (UPDATED to match on-chain IDL)
+// On-chain program expects 11 accounts + user_type byte
 export function createInitializeUserInstruction(
   userAccount: PublicKey,
+  userMetadata: PublicKey,
   authority: PublicKey,
   globalState: PublicKey,
   referralAccount: PublicKey,
+  referrerMetadata: PublicKey,
   userTokenAccount: PublicKey,
   mint: PublicKey,
   associatedTokenProgram: PublicKey,
   tokenProgram: PublicKey,
   mintStart: number,
-  referrer: PublicKey = PublicKey.default
+  referrer: PublicKey = PublicKey.default,
+  userType: number = 0
 ): TransactionInstruction {
   const discriminator = Buffer.from([111, 17, 185, 250, 60, 122, 38, 254]);
   
   const mintStartBN = new BN(mintStart);
   
-  // Args order per IDL: referral (Pubkey 32 bytes) | mint_start (i64 8 bytes)
-  // Note: user_type removed to match backend IDL exactly
+  // Args order per on-chain IDL: 
+  // referral (Pubkey 32 bytes) | mint_start (i64 8 bytes) | user_type (u8 1 byte)
+  const userTypeByte = Buffer.from([userType & 0xFF]);
+  
   const data = Buffer.concat([
     discriminator,
     referrer.toBuffer(),
     mintStartBN.toArrayLike(Buffer, 'le', 8),
+    userTypeByte,
   ]);
 
   if (DEBUG_INSTRUCTIONS) {
@@ -357,29 +363,33 @@ export function createInitializeUserInstruction(
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Referrer:', referrer.toBase58());
     console.log('  - Mint start:', mintStart);
+    console.log('  - User type:', userType, '(0=individual, 1=business)');
   }
 
-  // Account order matches backend IDL exactly (9 accounts)
-  // user_account, authority, global_state, referral_account, user_token_account, 
-  // mint, associated_token_program, token_program, system_program
+  // Account order matches on-chain IDL exactly (11 accounts)
+  // 0: user_account, 1: user_metadata, 2: authority, 3: global_state,
+  // 4: referral_account, 5: referrer_metadata, 6: user_token_account,
+  // 7: mint, 8: associated_token_program, 9: token_program, 10: system_program
   const instruction = new TransactionInstruction({
     keys: [
       { pubkey: userAccount, isSigner: false, isWritable: true },        // 0. user_account
-      { pubkey: authority, isSigner: true, isWritable: true },           // 1. authority
-      { pubkey: globalState, isSigner: false, isWritable: true },        // 2. global_state
-      { pubkey: referralAccount, isSigner: false, isWritable: true },    // 3. referral_account
-      { pubkey: userTokenAccount, isSigner: false, isWritable: true },   // 4. user_token_account
-      { pubkey: mint, isSigner: false, isWritable: false },              // 5. mint
-      { pubkey: associatedTokenProgram, isSigner: false, isWritable: false }, // 6. associated_token_program
-      { pubkey: tokenProgram, isSigner: false, isWritable: false },      // 7. token_program
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // 8. system_program
+      { pubkey: userMetadata, isSigner: false, isWritable: true },       // 1. user_metadata
+      { pubkey: authority, isSigner: true, isWritable: true },           // 2. authority
+      { pubkey: globalState, isSigner: false, isWritable: true },        // 3. global_state
+      { pubkey: referralAccount, isSigner: false, isWritable: true },    // 4. referral_account (unchecked)
+      { pubkey: referrerMetadata, isSigner: false, isWritable: true },   // 5. referrer_metadata (unchecked)
+      { pubkey: userTokenAccount, isSigner: false, isWritable: true },   // 6. user_token_account
+      { pubkey: mint, isSigner: false, isWritable: false },              // 7. mint
+      { pubkey: associatedTokenProgram, isSigner: false, isWritable: false }, // 8. associated_token_program
+      { pubkey: tokenProgram, isSigner: false, isWritable: false },      // 9. token_program
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // 10. system_program
     ],
     programId: PROGRAM_ID,
     data,
   });
 
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Instruction account metas:');
+    console.log('🔧 Instruction account metas (11 accounts):');
     instruction.keys.forEach((meta, idx) => {
       console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
     });

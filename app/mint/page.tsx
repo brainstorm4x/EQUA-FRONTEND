@@ -579,42 +579,58 @@ export default function MintPage() {
       console.log('- Token Account:', userTokenAccount.toBase58());
       console.log('- Mint:', mintPDA.toBase58());
 
+      // Derive user_metadata PDA for the registering user
+      const [userMetadataPDA] = getUserMetadataPDA(publicKey);
+      console.log('- User Metadata (PDA):', userMetadataPDA.toBase58());
+
       // Determine referral accounts - derive PDAs if referrer provided
       let referralAccountPubkey: PublicKey;
       let referrerPubkey: PublicKey;
+      let referrerMetadataPubkey: PublicKey;
       
       if (referrer) {
         try {
-          // referrer is the wallet address, derive the user_account PDA
+          // referrer is the wallet address, derive the user_account PDA and metadata PDA
           referrerPubkey = new PublicKey(referrer);
           const [referrerUserAccountPDA] = getUserAccountPDA(referrerPubkey);
+          const [referrerMetadataPDA] = getUserMetadataPDA(referrerPubkey);
           referralAccountPubkey = referrerUserAccountPDA;
+          referrerMetadataPubkey = referrerMetadataPDA;
           
           console.log('- Referrer:', referrerPubkey.toBase58());
           console.log('- Referral Account (PDA):', referralAccountPubkey.toBase58());
+          console.log('- Referrer Metadata (PDA):', referrerMetadataPubkey.toBase58());
         } catch {
           console.log('Invalid referrer address, using default (no referral)');
           referrerPubkey = PublicKey.default;
           referralAccountPubkey = PublicKey.default;
+          referrerMetadataPubkey = PublicKey.default;
         }
       } else {
         // No referral - use PublicKey.default for all referrer accounts
         referrerPubkey = PublicKey.default;
         referralAccountPubkey = PublicKey.default;
+        referrerMetadataPubkey = PublicKey.default;
         console.log('- No referral provided');
       }
 
+      // Determine user_type: 0 = individual, 1 = business
+      const userTypeValue = accountType === 'business' ? 1 : 0;
+
       const instruction = createInitializeUserInstruction(
         userAccountPDA,
+        userMetadataPDA,
         publicKey,
         globalStatePDA,
         referralAccountPubkey,
+        referrerMetadataPubkey,
         userTokenAccount,
         mintPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         now,
-        referrerPubkey
+        referrerPubkey,
+        userTypeValue
       );
 
       // Log instruction metas for debugging
@@ -695,7 +711,25 @@ export default function MintPage() {
       await checkUserRegistration();
     } catch (err: unknown) {
       console.error('Registration error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      
+      // Enhanced error logging for SendTransactionError
+      if (err && typeof err === 'object' && 'logs' in err) {
+        console.error('Transaction logs:', (err as any).logs);
+      }
+      
+      // Try to get detailed error information
+      let errorMessage = 'Registration failed';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        
+        // Check for specific Anchor errors
+        if (errorMessage.includes('0x66') || errorMessage.includes('InstructionDidNotDeserialize')) {
+          errorMessage = 'Instruction deserialization failed. This may indicate a mismatch between the frontend and smart contract. Please contact support.';
+        } else if (errorMessage.includes('0x0')) {
+          errorMessage = 'Transaction failed with program error. Please check your inputs and try again.';
+        }
+      }
+      
       setError(errorMessage);
     } finally {
       setIsLoading(false);

@@ -1,5 +1,7 @@
 # EQUA Token - Comprehensive Code Audit Report
 
+> ⚠️ **OUTDATED DOCUMENT**: This audit report documents the 9-account initialize_user structure. As of December 2025, the instruction has been updated to **11 accounts** with added `user_metadata` and `referrer_metadata` PDAs, plus a `user_type` byte. See `IMPLEMENTATION_NOTES.md` for current structure.
+
 **Date**: 2025-11-24  
 **Branch**: main  
 **Network**: Solana Devnet  
