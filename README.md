@@ -149,7 +149,9 @@ formatEquaRaw(123_456, { trimTrailingZeros: true }) // "0.123456"
 - **Token Standard**: SPL Token (Standard) - *See note below*
 - **Program ID**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
 
-> **Note:** The program ID can be overridden using the `NEXT_PUBLIC_PROGRAM_ID` or `NEXT_PUBLIC_EQUA_PROGRAM_ID` (legacy) environment variable.
+> **Important:** The program client has been consolidated (December 2025) to fix `InstructionDidNotDeserialize` errors. All code now uses a single program client with the full IDL. See [docs/PROGRAM_ID_MIGRATION.md](docs/PROGRAM_ID_MIGRATION.md) for details.
+
+> **Note:** The program ID can be overridden using the `NEXT_PUBLIC_PROGRAM_ID` or `NEXT_PUBLIC_EQUA_PROGRAM_ID` (legacy) environment variable. The runtime validates that the configured ID matches the deployed program.
 > **Note:** The codebase is currently configured for Standard SPL Token Program. If your deployed mint uses Token-2022, see [AUDIT_REPORT.md](AUDIT_REPORT.md#16-how-to-switch-to-token-2022-if-needed) for configuration instructions.
 
 ### Environment Variables

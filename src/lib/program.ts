@@ -99,6 +99,22 @@ export async function createProgram(
         throw new Error("Failed to load IDL: " + response.statusText);
       }
       cachedIdl = await response.json();
+      
+      // Runtime validation: Ensure configured PROGRAM_ID matches the IDL
+      const idlProgramId = cachedIdl.address || cachedIdl.metadata?.address;
+      if (idlProgramId) {
+        const idlPubkey = new PublicKey(idlProgramId);
+        if (!PROGRAM_ID.equals(idlPubkey)) {
+          const errorMsg = `❌ CRITICAL: Program ID mismatch!\n` +
+            `  Environment/Config PROGRAM_ID: ${PROGRAM_ID.toBase58()}\n` +
+            `  IDL Program ID: ${idlPubkey.toBase58()}\n` +
+            `  This will cause instruction deserialization failures (0x66).\n` +
+            `  Fix: Set NEXT_PUBLIC_PROGRAM_ID=${idlPubkey.toBase58()} in .env.local`;
+          console.error(errorMsg);
+          throw new Error(`Program ID mismatch: expected ${idlPubkey.toBase58()}, got ${PROGRAM_ID.toBase58()}`);
+        }
+      }
+      
       console.log(
         "✅ IDL loaded, creating program with ID:",
         PROGRAM_ID.toBase58()

@@ -4,15 +4,15 @@ import { PublicKey } from '@solana/web3.js';
 import { Program } from '@coral-xyz/anchor';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
-createProgram,
-getGlobalStatePDA,
-getMintPDA,
-getMintAuthorityPDA,
-getUserAccountPDA,
-isUserRegistered,
-getUserBalance,
-getSPLTokenBalance,
-getGlobalState,
+  createProgram,
+  getGlobalStatePDA,
+  getMintPDA,
+  getMintAuthorityPDA,
+  getUserAccountPDA,
+  isUserRegistered,
+  getUserBalance,
+  getSPLTokenBalance,
+  getGlobalState,
 } from '@/lib/program';
 
 // ============================================================================
