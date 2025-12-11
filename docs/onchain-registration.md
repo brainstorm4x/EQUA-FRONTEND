@@ -32,11 +32,13 @@ interface UserAccount {
   token_account: PublicKey;    // User's SPL token account
   minted_amount: u64;          // Total tokens minted
   mint_start: i64;             // Registration timestamp
-  locked_until: i64;           // Token lock expiry
+  // locked_until field removed per EQUA Whitepaper 2025
   referral_rewards: u64;       // Rewards earned from referrals
   last_mint_time: i64;         // Last successful mint
 }
 ```
+
+> **Note**: The `locked_until` field has been removed as of December 2025 per EQUA Whitepaper 2025. Account size reduced from 144 to 136 bytes.
 
 ### Key Design Points
 

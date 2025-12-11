@@ -1,6 +1,6 @@
 /**
  * Tests for initialize_user instruction builder
- * Verifies referral_account is always writable per IDL
+ * Verifies 11-account structure with user_metadata and referrer_metadata PDAs
  */
 
 import { PublicKey } from '@solana/web3.js';

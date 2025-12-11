@@ -385,7 +385,7 @@ export function createInitializeUserInstruction(
   });
 
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Instruction account metas:');
+    console.log('🔧 Instruction account metas (11 accounts):');
     instruction.keys.forEach((meta, idx) => {
       console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
     });
