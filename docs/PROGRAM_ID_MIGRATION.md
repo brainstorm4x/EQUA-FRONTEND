@@ -2,6 +2,47 @@
 
 This guide explains how to use the new program ID migration system and Turso database setup.
 
+## December 2025 Update: Program Client Consolidation
+
+**Breaking Change:** The frontend has consolidated to a single Solana program client implementation to fix `InstructionDidNotDeserialize (0x66)` errors during user registration.
+
+### What Changed
+
+1. **Removed duplicate program clients:**
+   - ❌ Deleted `lib/program.ts` (root level duplicate)
+   - ❌ Deleted `lib/constants.ts` (root level duplicate)
+   - ❌ Deleted `src/hooks/useEquaProgram.ts` (alternate hook with minimal IDL)
+   - ❌ Deleted `src/config/program.ts` (redundant configuration)
+   - ❌ Deleted `src/services/program.service.ts` (unused service)
+
+2. **Single source of truth:**
+   - ✅ All code now uses `src/lib/program.ts` for program client
+   - ✅ All code now uses `src/lib/constants.ts` for configuration
+   - ✅ Only `useProgram` hook is used (loads full IDL from `/idl/equa_token.json`)
+
+3. **Runtime validation:**
+   - Program client now validates that `PROGRAM_ID` from environment matches the IDL
+   - Clear error messages guide developers to fix misconfigurations
+
+### Action Required
+
+If you have a local development environment, ensure your `.env.local` has the correct program ID:
+
+```bash
+# Current deployed program ID (Devnet)
+NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+```
+
+The legacy environment variable `NEXT_PUBLIC_EQUA_PROGRAM_ID` is still supported but deprecated.
+
+### Why This Matters
+
+The previous setup had two program clients loading different IDL structures:
+- `useProgram` loaded the full IDL from `/idl/equa_token.json`
+- `useEquaProgram` used a hardcoded minimal IDL
+
+This caused instruction data to be formatted differently, leading to deserialization failures on-chain. With a single program client, all instructions are guaranteed to match the deployed program's expectations.
+
 ## Program ID Migration
 
 The system automatically detects when the Solana program ID changes and clears local state to ensure a fresh start.
