@@ -12,7 +12,7 @@ import '@/lib/clientProcessShim';
 
 // Dynamically import WalletProvider with no SSR to prevent hydration issues
 const WalletProvider = dynamic(
-  () => import('@/components/WalletProvider').then((mod) => ({ default: mod.WalletProvider })),
+  () => import('@/providers/WalletProvider').then((mod) => ({ default: mod.WalletProvider })),
   { ssr: false }
 );
 
