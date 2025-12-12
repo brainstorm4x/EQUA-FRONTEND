@@ -645,17 +645,21 @@ export default function MintPage() {
           console.log('- Referral Account (PDA):', referralAccountPubkey.toBase58());
           console.log('- Referrer Metadata (PDA):', referrerMetadataPubkey.toBase58());
         } catch {
-          console.log('Invalid referrer address, using default (no referral)');
+          console.log('Invalid referrer address, using self-referral');
+          // Invalid referrer: use user's own PDAs to avoid ConstraintMut error
+          // Backend won't mutate when referrer param is PublicKey.default
           referrerPubkey = PublicKey.default;
-          referralAccountPubkey = PublicKey.default;
-          referrerMetadataPubkey = PublicKey.default;
+          referralAccountPubkey = userAccountPDA;
+          referrerMetadataPubkey = userMetadataPDA;
         }
       } else {
-        // No referral - use PublicKey.default for all referrer accounts
+        // No referral - use user's own PDAs for referral_account and referrer_metadata
+        // This satisfies #[account(mut)] constraint without causing ConstraintMut error
+        // Backend won't mutate these when referrer param is PublicKey.default
         referrerPubkey = PublicKey.default;
-        referralAccountPubkey = PublicKey.default;
-        referrerMetadataPubkey = PublicKey.default;
-        console.log('- No referral provided');
+        referralAccountPubkey = userAccountPDA;
+        referrerMetadataPubkey = userMetadataPDA;
+        console.log('- No referral provided (self-referral)');
       }
 
       // Convert account type to user_type enum
@@ -761,12 +765,37 @@ export default function MintPage() {
       let errorMessage = err instanceof Error ? err.message : 'Registration failed';
       const errorObj = err as any;
       
+      // Try to get logs from the error object or fetch from chain
+      let logs: string[] = [];
       if (errorObj?.logs) {
-        const anchorLog = extractAnchorLog(errorObj.logs);
+        logs = errorObj.logs;
+      } else if (errorObj?.signature && connection) {
+        // Try to fetch logs from the transaction
+        try {
+          logs = await getTransactionLogs(connection, errorObj.signature);
+        } catch (logErr) {
+          console.error('Failed to fetch transaction logs:', logErr);
+        }
+      }
+      
+      if (logs.length > 0) {
+        console.error('📋 Transaction logs:', logs);
+        const anchorLog = extractAnchorLog(logs);
         if (anchorLog) {
           errorMessage = `Transaction failed: ${anchorLog}`;
           console.log('📋 Anchor program log:', anchorLog);
         }
+      }
+      
+      // Provide user-friendly error messages
+      if (errorMessage.includes('ConstraintMut') || errorMessage.includes('2000')) {
+        errorMessage = 'Registration failed: Account constraint violation. Please ensure you have the latest app version and try again.';
+      } else if (errorMessage.includes('0x66') || errorMessage.includes('InstructionDidNotDeserialize')) {
+        errorMessage = 'Registration failed: Instruction format mismatch. Please refresh the page and try again.';
+      } else if (errorMessage.includes('insufficient')) {
+        errorMessage = `Registration failed: Insufficient SOL balance. You need at least ${MIN_SOL_BALANCE} SOL for transaction fees.`;
+      } else if (totalUsers >= 100 && !referrer) {
+        errorMessage = 'Registration failed: A referral code is required after the first 100 users. Please enter a valid referral code.';
       }
       
       setError(errorMessage);
