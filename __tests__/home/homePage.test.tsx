@@ -120,7 +120,7 @@ describe('Home/Landing Page', () => {
       
       const logos = screen.getAllByAltText('EQUA Logo');
       logos.forEach(logo => {
-        expect(logo).toHaveAttribute('src', '/equa-logo.svg');
+        expect(logo).toHaveAttribute('src', '/branding/equa-logo.svg');
       });
     });
   });

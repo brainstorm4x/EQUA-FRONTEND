@@ -40,7 +40,7 @@ import { isUserAccountRegisteredOnchain } from '@/utils/onchainRegistration';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
-  () => import('@/components/WalletButton').then((mod) => ({ default: mod.WalletButton })),
+  () => import('@/components/ui/WalletButton').then((mod) => ({ default: mod.WalletButton })),
   { ssr: false }
 );
 

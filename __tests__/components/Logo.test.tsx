@@ -29,7 +29,7 @@ describe('Logo Component', () => {
       render(<Logo />);
       
       const logo = screen.getByAltText('EQUA Logo');
-      expect(logo).toHaveAttribute('src', '/equa-logo.svg');
+      expect(logo).toHaveAttribute('src', '/branding/equa-logo.svg');
     });
 
     it('should have accessible alt text', () => {

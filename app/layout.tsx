@@ -23,7 +23,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* Preload critical assets for faster loading */}
-        <link rel="preload" href="/equa-logo.svg" as="image" type="image/svg+xml" />
+        <link rel="preload" href="/branding/equa-logo.svg" as="image" type="image/svg+xml" />
         {/* DNS prefetch for external services */}
         <link rel="dns-prefetch" href="https://api.devnet.solana.com" />
         {/* Preconnect for wallet adapter resources */}

@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { WalletProvider } from '@/components/providers/WalletProvider';
+import { WalletProvider } from '@/providers/WalletProvider';
 
 // Mock the wallet adapter modules
 jest.mock('@solana/wallet-adapter-react', () => ({
@@ -21,8 +21,6 @@ jest.mock('@solana/wallet-adapter-react-ui', () => ({
 jest.mock('@solana/wallet-adapter-wallets', () => ({
   PhantomWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Phantom' })),
   SolflareWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Solflare' })),
-  TorusWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Torus' })),
-  LedgerWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Ledger' })),
 }));
 
 describe('WalletProvider Configuration', () => {
@@ -85,7 +83,7 @@ describe('WalletProvider Configuration', () => {
 
   describe('Wallet Adapters', () => {
     it('should initialize with multiple wallet adapters', () => {
-      const { PhantomWalletAdapter, SolflareWalletAdapter, TorusWalletAdapter, LedgerWalletAdapter } = 
+      const { PhantomWalletAdapter, SolflareWalletAdapter } = 
         require('@solana/wallet-adapter-wallets');
 
       render(
@@ -97,8 +95,6 @@ describe('WalletProvider Configuration', () => {
       // Verify that wallet adapters were instantiated
       expect(PhantomWalletAdapter).toHaveBeenCalled();
       expect(SolflareWalletAdapter).toHaveBeenCalled();
-      expect(TorusWalletAdapter).toHaveBeenCalled();
-      expect(LedgerWalletAdapter).toHaveBeenCalled();
     });
   });
 

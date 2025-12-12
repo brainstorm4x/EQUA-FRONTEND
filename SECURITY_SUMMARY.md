@@ -1,3 +1,5 @@
+> **📍 NOTICE:** This is a legacy copy. The canonical version of this document is located at [`docs/SECURITY_SUMMARY.md`](docs/SECURITY_SUMMARY.md). Archived copies are available in `docs/archive/`.
+
 # Security Summary
 
 ## CodeQL Analysis Results
