@@ -1,3 +1,5 @@
+> **📍 NOTICE:** This is a legacy copy. The canonical version of this document is located at [`docs/FIX_SUMMARY.md`](docs/FIX_SUMMARY.md). Archived copies are available in `docs/archive/`.
+
 # Fix for AnchorError InstructionFallbackNotFound (Code 101)
 
 ## Summary
