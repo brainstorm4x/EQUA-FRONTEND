@@ -177,3 +177,193 @@ If buttons are still not visible after trying all solutions:
 
 **Last Updated:** December 2024
 **Version:** 0.1.0
+
+---
+
+## Issue: Home Page Balance Shows "--"
+
+### Symptoms
+- Balance displays "--" on home page even when wallet is connected and has EQUA tokens
+- Mint page shows correct balance but home page doesn't
+
+### Root Cause
+The home page component was not properly subscribing to SPL token balance updates.
+
+### Solution
+Use the `useEquaBalance` hook in components that need to display balance:
+
+```typescript
+import { useEquaBalance } from '@/hooks/useEquaBalance';
+import { formatEquaBalance } from '@/utils/tokenFormat';
+
+const { balance, isLoading, error } = useEquaBalance();
+
+// Display balance
+{balance > 0 ? formatEquaBalance(balance) : '--'}
+```
+
+---
+
+## Issue: Pyth Hermes API 404 Errors
+
+### Symptoms
+Console shows repeated 404 errors from Pyth Hermes API endpoint.
+
+### Root Causes
+- Missing `parsed=true` query parameter
+- Rate limiting (HTTP 429)
+- Invalid or unavailable feed IDs
+- Network configuration mismatch
+
+### Solution
+
+1. **Temporary Disable**: Set `NEXT_PUBLIC_ENABLE_PYTH=false` in `.env.local`
+
+2. **Configure Network**: Add to `.env.local`:
+   ```bash
+   NEXT_PUBLIC_PYTH_ENV=mainnet-beta
+   ```
+
+3. **Error Handling**: The system automatically falls back to:
+   - Pyth Network (primary)
+   - CoinGecko API (fallback)
+   - Hardcoded fallback prices (last resort)
+
+---
+
+## Issue: Referral Validation Broken
+
+### Symptoms
+- Entering a valid referrer public key shows "not registered" error
+- Referrer is actually registered and visible on blockchain
+- "Register Now" button remains disabled after removing invalid referrer
+
+### Root Cause
+Validation was checking the wallet public key directly instead of deriving the UserAccount PDA.
+
+### Solution
+The system now correctly derives the UserAccount PDA before validation:
+
+```typescript
+// CORRECT - derives UserAccount PDA first
+const [referrerUserAccountPDA] = getUserAccountPDA(referrerPubkey);
+const accountInfo = await connection.getAccountInfo(referrerUserAccountPDA);
+```
+
+### How to Verify
+1. Register user with wallet A
+2. Use wallet A's public key as referrer when registering with wallet B
+3. Validation should succeed
+
+---
+
+## Issue: Account Parsing Offset Bug
+
+### Symptoms
+Console warnings like:
+```
+⚠️ Account data too short (136 bytes) for timestamp at offset 136
+```
+
+### Root Cause
+Incorrect byte offsets for parsing UserAccount fields.
+
+### Solution
+Use the `decodeUserAccount` function:
+
+```typescript
+import { decodeUserAccount } from '@/utils/safeAccountParsing';
+
+const decoded = decodeUserAccount(accountData);
+if (decoded) {
+  console.log('Last mint time:', decoded.lastMintTime);
+  console.log('Minted amount:', decoded.mintedAmount);
+}
+```
+
+**Correct UserAccount Structure** (136 bytes):
+```
+discriminator:     0-7    (8 bytes)
+authority:         8-39   (32 bytes)
+referral:          40-71  (32 bytes)
+token_account:     72-103 (32 bytes)
+minted_amount:     104-111 (8 bytes)
+mint_start:        112-119 (8 bytes)
+referral_rewards:  120-127 (8 bytes)
+last_mint_time:    128-135 (8 bytes)
+```
+
+---
+
+## Issue: Transfer Count Remains Zero
+
+### Symptoms
+After sending EQUA, the transfer count doesn't increment on the home page.
+
+### Solution
+The `recordTransfer` function is now automatically called and:
+1. Increments transfer count in localStorage
+2. Dispatches events for real-time UI updates
+3. Logs transaction signature
+
+### Verify
+Check browser console for:
+```
+✓ Transfer recorded to localStorage
+```
+
+---
+
+## Environment Variables Reference
+
+Add these to `.env.local`:
+
+```bash
+# Program Configuration
+NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com
+NEXT_PUBLIC_NETWORK=devnet
+
+# Oracle Configuration
+NEXT_PUBLIC_ENABLE_PYTH=true
+NEXT_PUBLIC_PYTH_ENV=mainnet-beta
+
+# Rate Limiting
+NEXT_PUBLIC_RATE_LIMIT_WINDOW_MS=86400000
+NEXT_PUBLIC_REFERRAL_RATE_LIMIT=10
+
+# Cooldown
+NEXT_PUBLIC_MINT_COOLDOWN_SECONDS=86400
+```
+
+**Note**: Restart dev server after changing environment variables.
+
+---
+
+## Debugging Tips
+
+### Check Account Data
+```typescript
+import { getUserAccountPDA } from '@/lib/program';
+import { decodeUserAccount } from '@/utils/safeAccountParsing';
+
+const [pda] = getUserAccountPDA(walletPublicKey);
+const account = await connection.getAccountInfo(pda);
+const decoded = decodeUserAccount(account?.data);
+console.log(decoded);
+```
+
+### Clear LocalStorage
+```javascript
+// In browser console
+Object.keys(localStorage)
+  .filter(key => key.startsWith('equa_'))
+  .forEach(key => localStorage.removeItem(key));
+```
+
+### Verify RPC Connection
+```bash
+curl https://api.devnet.solana.com -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"getVersion"}'
+```
