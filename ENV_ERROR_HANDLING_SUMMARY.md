@@ -236,3 +236,87 @@ This implementation successfully addresses all three issues from the problem sta
 3. ✅ useProgram hook has structured state transitions with improved error handling
 
 All changes are minimal, surgical, and maintain full backward compatibility while providing enhanced functionality for future development.
+
+---
+
+## Update: Pyth Oracle Environment Variables
+
+### New Environment Variables Added
+
+#### NEXT_PUBLIC_ENABLE_PYTH
+- **Type**: Boolean (string)
+- **Default**: `true`
+- **Purpose**: Enable/disable Pyth Network Hermes price feeds
+- **Usage**:
+  ```bash
+  # Disable Pyth (use CoinGecko/fallback only)
+  NEXT_PUBLIC_ENABLE_PYTH=false
+  
+  # Enable Pyth (default)
+  NEXT_PUBLIC_ENABLE_PYTH=true
+  ```
+
+#### NEXT_PUBLIC_PYTH_ENV
+- **Type**: String
+- **Default**: `mainnet-beta`
+- **Options**: `mainnet-beta`, `devnet`
+- **Purpose**: Specify which Pyth Network environment to use
+- **Usage**:
+  ```bash
+  # Use mainnet Pyth feeds (recommended for production)
+  NEXT_PUBLIC_PYTH_ENV=mainnet-beta
+  
+  # Use devnet Pyth feeds (for testing)
+  NEXT_PUBLIC_PYTH_ENV=devnet
+  ```
+
+### Implementation Details
+
+**Location**: `src/utils/eqxOracle.ts`
+
+**Error Handling Improvements**:
+1. HTTP 404 errors are now properly caught and logged
+2. Rate limiting (HTTP 429) is detected and handled gracefully
+3. Network errors are classified (timeout, connection, HTTP status)
+4. Automatic fallback cascade: Pyth → CoinGecko → Hardcoded values
+5. Added `parsed=true` parameter to Hermes API requests
+6. Better logging with error classification
+
+**Example Configuration**:
+```bash
+# .env.local for production
+NEXT_PUBLIC_ENABLE_PYTH=true
+NEXT_PUBLIC_PYTH_ENV=mainnet-beta
+
+# .env.local for development/testing
+NEXT_PUBLIC_ENABLE_PYTH=false  # Use fallback prices during dev
+NEXT_PUBLIC_PYTH_ENV=devnet
+```
+
+### Troubleshooting Pyth Issues
+
+**Symptom**: Console shows 404 errors from Pyth Hermes API
+
+**Solutions**:
+1. Temporarily disable: `NEXT_PUBLIC_ENABLE_PYTH=false`
+2. Check network setting: Ensure `NEXT_PUBLIC_PYTH_ENV` matches your needs
+3. Verify feed IDs are correct (see `PYTH_FEED_IDS` in `eqxOracle.ts`)
+4. System automatically falls back to CoinGecko if Pyth fails
+
+**Symptom**: Prices showing "⚪ Fallback" indicator
+
+**Cause**: Both Pyth and CoinGecko APIs failed or are disabled
+
+**Impact**: System continues to work with hardcoded fallback prices
+
+**Action**: 
+- Check network connectivity
+- Verify RPC endpoint is accessible
+- Review browser console for specific errors
+- Enable Pyth if it was disabled
+
+### Related Documentation
+
+- See `docs/TROUBLESHOOTING.md` for detailed Pyth troubleshooting
+- See `docs/PYTH_INTEGRATION.md` for integration details
+- See `.env.example` for all environment variables
