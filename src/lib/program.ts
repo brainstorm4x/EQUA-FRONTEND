@@ -206,6 +206,13 @@ function validateIdl(idl: any): void {
     console.warn('⚠️ IDL has no custom types. This may be expected for simple programs.');
   }
 
+  // Solana primitive types that don't need to be defined in the IDL
+  const SOLANA_PRIMITIVE_TYPES = new Set([
+    'u8', 'u16', 'u32', 'u64', 'u128',
+    'i8', 'i16', 'i32', 'i64', 'i128',
+    'bool', 'string', 'pubkey', 'bytes'
+  ]);
+
   // Check for common type reference issues
   const definedTypes = new Set<string>();
   if (Array.isArray(idl.types)) {
@@ -219,8 +226,7 @@ function validateIdl(idl: any): void {
       if (typeof field.type === 'string' && field.type.length > 0) {
         const lowerType = field.type.toLowerCase();
         // Check if this looks like a custom type but isn't defined
-        if (!['u8', 'u16', 'u32', 'u64', 'u128', 'i8', 'i16', 'i32', 'i64', 'i128', 
-              'bool', 'string', 'pubkey', 'bytes'].includes(lowerType)) {
+        if (!SOLANA_PRIMITIVE_TYPES.has(lowerType)) {
           if (!definedTypes.has(lowerType)) {
             console.warn(`⚠️ Type reference "${field.type}" not found in IDL types. This may cause Program construction to fail.`);
           }

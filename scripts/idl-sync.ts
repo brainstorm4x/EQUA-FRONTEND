@@ -21,6 +21,9 @@ import * as path from 'path';
 import * as https from 'https';
 
 // Default backend IDL location (GitHub raw content)
+// SECURITY NOTE: Always verify IDL changes before committing. The IDL defines
+// program behavior and malicious modifications could cause unexpected transactions.
+// Override via IDL_SOURCE_URL environment variable if needed.
 const DEFAULT_IDL_URL = 'https://raw.githubusercontent.com/brainstorm4x/EQUA/main/target/idl/equa_token.json';
 
 // Allow override via environment variable
@@ -65,9 +68,17 @@ function fetchUrl(url: string): Promise<string> {
  * Validate that fetched content is valid JSON IDL
  */
 function validateIdl(idlJson: string): any {
+  let idl: any;
+  
   try {
-    const idl = JSON.parse(idlJson);
-    
+    idl = JSON.parse(idlJson);
+  } catch (parseError: any) {
+    const error = new Error(`IDL validation failed: Invalid JSON - ${parseError.message}`);
+    (error as any).cause = parseError;
+    throw error;
+  }
+  
+  try {
     if (!idl.instructions || !Array.isArray(idl.instructions)) {
       throw new Error('IDL missing instructions array');
     }
@@ -82,8 +93,10 @@ function validateIdl(idlJson: string): any {
     console.log(`   - Accounts: ${idl.accounts?.length || 0}`);
     
     return idl;
-  } catch (error: any) {
-    throw new Error(`IDL validation failed: ${error.message}`);
+  } catch (validationError: any) {
+    const error = new Error(`IDL validation failed: ${validationError.message}`);
+    (error as any).cause = validationError;
+    throw error;
   }
 }
 
