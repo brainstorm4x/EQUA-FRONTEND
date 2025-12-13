@@ -6,6 +6,10 @@ import { test, expect } from '@playwright/test';
  * Tests off-chain cooldown logic to prevent multiple mints within 24 hours
  * and eliminate UI race conditions.
  */
+
+// Regex pattern for time format from formatTimeRemaining (e.g., "2h 30m", "45m 15s", "30s")
+const TIME_FORMAT_REGEX = /\d+h \d+m|\d+m \d+s|\d+s/;
+
 test.describe('Cooldown Enforcement', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/mint');
@@ -93,7 +97,8 @@ test.describe('Cooldown Enforcement', () => {
       await expect(countdown).toBeVisible();
       
       // Verify time format (hours, minutes, or seconds)
-      await expect(page.locator('text=/\\d+h \\d+m|\\d+m \\d+s|\\d+s/')).toBeVisible();
+      const timePattern = new RegExp(TIME_FORMAT_REGEX.source);
+      await expect(page.locator(`text=${timePattern}`)).toBeVisible();
       
       test.skip();
       return;
@@ -184,7 +189,7 @@ test.describe('Cooldown Enforcement', () => {
     await expect(timeDisplay).toBeVisible();
     
     const timeText = await timeDisplay.textContent();
-    expect(timeText).toMatch(/\d+h \d+m|\d+m \d+s|\d+s/);
+    expect(timeText).toMatch(TIME_FORMAT_REGEX);
     
     // Verify "Come back at" message
     await expect(page.locator('text=/Come back at/i')).toBeVisible();
@@ -257,8 +262,8 @@ test.describe('Cooldown Enforcement', () => {
     expect(newTime).toBeTruthy();
     
     // Both should have time format
-    expect(initialTime).toMatch(/\d+h \d+m|\d+m \d+s|\d+s/);
-    expect(newTime).toMatch(/\d+h \d+m|\d+m \d+s|\d+s/);
+    expect(initialTime).toMatch(TIME_FORMAT_REGEX);
+    expect(newTime).toMatch(TIME_FORMAT_REGEX);
   });
 });
 
