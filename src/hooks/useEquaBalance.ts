@@ -16,6 +16,11 @@ import {
 import { getMintPDA, getSPLTokenBalance } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
 
+// SPL Token account layout constants
+// See: https://docs.rs/spl-token/latest/spl_token/state/struct.Account.html
+const SPL_TOKEN_BALANCE_OFFSET = 64; // Balance field offset in SPL Token account
+const SPL_TOKEN_BALANCE_LENGTH = 8;  // Balance field length (u64)
+
 export interface UseEquaBalanceResult {
   balance: number; // Balance in base units (raw)
   isLoading: boolean;
@@ -76,7 +81,10 @@ export function useEquaBalance(): UseEquaBalanceResult {
       
       // Parse balance from account data
       // SPL Token account layout: balance is at offset 64, 8 bytes (u64)
-      const balanceRaw = new anchor.BN(accountInfo.data.slice(64, 72), 'le');
+      const balanceRaw = new anchor.BN(
+        accountInfo.data.slice(SPL_TOKEN_BALANCE_OFFSET, SPL_TOKEN_BALANCE_OFFSET + SPL_TOKEN_BALANCE_LENGTH), 
+        'le'
+      );
       const balanceNumber = balanceRaw.toNumber();
       
       if (isMountedRef.current) {
@@ -124,7 +132,10 @@ export function useEquaBalance(): UseEquaBalanceResult {
         (accountInfo) => {
           if (accountInfo && accountInfo.data.length > 0 && isMountedRef.current) {
             // Parse updated balance
-            const balanceRaw = new anchor.BN(accountInfo.data.slice(64, 72), 'le');
+            const balanceRaw = new anchor.BN(
+              accountInfo.data.slice(SPL_TOKEN_BALANCE_OFFSET, SPL_TOKEN_BALANCE_OFFSET + SPL_TOKEN_BALANCE_LENGTH), 
+              'le'
+            );
             const balanceNumber = balanceRaw.toNumber();
             setBalance(balanceNumber);
           }

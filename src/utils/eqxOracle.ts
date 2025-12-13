@@ -190,9 +190,10 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
     params.append('parsed', 'true');
     
     // Get network environment (devnet vs mainnet)
+    // Note: Hermes aggregates data from both networks
+    // Feed IDs used above are for mainnet/stable and work across networks
     const pythEnv = process.env.NEXT_PUBLIC_PYTH_ENV || 'mainnet-beta';
-    // Note: Hermes aggregates data from both networks, but feed IDs are specific to mainnet
-    // For production use, ensure feed IDs match the network
+    console.log(`[EQX Oracle] Using Pyth environment: ${pythEnv}`);
 
     const url = `${PYTH_HERMES_API}?${params.toString()}`;
     console.log('[EQX Oracle] Fetching Pyth prices from:', url.substring(0, 100) + '...');

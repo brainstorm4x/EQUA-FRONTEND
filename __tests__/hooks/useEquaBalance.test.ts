@@ -77,7 +77,8 @@ describe('useEquaBalance', () => {
     });
 
     // Create mock token account data with balance at offset 64
-    const mockBalance = 1000000000; // 1 EQUA with 6 decimals (but we're using 9 in code)
+    // Note: EQUA uses 6 decimals, so 1,000,000 base units = 1 EQUA
+    const mockBalance = 1000000; // 1 EQUA (1,000,000 base units with 6 decimals)
     const mockAccountData = Buffer.alloc(165); // SPL Token account size
     
     // Write balance at offset 64 (8 bytes, u64 little-endian)
