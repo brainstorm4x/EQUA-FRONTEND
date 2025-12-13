@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- IDL normalization and synchronization system to prevent Anchor type mismatch errors
+  - `normalizeIdl()` function in `src/lib/program.ts` automatically fixes case mismatches in type references
+  - `validateIdl()` function validates IDL structure and provides actionable error messages
+  - Enhanced error categorization and logging for IDL loading failures
+  - New `scripts/idl-sync.ts` script to fetch canonical IDL from backend repository
+  - `npm run idl:sync` command to synchronize frontend IDL with backend
+  - Automatic IDL backup before sync operations
 - PNG logo format (`equa-logo.png`) as the default logo format for faster page loading
   - 1024x1024 PNG extracted from SVG for better performance
   - Loading placeholder skeleton while logo loads to prevent blank page
@@ -25,12 +32,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation updates for database providers
 
 ### Changed
-- Logo component now uses PNG format by default instead of SVG for improved performance
+- Logo component now uses `onLoad` instead of deprecated `onLoadingComplete` prop
+  - Eliminates Next.js deprecation warning
+  - Maintains loading state functionality
+- Logo component uses PNG format by default instead of SVG for improved performance
   - Eliminates browser console warning about unused preloaded SVG asset
   - Reduces initial page load time and prevents blank page during logo loading
-  - `app/layout.tsx` now preloads PNG instead of SVG
+  - `app/layout.tsx` already preloads PNG instead of SVG
   - SVG format remains available via `format="svg"` prop
-- Updated `docs/LOGO_INSTRUCTIONS.md` to reflect PNG as default format
+- Updated `docs/LOGO_INSTRUCTIONS.md` to include IDL synchronization instructions
 - **BREAKING**: Updated Solana program ID from `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL` to `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
   - Updated all code references: `src/config/program.ts`, `lib/constants.ts`, `src/lib/constants.ts`
   - Updated IDL files: `public/idl/equa_token.json`, `src/idl/equa_token.json`, `src/lib/equa_token.json`, `src/lib/equa_token.ts`
@@ -41,8 +51,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.env.example` updated with Turso configuration and program ID override documentation
 
 ### Fixed
+- Fixed potential Anchor "Type not found" errors due to IDL type name case mismatches
+  - Frontend now normalizes type references (e.g., "referralType" → "ReferralType")
+  - Program construction wrapped with comprehensive error handling
+  - Clear, actionable error messages guide developers to solutions
+- Fixed Next.js Image deprecation warning by replacing `onLoadingComplete` with `onLoad`
 - Fixed blank page issue on initial load caused by slow SVG loading (2.4MB)
-- Fixed browser console warning: "The resource http://localhost:3000/branding/equa-logo.svg was preloaded using link preload but not used within a few seconds"
+- Fixed browser console warning about unused preloaded SVG asset
 - Program ID now supports environment variable override for easier testing and migrations
 
 ## Migration Notes

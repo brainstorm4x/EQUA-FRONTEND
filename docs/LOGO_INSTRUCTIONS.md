@@ -65,3 +65,18 @@ The application favicon is configured in `app/layout.tsx`:
 - `/favicon.ico` - Main favicon
 - `/icon.png` - 32x32 PNG icon
 - `/apple-icon.png` - Apple touch icon
+
+## IDL Synchronization
+
+The frontend must use the canonical Anchor IDL from the backend repository to prevent type mismatches. To sync the IDL:
+
+```bash
+npm run idl:sync
+```
+
+This fetches the latest IDL from the EQUA backend repository and writes it to `public/idl/equa_token.json`. Run this command:
+- After deploying a new version of the backend program
+- When encountering "Type not found" errors in the console
+- Before major frontend releases to ensure compatibility
+
+The IDL sync script includes validation and creates automatic backups of the existing IDL file.

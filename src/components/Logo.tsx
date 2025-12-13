@@ -35,7 +35,7 @@ export function Logo({ className = '', size = 40, priority = false, format = 'pn
         className={className}
         priority={priority}
         loading={priority ? 'eager' : 'lazy'}
-        onLoadingComplete={() => setIsLoading(false)}
+        onLoad={() => setIsLoading(false)}
       />
     </div>
   );

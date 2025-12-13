@@ -80,6 +80,177 @@ export function getUserMetadataPDA(authority: PublicKey): [PublicKey, number] {
 let cachedProgram: Program | null = null;
 let cachedIdl: any = null;
 
+/**
+ * Normalize IDL type references to fix case mismatches
+ * 
+ * The backend may define types with capitalized names (e.g., "ReferralType")
+ * while accounts reference them with lowercase (e.g., "referralType").
+ * This function normalizes such references to prevent Anchor's BorshCoder failures.
+ * 
+ * @param idl - Raw IDL object from JSON
+ * @returns Normalized IDL with consistent type name references
+ */
+function normalizeIdl(idl: any): any {
+  if (!idl || typeof idl !== 'object') {
+    console.error('❌ Invalid IDL structure: IDL is null or not an object');
+    return idl;
+  }
+
+  // Build a map of lowercase type names to canonical names
+  const typeNameMap = new Map<string, string>();
+  
+  if (Array.isArray(idl.types)) {
+    idl.types.forEach((type: any) => {
+      if (type.name) {
+        typeNameMap.set(type.name.toLowerCase(), type.name);
+      }
+    });
+  }
+
+  // Helper to normalize type references in fields
+  const normalizeField = (field: any): any => {
+    if (!field || typeof field !== 'object') return field;
+
+    // Handle direct type reference
+    if (typeof field.type === 'string') {
+      const lowerType = field.type.toLowerCase();
+      if (typeNameMap.has(lowerType) && field.type !== typeNameMap.get(lowerType)) {
+        const canonical = typeNameMap.get(lowerType)!;
+        console.log(`🔧 IDL normalization: "${field.type}" → "${canonical}"`);
+        field.type = canonical;
+      }
+    }
+    
+    // Handle nested type definitions (vec, option, defined, etc.)
+    else if (typeof field.type === 'object') {
+      if (field.type.defined) {
+        const lowerDefined = field.type.defined.toLowerCase();
+        if (typeNameMap.has(lowerDefined) && field.type.defined !== typeNameMap.get(lowerDefined)) {
+          const canonical = typeNameMap.get(lowerDefined)!;
+          console.log(`🔧 IDL normalization: defined "${field.type.defined}" → "${canonical}"`);
+          field.type.defined = canonical;
+        }
+      }
+      
+      // Recursively handle vec, option, array inner types
+      if (field.type.vec) {
+        field.type.vec = normalizeField({ type: field.type.vec }).type;
+      }
+      if (field.type.option) {
+        field.type.option = normalizeField({ type: field.type.option }).type;
+      }
+      if (field.type.array) {
+        field.type.array[0] = normalizeField({ type: field.type.array[0] }).type;
+      }
+    }
+
+    return field;
+  };
+
+  // Normalize all account type references
+  if (Array.isArray(idl.accounts)) {
+    idl.accounts.forEach((account: any) => {
+      if (account.type?.kind === 'struct' && Array.isArray(account.type.fields)) {
+        account.type.fields = account.type.fields.map(normalizeField);
+      }
+    });
+  }
+
+  // Normalize all instruction argument type references
+  if (Array.isArray(idl.instructions)) {
+    idl.instructions.forEach((instruction: any) => {
+      if (Array.isArray(instruction.args)) {
+        instruction.args = instruction.args.map(normalizeField);
+      }
+    });
+  }
+
+  // Normalize type definitions themselves (for nested types)
+  if (Array.isArray(idl.types)) {
+    idl.types.forEach((type: any) => {
+      if (type.type?.kind === 'struct' && Array.isArray(type.type.fields)) {
+        type.type.fields = type.type.fields.map(normalizeField);
+      }
+      if (type.type?.kind === 'enum' && Array.isArray(type.type.variants)) {
+        type.type.variants.forEach((variant: any) => {
+          if (Array.isArray(variant.fields)) {
+            variant.fields = variant.fields.map(normalizeField);
+          }
+        });
+      }
+    });
+  }
+
+  return idl;
+}
+
+/**
+ * Validate IDL structure and provide actionable error messages
+ * @param idl - IDL object to validate
+ * @throws Error with user-facing message if validation fails
+ */
+function validateIdl(idl: any): void {
+  if (!idl) {
+    throw new Error('IDL is null or undefined. Check that /idl/equa_token.json exists and is valid JSON.');
+  }
+
+  if (!idl.address && !idl.metadata?.address) {
+    console.warn('⚠️ IDL missing program address. Ensure IDL is from the correct backend version.');
+  }
+
+  if (!Array.isArray(idl.instructions) || idl.instructions.length === 0) {
+    throw new Error('IDL contains no instructions. The IDL file may be corrupted or incomplete.');
+  }
+
+  if (!Array.isArray(idl.types)) {
+    console.warn('⚠️ IDL has no custom types. This may be expected for simple programs.');
+  }
+
+  // Check for common type reference issues
+  const definedTypes = new Set<string>();
+  if (Array.isArray(idl.types)) {
+    idl.types.forEach((type: any) => {
+      if (type.name) definedTypes.add(type.name.toLowerCase());
+    });
+  }
+
+  const checkTypeReferences = (fields: any[]) => {
+    fields.forEach((field: any) => {
+      if (typeof field.type === 'string' && field.type.length > 0) {
+        const lowerType = field.type.toLowerCase();
+        // Check if this looks like a custom type but isn't defined
+        if (!['u8', 'u16', 'u32', 'u64', 'u128', 'i8', 'i16', 'i32', 'i64', 'i128', 
+              'bool', 'string', 'pubkey', 'bytes'].includes(lowerType)) {
+          if (!definedTypes.has(lowerType)) {
+            console.warn(`⚠️ Type reference "${field.type}" not found in IDL types. This may cause Program construction to fail.`);
+          }
+        }
+      } else if (field.type?.defined) {
+        const lowerDefined = field.type.defined.toLowerCase();
+        if (!definedTypes.has(lowerDefined)) {
+          console.warn(`⚠️ Defined type "${field.type.defined}" not found in IDL types. This may cause Program construction to fail.`);
+        }
+      }
+    });
+  };
+
+  if (Array.isArray(idl.accounts)) {
+    idl.accounts.forEach((account: any) => {
+      if (account.type?.kind === 'struct' && Array.isArray(account.type.fields)) {
+        checkTypeReferences(account.type.fields);
+      }
+    });
+  }
+
+  if (Array.isArray(idl.instructions)) {
+    idl.instructions.forEach((instruction: any) => {
+      if (Array.isArray(instruction.args)) {
+        checkTypeReferences(instruction.args);
+      }
+    });
+  }
+}
+
 // Create Anchor Program Instance with caching
 export async function createProgram(
   connection: Connection,
@@ -98,7 +269,18 @@ export async function createProgram(
       if (!response.ok) {
         throw new Error("Failed to load IDL: " + response.statusText);
       }
-      cachedIdl = await response.json();
+      const rawIdl = await response.json();
+      
+      // Validate IDL structure
+      try {
+        validateIdl(rawIdl);
+      } catch (validationError: any) {
+        console.error('❌ IDL validation failed:', validationError.message);
+        throw new Error(`IDL validation failed: ${validationError.message}`);
+      }
+      
+      // Normalize IDL type references (fix case mismatches)
+      cachedIdl = normalizeIdl(rawIdl);
       
       // Runtime validation: Ensure configured PROGRAM_ID matches the IDL
       const idlProgramId = cachedIdl.address || cachedIdl.metadata?.address;
@@ -116,15 +298,28 @@ export async function createProgram(
       }
       
       console.log(
-        "✅ IDL loaded, creating program with ID:",
+        "✅ IDL loaded and normalized, creating program with ID:",
         PROGRAM_ID.toBase58()
       );
     }
 
     // Create program with 2-parameter constructor (IDL contains the program ID)
     return new Program(cachedIdl, provider);
-  } catch (error) {
-    console.error("❌ Error creating program:", error);
+  } catch (error: any) {
+    // Categorize and log errors for better debugging
+    if (error.message?.includes('Type not found')) {
+      console.error('❌ Anchor IDL Type Error:', error.message);
+      console.error('💡 This usually means the IDL has type reference mismatches.');
+      console.error('💡 Run: npm run idl:sync to fetch the latest canonical IDL from backend.');
+    } else if (error.message?.includes('Program ID mismatch')) {
+      console.error('❌ Program ID Configuration Error');
+      console.error('💡 Update NEXT_PUBLIC_PROGRAM_ID in .env.local to match the deployed program.');
+    } else if (error.message?.includes('Failed to load IDL')) {
+      console.error('❌ IDL Loading Error:', error.message);
+      console.error('💡 Ensure /idl/equa_token.json exists and is valid JSON.');
+    } else {
+      console.error("❌ Error creating program:", error);
+    }
     throw error;
   }
 }
