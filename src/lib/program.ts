@@ -57,7 +57,7 @@ function normalizeIdl(idl: any): any {
     });
   }
 
-  // Validate that critical types exist if referenced in accounts
+  // Normalize types in accounts
   if (idl.accounts && Array.isArray(idl.accounts)) {
     idl.accounts.forEach((account: IdlAccount) => {
       if (account.type && typeof account.type === 'object') {
@@ -66,21 +66,44 @@ function normalizeIdl(idl: any): any {
     });
   }
 
-  // Normalize instruction account types
+  // Normalize instruction account and arg types
   if (idl.instructions && Array.isArray(idl.instructions)) {
     idl.instructions.forEach((instruction: any) => {
       if (instruction.accounts && Array.isArray(instruction.accounts)) {
-        instruction.accounts.forEach((account: any) => {
-          if (account.type && typeof account.type === 'object') {
-            normalizeTypeReferences(account.type, typeNameMap);
+        instruction.accounts.forEach((account: any, idx: number) => {
+          if (account.type) {
+            // Handle both object and string type references
+            if (typeof account.type === 'object') {
+              normalizeTypeReferences(account.type, typeNameMap);
+            } else if (typeof account.type === 'string') {
+              const lowerType = account.type.toLowerCase();
+              if (typeNameMap.has(lowerType)) {
+                const correctName = typeNameMap.get(lowerType);
+                if (correctName !== account.type) {
+                  console.warn(`⚠️ Normalizing account type: "${account.type}" → "${correctName}"`);
+                  instruction.accounts[idx].type = correctName;
+                }
+              }
+            }
           }
         });
       }
       // Also check args
       if (instruction.args && Array.isArray(instruction.args)) {
-        instruction.args.forEach((arg: any) => {
-          if (arg.type && typeof arg.type === 'object') {
-            normalizeTypeReferences(arg.type, typeNameMap);
+        instruction.args.forEach((arg: any, idx: number) => {
+          if (arg.type) {
+            if (typeof arg.type === 'object') {
+              normalizeTypeReferences(arg.type, typeNameMap);
+            } else if (typeof arg.type === 'string') {
+              const lowerType = arg.type.toLowerCase();
+              if (typeNameMap.has(lowerType)) {
+                const correctName = typeNameMap.get(lowerType);
+                if (correctName !== arg.type) {
+                  console.warn(`⚠️ Normalizing arg type: "${arg.type}" → "${correctName}"`);
+                  instruction.args[idx].type = correctName;
+                }
+              }
+            }
           }
         });
       }
@@ -119,6 +142,10 @@ function normalizeTypeReferences(typeObj: any, typeNameMap: Map<string, string>)
       } else {
         // Type is referenced but not defined in IDL
         console.error(`❌ Type "${typeObj.defined}" is referenced but not defined in IDL`);
+        console.error('   This usually indicates:');
+        console.error('   1. The IDL is out of sync with the deployed program');
+        console.error('   2. A hand-edited IDL has incorrect type references');
+        console.error('   → Solution: Run "npm run idl:sync" to fetch the canonical IDL from backend');
       }
     }
     

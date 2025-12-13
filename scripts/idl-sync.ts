@@ -21,6 +21,8 @@ import * as path from 'path';
 import * as https from 'https';
 
 // Configuration
+// Default IDL source: EQUA backend repository
+// Override with IDL_SOURCE_URL environment variable for custom repositories
 const DEFAULT_IDL_URL = 'https://raw.githubusercontent.com/brainstorm4x/EQUA/main/target/idl/equa_token.json';
 const IDL_SOURCE_URL = process.env.IDL_SOURCE_URL || DEFAULT_IDL_URL;
 const OUTPUT_PATH = path.join(__dirname, '../public/idl/equa_token.json');
@@ -51,30 +53,67 @@ function fetchUrl(url: string): Promise<string> {
 }
 
 /**
- * Validate IDL structure
+ * Validate IDL structure comprehensively
  */
 function validateIdl(idl: any): void {
   if (!idl) {
     throw new Error('IDL is null or undefined');
   }
 
-  if (!idl.address && !idl.metadata?.address) {
-    throw new Error('IDL missing program address');
+  // Validate metadata
+  if (!idl.metadata?.name) {
+    console.warn('⚠️  IDL missing metadata.name - this is recommended but not required');
+  }
+  if (!idl.metadata?.version) {
+    console.warn('⚠️  IDL missing metadata.version - this is recommended but not required');
   }
 
+  // Validate program address
+  if (!idl.address && !idl.metadata?.address) {
+    throw new Error('IDL missing program address (address or metadata.address field)');
+  }
+
+  // Validate instructions
   if (!Array.isArray(idl.instructions)) {
     throw new Error('IDL missing instructions array');
   }
+  if (idl.instructions.length === 0) {
+    console.warn('⚠️  IDL has no instructions - this is unusual');
+  }
+  
+  // Validate critical instruction structure
+  idl.instructions.forEach((instruction: any, idx: number) => {
+    if (!instruction.name) {
+      throw new Error(`Instruction at index ${idx} is missing name field`);
+    }
+    if (!instruction.discriminator || !Array.isArray(instruction.discriminator)) {
+      console.warn(`⚠️  Instruction "${instruction.name}" missing discriminator array`);
+    }
+  });
 
+  // Validate accounts
   if (!Array.isArray(idl.accounts)) {
     throw new Error('IDL missing accounts array');
   }
+  
+  // Validate account structure
+  idl.accounts.forEach((account: any, idx: number) => {
+    if (!account.name) {
+      throw new Error(`Account at index ${idx} is missing name field`);
+    }
+    if (!account.discriminator || !Array.isArray(account.discriminator)) {
+      console.warn(`⚠️  Account "${account.name}" missing discriminator array`);
+    }
+  });
 
   console.log('✅ IDL structure validated');
   console.log(`   Program ID: ${idl.address || idl.metadata?.address}`);
+  console.log(`   Name: ${idl.metadata?.name || 'N/A'}`);
+  console.log(`   Version: ${idl.metadata?.version || 'N/A'}`);
   console.log(`   Instructions: ${idl.instructions.length}`);
   console.log(`   Accounts: ${idl.accounts.length}`);
   console.log(`   Types: ${idl.types?.length || 0}`);
+  console.log(`   Errors: ${idl.errors?.length || 0}`);
 }
 
 /**
