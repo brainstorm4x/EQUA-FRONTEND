@@ -211,3 +211,113 @@ export function safeParseAmount(
     return 0;
   }
 }
+
+/**
+ * UserAccount structure offsets (from IDL):
+ * - discriminator: 0 (8 bytes)
+ * - authority: 8 (32 bytes, pubkey)
+ * - referral: 40 (32 bytes, pubkey)
+ * - token_account: 72 (32 bytes, pubkey)
+ * - minted_amount: 104 (8 bytes, u64)
+ * - mint_start: 112 (8 bytes, i64)
+ * - referral_rewards: 120 (8 bytes, u64)
+ * - last_mint_time: 128 (8 bytes, i64)
+ * Total size: 136 bytes
+ */
+export const USER_ACCOUNT_OFFSETS = {
+  DISCRIMINATOR: 0,
+  AUTHORITY: 8,
+  REFERRAL: 40,
+  TOKEN_ACCOUNT: 72,
+  MINTED_AMOUNT: 104,
+  MINT_START: 112,
+  REFERRAL_REWARDS: 120,
+  LAST_MINT_TIME: 128,
+} as const;
+
+export const USER_ACCOUNT_SIZE = 136;
+
+/**
+ * Decoded UserAccount data
+ */
+export interface DecodedUserAccount {
+  authority: string; // Base58 encoded public key
+  referral: string; // Base58 encoded public key
+  tokenAccount: string; // Base58 encoded public key
+  mintedAmount: number;
+  mintStart: number;
+  referralRewards: number;
+  lastMintTime: number;
+}
+
+/**
+ * Decodes a UserAccount buffer into structured data
+ * 
+ * @param accountData - Raw account data buffer from UserAccount PDA
+ * @returns Decoded account data or null if invalid
+ */
+export function decodeUserAccount(
+  accountData: Buffer | Uint8Array | null | undefined
+): DecodedUserAccount | null {
+  // Validate account data exists and has correct size
+  if (!accountData || accountData.length < USER_ACCOUNT_SIZE) {
+    console.warn(
+      `⚠️ Invalid UserAccount data: expected ${USER_ACCOUNT_SIZE} bytes, got ${accountData?.length || 0}`
+    );
+    return null;
+  }
+
+  try {
+    // Parse public keys
+    const authorityBytes = accountData.slice(
+      USER_ACCOUNT_OFFSETS.AUTHORITY,
+      USER_ACCOUNT_OFFSETS.AUTHORITY + 32
+    );
+    const referralBytes = accountData.slice(
+      USER_ACCOUNT_OFFSETS.REFERRAL,
+      USER_ACCOUNT_OFFSETS.REFERRAL + 32
+    );
+    const tokenAccountBytes = accountData.slice(
+      USER_ACCOUNT_OFFSETS.TOKEN_ACCOUNT,
+      USER_ACCOUNT_OFFSETS.TOKEN_ACCOUNT + 32
+    );
+
+    // Convert to PublicKey and then to Base58
+    // Note: Using PublicKey constructor is standard practice in Solana programs
+    // and provides validation. Performance impact is minimal as this is not a hot path.
+    const authority = new anchor.web3.PublicKey(authorityBytes).toBase58();
+    const referral = new anchor.web3.PublicKey(referralBytes).toBase58();
+    const tokenAccount = new anchor.web3.PublicKey(tokenAccountBytes).toBase58();
+
+    // Parse numeric fields using safe parsing functions
+    const mintedAmount = safeParseAmount(
+      accountData,
+      USER_ACCOUNT_OFFSETS.MINTED_AMOUNT
+    );
+    const mintStart = safeParseTimestamp(
+      accountData,
+      USER_ACCOUNT_OFFSETS.MINT_START
+    );
+    const referralRewards = safeParseAmount(
+      accountData,
+      USER_ACCOUNT_OFFSETS.REFERRAL_REWARDS
+    );
+    const lastMintTime = safeParseTimestamp(
+      accountData,
+      USER_ACCOUNT_OFFSETS.LAST_MINT_TIME
+    );
+
+    return {
+      authority,
+      referral,
+      tokenAccount,
+      mintedAmount,
+      mintStart,
+      referralRewards,
+      lastMintTime,
+    };
+  } catch (error) {
+    console.error('❌ Error decoding UserAccount:', error);
+    return null;
+  }
+}

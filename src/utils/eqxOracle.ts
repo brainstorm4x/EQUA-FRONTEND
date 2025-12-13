@@ -37,6 +37,10 @@ const isPythEnabled = (): boolean => {
 // Track if we've already warned about Pyth errors (warn only once)
 let pythErrorWarned = false;
 
+// Maximum reasonable price for sanity checks (prevents parsing errors)
+// Prevents accepting corrupted data or overflow values
+const MAX_REASONABLE_PRICE = 1_000_000; // $1M per unit - beyond any realistic commodity/currency price
+
 // ============================================================================
 // Pyth Feed IDs (Hermes hex IDs from official documentation)
 // ============================================================================
@@ -159,6 +163,7 @@ const PYTH_HERMES_API = 'https://hermes.pyth.network/v2/updates/price/latest';
 
 /**
  * Fetches prices from Pyth Network using the Hermes API
+ * Documentation: https://hermes.pyth.network/docs/
  */
 async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
   // Check if Pyth is enabled
@@ -182,17 +187,58 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
       PYTH_FEED_IDS.GBP_USD,
     ];
 
+    // Build query parameters per Hermes API docs
     const params = new URLSearchParams();
     feedIds.forEach(id => params.append('ids[]', id));
+    // Add parsed=true to get JSON response with parsed prices
+    params.append('parsed', 'true');
+    
+    // Log network configuration for debugging
+    // Note: Hermes API works with mainnet feed IDs regardless of NEXT_PUBLIC_PYTH_ENV
+    // The env variable is primarily for documentation/configuration purposes
+    const pythEnv = process.env.NEXT_PUBLIC_PYTH_ENV || 'mainnet-beta';
+    console.log(`[EQX Oracle] Configured Pyth environment: ${pythEnv} (using mainnet feed IDs)`);
 
-    const response = await axios.get(`${PYTH_HERMES_API}?${params.toString()}`, {
+    const url = `${PYTH_HERMES_API}?${params.toString()}`;
+    console.log('[EQX Oracle] Fetching Pyth prices from:', url.substring(0, 100) + '...');
+    
+    const response = await axios.get(url, {
       timeout: 10000, // 10 second timeout
+      headers: {
+        'Accept': 'application/json',
+      },
+      validateStatus: (status) => status < 500, // Don't throw on 4xx errors
     });
+
+    // Handle rate limiting (429) or client errors (4xx)
+    if (response.status === 429) {
+      if (!pythErrorWarned) {
+        console.warn('[EQX Oracle] Pyth API rate limit exceeded. Using fallback prices.');
+        pythErrorWarned = true;
+      }
+      return null;
+    }
+    
+    if (response.status === 404) {
+      if (!pythErrorWarned) {
+        console.warn('[EQX Oracle] Pyth API returned 404. Feed IDs may be incorrect or unavailable. Using fallback.');
+        pythErrorWarned = true;
+      }
+      return null;
+    }
+    
+    if (response.status >= 400) {
+      if (!pythErrorWarned) {
+        console.warn(`[EQX Oracle] Pyth API error ${response.status}. Using fallback prices.`);
+        pythErrorWarned = true;
+      }
+      return null;
+    }
 
     // Hermes V2 API returns: { binary: { data: [...], encoding: "hex" }, parsed: [...] }
     if (!response.data || !response.data.parsed || !Array.isArray(response.data.parsed)) {
       if (!pythErrorWarned) {
-        console.warn('[EQX Oracle] Invalid Pyth response format');
+        console.warn('[EQX Oracle] Invalid Pyth response format:', response.data);
         pythErrorWarned = true;
       }
       return null;
@@ -223,6 +269,13 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
         // feed.price.expo is the exponent (usually negative, e.g., -8 for USD prices)
         // Example: raw price 123456 with expo -2 becomes 1234.56
         const price = parseFloat(feed.price.price) * Math.pow(10, feed.price.expo);
+        
+        // Validate price is reasonable (sanity check)
+        if (isNaN(price) || price <= 0 || price > MAX_REASONABLE_PRICE) {
+          console.warn(`[EQX Oracle] Invalid price for ${symbol}: ${price} (exceeds max ${MAX_REASONABLE_PRICE})`);
+          continue;
+        }
+        
         prices[symbol] = {
           symbol,
           price,
@@ -245,17 +298,24 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
     const hasAllPrices = requiredSymbols.every(s => prices[s] !== undefined);
 
     if (!hasAllPrices) {
+      const missing = requiredSymbols.filter(s => !prices[s]);
       if (!pythErrorWarned) {
-        console.warn('[EQX Oracle] Pyth did not return all required prices');
+        console.warn('[EQX Oracle] Pyth did not return all required prices. Missing:', missing);
         pythErrorWarned = true;
       }
       return null;
     }
 
+    console.log('[EQX Oracle] Successfully fetched prices from Pyth');
     return prices;
-  } catch (error) {
+  } catch (error: any) {
+    // Classify error types for better debugging
+    const errorType = error.code === 'ECONNABORTED' ? 'timeout' : 
+                     error.response?.status ? `HTTP ${error.response.status}` :
+                     'network';
+    
     if (!pythErrorWarned) {
-      console.warn('[EQX Oracle] Error fetching Pyth prices:', error);
+      console.warn(`[EQX Oracle] Error fetching Pyth prices (${errorType}):`, error.message);
       pythErrorWarned = true;
     }
     return null;

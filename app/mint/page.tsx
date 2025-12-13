@@ -180,9 +180,8 @@ async function getLastMintTime(connection: any, userPubkey: PublicKey): Promise<
       return 0;
     }
     
-    // Offset based on IDL: 8 discriminator + 32 authority + 32 referral + 32 token_account + 8 minted_amount + 8 mint_start = 120
-    // Note: locked_until field removed per EQUA Whitepaper 2025
-    const LAST_MINT_TIME_OFFSET = 136;
+    // Use correct offset from safeAccountParsing.ts
+    const LAST_MINT_TIME_OFFSET = 128; // 8 discriminator + 32 authority + 32 referral + 32 token_account + 8 minted_amount + 8 mint_start + 8 referral_rewards = 128
     
     // Use safe parsing to handle overflow, uninitialized, or corrupted values
     const lastMintTime = safeParseTimestamp(accountInfo.data, LAST_MINT_TIME_OFFSET);
@@ -461,11 +460,14 @@ export default function MintPage() {
     
     try {
       const referrerPubkey = new PublicKey(referrerAddress);
-      // Check if the referrer has a registered user account on-chain
+      // Derive the UserAccount PDA for the referrer's wallet
+      // The referrerAddress is the wallet public key (authority), not the PDA itself
+      const [referrerUserAccountPDA] = getUserAccountPDA(referrerPubkey);
+      
+      // Check if the referrer's UserAccount PDA exists on-chain
       // This is the source of truth - no database checks
-      const accountInfo = await connection.getAccountInfo(referrerPubkey);
-      // Check that account exists and has sufficient data to be a UserAccount
-      // Note: Size reduced from 144 to 136 after locked_until field removal
+      const accountInfo = await connection.getAccountInfo(referrerUserAccountPDA);
+      // Check that account exists and has sufficient data to be a UserAccount (136 bytes)
       return accountInfo !== null && accountInfo.data.length >= 136;
     } catch {
       return false;

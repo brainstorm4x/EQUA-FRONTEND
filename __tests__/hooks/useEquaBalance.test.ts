@@ -1,0 +1,171 @@
+/**
+ * Tests for useEquaBalance hook
+ */
+
+import { renderHook, waitFor } from '@testing-library/react';
+import { useEquaBalance } from '@/hooks/useEquaBalance';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { PublicKey, Connection } from '@solana/web3.js';
+import * as anchor from '@coral-xyz/anchor';
+
+// Mock wallet adapter hooks
+jest.mock('@solana/wallet-adapter-react', () => ({
+  useConnection: jest.fn(),
+  useWallet: jest.fn(),
+}));
+
+// Mock program functions
+jest.mock('@/lib/program', () => ({
+  getMintPDA: jest.fn(() => [new PublicKey('11111111111111111111111111111111'), 0]),
+  getSPLTokenBalance: jest.fn(),
+  getUserAccountPDA: jest.fn(() => [new PublicKey('22222222222222222222222222222222'), 0]),
+}));
+
+describe('useEquaBalance', () => {
+  const mockConnection = {
+    getAccountInfo: jest.fn(),
+    onAccountChange: jest.fn(() => 1),
+    removeAccountChangeListener: jest.fn(),
+  } as unknown as Connection;
+
+  const mockPublicKey = new PublicKey('33333333333333333333333333333333');
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    (useConnection as jest.Mock).mockReturnValue({
+      connection: mockConnection,
+    });
+  });
+
+  it('should return zero balance when wallet not connected', () => {
+    (useWallet as jest.Mock).mockReturnValue({
+      publicKey: null,
+      connected: false,
+    });
+
+    const { result } = renderHook(() => useEquaBalance());
+
+    expect(result.current.balance).toBe(0);
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('should return zero balance when token account does not exist', async () => {
+    (useWallet as jest.Mock).mockReturnValue({
+      publicKey: mockPublicKey,
+      connected: true,
+    });
+
+    // Mock token account not found
+    mockConnection.getAccountInfo = jest.fn().mockResolvedValue(null);
+
+    const { result } = renderHook(() => useEquaBalance());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.balance).toBe(0);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('should parse and return balance from token account', async () => {
+    (useWallet as jest.Mock).mockReturnValue({
+      publicKey: mockPublicKey,
+      connected: true,
+    });
+
+    // Create mock token account data with balance at offset 64
+    // Note: EQUA uses 6 decimals, so 1,000,000 base units = 1 EQUA
+    const mockBalance = 1000000; // 1 EQUA (1,000,000 base units with 6 decimals)
+    const mockAccountData = Buffer.alloc(165); // SPL Token account size
+    
+    // Write balance at offset 64 (8 bytes, u64 little-endian)
+    const balanceBN = new anchor.BN(mockBalance);
+    balanceBN.toArrayLike(Buffer, 'le', 8).copy(mockAccountData, 64);
+
+    mockConnection.getAccountInfo = jest.fn().mockResolvedValue({
+      data: mockAccountData,
+      executable: false,
+      lamports: 2039280,
+      owner: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
+    });
+
+    const { result } = renderHook(() => useEquaBalance());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.balance).toBe(mockBalance);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('should handle errors gracefully', async () => {
+    (useWallet as jest.Mock).mockReturnValue({
+      publicKey: mockPublicKey,
+      connected: true,
+    });
+
+    mockConnection.getAccountInfo = jest.fn().mockRejectedValue(
+      new Error('RPC connection failed')
+    );
+
+    const { result } = renderHook(() => useEquaBalance());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.balance).toBe(0);
+    expect(result.current.error).toBeTruthy();
+    expect(result.current.error).toContain('RPC connection failed');
+  });
+
+  it('should provide a refresh function', async () => {
+    (useWallet as jest.Mock).mockReturnValue({
+      publicKey: mockPublicKey,
+      connected: true,
+    });
+
+    mockConnection.getAccountInfo = jest.fn().mockResolvedValue(null);
+
+    const { result } = renderHook(() => useEquaBalance());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(typeof result.current.refresh).toBe('function');
+
+    // Call refresh
+    await result.current.refresh();
+
+    expect(mockConnection.getAccountInfo).toHaveBeenCalled();
+  });
+
+  it('should set up account subscription when connected', async () => {
+    (useWallet as jest.Mock).mockReturnValue({
+      publicKey: mockPublicKey,
+      connected: true,
+    });
+
+    const mockSubscriptionId = 123;
+    mockConnection.onAccountChange = jest.fn().mockReturnValue(mockSubscriptionId);
+    mockConnection.getAccountInfo = jest.fn().mockResolvedValue(null);
+
+    const { unmount } = renderHook(() => useEquaBalance());
+
+    await waitFor(() => {
+      expect(mockConnection.onAccountChange).toHaveBeenCalled();
+    });
+
+    // Cleanup should remove listener
+    unmount();
+
+    await waitFor(() => {
+      expect(mockConnection.removeAccountChangeListener).toHaveBeenCalledWith(mockSubscriptionId);
+    });
+  });
+});
