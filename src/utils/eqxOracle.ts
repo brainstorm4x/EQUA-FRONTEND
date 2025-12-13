@@ -37,6 +37,10 @@ const isPythEnabled = (): boolean => {
 // Track if we've already warned about Pyth errors (warn only once)
 let pythErrorWarned = false;
 
+// Maximum reasonable price for sanity checks (prevents parsing errors)
+// Prevents accepting corrupted data or overflow values
+const MAX_REASONABLE_PRICE = 1_000_000; // $1M per unit - beyond any realistic commodity/currency price
+
 // ============================================================================
 // Pyth Feed IDs (Hermes hex IDs from official documentation)
 // ============================================================================
@@ -189,11 +193,11 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
     // Add parsed=true to get JSON response with parsed prices
     params.append('parsed', 'true');
     
-    // Get network environment (devnet vs mainnet)
-    // Note: Hermes aggregates data from both networks
-    // Feed IDs used above are for mainnet/stable and work across networks
+    // Log network configuration for debugging
+    // Note: Hermes API works with mainnet feed IDs regardless of NEXT_PUBLIC_PYTH_ENV
+    // The env variable is primarily for documentation/configuration purposes
     const pythEnv = process.env.NEXT_PUBLIC_PYTH_ENV || 'mainnet-beta';
-    console.log(`[EQX Oracle] Using Pyth environment: ${pythEnv}`);
+    console.log(`[EQX Oracle] Configured Pyth environment: ${pythEnv} (using mainnet feed IDs)`);
 
     const url = `${PYTH_HERMES_API}?${params.toString()}`;
     console.log('[EQX Oracle] Fetching Pyth prices from:', url.substring(0, 100) + '...');
@@ -267,8 +271,8 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
         const price = parseFloat(feed.price.price) * Math.pow(10, feed.price.expo);
         
         // Validate price is reasonable (sanity check)
-        if (isNaN(price) || price <= 0 || price > 1000000) {
-          console.warn(`[EQX Oracle] Invalid price for ${symbol}: ${price}`);
+        if (isNaN(price) || price <= 0 || price > MAX_REASONABLE_PRICE) {
+          console.warn(`[EQX Oracle] Invalid price for ${symbol}: ${price} (exceeds max ${MAX_REASONABLE_PRICE})`);
           continue;
         }
         

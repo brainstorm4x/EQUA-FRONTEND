@@ -283,6 +283,8 @@ export function decodeUserAccount(
     );
 
     // Convert to PublicKey and then to Base58
+    // Note: Using PublicKey constructor is standard practice in Solana programs
+    // and provides validation. Performance impact is minimal as this is not a hot path.
     const authority = new anchor.web3.PublicKey(authorityBytes).toBase58();
     const referral = new anchor.web3.PublicKey(referralBytes).toBase58();
     const tokenAccount = new anchor.web3.PublicKey(tokenAccountBytes).toBase58();

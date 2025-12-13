@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, AccountInfo } from '@solana/web3.js';
 import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
@@ -20,6 +20,23 @@ import * as anchor from '@coral-xyz/anchor';
 // See: https://docs.rs/spl-token/latest/spl_token/state/struct.Account.html
 const SPL_TOKEN_BALANCE_OFFSET = 64; // Balance field offset in SPL Token account
 const SPL_TOKEN_BALANCE_LENGTH = 8;  // Balance field length (u64)
+
+/**
+ * Parses SPL token balance from account data
+ * @param accountData - Raw account data from SPL token account
+ * @returns Balance as number in base units
+ */
+function parseTokenBalance(accountData: Buffer | Uint8Array): number {
+  if (!accountData || accountData.length < SPL_TOKEN_BALANCE_OFFSET + SPL_TOKEN_BALANCE_LENGTH) {
+    return 0;
+  }
+  
+  const balanceRaw = new anchor.BN(
+    accountData.slice(SPL_TOKEN_BALANCE_OFFSET, SPL_TOKEN_BALANCE_OFFSET + SPL_TOKEN_BALANCE_LENGTH), 
+    'le'
+  );
+  return balanceRaw.toNumber();
+}
 
 export interface UseEquaBalanceResult {
   balance: number; // Balance in base units (raw)
@@ -79,13 +96,8 @@ export function useEquaBalance(): UseEquaBalanceResult {
         return;
       }
       
-      // Parse balance from account data
-      // SPL Token account layout: balance is at offset 64, 8 bytes (u64)
-      const balanceRaw = new anchor.BN(
-        accountInfo.data.slice(SPL_TOKEN_BALANCE_OFFSET, SPL_TOKEN_BALANCE_OFFSET + SPL_TOKEN_BALANCE_LENGTH), 
-        'le'
-      );
-      const balanceNumber = balanceRaw.toNumber();
+      // Parse balance from account data using helper function
+      const balanceNumber = parseTokenBalance(accountInfo.data);
       
       if (isMountedRef.current) {
         setBalance(balanceNumber);
@@ -131,12 +143,8 @@ export function useEquaBalance(): UseEquaBalanceResult {
         tokenAccount,
         (accountInfo) => {
           if (accountInfo && accountInfo.data.length > 0 && isMountedRef.current) {
-            // Parse updated balance
-            const balanceRaw = new anchor.BN(
-              accountInfo.data.slice(SPL_TOKEN_BALANCE_OFFSET, SPL_TOKEN_BALANCE_OFFSET + SPL_TOKEN_BALANCE_LENGTH), 
-              'le'
-            );
-            const balanceNumber = balanceRaw.toNumber();
+            // Parse updated balance using helper function
+            const balanceNumber = parseTokenBalance(accountInfo.data);
             setBalance(balanceNumber);
           }
         },
