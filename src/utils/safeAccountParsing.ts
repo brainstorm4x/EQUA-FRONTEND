@@ -222,7 +222,8 @@ export function safeParseAmount(
  * - mint_start: 112 (8 bytes, i64)
  * - referral_rewards: 120 (8 bytes, u64)
  * - last_mint_time: 128 (8 bytes, i64)
- * Total size: 136 bytes
+ * - referral_type: 136 (1 byte, enum: 0=Individual, 1=Business)
+ * Total size: 137 bytes
  */
 export const USER_ACCOUNT_OFFSETS = {
   DISCRIMINATOR: 0,

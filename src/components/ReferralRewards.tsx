@@ -32,7 +32,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
   const [rewards, setRewards] = useState<BN | null>(null);
   const [referredCount, setReferredCount] = useState(0);
   const [referredUsers, setReferredUsers] = useState<PublicKey[]>([]);
-  const [referralType, setReferralType] = useState<'Individual' | 'Business'>('Individual');
+  const [referralType, setReferralType] = useState<ReferralType>(ReferralType.Individual);
   const [error, setError] = useState('');
   const [showDetails, setShowDetails] = useState(false);
 
@@ -64,7 +64,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       const userAccountData = await getUserAccountData(connection, userAccountPDA);
       
       if (userAccountData) {
-        setReferralType(userAccountData.referralType === ReferralType.Business ? 'Business' : 'Individual');
+        setReferralType(userAccountData.referralType);
       }
 
       // Fetch referral statistics
@@ -121,7 +121,8 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
 
   const rewardsDisplay = rewards ? formatReferralRewards(rewards) : '0.000000';
   const hasRewards = rewards && rewards.gt(new BN(0));
-  const rewardPercentage = referralType === 'Business' ? 2 : 1;
+  const rewardPercentage = getReferralRewardPercentage(referralType);
+  const referralTypeName = referralType === ReferralType.Business ? 'Business' : 'Individual';
 
   return (
     <div className={`bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30 ${className}`}>
@@ -131,7 +132,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
         </h3>
         <div className="bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30">
           <span className="text-green-300 text-sm font-medium">
-            {rewardPercentage}% {referralType}
+            {rewardPercentage}% {referralTypeName}
           </span>
         </div>
       </div>
