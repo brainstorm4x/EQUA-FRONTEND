@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **On-Chain Referral System Alignment**
+  - `referral_type` field in UserAccount IDL (Individual = 0, Business = 1)
+  - `ReferralType` enum in TypeScript interfaces matching on-chain structure
+  - Display of referral type badge showing 1% (Individual) or 2% (Business) reward rate
+  - Balance loading state with skeleton animation in WalletDashboard
+  - Retry logic for token balance fetching (3 attempts with 1s delay)
+  - Dev-only localStorage referral tracking gated behind `NEXT_PUBLIC_DEV_REFERRAL_MOCK=true`
 - PNG logo format (`equa-logo.png`) as the default logo format for faster page loading
   - 1024x1024 PNG extracted from SVG for better performance
   - Loading placeholder skeleton while logo loads to prevent blank page
@@ -25,6 +32,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation updates for database providers
 
 ### Changed
+- **Balance Display Improvements**
+  - WalletDashboard now shows loading state with animated skeleton
+  - Balance displays "0" instead of "--" after loading completes
+  - Implements robust retry mechanism for balance fetching
+- **Referral Rewards**
+  - ReferralRewards component reads `referral_type` from on-chain UserAccount
+  - Displays referral reward percentage based on account type
+  - localStorage-based referral counts only used when `NEXT_PUBLIC_DEV_REFERRAL_MOCK=true`
+  - Production code relies solely on on-chain data for referral information
+- **IDL Updates**
+  - Updated UserAccount structure to include `referral_type` field (1 byte enum)
+  - Account size increased from 136 to 137 bytes
+  - Parsing logic updated to handle new field at offset 136
 - Logo component now uses PNG format by default instead of SVG for improved performance
   - Eliminates browser console warning about unused preloaded SVG asset
   - Reduces initial page load time and prevents blank page during logo loading
@@ -41,6 +61,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.env.example` updated with Turso configuration and program ID override documentation
 
 ### Fixed
+- Fixed balance display showing "--" instead of "0" when no tokens present
+- Fixed missing loading state when fetching EQUA balance
+- Fixed localStorage referral tracking being used in production (now dev-only)
 - Fixed blank page issue on initial load caused by slow SVG loading (2.4MB)
 - Fixed browser console warning: "The resource http://localhost:3000/branding/equa-logo.svg was preloaded using link preload but not used within a few seconds"
 - Program ID now supports environment variable override for easier testing and migrations

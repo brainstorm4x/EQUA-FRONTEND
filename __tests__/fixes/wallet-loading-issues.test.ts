@@ -57,8 +57,8 @@ describe('Fix verification tests', () => {
     });
 
     it('should parse valid user account data correctly', () => {
-      // Create a valid buffer with 136 bytes (locked_until field removed)
-      const validBuffer = Buffer.alloc(136);
+      // Create a valid buffer with 137 bytes (includes referral_type field)
+      const validBuffer = Buffer.alloc(137);
       
       // Fill with discriminator (8 bytes)
       validBuffer.fill(0, 0, 8);
@@ -71,10 +71,13 @@ describe('Fix verification tests', () => {
       testKey.copy(validBuffer, 72); // token_account
       
       // Fill with test u64/i64 values (8 bytes each)
-      // minted_amount, mint_start, referral_rewards, last_mint_time (locked_until removed)
+      // minted_amount, mint_start, referral_rewards, last_mint_time
       for (let i = 0; i < 4; i++) {
         validBuffer.writeBigUInt64LE(BigInt(i * 1000), 104 + i * 8);
       }
+      
+      // Add referral_type (1 byte, 0 = Individual)
+      validBuffer.writeUInt8(0, 136);
 
       const result = parseUserAccountData(validBuffer);
       

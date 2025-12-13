@@ -875,7 +875,7 @@ export default function MintPage() {
         throw new Error('User account not found. Please register first.');
       }
       
-      const MIN_USER_ACCOUNT_SIZE = 136;  // Updated: locked_until field removed (was 144)
+      const MIN_USER_ACCOUNT_SIZE = 137;  // Updated: added referral_type field (was 136)
       const LEGACY_USER_ACCOUNT_SIZE = 128;  // Pre-metadata version
       
       if (userAccountInfo.data.length < MIN_USER_ACCOUNT_SIZE) {

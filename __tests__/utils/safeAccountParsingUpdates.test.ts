@@ -24,7 +24,8 @@ describe('UserAccount Parsing Updates', () => {
     });
 
     it('should have correct account size', () => {
-      expect(USER_ACCOUNT_SIZE).toBe(136);
+      // Updated to 137 bytes with referral_type field (1 byte enum)
+      expect(USER_ACCOUNT_SIZE).toBe(137);
     });
   });
 

@@ -233,9 +233,11 @@ export const USER_ACCOUNT_OFFSETS = {
   MINT_START: 112,
   REFERRAL_REWARDS: 120,
   LAST_MINT_TIME: 128,
+  REFERRAL_TYPE: 136,
 } as const;
 
-export const USER_ACCOUNT_SIZE = 136;
+// Updated to 137 bytes with referral_type field (1 byte enum)
+export const USER_ACCOUNT_SIZE = 137;
 
 /**
  * Decoded UserAccount data
@@ -248,6 +250,7 @@ export interface DecodedUserAccount {
   mintStart: number;
   referralRewards: number;
   lastMintTime: number;
+  referralType: number; // 0 = Individual, 1 = Business
 }
 
 /**
@@ -306,6 +309,11 @@ export function decodeUserAccount(
       accountData,
       USER_ACCOUNT_OFFSETS.LAST_MINT_TIME
     );
+    
+    // Parse referral_type (1 byte enum: 0 = Individual, 1 = Business)
+    const referralType = accountData.length > USER_ACCOUNT_OFFSETS.REFERRAL_TYPE
+      ? accountData[USER_ACCOUNT_OFFSETS.REFERRAL_TYPE]
+      : 0; // Default to Individual if not present
 
     return {
       authority,
@@ -315,6 +323,7 @@ export function decodeUserAccount(
       mintStart,
       referralRewards,
       lastMintTime,
+      referralType,
     };
   } catch (error) {
     console.error('❌ Error decoding UserAccount:', error);

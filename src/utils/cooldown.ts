@@ -18,8 +18,8 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { safeParseTimestamp } from './safeAccountParsing';
 
 // Constants
-const LAST_MINT_TIME_OFFSET = 136; // Offset in UserAccount for last_mint_time (i64)
-const MIN_USER_ACCOUNT_SIZE = LAST_MINT_TIME_OFFSET + 8; // Minimum size to read last_mint_time (i64 = 8 bytes)
+const LAST_MINT_TIME_OFFSET = 128; // Offset in UserAccount for last_mint_time (i64)
+const MIN_USER_ACCOUNT_SIZE = 137; // Full UserAccount size with referral_type field
 const IN_FLIGHT_LOCK_TTL = 120; // In-flight lock TTL in seconds (2 minutes)
 
 // Get cooldown period from environment variable (default 86400 = 24 hours)
