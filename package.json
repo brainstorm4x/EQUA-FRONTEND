@@ -9,7 +9,7 @@
     "lint": "next lint",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check:structure": "bash scripts/check-app-directory.sh",
-    "idl:sync": "ts-node scripts/idl-sync.ts",
+    "idl:sync": "node scripts/idl-sync.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
