@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- PNG logo format (`equa-logo.png`) as the default logo format for faster page loading
+  - 1024x1024 PNG extracted from SVG for better performance
+  - Loading placeholder skeleton while logo loads to prevent blank page
+  - Optional `format` prop on Logo component to support both PNG and SVG
 - Turso (libSQL) database provider support for globally replicated SQLite-compatible cloud database
   - New `DB_PROVIDER=turso` option alongside existing sqlite and supabase
   - `@libsql/client` dependency for HTTP-based libSQL access
@@ -21,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation updates for database providers
 
 ### Changed
+- Logo component now uses PNG format by default instead of SVG for improved performance
+  - Eliminates browser console warning about unused preloaded SVG asset
+  - Reduces initial page load time and prevents blank page during logo loading
+  - `app/layout.tsx` now preloads PNG instead of SVG
+  - SVG format remains available via `format="svg"` prop
+- Updated `docs/LOGO_INSTRUCTIONS.md` to reflect PNG as default format
 - **BREAKING**: Updated Solana program ID from `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL` to `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
   - Updated all code references: `src/config/program.ts`, `lib/constants.ts`, `src/lib/constants.ts`
   - Updated IDL files: `public/idl/equa_token.json`, `src/idl/equa_token.json`, `src/lib/equa_token.json`, `src/lib/equa_token.ts`
@@ -31,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.env.example` updated with Turso configuration and program ID override documentation
 
 ### Fixed
+- Fixed blank page issue on initial load caused by slow SVG loading (2.4MB)
+- Fixed browser console warning: "The resource http://localhost:3000/branding/equa-logo.svg was preloaded using link preload but not used within a few seconds"
 - Program ID now supports environment variable override for easier testing and migrations
 
 ## Migration Notes
