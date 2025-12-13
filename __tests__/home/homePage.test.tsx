@@ -115,12 +115,12 @@ describe('Home/Landing Page', () => {
       expect(heroSection?.textContent).not.toContain('🪙');
     });
 
-    it('should use SVG format for logo', () => {
+    it('should use PNG format for logo by default', () => {
       render(<HomePage />);
       
       const logos = screen.getAllByAltText('EQUA Logo');
       logos.forEach(logo => {
-        expect(logo).toHaveAttribute('src', '/branding/equa-logo.svg');
+        expect(logo).toHaveAttribute('src', '/branding/equa-logo.png');
       });
     });
   });

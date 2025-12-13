@@ -25,8 +25,15 @@ describe('Logo Component', () => {
       expect(logo).toBeInTheDocument();
     });
 
-    it('should use the correct logo source path', () => {
+    it('should use PNG format by default', () => {
       render(<Logo />);
+      
+      const logo = screen.getByAltText('EQUA Logo');
+      expect(logo).toHaveAttribute('src', '/branding/equa-logo.png');
+    });
+
+    it('should use SVG format when specified', () => {
+      render(<Logo format="svg" />);
       
       const logo = screen.getByAltText('EQUA Logo');
       expect(logo).toHaveAttribute('src', '/branding/equa-logo.svg');
