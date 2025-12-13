@@ -19,6 +19,13 @@ export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
 // Associated Token Program ID: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
 // This is the same for both standard SPL Token and Token-2022
 // This MUST be passed at index 8 (associated_token_program) in initialize_user instruction
+// 
+// RE-EXPORT RATIONALE: We re-export this constant here (rather than importing directly
+// from @solana/spl-token throughout the codebase) to maintain a single source of truth
+// for all token program constants. This centralization:
+// - Prevents accidental imports of standard TOKEN_PROGRAM_ID alongside ATA program
+// - Makes it easier to update or validate program IDs across the entire codebase
+// - Provides a clear contract: "import from @/lib/constants for EQUA token operations"
 export const ASSOCIATED_TOKEN_PROGRAM_ID = SPL_ASSOCIATED_TOKEN_PROGRAM_ID;
 
 // Network configuration

@@ -15,6 +15,14 @@ import {
 const DEBUG_INSTRUCTIONS = process.env.NODE_ENV === 'development';
 
 // ============================================================================
+// CONSTANTS FOR RUNTIME VALIDATION
+// ============================================================================
+// These constants are used by runtime guards to validate program IDs
+// before building instructions. They match the exports from constants.ts.
+const EXPECTED_ASSOCIATED_TOKEN_PROGRAM_ID = ASSOCIATED_TOKEN_PROGRAM_ID.toBase58();
+const EXPECTED_TOKEN_2022_PROGRAM_ID = TOKEN_PROGRAM_ID.toBase58();
+
+// ============================================================================
 // PERFORMANCE OPTIMIZATION: Memoized PDA Calculations
 // PDAs are deterministic - cache them to avoid repeated computation
 // ============================================================================
@@ -345,30 +353,32 @@ export function createInitializeUserInstruction(
   // RUNTIME GUARDS: Validate program IDs before building instruction
   // ============================================================================
   
+  // Cache string conversions for performance (these may be called frequently)
+  const associatedTokenProgramStr = associatedTokenProgram.toBase58();
+  const tokenProgramStr = tokenProgram.toBase58();
+  
   // Guard 1: Verify associatedTokenProgram is the correct ATA program
-  const EXPECTED_ATA_PROGRAM = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
-  if (associatedTokenProgram.toBase58() !== EXPECTED_ATA_PROGRAM) {
+  if (associatedTokenProgramStr !== EXPECTED_ASSOCIATED_TOKEN_PROGRAM_ID) {
     const errorMsg = 
       `❌ CRITICAL: Invalid associated_token_program!\n` +
-      `  Expected (index 8): ${EXPECTED_ATA_PROGRAM}\n` +
-      `  Received: ${associatedTokenProgram.toBase58()}\n` +
+      `  Expected (index 8): ${EXPECTED_ASSOCIATED_TOKEN_PROGRAM_ID}\n` +
+      `  Received: ${associatedTokenProgramStr}\n` +
       `  This will cause AnchorError: InvalidProgramId.\n` +
       `  Fix: Pass ASSOCIATED_TOKEN_PROGRAM_ID from src/lib/constants.ts`;
     console.error(errorMsg);
-    throw new Error(`Invalid associated_token_program: expected ${EXPECTED_ATA_PROGRAM}, got ${associatedTokenProgram.toBase58()}`);
+    throw new Error(`Invalid associated_token_program: expected ${EXPECTED_ASSOCIATED_TOKEN_PROGRAM_ID}, got ${associatedTokenProgramStr}`);
   }
   
   // Guard 2: Verify tokenProgram is Token-2022
-  const EXPECTED_TOKEN_2022 = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
-  if (tokenProgram.toBase58() !== EXPECTED_TOKEN_2022) {
+  if (tokenProgramStr !== EXPECTED_TOKEN_2022_PROGRAM_ID) {
     const errorMsg = 
       `❌ CRITICAL: Invalid token_program!\n` +
-      `  Expected (index 9): ${EXPECTED_TOKEN_2022} (Token-2022)\n` +
-      `  Received: ${tokenProgram.toBase58()}\n` +
+      `  Expected (index 9): ${EXPECTED_TOKEN_2022_PROGRAM_ID} (Token-2022)\n` +
+      `  Received: ${tokenProgramStr}\n` +
       `  EQUA mint on Devnet uses Token-2022, not standard SPL Token.\n` +
       `  Fix: Pass TOKEN_PROGRAM_ID from src/lib/constants.ts (exports Token-2022)`;
     console.error(errorMsg);
-    throw new Error(`Invalid token_program: expected Token-2022 (${EXPECTED_TOKEN_2022}), got ${tokenProgram.toBase58()}`);
+    throw new Error(`Invalid token_program: expected Token-2022 (${EXPECTED_TOKEN_2022_PROGRAM_ID}), got ${tokenProgramStr}`);
   }
   
   const discriminator = Buffer.from([111, 17, 185, 250, 60, 122, 38, 254]);
@@ -389,8 +399,8 @@ export function createInitializeUserInstruction(
     console.log('  - Referrer:', referrer.toBase58());
     console.log('  - Mint start:', mintStart);
     console.log('  - User type:', userType);
-    console.log('  - Associated Token Program (index 8):', associatedTokenProgram.toBase58());
-    console.log('  - Token Program (index 9):', tokenProgram.toBase58());
+    console.log('  - Associated Token Program (index 8):', associatedTokenProgramStr);
+    console.log('  - Token Program (index 9):', tokenProgramStr);
   }
 
   // Account order matches backend IDL exactly (11 accounts)
@@ -596,8 +606,6 @@ export async function validateMintOwner(
   connection: Connection,
   mintPubkey: PublicKey
 ): Promise<void> {
-  const EXPECTED_TOKEN_2022 = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
-  
   const mintInfo = await connection.getAccountInfo(mintPubkey);
   
   if (!mintInfo) {
@@ -609,11 +617,11 @@ export async function validateMintOwner(
   
   const actualOwner = mintInfo.owner.toBase58();
   
-  if (actualOwner !== EXPECTED_TOKEN_2022) {
+  if (actualOwner !== EXPECTED_TOKEN_2022_PROGRAM_ID) {
     const errorMsg = 
       `❌ CRITICAL: Mint owner mismatch!\n` +
       `  Mint: ${mintPubkey.toBase58()}\n` +
-      `  Expected owner: ${EXPECTED_TOKEN_2022} (Token-2022)\n` +
+      `  Expected owner: ${EXPECTED_TOKEN_2022_PROGRAM_ID} (Token-2022)\n` +
       `  Actual owner: ${actualOwner}\n` +
       `  This indicates the mint was created with the wrong token program.\n` +
       `  All EQUA operations require Token-2022.`;
