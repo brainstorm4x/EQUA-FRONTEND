@@ -74,8 +74,23 @@ function getCooldownState(walletAddress: string): CooldownState | null {
     const stored = localStorage.getItem(key);
     if (!stored) return null;
     
-    const state = JSON.parse(stored) as CooldownState;
-    return state;
+    const parsed = JSON.parse(stored);
+    
+    // Validate structure
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      typeof parsed.lastMintTime === 'number' &&
+      typeof parsed.cooldownUntil === 'number' &&
+      typeof parsed.isOptimistic === 'boolean'
+    ) {
+      return parsed as CooldownState;
+    }
+    
+    // Invalid structure, remove corrupted data
+    console.warn('Invalid cooldown state structure, removing corrupted data');
+    localStorage.removeItem(key);
+    return null;
   } catch (error) {
     console.error('Error reading cooldown state:', error);
     return null;
@@ -107,17 +122,30 @@ function getInFlightLock(walletAddress: string): InFlightLock | null {
     const stored = localStorage.getItem(key);
     if (!stored) return null;
     
-    const lock = JSON.parse(stored) as InFlightLock;
+    const parsed = JSON.parse(stored);
     
-    // Check if lock has expired
-    const now = Math.floor(Date.now() / 1000);
-    if (now >= lock.expiresAt) {
-      // Lock expired, remove it
-      localStorage.removeItem(key);
-      return null;
+    // Validate structure
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      typeof parsed.lockedAt === 'number' &&
+      typeof parsed.expiresAt === 'number'
+    ) {
+      // Check if lock has expired
+      const now = Math.floor(Date.now() / 1000);
+      if (now >= parsed.expiresAt) {
+        // Lock expired, remove it
+        localStorage.removeItem(key);
+        return null;
+      }
+      
+      return parsed as InFlightLock;
     }
     
-    return lock;
+    // Invalid structure, remove corrupted data
+    console.warn('Invalid in-flight lock structure, removing corrupted data');
+    localStorage.removeItem(key);
+    return null;
   } catch (error) {
     console.error('Error reading in-flight lock:', error);
     return null;

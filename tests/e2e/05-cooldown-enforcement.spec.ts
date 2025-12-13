@@ -93,7 +93,7 @@ test.describe('Cooldown Enforcement', () => {
       await expect(countdown).toBeVisible();
       
       // Verify time format (hours, minutes, or seconds)
-      await expect(page.locator('text=/\\d+h.*\\d+m|\\d+m.*\\d+s|\\d+s/')).toBeVisible();
+      await expect(page.locator('text=/\\d+h \\d+m|\\d+m \\d+s|\\d+s/')).toBeVisible();
       
       test.skip();
       return;
@@ -184,7 +184,7 @@ test.describe('Cooldown Enforcement', () => {
     await expect(timeDisplay).toBeVisible();
     
     const timeText = await timeDisplay.textContent();
-    expect(timeText).toMatch(/\d+h|\d+m|\d+s/);
+    expect(timeText).toMatch(/\d+h \d+m|\d+m \d+s|\d+s/);
     
     // Verify "Come back at" message
     await expect(page.locator('text=/Come back at/i')).toBeVisible();
@@ -257,8 +257,8 @@ test.describe('Cooldown Enforcement', () => {
     expect(newTime).toBeTruthy();
     
     // Both should have time format
-    expect(initialTime).toMatch(/\d+h|\d+m|\d+s/);
-    expect(newTime).toMatch(/\d+h|\d+m|\d+s/);
+    expect(initialTime).toMatch(/\d+h \d+m|\d+m \d+s|\d+s/);
+    expect(newTime).toMatch(/\d+h \d+m|\d+m \d+s|\d+s/);
   });
 });
 
