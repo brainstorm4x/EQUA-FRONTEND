@@ -1,11 +1,9 @@
 import { Connection, PublicKey, Keypair, TransactionInstruction, SystemProgram } from "@solana/web3.js";
-import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import {
   PROGRAM_ID,
   TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   GLOBAL_STATE_SEED,
   MINT_SEED,
   MINT_AUTHORITY_SEED,
@@ -326,6 +324,61 @@ export function getOrCreateKeypair(): Keypair {
   return keypair;
 }
 
+/**
+ * Verify that the mint account owner matches the configured TOKEN_PROGRAM_ID
+ * This prevents InvalidProgramId errors when the mint is owned by a different program
+ * @param connection - Solana connection
+ * @param mintPubkey - Mint account public key
+ * @returns true if mint owner matches TOKEN_PROGRAM_ID, false otherwise
+ * @throws Error with actionable message if mint doesn't exist or owner mismatch
+ */
+export async function verifyMintOwner(
+  connection: Connection,
+  mintPubkey: PublicKey
+): Promise<boolean> {
+  try {
+    const mintAccountInfo = await connection.getAccountInfo(mintPubkey);
+    
+    if (!mintAccountInfo) {
+      throw new Error(
+        `Mint account ${mintPubkey.toBase58()} does not exist. ` +
+        'The EQUA token mint needs to be created first.'
+      );
+    }
+    
+    const mintOwner = mintAccountInfo.owner.toBase58();
+    const expectedOwner = TOKEN_PROGRAM_ID.toBase58();
+    
+    if (mintOwner !== expectedOwner) {
+      const errorMsg = 
+        `❌ Mint owner mismatch - this will cause InvalidProgramId errors!\n` +
+        `  Mint address: ${mintPubkey.toBase58()}\n` +
+        `  Mint owner: ${mintOwner}\n` +
+        `  Expected (TOKEN_PROGRAM_ID): ${expectedOwner}\n` +
+        `  \n` +
+        `  The mint was created with a different token program than configured.\n` +
+        `  ${mintOwner === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' 
+          ? 'Mint uses Token-2022, but app is configured for Standard SPL Token.'
+          : 'Mint uses an unknown token program.'}\n` +
+        `  \n` +
+        `  Fix: Update TOKEN_PROGRAM_ID in src/lib/constants.ts to match the mint owner,\n` +
+        `  or recreate the mint with the correct token program.`;
+      
+      console.error(errorMsg);
+      throw new Error(`Mint owner mismatch: expected ${expectedOwner}, got ${mintOwner}`);
+    }
+    
+    console.log(`✅ Mint owner verified: ${mintOwner} (Standard SPL Token)`);
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Mint owner mismatch')) {
+      throw error;
+    }
+    console.error('Error verifying mint owner:', error);
+    throw new Error(`Failed to verify mint owner: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
 // ✅ Create initialize_user instruction (UPDATED for 11 accounts + user_type)
 // Note: locked_until field removed per EQUA Whitepaper 2025
 export function createInitializeUserInstruction(
@@ -555,4 +608,5 @@ export function invalidateUserCache(userPubkey: PublicKey): void {
   rpcCache.delete(`splBalance:${base58}`);
 }
 
+// Re-export token program constants for convenience
 export { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
