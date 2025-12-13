@@ -7,17 +7,18 @@ import { Logo } from '@/components/Logo';
 import { PublicKey, Transaction, Connection } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import { 
   TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   createInitializeUserInstruction,
   createMintEquaInstruction,
   createMintTokensInstruction,
   getUserMetadataPDA,
   getUserAccountPDA,
   isUserRegistered,
+  validateMintOwner,
 } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
@@ -545,16 +546,10 @@ export default function MintPage() {
         }
       }
 
-      // First, verify that the mint account exists on-chain
-      console.log('🔍 Verifying mint account exists...');
-      const mintInfo = await connection.getAccountInfo(mintPDA);
-      if (!mintInfo) {
-        throw new Error(
-          'EQUA token mint has not been created yet. The program administrator needs to run the mint creation script first. ' +
-          'See MINT_CREATION_INSTRUCTIONS.md for details.'
-        );
-      }
-      console.log('✅ Mint account verified');
+      // First, verify that the mint account exists and is owned by Token-2022
+      console.log('🔍 Verifying mint account and owner...');
+      await validateMintOwner(connection, mintPDA);
+      console.log('✅ Mint account verified (Token-2022)');
 
       const userTokenAccount = getAssociatedTokenAddressSync(
         mintPDA,
@@ -847,16 +842,10 @@ export default function MintPage() {
     try {
       console.log('🔄 Starting mint process...');
       
-      // First, verify that the mint account exists on-chain
-      console.log('🔍 Verifying mint account exists...');
-      const mintInfo = await connection.getAccountInfo(mintPDA);
-      if (!mintInfo) {
-        throw new Error(
-          'EQUA token mint has not been created yet. The program administrator needs to run the mint creation script first. ' +
-          'See MINT_CREATION_INSTRUCTIONS.md for details.'
-        );
-      }
-      console.log('✅ Mint account verified');
+      // First, verify that the mint account exists and is owned by Token-2022
+      console.log('🔍 Verifying mint account and owner...');
+      await validateMintOwner(connection, mintPDA);
+      console.log('✅ Mint account verified (Token-2022)');
       
       // Verify global state exists
       console.log('🔍 Verifying global state...');

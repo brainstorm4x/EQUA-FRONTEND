@@ -150,7 +150,7 @@
     {
       "name": "initialize_user",
       "docs": [
-        "Register a new user with optional referral"
+        "Register a new user with optional referral (11 accounts + user_type)"
       ],
       "discriminator": [
         111,
@@ -165,6 +165,10 @@
       "accounts": [
         {
           "name": "user_account",
+          "writable": true
+        },
+        {
+          "name": "user_metadata",
           "writable": true
         },
         {
@@ -199,6 +203,10 @@
         },
         {
           "name": "referral_account",
+          "writable": true
+        },
+        {
+          "name": "referrer_metadata",
           "writable": true
         },
         {
@@ -299,6 +307,10 @@
         {
           "name": "mint_start",
           "type": "i64"
+        },
+        {
+          "name": "user_type",
+          "type": "u8"
         }
       ]
     },

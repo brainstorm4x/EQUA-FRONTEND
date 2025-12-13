@@ -10,10 +10,8 @@ import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey, AccountInfo } from '@solana/web3.js';
 import {
   getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
-import { getMintPDA, getSPLTokenBalance } from '@/lib/program';
+import { getMintPDA, getSPLTokenBalance, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
 
 // SPL Token account layout constants

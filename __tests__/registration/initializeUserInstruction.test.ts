@@ -5,7 +5,7 @@
 
 import { PublicKey } from '@solana/web3.js';
 import { createInitializeUserInstruction } from '@/lib/program';
-import { TOKEN_PROGRAM_ID } from '@/lib/constants';
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@/lib/constants';
 
 describe('createInitializeUserInstruction', () => {
   // Mock public keys for testing (using well-known valid addresses)
@@ -233,5 +233,91 @@ describe('createInitializeUserInstruction', () => {
     // Verify user_type is encoded as 1 for business
     const userTypeByte = instruction.data.readUInt8(48);
     expect(userTypeByte).toBe(1);
+  });
+
+  it('should pass Token-2022 program ID at index 9', () => {
+    const instruction = createInitializeUserInstruction(
+      userAccount,
+      userMetadata,
+      authority,
+      globalState,
+      referralAccount,
+      referrerMetadata,
+      userTokenAccount,
+      mint,
+      associatedTokenProgram,
+      TOKEN_PROGRAM_ID,
+      now,
+      referrer,
+      userType
+    );
+
+    // Verify token_program at index 9 is Token-2022
+    expect(instruction.keys[9].pubkey.toBase58()).toBe('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb');
+  });
+
+  it('should pass Associated Token Program at index 8', () => {
+    const instruction = createInitializeUserInstruction(
+      userAccount,
+      userMetadata,
+      authority,
+      globalState,
+      referralAccount,
+      referrerMetadata,
+      userTokenAccount,
+      mint,
+      associatedTokenProgram,
+      TOKEN_PROGRAM_ID,
+      now,
+      referrer,
+      userType
+    );
+
+    // Verify associated_token_program at index 8 is ATokenGP...
+    expect(instruction.keys[8].pubkey.toBase58()).toBe('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
+  });
+
+  it('should throw error if wrong associated_token_program is passed', () => {
+    const wrongATA = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'); // Using Token-2022 instead of ATA
+    
+    expect(() => {
+      createInitializeUserInstruction(
+        userAccount,
+        userMetadata,
+        authority,
+        globalState,
+        referralAccount,
+        referrerMetadata,
+        userTokenAccount,
+        mint,
+        wrongATA, // Wrong program!
+        TOKEN_PROGRAM_ID,
+        now,
+        referrer,
+        userType
+      );
+    }).toThrow('Invalid associated_token_program');
+  });
+
+  it('should throw error if standard SPL Token is passed instead of Token-2022', () => {
+    const standardSPL = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'); // Standard SPL Token
+    
+    expect(() => {
+      createInitializeUserInstruction(
+        userAccount,
+        userMetadata,
+        authority,
+        globalState,
+        referralAccount,
+        referrerMetadata,
+        userTokenAccount,
+        mint,
+        associatedTokenProgram,
+        standardSPL, // Wrong program!
+        now,
+        referrer,
+        userType
+      );
+    }).toThrow('Invalid token_program');
   });
 });

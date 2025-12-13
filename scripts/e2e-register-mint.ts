@@ -20,13 +20,13 @@ import {
 } from '@solana/web3.js';
 import {
   getAssociatedTokenAddressSync,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import * as anchor from '@coral-xyz/anchor';
 import {
   PROGRAM_ID,
   TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   GLOBAL_STATE_SEED,
   MINT_SEED,
   MINT_AUTHORITY_SEED,

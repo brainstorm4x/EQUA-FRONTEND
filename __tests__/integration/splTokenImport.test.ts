@@ -12,9 +12,8 @@
 import { PublicKey } from '@solana/web3.js';
 import {
   getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@/lib/constants';
 
 describe('SPL Token Imports', () => {
   it('should successfully import getAssociatedTokenAddressSync', () => {
@@ -39,9 +38,9 @@ describe('SPL Token Imports', () => {
     expect(getAssociatedTokenAddressSync.length).toBe(2);
   });
 
-  it('should export TOKEN_PROGRAM_ID with correct address', () => {
-    // Standard SPL Token program ID
-    expect(TOKEN_PROGRAM_ID.toBase58()).toBe('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+  it('should export TOKEN_PROGRAM_ID with Token-2022 address', () => {
+    // Token-2022 Program ID (EQUA uses Token-2022, not standard SPL Token)
+    expect(TOKEN_PROGRAM_ID.toBase58()).toBe('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb');
   });
 
   it('should export ASSOCIATED_TOKEN_PROGRAM_ID with correct address', () => {

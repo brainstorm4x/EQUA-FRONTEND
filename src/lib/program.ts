@@ -1,11 +1,9 @@
 import { Connection, PublicKey, Keypair, TransactionInstruction, SystemProgram } from "@solana/web3.js";
-import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import {
   PROGRAM_ID,
   TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   GLOBAL_STATE_SEED,
   MINT_SEED,
   MINT_AUTHORITY_SEED,
@@ -343,6 +341,36 @@ export function createInitializeUserInstruction(
   referrer: PublicKey = PublicKey.default,
   userType: number = 0
 ): TransactionInstruction {
+  // ============================================================================
+  // RUNTIME GUARDS: Validate program IDs before building instruction
+  // ============================================================================
+  
+  // Guard 1: Verify associatedTokenProgram is the correct ATA program
+  const EXPECTED_ATA_PROGRAM = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
+  if (associatedTokenProgram.toBase58() !== EXPECTED_ATA_PROGRAM) {
+    const errorMsg = 
+      `❌ CRITICAL: Invalid associated_token_program!\n` +
+      `  Expected (index 8): ${EXPECTED_ATA_PROGRAM}\n` +
+      `  Received: ${associatedTokenProgram.toBase58()}\n` +
+      `  This will cause AnchorError: InvalidProgramId.\n` +
+      `  Fix: Pass ASSOCIATED_TOKEN_PROGRAM_ID from src/lib/constants.ts`;
+    console.error(errorMsg);
+    throw new Error(`Invalid associated_token_program: expected ${EXPECTED_ATA_PROGRAM}, got ${associatedTokenProgram.toBase58()}`);
+  }
+  
+  // Guard 2: Verify tokenProgram is Token-2022
+  const EXPECTED_TOKEN_2022 = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+  if (tokenProgram.toBase58() !== EXPECTED_TOKEN_2022) {
+    const errorMsg = 
+      `❌ CRITICAL: Invalid token_program!\n` +
+      `  Expected (index 9): ${EXPECTED_TOKEN_2022} (Token-2022)\n` +
+      `  Received: ${tokenProgram.toBase58()}\n` +
+      `  EQUA mint on Devnet uses Token-2022, not standard SPL Token.\n` +
+      `  Fix: Pass TOKEN_PROGRAM_ID from src/lib/constants.ts (exports Token-2022)`;
+    console.error(errorMsg);
+    throw new Error(`Invalid token_program: expected Token-2022 (${EXPECTED_TOKEN_2022}), got ${tokenProgram.toBase58()}`);
+  }
+  
   const discriminator = Buffer.from([111, 17, 185, 250, 60, 122, 38, 254]);
   
   const mintStartBN = new BN(mintStart);
@@ -361,6 +389,8 @@ export function createInitializeUserInstruction(
     console.log('  - Referrer:', referrer.toBase58());
     console.log('  - Mint start:', mintStart);
     console.log('  - User type:', userType);
+    console.log('  - Associated Token Program (index 8):', associatedTokenProgram.toBase58());
+    console.log('  - Token Program (index 9):', tokenProgram.toBase58());
   }
 
   // Account order matches backend IDL exactly (11 accounts)
@@ -553,6 +583,45 @@ export function invalidateUserCache(userPubkey: PublicKey): void {
   rpcCache.delete(`registered:${base58}`);
   rpcCache.delete(`balance:${base58}`);
   rpcCache.delete(`splBalance:${base58}`);
+}
+
+/**
+ * Validate that the mint account is owned by Token-2022 program
+ * CRITICAL: This prevents InvalidProgramId errors during transactions
+ * @param connection - Solana RPC connection
+ * @param mintPubkey - Mint account public key
+ * @throws Error if mint doesn't exist or is owned by wrong program
+ */
+export async function validateMintOwner(
+  connection: Connection,
+  mintPubkey: PublicKey
+): Promise<void> {
+  const EXPECTED_TOKEN_2022 = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+  
+  const mintInfo = await connection.getAccountInfo(mintPubkey);
+  
+  if (!mintInfo) {
+    throw new Error(
+      `Mint account not found: ${mintPubkey.toBase58()}\n` +
+      `The EQUA mint may not have been created yet.`
+    );
+  }
+  
+  const actualOwner = mintInfo.owner.toBase58();
+  
+  if (actualOwner !== EXPECTED_TOKEN_2022) {
+    const errorMsg = 
+      `❌ CRITICAL: Mint owner mismatch!\n` +
+      `  Mint: ${mintPubkey.toBase58()}\n` +
+      `  Expected owner: ${EXPECTED_TOKEN_2022} (Token-2022)\n` +
+      `  Actual owner: ${actualOwner}\n` +
+      `  This indicates the mint was created with the wrong token program.\n` +
+      `  All EQUA operations require Token-2022.`;
+    console.error(errorMsg);
+    throw new Error(`Mint owner validation failed: expected Token-2022, got ${actualOwner}`);
+  }
+  
+  console.log('✅ Mint owner validated: Token-2022');
 }
 
 export { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
