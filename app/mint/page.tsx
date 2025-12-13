@@ -38,6 +38,7 @@ import {
   recordRegisteredKey,
 } from '@/utils/registrationGuard';
 import { isUserAccountRegisteredOnchain } from '@/utils/onchainRegistration';
+import * as CooldownGuard from '@/utils/cooldown';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -817,15 +818,29 @@ export default function MintPage() {
       return;
     }
     
-    // Check cooldown
-    if (!canMint) {
-      setError(`⏰ Please wait ${formatTimeRemaining(timeUntilNextMint)} before minting again`);
+    // ✅ COOLDOWN GUARD: Check cooldown with CooldownGuard (prevents race conditions)
+    const walletAddress = publicKey.toBase58();
+    if (!CooldownGuard.canMintNow(walletAddress)) {
+      const remaining = CooldownGuard.timeRemaining(walletAddress);
+      setError(`⏰ Please wait ${formatTimeRemaining(remaining)} before minting again`);
       return;
     }
     
+    // ✅ COOLDOWN GUARD: Start mint - set optimistic cooldown and in-flight lock
+    CooldownGuard.startMint(walletAddress);
+    
+    // Update UI state immediately
     setIsLoading(true);
+    setCanMint(false);
     setError('');
     setTxSignature('');
+    
+    // Update cooldown timer immediately with optimistic value
+    const cooldownUntil = CooldownGuard.getCooldownUntil(walletAddress);
+    if (cooldownUntil) {
+      const now = Math.floor(Date.now() / 1000);
+      setTimeUntilNextMint(Math.max(0, cooldownUntil - now));
+    }
     
     try {
       console.log('🔄 Starting mint process...');
@@ -1027,9 +1042,16 @@ export default function MintPage() {
       const newLastMintTime = await getLastMintTime(connection, userAccountPDA);
       setLastMintTime(newLastMintTime);
       console.log('⏰ Updated last mint time:', newLastMintTime);
+      
+      // ✅ COOLDOWN GUARD: End mint successfully - reconcile with on-chain data
+      const now = Math.floor(Date.now() / 1000);
+      CooldownGuard.endMint(walletAddress, true, now, newLastMintTime);
 
     } catch (err: any) {
       console.error('❌ Minting error:', err);
+      
+      // ✅ COOLDOWN GUARD: End mint with error - clear optimistic cooldown
+      CooldownGuard.endMint(walletAddress, false);
       
       // Check for SendTransactionError and extract detailed logs
       if (err?.logs) {
@@ -1324,6 +1346,7 @@ export default function MintPage() {
                     <button
                       onClick={handleMint}
                       disabled={isLoading || !canMint}
+                      style={{ pointerEvents: (isLoading || !canMint) ? 'none' : 'auto' }}
                       className={`w-full font-bold py-4 px-8 rounded-xl transition-all ${
                         canMint && !isLoading
                           ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
