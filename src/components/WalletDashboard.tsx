@@ -58,6 +58,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const { publicKey, connected, signTransaction } = useWallet();
   const { connection } = useConnection();
   const [balance, setBalance] = useState<number>(0);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
@@ -84,10 +85,12 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       setBalance(0);
       setReferralCount(0);
       setReferralRewards(0);
+      setIsLoadingBalance(false);
       return;
     }
 
     const fetchData = async () => {
+      setIsLoadingBalance(true);
       try {
         const [mintPDA] = getMintPDA();
         const tokenAccount = getAssociatedTokenAddressSync(
@@ -98,7 +101,27 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           ASSOCIATED_TOKEN_PROGRAM_ID
         );
         
-        const bal = await getSPLTokenBalance(connection, tokenAccount);
+        // Retry logic for balance fetch
+        let bal = 0;
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        while (attempts < maxAttempts) {
+          try {
+            bal = await getSPLTokenBalance(connection, tokenAccount);
+            break;
+          } catch (error) {
+            attempts++;
+            if (attempts >= maxAttempts) {
+              console.error('Error fetching EQUA balance after retries:', error);
+              bal = 0;
+            } else {
+              // Wait 1 second before retry
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+        }
+        
         setBalance(bal);
         
         // Get referral data from onchain UserAccount (source of truth)
@@ -108,15 +131,24 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           console.log('✓ Referral rewards from onchain:', referralInfo.referralRewards);
         }
         
-        // Note: Referral count would need to be calculated by scanning all user accounts
-        // For now, we use localStorage tracking as an estimate
-        const referrerData = getReferrerData(publicKey.toBase58());
-        const count24h = referrerData?.referrals.length || 0;
-        setReferralCount(count24h);
-        console.log('✓ Referral count (24h estimate):', count24h);
+        // Check if dev mock is enabled
+        const enableDevMock = process.env.NEXT_PUBLIC_DEV_REFERRAL_MOCK === 'true';
+        
+        if (enableDevMock) {
+          // Dev-only: Use localStorage tracking as an estimate
+          const referrerData = getReferrerData(publicKey.toBase58());
+          const count24h = referrerData?.referrals.length || 0;
+          setReferralCount(count24h);
+          console.log('✓ [DEV] Referral count (24h estimate from localStorage):', count24h);
+        } else {
+          // Production: Would need to scan all user accounts or use indexer
+          setReferralCount(0);
+        }
       } catch (error) {
-        console.error('Error fetching EQUA balance:', error);
+        console.error('Error fetching wallet data:', error);
         setBalance(0);
+      } finally {
+        setIsLoadingBalance(false);
       }
     };
 
@@ -158,10 +190,19 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           <Logo size={32} />
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-white text-4xl font-bold" data-testid="equa-balance">
-            {balance > 0 ? formatEquaBalance(balance) : '--'}
-          </span>
-          <span className="text-purple-300 text-xl">EQUA</span>
+          {isLoadingBalance ? (
+            <div className="flex items-center gap-3">
+              <div className="w-32 h-10 bg-purple-500/20 rounded-lg animate-pulse" />
+              <span className="text-purple-300 text-xl">Loading...</span>
+            </div>
+          ) : (
+            <>
+              <span className="text-white text-4xl font-bold" data-testid="equa-balance">
+                {formatEquaBalance(balance)}
+              </span>
+              <span className="text-purple-300 text-xl">EQUA</span>
+            </>
+          )}
         </div>
       </div>
 
@@ -190,12 +231,14 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
             <span className="text-2xl">🎁</span>
             Refer & Earn
           </h3>
-          {/* Referral Count Badge */}
-          <div className="bg-purple-600/30 px-3 py-1 rounded-full">
-            <span className="text-purple-200 text-sm font-medium">
-              {referralCount} {referralCount === 1 ? 'referral' : 'referrals'}
-            </span>
-          </div>
+          {/* Referral Count Badge - only show if dev mock enabled */}
+          {process.env.NEXT_PUBLIC_DEV_REFERRAL_MOCK === 'true' && (
+            <div className="bg-purple-600/30 px-3 py-1 rounded-full">
+              <span className="text-purple-200 text-sm font-medium">
+                {referralCount} {referralCount === 1 ? 'referral' : 'referrals'} (dev)
+              </span>
+            </div>
+          )}
         </div>
         <p className="text-purple-200 text-sm mb-4">
           Share your referral to earn rewards: 1% for individuals, 2% for businesses!

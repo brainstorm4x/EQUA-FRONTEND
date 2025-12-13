@@ -727,6 +727,20 @@
       }
     },
     {
+      "name": "ReferralType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Individual"
+          },
+          {
+            "name": "Business"
+          }
+        ]
+      }
+    },
+    {
       "name": "UserAccount",
       "type": {
         "kind": "struct",
@@ -762,6 +776,12 @@
           {
             "name": "last_mint_time",
             "type": "i64"
+          },
+          {
+            "name": "referral_type",
+            "type": {
+              "defined": "ReferralType"
+            }
           }
         ]
       }

@@ -10,6 +10,7 @@ import {
   getReferredUsersDetails,
 } from '@/utils/referralRewards';
 import { getUserAccountPDA } from '@/lib/program';
+import { getUserAccountData, ReferralType, getReferralRewardPercentage } from '@/utils/onchainRegistration';
 
 interface ReferralRewardsProps {
   className?: string;
@@ -31,6 +32,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
   const [rewards, setRewards] = useState<BN | null>(null);
   const [referredCount, setReferredCount] = useState(0);
   const [referredUsers, setReferredUsers] = useState<PublicKey[]>([]);
+  const [referralType, setReferralType] = useState<'Individual' | 'Business'>('Individual');
   const [error, setError] = useState('');
   const [showDetails, setShowDetails] = useState(false);
 
@@ -56,6 +58,13 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       const [userAccountPDA] = getUserAccountPDA(publicKey);
       
       console.log(`✓ Fetching referral stats for PDA: ${userAccountPDA.toBase58()}`);
+
+      // Fetch user account data to get referral type
+      const userAccountData = await getUserAccountData(connection, userAccountPDA);
+      
+      if (userAccountData) {
+        setReferralType(userAccountData.referralType === ReferralType.Business ? 'Business' : 'Individual');
+      }
 
       // Fetch referral statistics
       const stats = await getReferralStats(connection, userAccountPDA);
@@ -111,6 +120,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
 
   const rewardsDisplay = rewards ? formatReferralRewards(rewards) : '0.000000';
   const hasRewards = rewards && rewards.gt(new BN(0));
+  const rewardPercentage = referralType === 'Business' ? 2 : 1;
 
   return (
     <div className={`bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30 ${className}`}>
@@ -118,6 +128,11 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
         <h3 className="text-2xl font-bold text-white flex items-center gap-2">
           🔗 Referral Rewards
         </h3>
+        <div className="bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30">
+          <span className="text-green-300 text-sm font-medium">
+            {rewardPercentage}% {referralType}
+          </span>
+        </div>
       </div>
 
       {error && (

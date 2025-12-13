@@ -60,9 +60,11 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   const hasSufficientBalance = hasMinimumSolBalance(walletBalance);
   const balanceSOL = formatSolBalance(walletBalance);
 
-  // Check referrer rate limit when referrer changes
+  // Check referrer rate limit when referrer changes (dev-only feature)
   useEffect(() => {
-    if (referralResolution.referrerPubkey) {
+    const enableDevMock = process.env.NEXT_PUBLIC_DEV_REFERRAL_MOCK === 'true';
+    
+    if (enableDevMock && referralResolution.referrerPubkey) {
       const rateLimitStatus = getRateLimitStatus(referralResolution.referrerPubkey);
       setReferrerRateLimited(rateLimitStatus.isRateLimited);
     } else {

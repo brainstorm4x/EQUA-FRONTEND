@@ -9,6 +9,14 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 
 /**
+ * ReferralType enum matching the IDL
+ */
+export enum ReferralType {
+  Individual = 0,
+  Business = 1,
+}
+
+/**
  * UserAccount structure from the IDL
  * Note: locked_until field removed per EQUA Whitepaper 2025
  */
@@ -20,6 +28,7 @@ export interface UserAccountData {
   mintStart: BN;
   referralRewards: BN;
   lastMintTime: BN;
+  referralType: ReferralType;
 }
 
 /**
@@ -54,9 +63,9 @@ export async function validateReferrerOnchain(
   try {
     const accountInfo = await connection.getAccountInfo(referrerPubkey);
     // Check that account exists and has sufficient data to be a UserAccount
-    // UserAccount discriminator (8 bytes) + authority (32) + referral (32) + ... = at least 136 bytes
-    // Note: Reduced by 8 bytes after locked_until field removal
-    return accountInfo !== null && accountInfo.data.length >= 136;
+    // UserAccount discriminator (8 bytes) + authority (32) + referral (32) + token_account (32) +
+    // minted_amount (8) + mint_start (8) + referral_rewards (8) + last_mint_time (8) + referral_type (1) = 137 bytes
+    return accountInfo !== null && accountInfo.data.length >= 137;
   } catch (error) {
     console.error('Error validating referrer account:', error);
     return false;
@@ -70,9 +79,10 @@ export async function validateReferrerOnchain(
  */
 export function parseUserAccountData(accountData: Buffer): UserAccountData | null {
   try {
-    // Check minimum length (reduced by 8 bytes after locked_until removal)
-    // Previous: 144 bytes, Now: 136 bytes
-    if (accountData.length < 136) {
+    // Check minimum length (now includes referral_type: 1 byte)
+    // 8 (discriminator) + 32 (authority) + 32 (referral) + 32 (token_account) +
+    // 8 (minted_amount) + 8 (mint_start) + 8 (referral_rewards) + 8 (last_mint_time) + 1 (referral_type) = 137 bytes
+    if (accountData.length < 137) {
       // This is a normal case when the user account doesn't exist yet (not registered)
       // No need to log an error
       return null;
@@ -87,7 +97,7 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
     // 8 bytes: mint_start (i64)
     // 8 bytes: referral_rewards (u64)
     // 8 bytes: last_mint_time (i64)
-    // Note: locked_until field removed per EQUA Whitepaper 2025
+    // 1 byte: referral_type (enum)
     
     let offset = 8; // Skip discriminator
     
@@ -114,6 +124,11 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
     offset += 8;
     
     const lastMintTime = new BN(accountData.slice(offset, offset + 8), 'le');
+    offset += 8;
+    
+    // Parse referral_type enum (1 byte: 0 = Individual, 1 = Business)
+    const referralTypeValue = accountData.readUInt8(offset);
+    const referralType = referralTypeValue === 1 ? ReferralType.Business : ReferralType.Individual;
     
     return {
       authority,
@@ -123,6 +138,7 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
       mintStart,
       referralRewards,
       lastMintTime,
+      referralType,
     };
   } catch (error) {
     console.error('Error parsing UserAccount data:', error);
@@ -174,5 +190,15 @@ export function getReferralInfo(accountData: UserAccountData) {
     hasReferrer,
     referralAddress: hasReferrer ? accountData.referral.toBase58() : null,
     referralRewards: accountData.referralRewards.toNumber(),
+    referralType: accountData.referralType,
   };
+}
+
+/**
+ * Get referral reward percentage based on referral type
+ * @param referralType The referral type (Individual or Business)
+ * @returns Reward percentage (1% for Individual, 2% for Business)
+ */
+export function getReferralRewardPercentage(referralType: ReferralType): number {
+  return referralType === ReferralType.Business ? 2 : 1;
 }
