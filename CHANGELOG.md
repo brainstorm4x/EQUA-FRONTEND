@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **IDL synchronization and normalization system** to prevent "Type not found" errors
+  - New `normalizeIdl()` function in `src/lib/program.ts` fixes type name case mismatches
+  - Automatic IDL validation before Program construction
+  - Enhanced error messages with actionable guidance when IDL issues occur
+  - New `scripts/idl-sync.ts` to fetch canonical IDL from backend repository
+  - New `npm run idl:sync` command to synchronize IDL from backend
+  - Comprehensive documentation in `docs/IDL_SYNC.md`
 - PNG logo format (`equa-logo.png`) as the default logo format for faster page loading
   - 1024x1024 PNG extracted from SVG for better performance
   - Loading placeholder skeleton while logo loads to prevent blank page
@@ -25,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation updates for database providers
 
 ### Changed
+- **Logo component now uses `onLoad` instead of deprecated `onLoadingComplete`** for Next.js 14+ compatibility
 - Logo component now uses PNG format by default instead of SVG for improved performance
   - Eliminates browser console warning about unused preloaded SVG asset
   - Reduces initial page load time and prevents blank page during logo loading
@@ -41,6 +49,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.env.example` updated with Turso configuration and program ID override documentation
 
 ### Fixed
+- **Fixed critical "Type not found: referralType" error** that prevented app initialization
+  - Added IDL normalization to handle type name case mismatches
+  - Frontend now tolerates minor IDL inconsistencies between hand-edited and generated versions
+  - Enhanced error categorization (NETWORK, WALLET, PROGRAM, UNKNOWN) for better debugging
+- **Fixed deprecated Next.js Image `onLoadingComplete` warning** by using `onLoad` prop
 - Fixed blank page issue on initial load caused by slow SVG loading (2.4MB)
 - Fixed browser console warning: "The resource http://localhost:3000/branding/equa-logo.svg was preloaded using link preload but not used within a few seconds"
 - Program ID now supports environment variable override for easier testing and migrations

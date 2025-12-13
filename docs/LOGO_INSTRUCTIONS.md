@@ -58,6 +58,7 @@ The Logo component is used throughout the application:
 - The PNG logo is preloaded in `app/layout.tsx` for immediate availability
 - Loading placeholder appears while the image loads to prevent layout shift
 - SVG remains available for cases requiring scalability at any resolution
+- The Logo component uses `onLoad` (Next.js 14+ recommended) instead of deprecated `onLoadingComplete`
 
 ## Favicon
 
@@ -65,3 +66,7 @@ The application favicon is configured in `app/layout.tsx`:
 - `/favicon.ico` - Main favicon
 - `/icon.png` - 32x32 PNG icon
 - `/apple-icon.png` - Apple touch icon
+
+## Image Loading Updates
+
+The Logo component has been updated to use the `onLoad` prop instead of the deprecated `onLoadingComplete` prop (deprecated in Next.js 14+). This ensures compatibility with current and future versions of Next.js.
