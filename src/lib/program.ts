@@ -349,6 +349,9 @@ export async function verifyMintOwner(
     const mintOwner = mintAccountInfo.owner.toBase58();
     const expectedOwner = TOKEN_PROGRAM_ID.toBase58();
     
+    // Token program IDs for helpful error messages
+    const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+    
     if (mintOwner !== expectedOwner) {
       const errorMsg = 
         `❌ Mint owner mismatch - this will cause InvalidProgramId errors!\n` +
@@ -357,7 +360,7 @@ export async function verifyMintOwner(
         `  Expected (TOKEN_PROGRAM_ID): ${expectedOwner}\n` +
         `  \n` +
         `  The mint was created with a different token program than configured.\n` +
-        `  ${mintOwner === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' 
+        `  ${mintOwner === TOKEN_2022_PROGRAM_ADDRESS
           ? 'Mint uses Token-2022, but app is configured for Standard SPL Token.'
           : 'Mint uses an unknown token program.'}\n` +
         `  \n` +

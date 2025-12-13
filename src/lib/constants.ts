@@ -15,6 +15,7 @@ export const TOKEN_PROGRAM_ID = SPL_TOKEN_PROGRAM_ID;
 export const ASSOCIATED_TOKEN_PROGRAM_ID = SPL_ASSOCIATED_TOKEN_PROGRAM_ID;
 
 // Runtime assertion to prevent passing wrong program IDs
+// Only run in browser (not during SSR/build) to avoid Next.js build issues
 if (typeof window !== 'undefined') {
   const expectedATokenAddress = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
   if (ASSOCIATED_TOKEN_PROGRAM_ID.toBase58() !== expectedATokenAddress) {
