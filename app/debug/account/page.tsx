@@ -64,7 +64,7 @@ export default function AccountDebugPage() {
         const info = await connection.getAccountInfo(userAccountPDA);
         setAccountInfo(info);
 
-        if (info && info.data.length >= 144) {
+        if (info && info.data.length >= 136) {
           // Parse last_mint_time at offset 136 (i64)
           const lastMint = safeParseTimestamp(info.data, 136);
           setLastMintTime(lastMint);
@@ -139,8 +139,8 @@ export default function AccountDebugPage() {
     );
   }
 
-  const MIN_ACCOUNT_SIZE = 144;
-  const LEGACY_ACCOUNT_SIZE = 136;
+  const MIN_ACCOUNT_SIZE = 136;
+  const LEGACY_ACCOUNT_SIZE = 128;
   const isLegacy = accountInfo && accountInfo.data.length < MIN_ACCOUNT_SIZE;
   const accountExists = accountInfo !== null;
 
@@ -217,7 +217,7 @@ export default function AccountDebugPage() {
                   </div>
 
                   {/* Last Mint Time */}
-                  {accountInfo.data.length >= 144 && (
+                  {accountInfo.data.length >= 136 && (
                     <>
                       <div className="bg-purple-900/30 rounded-lg p-4">
                         <div className="flex justify-between items-center mb-2">
