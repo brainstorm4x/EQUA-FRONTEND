@@ -340,6 +340,99 @@ NEXT_PUBLIC_MINT_COOLDOWN_SECONDS=86400
 
 ---
 
+## Issue: InvalidProgramId Error During Registration
+
+### Symptoms
+- Registration fails with AnchorError: InvalidProgramId
+- Console shows error like:
+  ```
+  AnchorError: InvalidProgramId on account: associated_token_program
+  Left: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb (Token-2022)
+  Right: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL (Associated Token Program)
+  ```
+- Or error stating token_program mismatch between mint owner and configured program
+
+### Root Causes
+
+#### 1. Mint Created with Wrong Token Program
+The EQUA mint was created with Token-2022, but the frontend is configured for Standard SPL Token.
+
+**Solution:**
+```typescript
+// In src/lib/constants.ts, check TOKEN_PROGRAM_ID
+// Should be:
+export const TOKEN_PROGRAM_ID = SPL_TOKEN_PROGRAM_ID; // Standard SPL Token
+
+// NOT:
+export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID; // Token-2022
+```
+
+#### 2. Frontend Configured for Wrong Token Program
+The mint uses Standard SPL Token, but frontend is configured for Token-2022.
+
+**Solution:**
+1. Check mint owner on Solana Explorer
+2. Update `src/lib/constants.ts` to match:
+   - Standard SPL Token: `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`
+   - Token-2022: `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`
+
+#### 3. Incorrect ASSOCIATED_TOKEN_PROGRAM_ID
+Wrong constant passed to instruction builder.
+
+**Solution:**
+The app now validates this at startup. Check browser console for:
+```
+✅ Token program IDs validated at startup:
+  - TOKEN_PROGRAM_ID: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA (Standard SPL Token)
+  - ASSOCIATED_TOKEN_PROGRAM_ID: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+```
+
+If you see an error instead, the constants are misconfigured.
+
+### Verification Steps
+
+1. **Check Mint Owner:**
+   ```bash
+   node scripts/validate_registration.mjs
+   ```
+   This will verify the mint owner matches your configuration.
+
+2. **View Mint on Solana Explorer:**
+   - Devnet: `https://explorer.solana.com/address/[MINT_ADDRESS]?cluster=devnet`
+   - Check "Owner Program" field
+   - Should match TOKEN_PROGRAM_ID in constants.ts
+
+3. **Inspect Instruction Metas:**
+   In registration flow, check console logs:
+   ```
+   🧪 InitializeUser instruction metas:
+   0. [user_account] writable=true signer=false
+   ...
+   8. [ATokenGP...] writable=false signer=false  ← Must be ATokenGP...
+   9. [Tokenkeg...] writable=false signer=false  ← Must match mint owner
+   ```
+
+### Prevention
+
+The frontend now includes runtime validation:
+- Startup assertion checks TOKEN_PROGRAM_ID and ASSOCIATED_TOKEN_PROGRAM_ID
+- Registration flow calls `verifyMintOwner()` before building instructions
+- Clear error messages guide you to the fix
+
+If validation fails, you'll see:
+```
+❌ Mint owner mismatch - this will cause InvalidProgramId errors!
+  Mint uses Token-2022, but app is configured for Standard SPL Token.
+  
+  Fix: Update TOKEN_PROGRAM_ID in src/lib/constants.ts to match the mint owner
+```
+
+### Related Issues
+- If you see "Token program provided does not match the token's program owner"
+- Check that `TOKEN_PROGRAM_ID` matches the actual mint owner on-chain
+
+---
+
 ## Debugging Tips
 
 ### Check Account Data
