@@ -150,7 +150,7 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="text-purple-300 text-sm mb-2">Token Standard</p>
-                <p className="text-white text-xl font-bold">SPL Token-2022</p>
+                <p className="text-white text-xl font-bold">SPL Token</p>
               </div>
               <div>
                 <p className="text-purple-300 text-sm mb-2">Program ID</p>

@@ -202,7 +202,7 @@ npm run build
 ## Program Details
 - **Program ID:** `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
 - **Network:** Solana Devnet
-- **Token Program:** Token-2022 (not standard SPL Token)
+- **Token Program:** Standard SPL Token (TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA)
 
 ## PDA Seeds
 - `user_account`: `["user-account", authority]`
