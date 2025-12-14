@@ -2,6 +2,163 @@
 
 This document provides solutions for common issues users may encounter with the EQUA Token frontend.
 
+## Issue: Blank Homepage / White Screen
+
+### Symptoms
+- Homepage loads but shows only a blank/white screen
+- No components visible, only warnings in browser console
+- Preload warnings for images or resources
+- Application appears to load but nothing renders
+
+### Root Causes & Solutions
+
+#### 1. Runtime JavaScript Error
+**Symptoms:**
+- Blank page with no error message
+- Console shows uncaught errors or exceptions
+- React components fail to render
+
+**Solution:**
+- Open browser console (F12) and check for error messages
+- Look for errors related to:
+  - `Cannot read property of undefined`
+  - `X is not a function`
+  - Module import failures
+  - Hydration mismatches
+- If you see errors, try:
+  ```bash
+  # Clear Next.js cache and rebuild
+  rm -rf .next
+  npm run build
+  npm run dev
+  ```
+- Check that all environment variables are set correctly (see `.env.local.example`)
+- Clear browser cache and reload: `Ctrl + Shift + R` (Windows/Linux) or `Cmd + Shift + R` (Mac)
+
+#### 2. Error Boundaries Not Catching Errors
+**Solution:**
+- The app now includes error boundaries at multiple levels:
+  - `app/error.tsx` - catches client-side page errors
+  - `app/global-error.tsx` - catches root layout errors
+  - `ErrorBoundary` component in providers
+- These should prevent blank screens and show user-friendly error messages
+- If you still see a blank page, check browser console for error details
+
+#### 3. Pyth Oracle 404 Errors
+**Symptoms:**
+- Blank page when Pyth Hermes API is unavailable
+- Console shows 404 errors from `https://hermes.pyth.network/`
+- Price data fails to load
+
+**Solution:**
+- The app is designed to handle Pyth 404s gracefully with fallback prices
+- If you experience issues:
+  - Check `src/utils/eqxOracle.ts` - it should use fallback prices automatically
+  - Verify `NEXT_PUBLIC_ENABLE_PYTH` is not causing issues (default: enabled)
+  - The app will use hardcoded fallback prices from November 2025 if Pyth is unavailable
+- **Fallback behavior:** App continues to function with static prices when oracle is unavailable
+
+#### 4. Image Preload Warnings
+**Symptoms:**
+- Console warning: "resource was preloaded using link preload but not used within a few seconds"
+- Specific to `/branding/equa-logo.png`
+
+**Solution:**
+- This is a non-critical warning and should not cause blank pages
+- The warning means the image was preloaded but took time to render
+- To silence the warning, ensure:
+  - Image exists at `/public/branding/equa-logo.png`
+  - Image is used immediately on page load (which it is - in Logo component)
+  - Clear browser cache if stale preload data is cached
+- **Note:** This warning does not affect functionality
+
+#### 5. Wallet Adapter Loading Issues
+**Symptoms:**
+- Page blank until wallet adapter fully loads
+- Dynamic imports not resolving
+
+**Solution:**
+- The app uses dynamic imports with `ssr: false` for wallet components
+- If issues persist:
+  ```bash
+  # Reinstall dependencies with legacy peer deps flag
+  rm -rf node_modules package-lock.json
+  npm install --legacy-peer-deps
+  npm run dev
+  ```
+- Check that wallet adapter packages are properly installed:
+  - `@solana/wallet-adapter-base`
+  - `@solana/wallet-adapter-react`
+  - `@solana/wallet-adapter-wallets`
+
+#### 6. Loading States and Suspense
+**Solution:**
+- App now includes loading states:
+  - `app/loading.tsx` - global loading UI
+  - Loading placeholders for dynamic components
+  - Suspense boundaries prevent blank renders during component loading
+- If loading spinner shows indefinitely, check:
+  - Network connectivity
+  - Browser console for stuck promises or errors
+  - Solana RPC endpoint availability
+
+### Quick Diagnostic Steps
+
+1. **Check Browser Console (F12 → Console):**
+   ```
+   - Look for red error messages
+   - Check for 404s, network errors, or CORS issues
+   - Verify all imports are resolving correctly
+   ```
+
+2. **Verify Environment Variables:**
+   ```bash
+   # Required variables in .env.local
+   NEXT_PUBLIC_SOLANA_NETWORK=devnet
+   NEXT_PUBLIC_SOLANA_RPC_HOST=https://api.devnet.solana.com
+   # Optional: NEXT_PUBLIC_ENABLE_PYTH=true
+   ```
+
+3. **Test in Incognito Mode:**
+   - Eliminates browser extension conflicts
+   - Ensures clean cache state
+   - Rules out localStorage issues
+
+4. **Check Network Tab (F12 → Network):**
+   - Verify JavaScript bundles are loading (200 status)
+   - Check for failed resource loads (404, 500 errors)
+   - Ensure no CORS errors blocking requests
+
+5. **Force Clean Build:**
+   ```bash
+   rm -rf .next node_modules
+   npm install --legacy-peer-deps
+   npm run build
+   npm run start
+   ```
+
+### Development Mode Debugging
+
+If blank page occurs in development:
+```bash
+# Enable verbose error logging
+NODE_ENV=development npm run dev
+
+# Check the terminal output for:
+# - Build errors
+# - Module resolution failures
+# - TypeScript errors
+```
+
+### When to Seek Help
+
+If none of the above solutions work:
+1. Note the exact browser and version
+2. Copy all console error messages
+3. Check browser Network tab for failed requests
+4. Document steps to reproduce the issue
+5. Report to the development team with all diagnostic info
+
 ## Issue: Buttons Not Visible (Connect Wallet / Get Started)
 
 ### Symptoms

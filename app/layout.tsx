@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import dynamic from "next/dynamic";
+
+// Dynamically import DiagnosticsOverlay with no SSR (dev-only component)
+const DiagnosticsOverlay = dynamic(
+  () => import('@/components/DiagnosticsOverlay').then((mod) => ({ default: mod.DiagnosticsOverlay })),
+  { ssr: false }
+);
 
 export const metadata: Metadata = {
   title: "EQUA Token - Solana DApp",
@@ -32,6 +39,8 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         {/* Providers component includes process shim, QueryClient, WalletProvider, and WebVitalsClient */}
         <Providers>{children}</Providers>
+        {/* Development-only diagnostics overlay */}
+        <DiagnosticsOverlay />
       </body>
     </html>
   );
