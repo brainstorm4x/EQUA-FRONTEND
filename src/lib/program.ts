@@ -120,23 +120,30 @@ export async function createProgram(
       }
       cachedIdl = await response.json();
       
-      // Runtime validation: Ensure configured PROGRAM_ID matches the IDL
+      // Runtime validation: Ensure IDL has program ID and matches configured PROGRAM_ID
       const idlProgramId = cachedIdl.address || cachedIdl.metadata?.address;
-      if (idlProgramId) {
-        const idlPubkey = new PublicKey(idlProgramId);
-        if (!PROGRAM_ID.equals(idlPubkey)) {
-          const errorMsg = `❌ CRITICAL: Program ID mismatch!\n` +
-            `  Environment/Config PROGRAM_ID: ${PROGRAM_ID.toBase58()}\n` +
-            `  IDL Program ID: ${idlPubkey.toBase58()}\n` +
-            `  This will cause instruction deserialization failures (0x66).\n` +
-            `  Fix: Set NEXT_PUBLIC_PROGRAM_ID=${idlPubkey.toBase58()} in .env.local`;
-          console.error(errorMsg);
-          throw new Error(`Program ID mismatch: expected ${idlPubkey.toBase58()}, got ${PROGRAM_ID.toBase58()}`);
-        }
+      if (!idlProgramId) {
+        const errorMsg = `❌ CRITICAL: IDL is missing program ID!\n` +
+          `  The IDL file at /idl/equa_token.json does not contain an 'address' field.\n` +
+          `  This indicates a malformed or outdated IDL file.\n` +
+          `  Fix: Ensure the IDL is properly generated and includes the program address.`;
+        console.error(errorMsg);
+        throw new Error('IDL is missing program ID (address field)');
+      }
+      
+      const idlPubkey = new PublicKey(idlProgramId);
+      if (!PROGRAM_ID.equals(idlPubkey)) {
+        const errorMsg = `❌ CRITICAL: Program ID mismatch!\n` +
+          `  Environment/Config PROGRAM_ID: ${PROGRAM_ID.toBase58()}\n` +
+          `  IDL Program ID: ${idlPubkey.toBase58()}\n` +
+          `  This will cause instruction deserialization failures (0x66).\n` +
+          `  Fix: Set NEXT_PUBLIC_PROGRAM_ID=${idlPubkey.toBase58()} in .env.local`;
+        console.error(errorMsg);
+        throw new Error(`Program ID mismatch: expected ${idlPubkey.toBase58()}, got ${PROGRAM_ID.toBase58()}`);
       }
       
       console.log(
-        "✅ IDL loaded, creating program with ID:",
+        "✅ IDL loaded and validated, creating program with ID:",
         PROGRAM_ID.toBase58()
       );
     }
@@ -641,15 +648,19 @@ export function createMintTokensInstruction(
   // Validate critical parameters before building instruction
   // ============================================================================
   
-  // Assert Token-2022 is being used (backend requirement)
-  if (tokenProgram.toBase58() !== TOKEN_2022_PROGRAM_ADDRESS) {
+  // Validate token program is configured correctly (Token-2022 by default)
+  // Verify it matches one of the known token program addresses
+  const isStandardToken = tokenProgram.toBase58() === STANDARD_TOKEN_PROGRAM_ADDRESS;
+  const isToken2022 = tokenProgram.toBase58() === TOKEN_2022_PROGRAM_ADDRESS;
+  
+  if (!isStandardToken && !isToken2022) {
     const errorMsg = 
-      `❌ CRITICAL: Token program mismatch!\n` +
-      `  Expected: ${TOKEN_2022_PROGRAM_ADDRESS} (Token-2022)\n` +
+      `❌ CRITICAL: Invalid token program!\n` +
+      `  Expected: ${TOKEN_2022_PROGRAM_ADDRESS} (Token-2022) or ${STANDARD_TOKEN_PROGRAM_ADDRESS} (Standard SPL Token)\n` +
       `  Got: ${tokenProgram.toBase58()}\n` +
-      `  The backend requires Token-2022. Update TOKEN_PROGRAM_ID in constants.ts.`;
+      `  This indicates a configuration error. Check TOKEN_PROGRAM_ID in constants.ts.`;
     console.error(errorMsg);
-    throw new Error('mint_tokens requires Token-2022 program');
+    throw new Error('mint_tokens requires a valid token program (Token-2022 or Standard SPL Token)');
   }
 
   // Assert authority is provided (required signer)
@@ -659,13 +670,14 @@ export function createMintTokensInstruction(
 
   // Log referrer account handling
   const isReferrerProvided = !referrerAccount.equals(PublicKey.default);
+  const tokenProgramType = isToken2022 ? 'Token-2022' : 'Standard SPL Token';
   if (DEBUG_INSTRUCTIONS) {
     console.log('🔧 Building mint_tokens instruction (8 accounts):');
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Amount (raw base units):', amount);
     console.log('  - Amount BN:', amountBN.toString());
-    console.log('  - Token Program:', tokenProgram.toBase58(), '(Token-2022 ✅)');
-    console.log('  - Referrer:', isReferrerProvided ? referrerAccount.toBase58() : 'None (PublicKey.default)');
+    console.log(`  - Token Program: ${tokenProgram.toBase58()} (${tokenProgramType} ✅)`);
+    console.log('  - Referrer:', isReferrerProvided ? referrerAccount.toBase58() : 'Self-referral (user\'s own userAccountPDA)');
   }
   
   // Build keys in exact order matching backend IDL
