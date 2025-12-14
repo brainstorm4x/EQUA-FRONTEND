@@ -2,19 +2,19 @@
 
 import { FC, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+import { PublicKey, Transaction, SystemProgram, SendTransactionError } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync, 
   createTransferInstruction,
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import { BN } from '@coral-xyz/anchor';
-import { getMintPDA, getSPLTokenBalance, getUserAccountPDA, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@/lib/program';
+import { getMintPDA, getSPLTokenBalance, getUserAccountPDA, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, getEquaMintDecimals } from '@/lib/program';
 import { Logo } from './Logo';
 import Image from 'next/image';
-import { formatEquaBalance, rawToDecimal } from '@/utils/tokenFormat';
+import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw } from '@/utils/tokenFormat';
 import { getReferrerData } from '@/utils/referralRateLimit';
-import { recordTransfer } from '@/utils/transferTracking';
+import { recordTransfer, syncTransfersFromChain } from '@/utils/transferTracking';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
@@ -24,9 +24,8 @@ interface WalletDashboardProps {
   className?: string;
 }
 
-// EQUA Token has 9 decimals
-const EQUA_DECIMALS = 9;
-const EQUA_MULTIPLIER = Math.pow(10, EQUA_DECIMALS);
+// EQUA Token decimals will be fetched from on-chain mint
+// Default to 6 decimals as per the on-chain mint configuration
 
 // Default EQUA price in USD per 1 EQUA token (used as fallback if price fetch fails)
 const DEFAULT_EQUA_PRICE_USD = 1.00;
@@ -56,6 +55,8 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const { publicKey, connected, signTransaction } = useWallet();
   const { connection } = useConnection();
   const [balance, setBalance] = useState<number>(0);
+  const [mintDecimals, setMintDecimals] = useState<number>(6); // Default to 6
+  const [transferCount, setTransferCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
@@ -76,10 +77,12 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     { enabled: connected && !!userAccountPDA }
   );
 
-  // Fetch EQUA balance and update referral rewards from onchain data
+  // Fetch EQUA balance, mint decimals, and update referral rewards from onchain data
   useEffect(() => {
     if (!publicKey || !connected) {
       setBalance(0);
+      setMintDecimals(6);
+      setTransferCount(0);
       setReferralCount(0);
       setReferralRewards(0);
       return;
@@ -88,6 +91,11 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     const fetchData = async () => {
       try {
         const [mintPDA] = getMintPDA();
+        
+        // Fetch mint decimals from on-chain
+        const decimals = await getEquaMintDecimals(connection);
+        setMintDecimals(decimals);
+        
         const tokenAccount = getAssociatedTokenAddressSync(
           mintPDA,
           publicKey,
@@ -98,6 +106,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         
         const bal = await getSPLTokenBalance(connection, tokenAccount);
         setBalance(bal);
+        
+        // Sync transfer count from chain
+        const txCount = await syncTransfersFromChain(connection, tokenAccount);
+        setTransferCount(txCount);
         
         // Get referral data from onchain UserAccount (source of truth)
         if (userAccountData) {
@@ -241,12 +253,13 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         <SendModal
           publicKey={publicKey}
           balance={balance}
+          mintDecimals={mintDecimals}
           connection={connection}
           signTransaction={signTransaction}
           onClose={() => setShowSendModal(false)}
           onSuccess={() => {
             setShowSendModal(false);
-            // Refresh balance after send
+            // Refresh balance and transfer count after send
             setTimeout(async () => {
               const [mintPDA] = getMintPDA();
               const tokenAccount = getAssociatedTokenAddressSync(
@@ -258,6 +271,8 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
               );
               const bal = await getSPLTokenBalance(connection, tokenAccount);
               setBalance(bal);
+              const txCount = await syncTransfersFromChain(connection, tokenAccount);
+              setTransferCount(txCount);
             }, 2000);
           }}
         />
@@ -286,6 +301,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
 interface SendModalProps {
   publicKey: PublicKey;
   balance: number;
+  mintDecimals: number;
   connection: any;
   signTransaction: ((tx: Transaction) => Promise<Transaction>) | undefined;
   onClose: () => void;
@@ -295,6 +311,7 @@ interface SendModalProps {
 const SendModal: FC<SendModalProps> = ({ 
   publicKey, 
   balance, 
+  mintDecimals,
   connection, 
   signTransaction,
   onClose, 
@@ -560,16 +577,6 @@ const SendModal: FC<SendModalProps> = ({
         throw new Error('Invalid recipient address');
       }
 
-      // Validate amount
-      const sendAmount = parseFloat(amount);
-      if (isNaN(sendAmount) || sendAmount <= 0) {
-        throw new Error('Invalid amount');
-      }
-      const balanceInEqua = rawToDecimal(balance);
-      if (sendAmount > balanceInEqua) {
-        throw new Error('Insufficient balance');
-      }
-
       const [mintPDA] = getMintPDA();
       
       // Get sender's token account
@@ -580,6 +587,26 @@ const SendModal: FC<SendModalProps> = ({
         TOKEN_PROGRAM_ID,
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
+
+      // Re-fetch current balance to ensure we have the latest value
+      const currentBalance = await getSPLTokenBalance(connection, senderTokenAccount);
+      
+      // Parse amount using BigInt to avoid float issues
+      const amountInBaseUnits = parseDecimalStringToRaw(amount, mintDecimals);
+      
+      if (amountInBaseUnits === null) {
+        throw new Error('Invalid amount format');
+      }
+
+      if (amountInBaseUnits <= 0n) {
+        throw new Error('Amount must be greater than zero');
+      }
+
+      // Validate against current balance
+      if (amountInBaseUnits > BigInt(currentBalance)) {
+        const balanceInEqua = rawToDecimal(currentBalance, mintDecimals);
+        throw new Error(`Insufficient balance. You have ${balanceInEqua.toFixed(6)} EQUA available.`);
+      }
 
       // Get recipient's token account
       const recipientTokenAccount = getAssociatedTokenAddressSync(
@@ -607,14 +634,14 @@ const SendModal: FC<SendModalProps> = ({
         );
       }
 
-      // Add transfer instruction
-      const amountInBaseUnits = Math.floor(sendAmount * EQUA_MULTIPLIER);
+      // Add transfer instruction with correct amount
+      // Convert BigInt to number for createTransferInstruction (safe for amounts within JS safe integer range)
       transaction.add(
         createTransferInstruction(
           senderTokenAccount,
           recipientTokenAccount,
           publicKey,
-          amountInBaseUnits,
+          Number(amountInBaseUnits),
           [],
           TOKEN_PROGRAM_ID
         )
@@ -639,15 +666,45 @@ const SendModal: FC<SendModalProps> = ({
       setTxSignature(signature);
       
       // Record the transfer for anonymous analytics tracking (NO PII stored)
+      const sendAmountDecimal = parseFloat(amount);
       await recordTransfer(
-        sendAmount,
+        sendAmountDecimal,
         signature
       );
       
       setTimeout(onSuccess, 2000);
     } catch (err: any) {
       console.error('Send error:', err);
-      setError(err.message || 'Failed to send EQUA');
+      
+      // Extract detailed error message from SendTransactionError
+      let errorMessage = 'Failed to send EQUA';
+      
+      if (err instanceof SendTransactionError) {
+        const logs = await err.getLogs(connection);
+        console.error('Transaction logs:', logs);
+        
+        // Check for common error patterns in logs
+        if (logs) {
+          const logsString = logs.join('\n');
+          if (logsString.includes('insufficient funds') || logsString.includes('0x1')) {
+            errorMessage = 'Insufficient funds. Please check your balance and try again.';
+          } else if (logsString.includes('custom program error')) {
+            // Extract error code if available
+            const errorMatch = logsString.match(/custom program error: (0x[0-9a-fA-F]+)/);
+            if (errorMatch) {
+              errorMessage = `Transaction failed with error code ${errorMatch[1]}. ${
+                errorMatch[1] === '0x1' ? 'This usually means insufficient funds.' : ''
+              }`;
+            } else {
+              errorMessage = 'Transaction failed. Please check the console for details.';
+            }
+          }
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -782,7 +839,7 @@ const SendModal: FC<SendModalProps> = ({
                 />
                 <button
                   onClick={() => {
-                    const maxEqua = rawToDecimal(balance);
+                    const maxEqua = rawToDecimal(balance, mintDecimals);
                     setAmount(maxEqua.toString());
                     handleEquaAmountChange(maxEqua.toString());
                   }}
@@ -792,7 +849,7 @@ const SendModal: FC<SendModalProps> = ({
                 </button>
               </div>
               <p className="text-purple-400 text-xs mt-1">
-                Available: {formatEquaBalance(balance)} EQUA
+                Available: {formatEquaBalance(balance, mintDecimals)} EQUA
               </p>
             </div>
 

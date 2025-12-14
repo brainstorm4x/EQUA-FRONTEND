@@ -3,13 +3,18 @@
  * 
  * Tracks EQUA token transfers for UI display purposes using localStorage only.
  * All tracking is done locally without external database dependencies.
+ * Supports both outbound (sends) and inbound (receives) tracking via chain signatures.
  */
 
+import { Connection, PublicKey } from '@solana/web3.js';
+
 const STORAGE_KEY = 'equa_transfer_stats';
+const PROCESSED_SIGNATURES_KEY = 'equa_processed_signatures';
 
 export interface TransferStats {
   totalTransfers: number;
   lastUpdated: number;
+  lastProcessedSignature?: string;
 }
 
 /**
@@ -90,7 +95,104 @@ export function resetTransferStats(): void {
   
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PROCESSED_SIGNATURES_KEY);
   } catch {
     console.warn('Failed to reset transfer stats');
+  }
+}
+
+/**
+ * Gets processed signatures from localStorage
+ */
+function getProcessedSignatures(): Set<string> {
+  if (typeof window === 'undefined') {
+    return new Set();
+  }
+  
+  try {
+    const stored = localStorage.getItem(PROCESSED_SIGNATURES_KEY);
+    if (!stored) {
+      return new Set();
+    }
+    const array = JSON.parse(stored);
+    return new Set(array);
+  } catch {
+    return new Set();
+  }
+}
+
+/**
+ * Saves processed signatures to localStorage
+ * Limits to most recent 1000 to avoid storage bloat
+ */
+function saveProcessedSignatures(signatures: Set<string>): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    // Keep only most recent 1000 signatures
+    const array = Array.from(signatures).slice(-1000);
+    localStorage.setItem(PROCESSED_SIGNATURES_KEY, JSON.stringify(array));
+  } catch {
+    console.warn('Failed to save processed signatures');
+  }
+}
+
+/**
+ * Fetches transfer count from chain by scanning token account signatures
+ * Updates localStorage with new transfers found
+ * 
+ * @param connection - Solana RPC connection
+ * @param tokenAccountAddress - Token account address (ATA)
+ * @returns Updated transfer count
+ */
+export async function syncTransfersFromChain(
+  connection: Connection,
+  tokenAccountAddress: PublicKey
+): Promise<number> {
+  try {
+    const processedSignatures = getProcessedSignatures();
+    const stats = getTransferStats();
+    
+    // Fetch recent signatures for this token account
+    // Limit to 100 to avoid rate limiting
+    const signatures = await connection.getSignaturesForAddress(
+      tokenAccountAddress,
+      { limit: 100 }
+    );
+
+    let newTransferCount = 0;
+
+    // Process signatures in chronological order (oldest first)
+    for (const sigInfo of signatures.reverse()) {
+      const signature = sigInfo.signature;
+      
+      // Skip if already processed
+      if (processedSignatures.has(signature)) {
+        continue;
+      }
+
+      // Mark as processed
+      processedSignatures.add(signature);
+      newTransferCount++;
+    }
+
+    // Update stats if we found new transfers
+    if (newTransferCount > 0) {
+      stats.totalTransfers += newTransferCount;
+      stats.lastUpdated = Date.now();
+      if (signatures.length > 0) {
+        stats.lastProcessedSignature = signatures[0].signature;
+      }
+      saveTransferStats(stats);
+      saveProcessedSignatures(processedSignatures);
+      
+      console.log(`✓ Synced ${newTransferCount} new transfers from chain (total: ${stats.totalTransfers})`);
+    }
+
+    return stats.totalTransfers;
+  } catch (error) {
+    console.error('Error syncing transfers from chain:', error);
+    // Return current count on error
+    return getTransferStats().totalTransfers;
   }
 }
