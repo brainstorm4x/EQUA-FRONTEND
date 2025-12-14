@@ -257,7 +257,7 @@ describe('createInitializeUserInstruction', () => {
     expect(instruction.keys[8].pubkey.toBase58()).toBe(expectedAddress);
   });
 
-  it('should use standard SPL Token at index 9', () => {
+  it('should use configured TOKEN_PROGRAM_ID at index 9', () => {
     const instruction = createInitializeUserInstruction(
       userAccount,
       userMetadata,
@@ -274,8 +274,7 @@ describe('createInitializeUserInstruction', () => {
       userType
     );
 
-    // Index 9 must be standard SPL Token (not Token-2022)
-    const expectedAddress = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
-    expect(instruction.keys[9].pubkey.toBase58()).toBe(expectedAddress);
+    // Index 9 must match the TOKEN_PROGRAM_ID from constants (Token-2022 by default)
+    expect(instruction.keys[9].pubkey.toBase58()).toBe(TOKEN_PROGRAM_ID.toBase58());
   });
 });

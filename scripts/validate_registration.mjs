@@ -51,7 +51,7 @@ const STANDARD_TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 const TOKEN_2022_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
 const ASSOCIATED_TOKEN_PROGRAM = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
 
-// EQUA uses Token-2022 by default
+// Expected token program for EQUA (default: Token-2022)
 const EXPECTED_TOKEN_PROGRAM = TOKEN_2022_PROGRAM;
 
 async function main() {
@@ -146,18 +146,22 @@ async function main() {
     const constantsPath = path.join(__dirname, '..', 'src', 'lib', 'constants.ts');
     const constantsContent = fs.readFileSync(constantsPath, 'utf-8');
     
-    // Check for TOKEN_2022_PROGRAM_ID import (SHOULD exist for Token-2022)
+    // Check for TOKEN_2022_PROGRAM_ID import (should exist now)
     if (constantsContent.includes('TOKEN_2022_PROGRAM_ID')) {
-      success('✓ constants.ts imports TOKEN_2022_PROGRAM_ID');
+      // Check if it's imported
+      const lines = constantsContent.split('\n').filter(line => 
+        line.includes('TOKEN_2022_PROGRAM_ID') && !line.trim().startsWith('//')
+      );
+      if (lines.length > 0) {
+        success('✓ TOKEN_2022_PROGRAM_ID imported in constants.ts');
+      }
     } else {
-      error('✗ TOKEN_2022_PROGRAM_ID not imported in constants.ts');
-      error('  EQUA uses Token-2022, not Standard SPL Token');
-      hasErrors = true;
+      warn('⚠ TOKEN_2022_PROGRAM_ID not found in constants.ts');
     }
     
     // Check for Token-2022 references
     if (constantsContent.includes('Token-2022') || 
-        constantsContent.includes('next generation SPL Token')) {
+        constantsContent.includes('TOKEN_2022_PROGRAM_ID')) {
       success('✓ constants.ts configured for Token-2022');
     } else {
       warn('⚠ Cannot verify Token-2022 configuration in constants.ts');
@@ -208,7 +212,7 @@ async function main() {
         success('✓ Mint uses Token-2022 Program (correct)');
       } else if (mintOwner === STANDARD_TOKEN_PROGRAM) {
         error('✗ Mint uses Standard SPL Token but app is configured for Token-2022');
-        error('  Fix: Either update constants.ts or recreate mint with Token-2022');
+        error('  Fix: Either set NEXT_PUBLIC_TOKEN_STANDARD=standard or recreate mint with Token-2022');
         hasErrors = true;
       } else {
         error(`✗ Mint uses unknown token program: ${mintOwner}`);

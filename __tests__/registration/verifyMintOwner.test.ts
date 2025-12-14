@@ -29,7 +29,7 @@ describe('verifyMintOwner', () => {
 
   it('should pass when mint owner matches TOKEN_PROGRAM_ID (Token-2022)', async () => {
     mockConnection.getAccountInfo.mockResolvedValue({
-      owner: token2022Program, // Now expects Token-2022
+      owner: token2022Program, // Now expecting Token-2022
       data: Buffer.alloc(82), // Standard mint account size
       lamports: 1000000
     });
@@ -45,9 +45,9 @@ describe('verifyMintOwner', () => {
       .toThrow('does not exist');
   });
 
-  it('should throw error when mint owner is Standard SPL instead of Token-2022', async () => {
+  it('should throw error when mint owner is standard SPL instead of Token-2022', async () => {
     mockConnection.getAccountInfo.mockResolvedValue({
-      owner: standardTokenProgram, // Wrong: Standard SPL when expecting Token-2022
+      owner: standardTokenProgram, // Wrong token program (we expect Token-2022)
       data: Buffer.alloc(82),
       lamports: 1000000
     });
@@ -57,9 +57,9 @@ describe('verifyMintOwner', () => {
       .toThrow('Mint owner mismatch');
   });
 
-  it('should provide actionable error message for Standard SPL mismatch', async () => {
+  it('should provide actionable error message for standard SPL mismatch', async () => {
     mockConnection.getAccountInfo.mockResolvedValue({
-      owner: standardTokenProgram, // Wrong: Standard SPL when expecting Token-2022
+      owner: standardTokenProgram, // Wrong token program (we expect Token-2022)
       data: Buffer.alloc(82),
       lamports: 1000000
     });

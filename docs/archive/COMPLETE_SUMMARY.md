@@ -40,14 +40,15 @@
 
 ### ✅ Audit Results: PASS
 
-The EQUA registration and minting flows have been comprehensively audited and are **production-ready for devnet testing**. All code is correct for the current configuration (Standard SPL Token Program).
+**UPDATE (December 2025)**: The EQUA registration and minting flows have been comprehensively audited and are **production-ready for devnet testing**. All code is correct for the current configuration (Token-2022, matching backend).
 
 ### What Was Audited:
 
 1. **Token Program Consistency** ✅
-   - Frontend uses Standard SPL Token Program
+   - Frontend uses Token-2022 (SPL Token Extensions)
    - All ATA operations use correct token program
-   - Ready to switch to Token-2022 if needed (one-line change)
+   - Aligned with EQUA backend Token-2022 configuration
+   - Environment variable override available for testing
 
 2. **Registration Flow** ✅
    - ATA created at correct time (with registration, not minting)
@@ -253,22 +254,30 @@ export { TOKEN_PROGRAM_ID };
 
 ---
 
-## How to Switch to Token-2022
+## Token Program Configuration (Updated December 2025)
 
-If testing reveals mint uses Token-2022, apply this single-line change:
+**UPDATE**: The frontend now uses Token-2022 by default to match the EQUA backend.
 
-### Before:
-```typescript
-// src/lib/constants.ts
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-export { TOKEN_PROGRAM_ID };
-```
-
-### After:
+### Current Configuration:
 ```typescript
 // src/lib/constants.ts
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
+```
+
+### To Switch to Standard SPL Token (If Needed):
+
+Use environment variable:
+```bash
+# In .env.local
+NEXT_PUBLIC_TOKEN_STANDARD=standard
+```
+
+Or update code:
+```typescript
+// src/lib/constants.ts
+import { TOKEN_PROGRAM_ID as SPL_TOKEN_PROGRAM_ID } from '@solana/spl-token';
+export const TOKEN_PROGRAM_ID = SPL_TOKEN_PROGRAM_ID;
 ```
 
 Then rebuild:
@@ -397,13 +406,14 @@ Use test report template from E2E_TESTING_GUIDE.md
 **Test Coverage:** Manual tests documented  
 **Readiness:** Production-ready for devnet
 
-### No Code Changes Required ✅
+### Token Program Updated (December 2025) ✅
 
-Unless devnet testing reveals the mint uses Token-2022 (which requires a one-line change), **no code modifications are necessary**. The current implementation is:
+**UPDATE**: The frontend has been updated to use Token-2022, matching the EQUA backend deployment. The current implementation is:
 
-- ✅ Correct for current configuration
+- ✅ Aligned with backend Token-2022 configuration
 - ✅ Well-structured and maintainable
 - ✅ Secure and following best practices
+- ✅ Environment variable override available for testing
 - ✅ Thoroughly documented
 - ✅ Ready for testing
 
