@@ -27,7 +27,7 @@ describe('verifyMintOwner', () => {
     };
   });
 
-  it('should pass when mint owner matches TOKEN_PROGRAM_ID', async () => {
+  it('should pass when mint owner matches TOKEN_PROGRAM_ID (Token-2022)', async () => {
     mockConnection.getAccountInfo.mockResolvedValue({
       owner: token2022Program, // Now expecting Token-2022
       data: Buffer.alloc(82), // Standard mint account size

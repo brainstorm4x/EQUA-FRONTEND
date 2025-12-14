@@ -324,6 +324,10 @@ export function getOrCreateKeypair(): Keypair {
   return keypair;
 }
 
+// Token program addresses for validation and error messages
+const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+const STANDARD_TOKEN_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+
 /**
  * Verify that the mint account owner matches the configured TOKEN_PROGRAM_ID
  * This prevents InvalidProgramId errors when the mint is owned by a different program
@@ -459,6 +463,46 @@ export function createInitializeUserInstruction(
     instruction.keys.forEach((meta, idx) => {
       console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
     });
+  }
+
+  // ✅ PREFLIGHT VALIDATION: Ensure correct program IDs at correct indices
+  // This prevents InvalidProgramId errors from parameter order mistakes
+  // Runs in ALL environments to catch configuration issues before they reach the blockchain
+  const atpIndex = 8;
+  const tokenProgramIndex = 9;
+  
+  const actualAtpAddress = instruction.keys[atpIndex].pubkey.toBase58();
+  const actualTokenProgramAddress = instruction.keys[tokenProgramIndex].pubkey.toBase58();
+  
+  const expectedAtpAddress = ASSOCIATED_TOKEN_PROGRAM_ID.toBase58();
+  const expectedTokenProgramAddress = TOKEN_PROGRAM_ID.toBase58();
+  
+  if (actualAtpAddress !== expectedAtpAddress) {
+    const errorMsg = 
+      `❌ PREFLIGHT CHECK FAILED: associated_token_program at wrong index!\n` +
+      `  Index ${atpIndex} should be ASSOCIATED_TOKEN_PROGRAM_ID: ${expectedAtpAddress}\n` +
+      `  But got: ${actualAtpAddress}\n` +
+      `  This will cause "InvalidProgramId" error on associated_token_program account.\n` +
+      `  Fix: Check parameter order in createInitializeUserInstruction call site.`;
+    console.error(errorMsg);
+    throw new Error('Preflight validation failed: associated_token_program at incorrect index');
+  }
+  
+  if (actualTokenProgramAddress !== expectedTokenProgramAddress) {
+    const errorMsg = 
+      `❌ PREFLIGHT CHECK FAILED: token_program at wrong index!\n` +
+      `  Index ${tokenProgramIndex} should be TOKEN_PROGRAM_ID: ${expectedTokenProgramAddress}\n` +
+      `  But got: ${actualTokenProgramAddress}\n` +
+      `  This will cause "InvalidProgramId" error on token_program account.\n` +
+      `  Fix: Check parameter order in createInitializeUserInstruction call site.`;
+    console.error(errorMsg);
+    throw new Error('Preflight validation failed: token_program at incorrect index');
+  }
+  
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('✅ Preflight validation passed:');
+    console.log(`  - Index ${atpIndex} = ASSOCIATED_TOKEN_PROGRAM_ID (${expectedAtpAddress})`);
+    console.log(`  - Index ${tokenProgramIndex} = TOKEN_PROGRAM_ID (${expectedTokenProgramAddress})`);
   }
 
   return instruction;

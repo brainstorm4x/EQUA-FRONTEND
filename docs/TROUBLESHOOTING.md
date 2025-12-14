@@ -295,6 +295,88 @@ last_mint_time:    128-135 (8 bytes)
 
 ---
 
+## Issue: InitializeUser InvalidProgramId on associated_token_program
+
+### Symptoms
+Registration fails with an Anchor error:
+```
+AnchorError caused by account: associated_token_program
+Error Code: InvalidProgramId
+Error Message: Program ID is not valid
+Left: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb (Token-2022)
+Right: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL (Associated Token Program)
+```
+
+### Root Cause
+The instruction accounts are being passed in the wrong order, causing:
+- Token-2022 program ID to be passed where Associated Token Program ID is expected
+- This creates a program ID mismatch that Anchor detects and rejects
+
+### Solution
+**For Developers:** Check the `createInitializeUserInstruction` call site parameter order.
+
+The function signature is:
+```typescript
+createInitializeUserInstruction(
+  userAccount,
+  userMetadata,
+  authority,
+  globalState,
+  referralAccount,
+  referrerMetadata,
+  userTokenAccount,
+  mint,
+  associatedTokenProgram,  // ← Must be ASSOCIATED_TOKEN_PROGRAM_ID
+  tokenProgram,             // ← Must be TOKEN_PROGRAM_ID (Token-2022)
+  mintStart,
+  referrer,
+  userType
+)
+```
+
+**Correct usage:**
+```typescript
+const instruction = createInitializeUserInstruction(
+  userAccountPDA,
+  userMetadataPDA,
+  publicKey,
+  globalStatePDA,
+  referralAccountPubkey,
+  referrerMetadataPubkey,
+  userTokenAccount,
+  mintPDA,
+  ASSOCIATED_TOKEN_PROGRAM_ID,  // ← Index 8 in instruction.keys
+  TOKEN_PROGRAM_ID,              // ← Index 9 in instruction.keys
+  now,
+  referrerPubkey,
+  userType
+);
+```
+
+### Preflight Validation
+The `createInitializeUserInstruction` function includes automatic preflight checks in development mode:
+```
+✅ Preflight validation passed:
+  - Index 8 = ASSOCIATED_TOKEN_PROGRAM_ID (ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL)
+  - Index 9 = TOKEN_PROGRAM_ID (TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb)
+```
+
+If you see a preflight check failure, the parameters are in the wrong order at the call site.
+
+### Token Program Configuration
+EQUA uses **Token-2022** (not Standard SPL Token):
+- TOKEN_PROGRAM_ID: `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`
+- ASSOCIATED_TOKEN_PROGRAM_ID: `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`
+
+**Always import from `src/lib/constants.ts`:**
+```typescript
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@/lib/program';
+```
+
+**Never import directly from `@solana/spl-token`** in feature code - this bypasses Token-2022 configuration.
+
+---
+
 ## Issue: Transfer Count Remains Zero
 
 ### Symptoms
