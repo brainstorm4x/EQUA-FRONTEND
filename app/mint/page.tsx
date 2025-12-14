@@ -12,6 +12,10 @@ import {
 import { 
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  USER_ACCOUNT_REFERRAL_OFFSET,
+  USER_ACCOUNT_REFERRAL_SIZE,
+} from '@/lib/constants';
+import { 
   createInitializeUserInstruction,
   createMintEquaInstruction,
   createMintTokensInstruction,
@@ -997,10 +1001,13 @@ export default function MintPage() {
       const [userMetadataPDA] = getUserMetadataPDA(publicKey);
       
       // Read referrer from UserAccount to determine referrerAccount
-      // UserAccount structure: 8 discriminator + 32 authority + 32 referral
+      // UserAccount structure: see USER_ACCOUNT_* constants in constants.ts
       let referrerAccountPDA = PublicKey.default;
       try {
-        const referralPubkeyBytes = userAccountInfo.data.slice(40, 72); // referral field at offset 40
+        const referralPubkeyBytes = userAccountInfo.data.slice(
+          USER_ACCOUNT_REFERRAL_OFFSET, 
+          USER_ACCOUNT_REFERRAL_OFFSET + USER_ACCOUNT_REFERRAL_SIZE
+        );
         const referralPubkey = new PublicKey(referralPubkeyBytes);
         
         if (!referralPubkey.equals(PublicKey.default)) {

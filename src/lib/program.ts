@@ -10,6 +10,8 @@ import {
   USER_ACCOUNT_SEED,
   USER_META_SEED,
   BUSINESS_REGISTRY_SEED,
+  TOKEN_2022_PROGRAM_ADDRESS,
+  STANDARD_TOKEN_PROGRAM_ADDRESS,
 } from "./constants";
 
 // Debug flag for instruction building logs
@@ -344,9 +346,8 @@ export function getOrCreateKeypair(): Keypair {
   return keypair;
 }
 
-// Token program addresses for validation and error messages
-const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
-const STANDARD_TOKEN_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+// Token program addresses imported from constants
+// (Used for validation and error messages)
 
 /**
  * Verify that the mint account owner matches the configured TOKEN_PROGRAM_ID
@@ -641,7 +642,6 @@ export function createMintTokensInstruction(
   // ============================================================================
   
   // Assert Token-2022 is being used (backend requirement)
-  const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
   if (tokenProgram.toBase58() !== TOKEN_2022_PROGRAM_ADDRESS) {
     const errorMsg = 
       `❌ CRITICAL: Token program mismatch!\n` +
