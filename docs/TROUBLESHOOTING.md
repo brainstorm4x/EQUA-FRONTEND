@@ -460,3 +460,68 @@ curl https://api.devnet.solana.com -X POST \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"getVersion"}'
 ```
+
+## Issue: InvalidProgramId Error on Registration (Account Mismatch)
+
+### Symptoms
+- Registration fails with `AnchorError` showing "InvalidProgramId" (Error Code: 3008)
+- Error message indicates mismatch on `associated_token_program` account
+- Transaction simulation or execution fails during `initialize_user` instruction
+
+### Root Cause
+This error occurs when the frontend sends a different number of accounts than the backend expects for the `initialize_user` instruction. The backend now requires **12 accounts** (including `business_registry` as the 9th account), but older frontend versions may send only 11 accounts.
+
+When account counts mismatch:
+- The backend reads accounts at wrong indices
+- Token program IDs appear at incorrect positions
+- The program sees Token-2022 (TokenzQdB...) where it expects Associated Token Program (ATokenGP...)
+
+### Expected Account Order (12 accounts)
+```
+0.  user_account           (PDA, writable)
+1.  user_metadata          (PDA, writable)
+2.  authority              (signer, writable)
+3.  global_state           (PDA, writable)
+4.  referral_account       (PDA, writable)
+5.  referrer_metadata      (PDA, writable)
+6.  user_token_account     (ATA, writable)
+7.  mint                   (PDA, read-only)
+8.  business_registry      (PDA, read-only) ← NEW
+9.  associated_token_program (ATokenGP..., read-only)
+10. token_program          (Token-2022 or Standard SPL, read-only)
+11. system_program         (11111..., read-only)
+```
+
+### Solution
+**Update your frontend to the latest version:**
+
+1. Pull the latest code from the repository
+2. The fix includes:
+   - `business_registry` PDA derivation using seed `"business-registry"`
+   - Updated `createInitializeUserInstruction` with 12 accounts
+   - Preflight validation to catch mismatches before sending transactions
+
+**For Developers:**
+```bash
+# Verify the fix is applied
+npm run typecheck
+node scripts/validate_registration.mjs
+
+# Expected output:
+# ✓ IDL has 12 accounts for initialize_user
+# ✓ IDL has business_registry at index 8
+# ✓ IDL specifies correct ASSOCIATED_TOKEN_PROGRAM_ID at index 9
+```
+
+### Verification
+After updating, successful registration will show:
+```
+✅ Preflight validation passed:
+  - Index 9 = ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL (associated_token_program)
+  - Index 10 = TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb (token_program)
+```
+
+### Related Issues
+- Error Code 3008: InvalidProgramId
+- Error Code 0x66: InstructionDidNotDeserialize (previous account count mismatch)
+- "Simulation failed" during registration

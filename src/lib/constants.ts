@@ -48,3 +48,4 @@ export const MINT_SEED = 'equa-mint';
 export const MINT_AUTHORITY_SEED = 'mint-authority';
 export const USER_ACCOUNT_SEED = 'user-account';
 export const USER_META_SEED = 'user-meta';
+export const BUSINESS_REGISTRY_SEED = 'business-registry';

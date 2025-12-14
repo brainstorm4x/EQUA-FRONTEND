@@ -9,6 +9,7 @@ import {
   MINT_AUTHORITY_SEED,
   USER_ACCOUNT_SEED,
   USER_META_SEED,
+  BUSINESS_REGISTRY_SEED,
 } from "./constants";
 
 // Debug flag for instruction building logs
@@ -68,6 +69,14 @@ export function getUserAccountPDA(authority: PublicKey): [PublicKey, number] {
 export function getUserMetadataPDA(authority: PublicKey): [PublicKey, number] {
   const cacheKey = `user_metadata:${authority.toBase58()}`;
   return getCachedPDA(cacheKey, [Buffer.from(USER_META_SEED), authority.toBuffer()]);
+}
+
+/**
+ * Get business registry PDA (global account for business registrations)
+ * @returns PDA and bump seed
+ */
+export function getBusinessRegistryPDA(): [PublicKey, number] {
+  return getCachedPDA('business_registry', [Buffer.from(BUSINESS_REGISTRY_SEED)]);
 }
 
 // ============================================================================
@@ -382,7 +391,7 @@ export async function verifyMintOwner(
   }
 }
 
-// ✅ Create initialize_user instruction (UPDATED for 11 accounts + user_type)
+// ✅ Create initialize_user instruction (UPDATED for 12 accounts + user_type)
 // Note: locked_until field removed per EQUA Whitepaper 2025
 export function createInitializeUserInstruction(
   userAccount: PublicKey,
@@ -393,6 +402,7 @@ export function createInitializeUserInstruction(
   referrerMetadata: PublicKey,
   userTokenAccount: PublicKey,
   mint: PublicKey,
+  businessRegistry: PublicKey,
   associatedTokenProgram: PublicKey,
   tokenProgram: PublicKey,
   mintStart: number,
@@ -419,29 +429,59 @@ export function createInitializeUserInstruction(
     console.log('  - User type:', userType);
   }
 
-  // Account order matches backend IDL exactly (11 accounts)
+  // Account order matches backend IDL exactly (12 accounts)
   // user_account, user_metadata, authority, global_state, referral_account, referrer_metadata,
-  // user_token_account, mint, associated_token_program, token_program, system_program
+  // user_token_account, mint, business_registry, associated_token_program, token_program, system_program
+  const keys = [
+    { pubkey: userAccount, isSigner: false, isWritable: true },        // 0. user_account
+    { pubkey: userMetadata, isSigner: false, isWritable: true },       // 1. user_metadata
+    { pubkey: authority, isSigner: true, isWritable: true },           // 2. authority
+    { pubkey: globalState, isSigner: false, isWritable: true },        // 3. global_state
+    { pubkey: referralAccount, isSigner: false, isWritable: true },    // 4. referral_account
+    { pubkey: referrerMetadata, isSigner: false, isWritable: true },   // 5. referrer_metadata
+    { pubkey: userTokenAccount, isSigner: false, isWritable: true },   // 6. user_token_account
+    { pubkey: mint, isSigner: false, isWritable: false },              // 7. mint
+    { pubkey: businessRegistry, isSigner: false, isWritable: false },  // 8. business_registry
+    { pubkey: associatedTokenProgram, isSigner: false, isWritable: false }, // 9. associated_token_program
+    { pubkey: tokenProgram, isSigner: false, isWritable: false },      // 10. token_program
+    { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // 11. system_program
+  ];
+
+  // Preflight validation: Assert critical program IDs are at correct indices
+  if (keys[9].pubkey.toBase58() !== ASSOCIATED_TOKEN_PROGRAM_ID.toBase58()) {
+    const errorMsg = 
+      `❌ CRITICAL: Program ID mismatch at index 9 (associated_token_program)!\n` +
+      `  Expected: ${ASSOCIATED_TOKEN_PROGRAM_ID.toBase58()} (ATokenGP...)\n` +
+      `  Got: ${keys[9].pubkey.toBase58()}\n` +
+      `  This will cause InvalidProgramId errors during instruction execution.\n` +
+      `  Fix: Ensure businessRegistry is passed as the 9th parameter (index 8) before associatedTokenProgram.`;
+    console.error(errorMsg);
+    throw new Error('InitializeUser instruction builder: associated_token_program at wrong index');
+  }
+
+  if (keys[10].pubkey.toBase58() !== TOKEN_PROGRAM_ID.toBase58()) {
+    const errorMsg = 
+      `❌ CRITICAL: Program ID mismatch at index 10 (token_program)!\n` +
+      `  Expected: ${TOKEN_PROGRAM_ID.toBase58()} (TokenkegQ... or TokenzQdB...)\n` +
+      `  Got: ${keys[10].pubkey.toBase58()}\n` +
+      `  This will cause InvalidProgramId errors during instruction execution.\n` +
+      `  Fix: Verify TOKEN_PROGRAM_ID in constants.ts matches the mint owner.`;
+    console.error(errorMsg);
+    throw new Error('InitializeUser instruction builder: token_program at wrong index');
+  }
+
+  console.log('✅ Preflight validation passed:');
+  console.log(`  - Index 9 = ${ASSOCIATED_TOKEN_PROGRAM_ID.toBase58()} (associated_token_program)`);
+  console.log(`  - Index 10 = ${TOKEN_PROGRAM_ID.toBase58()} (token_program)`);
+
   const instruction = new TransactionInstruction({
-    keys: [
-      { pubkey: userAccount, isSigner: false, isWritable: true },        // 0. user_account
-      { pubkey: userMetadata, isSigner: false, isWritable: true },       // 1. user_metadata
-      { pubkey: authority, isSigner: true, isWritable: true },           // 2. authority
-      { pubkey: globalState, isSigner: false, isWritable: true },        // 3. global_state
-      { pubkey: referralAccount, isSigner: false, isWritable: true },    // 4. referral_account
-      { pubkey: referrerMetadata, isSigner: false, isWritable: true },   // 5. referrer_metadata
-      { pubkey: userTokenAccount, isSigner: false, isWritable: true },   // 6. user_token_account
-      { pubkey: mint, isSigner: false, isWritable: false },              // 7. mint
-      { pubkey: associatedTokenProgram, isSigner: false, isWritable: false }, // 8. associated_token_program
-      { pubkey: tokenProgram, isSigner: false, isWritable: false },      // 9. token_program
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // 10. system_program
-    ],
+    keys,
     programId: PROGRAM_ID,
     data,
   });
 
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Instruction account metas (11 accounts):');
+    console.log('🔧 Instruction account metas (12 accounts):');
     instruction.keys.forEach((meta, idx) => {
       console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
     });

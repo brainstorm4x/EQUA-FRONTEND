@@ -17,6 +17,7 @@ import {
   createMintTokensInstruction,
   getUserMetadataPDA,
   getUserAccountPDA,
+  getBusinessRegistryPDA,
   isUserRegistered,
   verifyMintOwner,
 } from '@/lib/program';
@@ -665,6 +666,10 @@ export default function MintPage() {
       const userType = accountTypeToUserType(accountType);
       console.log('- User Type:', userType, `(${accountType})`);
 
+      // Derive business registry PDA (global account for business registrations)
+      const [businessRegistryPDA] = getBusinessRegistryPDA();
+      console.log('- Business Registry (PDA):', businessRegistryPDA.toBase58());
+
       const instruction = createInitializeUserInstruction(
         userAccountPDA,
         userMetadataPDA,
@@ -674,6 +679,7 @@ export default function MintPage() {
         referrerMetadataPubkey,
         userTokenAccount,
         mintPDA,
+        businessRegistryPDA,
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         now,
