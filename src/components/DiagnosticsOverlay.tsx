@@ -53,9 +53,10 @@ export function DiagnosticsOverlay() {
     try {
       new PublicKey(PROGRAM_ID);
     } catch (err) {
-      // Safely convert to string without calling toString() on invalid PublicKey
-      const programIdStr = typeof PROGRAM_ID === 'string' ? PROGRAM_ID : 
-                          (PROGRAM_ID as any).toBase58?.() || String(PROGRAM_ID);
+      // Safely convert to string - PROGRAM_ID should be a PublicKey with toBase58 method
+      const programIdStr = typeof PROGRAM_ID === 'object' && PROGRAM_ID && 'toBase58' in PROGRAM_ID
+        ? (PROGRAM_ID as PublicKey).toBase58()
+        : String(PROGRAM_ID);
       detectedIssues.push(`Invalid PROGRAM_ID: ${programIdStr}`);
     }
 
@@ -69,7 +70,12 @@ export function DiagnosticsOverlay() {
     // Check for common misconfigurations
     if (typeof window !== 'undefined') {
       // Verify process polyfill is available (required for Solana libraries)
-      if (!(window as any).process?.env) {
+      interface WindowWithProcess extends Window {
+        process?: {
+          env?: Record<string, string | undefined>;
+        };
+      }
+      if (!(window as WindowWithProcess).process?.env) {
         detectedIssues.push('window.process.env is not defined - clientProcessShim may not be loaded');
       }
 
