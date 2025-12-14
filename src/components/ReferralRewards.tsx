@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useCallback } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
@@ -34,18 +34,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
   const [error, setError] = useState('');
   const [showDetails, setShowDetails] = useState(false);
 
-  useEffect(() => {
-    if (!connected || !publicKey) {
-      setRewards(null);
-      setReferredCount(0);
-      setReferredUsers([]);
-      return;
-    }
-
-    loadReferralData();
-  }, [connected, publicKey, connection]);
-
-  const loadReferralData = async () => {
+  const loadReferralData = useCallback(async () => {
     if (!publicKey) return;
 
     setIsLoading(true);
@@ -73,7 +62,18 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [publicKey, connection]);
+
+  useEffect(() => {
+    if (!connected || !publicKey) {
+      setRewards(null);
+      setReferredCount(0);
+      setReferredUsers([]);
+      return;
+    }
+
+    loadReferralData();
+  }, [connected, publicKey, loadReferralData]);
 
   const handleClaimRewards = async () => {
     // TODO: Implement claim functionality when backend supports it
