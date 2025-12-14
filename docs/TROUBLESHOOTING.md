@@ -295,6 +295,64 @@ last_mint_time:    128-135 (8 bytes)
 
 ---
 
+## Issue: Preflight Validation Error - 11 vs 12 Account Mismatch
+
+### Symptoms
+Registration fails with a preflight validation error:
+```
+❌ PREFLIGHT CHECK FAILED: associated_token_program at wrong index!
+  Index 8 should be ASSOCIATED_TOKEN_PROGRAM_ID: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+  But got: [different address]
+  This will cause "InvalidProgramId" error on associated_token_program account.
+```
+
+OR runtime error during registration:
+```
+AnchorError caused by account: associated_token_program
+Error Code: InvalidProgramId (3008)
+Left: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb (Token-2022)
+Right: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL (Associated Token Program)
+```
+
+### Root Cause
+The backend's `InitializeUser` instruction evolved from 11 accounts to 12 accounts by adding `business_registry` at index 8. A legacy frontend preflight check was still enforcing the old 11-account layout, expecting:
+- Index 8 = `associated_token_program` (OLD - incorrect)
+- Index 9 = `token_program` (OLD - incorrect)
+
+But the correct 12-account layout requires:
+- Index 8 = `business_registry` (NEW)
+- Index 9 = `associated_token_program` (NEW - correct)
+- Index 10 = `token_program` (NEW - correct)
+
+### Solution
+**This issue has been fixed in the latest version.** The legacy preflight validation has been removed.
+
+**For Users:**
+1. Clear your browser cache and hard refresh (Ctrl+Shift+R / Cmd+Shift+R)
+2. Ensure you're using the latest version of the app
+3. Try registration again
+
+**For Developers:**
+1. Pull the latest code from the repository
+2. Ensure `createInitializeUserInstruction` in `src/lib/program.ts` has only ONE preflight check
+3. The preflight should validate indices 9 and 10 (not 8 and 9)
+4. Run `node scripts/validate_registration.mjs` to verify the 12-account structure
+
+**Verification:**
+```bash
+# Verify the fix
+node scripts/validate_registration.mjs
+
+# Should show:
+✓ IDL has 12 accounts for initialize_user
+✓ IDL has business_registry at index 8
+✓ IDL specifies correct ASSOCIATED_TOKEN_PROGRAM_ID at index 9
+✓ IDL has token_program at index 10
+✓ Preflight validates ASSOCIATED_TOKEN_PROGRAM_ID at index 9
+```
+
+---
+
 ## Issue: InitializeUser InvalidProgramId on associated_token_program
 
 ### Symptoms
@@ -334,8 +392,10 @@ createInitializeUserInstruction(
 )
 ```
 
-**Correct usage:**
+**Correct usage (12-account structure with business_registry):**
 ```typescript
+const [businessRegistryPDA] = getBusinessRegistryPDA();
+
 const instruction = createInitializeUserInstruction(
   userAccountPDA,
   userMetadataPDA,
@@ -345,8 +405,9 @@ const instruction = createInitializeUserInstruction(
   referrerMetadataPubkey,
   userTokenAccount,
   mintPDA,
-  ASSOCIATED_TOKEN_PROGRAM_ID,  // ← Index 8 in instruction.keys
-  TOKEN_PROGRAM_ID,              // ← Index 9 in instruction.keys
+  businessRegistryPDA,           // ← Index 8 in instruction.keys
+  ASSOCIATED_TOKEN_PROGRAM_ID,   // ← Index 9 in instruction.keys
+  TOKEN_PROGRAM_ID,              // ← Index 10 in instruction.keys
   now,
   referrerPubkey,
   userType
@@ -357,8 +418,8 @@ const instruction = createInitializeUserInstruction(
 The `createInitializeUserInstruction` function includes automatic preflight checks in development mode:
 ```
 ✅ Preflight validation passed:
-  - Index 8 = ASSOCIATED_TOKEN_PROGRAM_ID (ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL)
-  - Index 9 = TOKEN_PROGRAM_ID (TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb)
+  - Index 9 = ASSOCIATED_TOKEN_PROGRAM_ID (ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL)
+  - Index 10 = TOKEN_PROGRAM_ID (TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb)
 ```
 
 If you see a preflight check failure, the parameters are in the wrong order at the call site.
