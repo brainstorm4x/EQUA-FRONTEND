@@ -8,6 +8,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   STANDARD_TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
+  getEnvConfigWarnings,
 } from '@/lib/constants';
 
 /**
@@ -31,23 +32,11 @@ export function DiagnosticsOverlay() {
 
     const detectedIssues: string[] = [];
 
-    // Check required environment variables
-    const requiredEnvs = [
-      'NEXT_PUBLIC_SOLANA_NETWORK',
-      'NEXT_PUBLIC_SOLANA_RPC_HOST',
-    ];
-
-    for (const envVar of requiredEnvs) {
-      if (!process.env[envVar]) {
-        detectedIssues.push(`Missing environment variable: ${envVar}`);
-      }
-    }
-
-    // Validate Solana network configuration
-    const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
-    if (network && !['devnet', 'testnet', 'mainnet-beta', 'localnet'].includes(network)) {
-      detectedIssues.push(`Invalid NEXT_PUBLIC_SOLANA_NETWORK: ${network}`);
-    }
+    // Check environment variables using centralized helper
+    // This supports both legacy (NEXT_PUBLIC_NETWORK, NEXT_PUBLIC_RPC_ENDPOINT)
+    // and new (NEXT_PUBLIC_SOLANA_NETWORK, NEXT_PUBLIC_SOLANA_RPC_HOST) naming conventions
+    const envWarnings = getEnvConfigWarnings();
+    detectedIssues.push(...envWarnings);
 
     // Check program ID is valid
     try {

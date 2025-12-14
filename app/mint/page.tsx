@@ -93,6 +93,90 @@ function extractAnchorLog(logs: string[] | undefined): string | null {
 }
 
 /**
+ * Categorize and enhance error messages with actionable guidance
+ * Maps common Solana/Anchor errors to user-friendly messages
+ */
+function categorizeError(error: any, logs: string[] = []): string {
+  const errorMessage = error?.message || 'Unknown error';
+  const logsStr = logs.join(' ');
+  
+  // Check for specific Anchor error codes
+  if (errorMessage.includes('0x1771') || logsStr.includes('0x1771')) {
+    return '⏰ Cooldown Active: You can only mint once every 24 hours. Please wait for the cooldown period to expire.';
+  }
+  
+  if (errorMessage.includes('0x1772') || logsStr.includes('0x1772') || 
+      errorMessage.includes('MintAmountExceedsTierLimit') || logsStr.includes('MintAmountExceedsTierLimit')) {
+    return '🚫 Mint Amount Exceeds Tier Limit: You have reached your maximum mint attempts for your tier. Please check your user tier details.';
+  }
+  
+  if (errorMessage.includes('0x1773') || logsStr.includes('0x1773') || 
+      errorMessage.includes('ReferralRequired') || logsStr.includes('ReferralRequired')) {
+    return '🔗 Referral Required: A valid referral code is required for registration after the first 100 users. Please obtain a referral code from an existing user.';
+  }
+  
+  if (errorMessage.includes('0x1774') || logsStr.includes('0x1774') || 
+      errorMessage.includes('InsufficientSolBalance') || logsStr.includes('InsufficientSolBalance')) {
+    return `💰 Insufficient SOL Balance: You need at least ${MIN_SOL_BALANCE} SOL to cover transaction fees. Please add more SOL to your wallet.`;
+  }
+  
+  // Token program errors
+  if (errorMessage.includes('InvalidProgramId') || logsStr.includes('InvalidProgramId')) {
+    return '❌ Invalid Token Program: The token program does not match the mint configuration. This is a configuration issue - please contact support.';
+  }
+  
+  if (errorMessage.includes('TokenAccountNotFound') || logsStr.includes('TokenAccountNotFound')) {
+    return '🪙 Token Account Not Found: Your associated token account needs to be created. Please try the operation again - it will be created automatically.';
+  }
+  
+  // Account errors
+  if (errorMessage.includes('AccountNotFound') || logsStr.includes('AccountNotFound')) {
+    return '📋 Account Not Found: Required account does not exist on-chain. Please ensure you are registered and all setup steps are complete.';
+  }
+  
+  if (errorMessage.includes('ConstraintMut') || logsStr.includes('ConstraintMut') || 
+      errorMessage.includes('2000') || logsStr.includes('error code: 2000')) {
+    return '⚠️ Account Constraint Violation: An account that should be writable is not marked as such. This indicates a program version mismatch - please refresh the page.';
+  }
+  
+  // Transaction errors
+  if (errorMessage.includes('blockhash') || errorMessage.includes('BlockhashNotFound')) {
+    return '⏱️ Transaction Expired: The transaction took too long to process. Please try again.';
+  }
+  
+  if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
+    return `💸 Insufficient Funds: You need at least ${MIN_SOL_BALANCE} SOL for transaction fees. Please add more SOL to your wallet.`;
+  }
+  
+  // Instruction errors
+  if (errorMessage.includes('InstructionFallbackNotFound') || logsStr.includes('InstructionFallbackNotFound')) {
+    return '🔧 Instruction Not Recognized: The program does not recognize this instruction. This may indicate the smart contract was recently updated. Please refresh the page and try again.';
+  }
+  
+  if (errorMessage.includes('InstructionDidNotDeserialize') || errorMessage.includes('0x66')) {
+    return '📦 Instruction Format Error: The instruction data format is incorrect. Please refresh the page and ensure you have the latest version.';
+  }
+  
+  // Simulation failures (generic fallback)
+  if (errorMessage.includes('simulation failed')) {
+    // Try to extract more details from logs
+    const anchorLog = extractAnchorLog(logs);
+    if (anchorLog) {
+      return `❌ Transaction Simulation Failed: ${anchorLog}\n\nPlease check your account status and try again.`;
+    }
+    return '⚠️ Transaction Simulation Failed: The transaction could not be simulated successfully. Common causes:\n• Cooldown period not expired (wait 24 hours between mints)\n• Insufficient SOL balance (need at least 0.05 SOL)\n• Account state mismatch\n\nPlease verify your account status and try again.';
+  }
+  
+  // User rejected transaction
+  if (errorMessage.includes('User rejected') || errorMessage.includes('user rejected')) {
+    return '🙅 Transaction Cancelled: You rejected the transaction in your wallet.';
+  }
+  
+  // Return the original error with context
+  return `${errorMessage}\n\n💡 If this error persists, please contact support with the transaction details.`;
+}
+
+/**
  * Get transaction logs from SendTransactionError
  */
 async function getTransactionLogs(
@@ -988,7 +1072,11 @@ export default function MintPage() {
         console.log('✅ Token account already exists');
       }
 
-      // ✅ Now mint tokens using mint_tokens instruction (8-account version aligned with backend)
+      // ============================================================================
+      // PREFLIGHT DIAGNOSTICS: Verify all accounts and parameters before minting
+      // ============================================================================
+      console.log('🔍 Running preflight diagnostics...');
+      
       // Calculate mint amount based on user tier (EQUA has 6 decimals)
       const mintUserNumber = userNumber > 0 ? userNumber : Math.max(totalUsers || 0, 1);
       const userTier = getUserMintTier(mintUserNumber);
@@ -996,6 +1084,56 @@ export default function MintPage() {
       const mintAmount = decimalToRaw(equaAmount); // Convert to base units using utility
       
       console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${mintUserNumber}`);
+      
+      // Verify mint authority PDA is correct
+      console.log('🔍 Verifying mint authority PDA...');
+      const expectedMintAuthority = mintAuthority.toBase58();
+      console.log('  Expected mint authority:', expectedMintAuthority);
+      
+      // Verify token program matches mint owner
+      console.log('🔍 Verifying token program matches mint owner...');
+      const mintAccountInfo = await connection.getAccountInfo(mintPDA);
+      if (mintAccountInfo) {
+        const mintOwner = mintAccountInfo.owner.toBase58();
+        const configuredTokenProgram = TOKEN_PROGRAM_ID.toBase58();
+        console.log('  Mint owner:', mintOwner);
+        console.log('  Configured token program:', configuredTokenProgram);
+        
+        if (mintOwner !== configuredTokenProgram) {
+          const isStandard = mintOwner === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+          const isToken2022 = mintOwner === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+          
+          throw new Error(
+            `❌ Token Program Mismatch\n\n` +
+            `The mint account is owned by a different token program than configured.\n\n` +
+            `Mint owner: ${mintOwner} (${isToken2022 ? 'Token-2022' : isStandard ? 'Standard SPL Token' : 'Unknown'})\n` +
+            `Configured: ${configuredTokenProgram}\n\n` +
+            `This will cause the transaction to fail. Please contact support.`
+          );
+        }
+        console.log('  ✅ Token program matches mint owner');
+      }
+      
+      // Verify associated token account was created with correct parameters
+      console.log('🔍 Verifying ATA derivation...');
+      const expectedATA = getAssociatedTokenAddressSync(
+        mintPDA,
+        publicKey,
+        false,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+      if (!expectedATA.equals(userTokenAccount)) {
+        throw new Error(
+          `❌ ATA Derivation Mismatch\n\n` +
+          `Expected: ${expectedATA.toBase58()}\n` +
+          `Got: ${userTokenAccount.toBase58()}\n\n` +
+          `This indicates a configuration error. Please refresh the page.`
+        );
+      }
+      console.log('  ✅ ATA derivation correct:', userTokenAccount.toBase58());
+      
+      console.log('✅ All preflight checks passed');
       
       // Derive user metadata PDA
       const [userMetadataPDA] = getUserMetadataPDA(publicKey);
@@ -1119,25 +1257,41 @@ export default function MintPage() {
       // ✅ COOLDOWN GUARD: End mint with error - clear optimistic cooldown
       CooldownGuard.endMint(walletAddress, false);
       
-      // Check for SendTransactionError and extract detailed logs
+      // Extract transaction logs for detailed diagnostics
+      let logs: string[] = [];
       if (err?.logs) {
-        console.error('Transaction logs:', err.logs);
+        logs = err.logs;
+        console.error('📋 Transaction logs:', logs);
+      } else if (err?.signature && connection) {
+        // Try to fetch logs from the transaction
+        try {
+          logs = await getTransactionLogs(connection, err.signature);
+          console.error('📋 Fetched transaction logs:', logs);
+        } catch (logErr) {
+          console.error('Failed to fetch transaction logs:', logErr);
+        }
       }
       
-      // Show user-friendly error message
-      let errorMessage = err?.message || 'Minting failed. Please try again.';
+      // Log instruction details for debugging
+      console.error('🔍 Mint instruction details:');
+      console.error('  - User Account:', userAccountPDA.toBase58());
+      console.error('  - User Metadata:', userMetadataPDA?.toBase58() || 'Not derived');
+      console.error('  - Token Account:', userTokenAccount.toBase58());
+      console.error('  - Mint:', mintPDA.toBase58());
+      console.error('  - Mint Authority:', mintAuthority.toBase58());
+      console.error('  - Token Program:', TOKEN_PROGRAM_ID.toBase58());
+      console.error('  - Mint Amount:', mintAmount);
       
-      // Check for program instruction errors
-      if (err?.message?.includes('InstructionFallbackNotFound') || err?.logs?.some?.((log: string) => log.includes('InstructionFallbackNotFound'))) {
-        errorMessage = 'The program does not recognize the mint instruction. This may indicate the smart contract was recently updated. Please try again in a moment or contact support.';
-      } else if (err?.message?.includes('custom program error: 0x65')) {
-        errorMessage = 'Transaction failed due to a program error. Please ensure your account is properly initialized and try again.';
-      } else if (err?.message?.includes('blockhash')) {
-        errorMessage = 'Transaction expired. Please try again.';
-      } else if (err?.message?.includes('insufficient funds')) {
-        errorMessage = 'Insufficient SOL balance to complete transaction.';
-      } else if (err?.message?.includes('simulation failed')) {
-        errorMessage = 'Transaction simulation failed. Please check your account status and try again.';
+      // Use categorized error with actionable guidance
+      const categorizedError = categorizeError(err, logs);
+      
+      // Try to extract Anchor log for additional context
+      const anchorLog = extractAnchorLog(logs);
+      let errorMessage = categorizedError;
+      
+      // If we have an anchor log that's different from the categorized message, append it
+      if (anchorLog && !categorizedError.includes(anchorLog)) {
+        errorMessage = `${categorizedError}\n\n📋 Program Log: ${anchorLog}`;
       }
       
       setError(errorMessage);

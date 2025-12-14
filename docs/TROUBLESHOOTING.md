@@ -114,8 +114,14 @@ This document provides solutions for common issues users may encounter with the 
 2. **Verify Environment Variables:**
    ```bash
    # Required variables in .env.local
-   NEXT_PUBLIC_SOLANA_NETWORK=devnet
-   NEXT_PUBLIC_SOLANA_RPC_HOST=https://api.devnet.solana.com
+   # Legacy naming (preferred):
+   NEXT_PUBLIC_NETWORK=devnet
+   NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com
+   
+   # Alternative naming (also supported):
+   # NEXT_PUBLIC_SOLANA_NETWORK=devnet
+   # NEXT_PUBLIC_SOLANA_RPC_HOST=https://api.devnet.solana.com
+   
    # Optional: NEXT_PUBLIC_ENABLE_PYTH=true
    ```
 
@@ -623,6 +629,10 @@ Add these to `.env.local`:
 NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
 NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com
 NEXT_PUBLIC_NETWORK=devnet
+
+# Note: Alternative naming also supported:
+# NEXT_PUBLIC_SOLANA_RPC_HOST=https://api.devnet.solana.com
+# NEXT_PUBLIC_SOLANA_NETWORK=devnet
 
 # Oracle Configuration
 NEXT_PUBLIC_ENABLE_PYTH=true
