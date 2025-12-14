@@ -676,3 +676,150 @@ After updating, successful registration will show:
 - Error Code 3008: InvalidProgramId
 - Error Code 0x66: InstructionDidNotDeserialize (previous account count mismatch)
 - "Simulation failed" during registration
+
+---
+
+## Token Program Configuration
+
+### EQUA Uses Token-2022
+**CRITICAL:** The EQUA backend program requires **Token-2022** (SPL Token Extensions), NOT Standard SPL Token.
+
+- **Token-2022 Program ID:** `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`
+- **Standard SPL Token Program ID:** `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`
+
+### Why Token-2022?
+Token-2022 provides advanced features and security improvements over the standard SPL Token program. The EQUA smart contract specifically validates that Token-2022 is used in all token operations.
+
+### Configuration
+The frontend is configured to use Token-2022 by default in `src/lib/constants.ts`:
+
+```typescript
+// Token-2022 is the default
+export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
+```
+
+**Do not change this unless you are testing with a different token program.** Using Standard SPL Token will cause `InvalidProgramId` errors during minting.
+
+### Verification
+The application validates Token-2022 configuration at startup. Check your browser console for:
+```
+✅ Token program IDs validated at startup:
+  - TOKEN_PROGRAM_ID: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb (Token-2022)
+  - ASSOCIATED_TOKEN_PROGRAM_ID: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+```
+
+If you see an error, the configuration is incorrect and must be fixed before using the app.
+
+---
+
+## Mint Tokens Instruction Signature
+
+### Overview
+The `mint_tokens` instruction is used for daily EQUA minting. It requires **8 accounts** in a specific order.
+
+### Account Order (8 accounts)
+```
+0. user_account         (PDA, writable)
+1. user_metadata        (PDA, writable)
+2. user_token_account   (ATA, writable)
+3. mint                 (PDA, writable)
+4. mint_authority       (PDA, read-only)
+5. referrer_account     (PDA, writable if referrer present, read-only otherwise)
+6. authority            (signer, read-only) ← MUST be signer
+7. token_program        (Token-2022, read-only)
+```
+
+### Referrer Account Handling
+- **If user has a referrer:** `referrer_account` is the referrer's UserAccount PDA (writable)
+- **If user has no referrer (self-referral):** `referrer_account` is `PublicKey.default` (read-only)
+
+The frontend automatically determines the correct referrer account by reading the `referral` field from the user's UserAccount.
+
+### Authority as Signer
+The `authority` account (index 6) **MUST** be marked as a signer. The frontend uses `wallet.sendTransaction` (not `signTransaction + sendRawTransaction`) to ensure the wallet adapter properly marks the authority as a signer.
+
+### Preflight Validation
+The `createMintTokensInstruction` function includes automatic preflight checks:
+- Validates Token-2022 program ID is used
+- Ensures authority is provided
+- Logs referrer account handling
+
+### Example Usage
+```typescript
+import { 
+  createMintTokensInstruction, 
+  getUserAccountPDA,
+  getUserMetadataPDA 
+} from '@/lib/program';
+
+// Derive accounts
+const [userAccountPDA] = getUserAccountPDA(walletPublicKey);
+const [userMetadataPDA] = getUserMetadataPDA(walletPublicKey);
+
+// Read referrer from UserAccount (offset 40-72)
+const referralPubkey = new PublicKey(userAccountData.slice(40, 72));
+const referrerAccountPDA = referralPubkey.equals(PublicKey.default) 
+  ? PublicKey.default 
+  : getUserAccountPDA(referralPubkey)[0];
+
+// Build instruction
+const instruction = createMintTokensInstruction(
+  userAccountPDA,
+  userMetadataPDA,
+  userTokenAccount,
+  mintPDA,
+  mintAuthority,
+  referrerAccountPDA,  // 8th account - NEW
+  walletPublicKey,     // authority - MUST be signer
+  TOKEN_PROGRAM_ID,    // Token-2022
+  mintAmount
+);
+
+// Send via wallet adapter (ensures proper signing)
+const signature = await wallet.sendTransaction(transaction, connection, {
+  skipPreflight: false,
+  maxRetries: 3
+});
+```
+
+### Common Errors
+
+#### AccountNotSigner on authority
+**Symptom:** Minting fails with "AccountNotSigner" error on authority account.
+
+**Cause:** Using `signTransaction + sendRawTransaction` instead of `wallet.sendTransaction`.
+
+**Solution:** Always use `wallet.sendTransaction` for both registration and minting flows. This ensures the wallet adapter properly marks signers.
+
+#### Missing referrer_account
+**Symptom:** Minting fails with account count mismatch or constraint error.
+
+**Cause:** Frontend passing only 7 accounts instead of 8.
+
+**Solution:** Update to latest frontend version which includes `referrer_account` parameter in `createMintTokensInstruction`.
+
+---
+
+## Deprecated Features
+
+### locked_until Field (REMOVED)
+**DEPRECATED as of EQUA Whitepaper 2025.**
+
+The `locked_until` field was removed from the UserAccount structure. The account size was reduced from 144 bytes to 136 bytes.
+
+**If you see references to `locked_until` in documentation or code:**
+- Ignore them - the field no longer exists
+- Update code to use the correct 136-byte UserAccount structure
+- Do not attempt to read `locked_until` at offset 136 (this is now out of bounds)
+
+**Correct UserAccount Structure** (136 bytes, without locked_until):
+```
+discriminator:     0-7    (8 bytes)
+authority:         8-39   (32 bytes)
+referral:          40-71  (32 bytes)
+token_account:     72-103 (32 bytes)
+minted_amount:     104-111 (8 bytes)
+mint_start:        112-119 (8 bytes)
+referral_rewards:  120-127 (8 bytes)
+last_mint_time:    128-135 (8 bytes)
+```

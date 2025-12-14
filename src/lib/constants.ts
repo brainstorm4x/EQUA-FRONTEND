@@ -11,8 +11,9 @@ export const PROGRAM_ID = new PublicKey(
 );
 
 // Token-2022 Program (SPL Token Extensions)
-// The EQUA backend and deployed mints use Token-2022
-// Can be overridden via NEXT_PUBLIC_TOKEN_STANDARD environment variable
+// CRITICAL: The EQUA backend requires Token-2022. Do not use Standard SPL Token.
+// The mint_tokens instruction specifically validates Token-2022 program ID.
+// Override via NEXT_PUBLIC_TOKEN_STANDARD='standard' only for testing/debugging.
 const useStandardToken = process.env.NEXT_PUBLIC_TOKEN_STANDARD === 'standard';
 export const TOKEN_PROGRAM_ID = useStandardToken ? SPL_TOKEN_PROGRAM_ID : TOKEN_2022_PROGRAM_ID;
 

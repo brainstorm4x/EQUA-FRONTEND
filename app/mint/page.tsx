@@ -699,70 +699,83 @@ export default function MintPage() {
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
 
-      console.log('📝 Requesting wallet signature...');
-      const signed = await wallet.signTransaction!(transaction);
-      // ✅ REMOVED: User account is now a PDA, not a keypair that can sign
-      // PDAs are derived deterministically and don't have private keys
+      console.log('📝 Sending registration transaction via wallet adapter...');
+      if (!wallet.sendTransaction) {
+        throw new Error('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
+      }
       
-      console.log('📤 Sending transaction...');
-      const rawTx = signed.serialize();
-      const tx = await connection.sendRawTransaction(rawTx, {
-        skipPreflight: false,
-        maxRetries: 3
-      });
-
-      console.log('⏳ Confirming transaction...');
-      await connection.confirmTransaction({
-        signature: tx,
-        blockhash,
-        lastValidBlockHeight
-      }, 'confirmed');
-
-      console.log('✅ Registration successful!', tx);
-      setTxSignature(tx);
-      setRegistered(true);
-
-      // Store the user's registration number for future reference
-      // This is totalUsers + 1 at the time of registration
-      const registrationNumber = totalUsers + 1;
-      setUserNumber(registrationNumber);
-      console.log(`📝 Set user number to: ${registrationNumber}`);
-      
-      // Note: Registration is now persisted on-chain only. No database storage needed.
-      // The blockchain is the source of truth for all registration data.
-      console.log('✅ Registration persisted on-chain (blockchain is source of truth)');
-      
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('equa_user_number', registrationNumber.toString());
-        console.log(`📝 Saved user registration number to localStorage: ${registrationNumber}`);
+      try {
+        // Use wallet.sendTransaction to ensure proper signing by the wallet adapter
+        const tx = await wallet.sendTransaction(transaction, connection, {
+          skipPreflight: false,
+          maxRetries: 3
+        });
         
-        // Record the public key as registered (prevent duplicate registration)
-        recordRegisteredKey(publicKey.toBase58(), metadata?.fingerprint?.fingerprint);
-        console.log('🔑 Public key recorded to prevent duplicate registration');
+        console.log('📤 Registration transaction sent:', tx);
+        console.log('⏳ Confirming transaction...');
         
-        // Store fingerprint AFTER successful registration (Sybil prevention)
-        if (metadata?.fingerprint) {
-          const existingFingerprints = JSON.parse(localStorage.getItem('equa_registered_fingerprints') || '[]');
-          existingFingerprints.push(metadata.fingerprint.fingerprint);
-          localStorage.setItem('equa_registered_fingerprints', JSON.stringify(existingFingerprints));
-          localStorage.setItem(`equa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
-          console.log('🔐 Device fingerprint stored for Sybil prevention');
+        await connection.confirmTransaction({
+          signature: tx,
+          blockhash,
+          lastValidBlockHeight
+        }, 'confirmed');
+
+        console.log('✅ Registration successful!', tx);
+        setTxSignature(tx);
+        setRegistered(true);
+
+        // Store the user's registration number for future reference
+        // This is totalUsers + 1 at the time of registration
+        const registrationNumber = totalUsers + 1;
+        setUserNumber(registrationNumber);
+        console.log(`📝 Set user number to: ${registrationNumber}`);
+        
+        // Note: Registration is now persisted on-chain only. No database storage needed.
+        // The blockchain is the source of truth for all registration data.
+        console.log('✅ Registration persisted on-chain (blockchain is source of truth)');
+        
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('equa_user_number', registrationNumber.toString());
+          console.log(`📝 Saved user registration number to localStorage: ${registrationNumber}`);
+          
+          // Record the public key as registered (prevent duplicate registration)
+          recordRegisteredKey(publicKey.toBase58(), metadata?.fingerprint?.fingerprint);
+          console.log('🔑 Public key recorded to prevent duplicate registration');
+          
+          // Store fingerprint AFTER successful registration (Sybil prevention)
+          if (metadata?.fingerprint) {
+            const existingFingerprints = JSON.parse(localStorage.getItem('equa_registered_fingerprints') || '[]');
+            existingFingerprints.push(metadata.fingerprint.fingerprint);
+            localStorage.setItem('equa_registered_fingerprints', JSON.stringify(existingFingerprints));
+            localStorage.setItem(`equa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
+            console.log('🔐 Device fingerprint stored for Sybil prevention');
+          }
+          
+          // Notify other components that registration is complete
+          // This triggers GetStartedButton to update its state
+          localStorage.setItem('equa_registration_complete', Date.now().toString());
+          window.dispatchEvent(new CustomEvent('equa_registration_complete'));
+          console.log('📢 Registration complete event dispatched');
         }
         
-        // Notify other components that registration is complete
-        // This triggers GetStartedButton to update its state
-        localStorage.setItem('equa_registration_complete', Date.now().toString());
-        window.dispatchEvent(new CustomEvent('equa_registration_complete'));
-        console.log('📢 Registration complete event dispatched');
-      }
-      
-      // Call the metadata callback for referral/registration recording
-      if (metadata?.onSuccessfulRegistration) {
-        metadata.onSuccessfulRegistration();
-        console.log('📝 Registration metadata recorded');
-      }
+        // Call the metadata callback for referral/registration recording
+        if (metadata?.onSuccessfulRegistration) {
+          metadata.onSuccessfulRegistration();
+          console.log('📝 Registration metadata recorded');
+        }
 
-      await checkUserRegistration();
+        await checkUserRegistration();
+      } catch (sendTxErr: any) {
+        // Enhanced error logging for wallet adapter sendTransaction failures
+        console.error('❌ wallet.sendTransaction failed during registration:', sendTxErr);
+        console.error('Error details:', {
+          message: sendTxErr?.message,
+          name: sendTxErr?.name,
+          code: sendTxErr?.code,
+          logs: sendTxErr?.logs,
+        });
+        throw sendTxErr; // Re-throw to be caught by outer catch block
+      }
     } catch (err: unknown) {
       console.error('Registration error:', err);
       
@@ -971,7 +984,7 @@ export default function MintPage() {
         console.log('✅ Token account already exists');
       }
 
-      // ✅ Now mint tokens using mint_tokens instruction (7-account version)
+      // ✅ Now mint tokens using mint_tokens instruction (8-account version aligned with backend)
       // Calculate mint amount based on user tier (EQUA has 6 decimals)
       const mintUserNumber = userNumber > 0 ? userNumber : Math.max(totalUsers || 0, 1);
       const userTier = getUserMintTier(mintUserNumber);
@@ -983,72 +996,108 @@ export default function MintPage() {
       // Derive user metadata PDA
       const [userMetadataPDA] = getUserMetadataPDA(publicKey);
       
-      // Build the mint_tokens instruction (7-account version for deployed program)
+      // Read referrer from UserAccount to determine referrerAccount
+      // UserAccount structure: 8 discriminator + 32 authority + 32 referral
+      let referrerAccountPDA = PublicKey.default;
+      try {
+        const referralPubkeyBytes = userAccountInfo.data.slice(40, 72); // referral field at offset 40
+        const referralPubkey = new PublicKey(referralPubkeyBytes);
+        
+        if (!referralPubkey.equals(PublicKey.default)) {
+          // User has a referrer, derive the referrer's UserAccount PDA
+          const [referrerPDA] = getUserAccountPDA(referralPubkey);
+          referrerAccountPDA = referrerPDA;
+          console.log('📋 User has referrer:', referralPubkey.toBase58());
+          console.log('📋 Referrer account PDA:', referrerAccountPDA.toBase58());
+        } else {
+          console.log('📋 No referrer (self-referral)');
+        }
+      } catch (err) {
+        console.warn('⚠️  Failed to read referrer from UserAccount, using PublicKey.default:', err);
+        referrerAccountPDA = PublicKey.default;
+      }
+      
+      // Build the mint_tokens instruction (8-account version for deployed program)
       const mintInstruction = createMintTokensInstruction(
         userAccountPDA,
         userMetadataPDA,
         userTokenAccount,
         mintPDA,
         mintAuthority,
+        referrerAccountPDA,
         publicKey,
         TOKEN_PROGRAM_ID,
         mintAmount
       );
       
-      console.log('📝 Mint instruction accounts:');
+      console.log('📝 Mint instruction accounts (8 accounts):');
       console.log('  0. user_account:', userAccountPDA.toBase58());
       console.log('  1. user_metadata:', userMetadataPDA.toBase58());
       console.log('  2. user_token_account:', userTokenAccount.toBase58());
       console.log('  3. mint:', mintPDA.toBase58());
       console.log('  4. mint_authority:', mintAuthority.toBase58());
-      console.log('  5. authority:', publicKey.toBase58());
-      console.log('  6. token_program:', TOKEN_PROGRAM_ID.toBase58());
+      console.log('  5. referrer_account:', referrerAccountPDA.toBase58());
+      console.log('  6. authority:', publicKey.toBase58());
+      console.log('  7. token_program:', TOKEN_PROGRAM_ID.toBase58());
       
-      // Create and send transaction
+      // Create and send transaction using wallet adapter's sendTransaction
+      // This ensures proper signature handling and prevents AccountNotSigner errors
       const transaction = new Transaction().add(mintInstruction);
       transaction.feePayer = publicKey;
       
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
       
-      console.log('📝 Requesting wallet signature for mint transaction...');
-      if (!wallet.signTransaction) {
-        throw new Error('Wallet does not support transaction signing');
+      console.log('📝 Sending transaction via wallet adapter...');
+      if (!wallet.sendTransaction) {
+        throw new Error('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
       }
       
-      const signed = await wallet.signTransaction(transaction);
-      
-      console.log('📤 Sending mint transaction...');
-      const tx = await connection.sendRawTransaction(signed.serialize(), {
-        skipPreflight: false,
-        maxRetries: 3
-      });
-      
-      console.log('⏳ Confirming mint transaction...');
-      await connection.confirmTransaction({
-        signature: tx,
-        blockhash,
-        lastValidBlockHeight
-      }, 'confirmed');
+      try {
+        // Use wallet.sendTransaction to ensure proper signing by the wallet adapter
+        const tx = await wallet.sendTransaction(transaction, connection, {
+          skipPreflight: false,
+          maxRetries: 3
+        });
+        
+        console.log('📤 Transaction sent:', tx);
+        console.log('⏳ Confirming mint transaction...');
+        
+        await connection.confirmTransaction({
+          signature: tx,
+          blockhash,
+          lastValidBlockHeight
+        }, 'confirmed');
 
-      console.log('✅ Minting successful!', tx);
-      setTxSignature(tx);
-      
-      // Increment total mints immediately for UI responsiveness
-      setTotalMints(prev => prev + 1);
+        console.log('✅ Minting successful!', tx);
+        setTxSignature(tx);
+        
+        // Increment total mints immediately for UI responsiveness
+        setTotalMints(prev => prev + 1);
 
-      // Wait for state to update on-chain
-      await new Promise(resolve => setTimeout(resolve, CHAIN_STATE_UPDATE_DELAY_MS));
+        // Wait for state to update on-chain
+        await new Promise(resolve => setTimeout(resolve, CHAIN_STATE_UPDATE_DELAY_MS));
 
-      // Refresh balance and last mint time
-      await checkUserRegistration();
-      const newLastMintTime = await getLastMintTime(connection, userAccountPDA);
-      setLastMintTime(newLastMintTime);
-      console.log('⏰ Updated last mint time:', newLastMintTime);
-      
-      // ✅ COOLDOWN GUARD: End mint successfully - reconcile with on-chain data
-      const now = Math.floor(Date.now() / 1000);
-      CooldownGuard.endMint(walletAddress, true, now, newLastMintTime);
+        // Refresh balance and last mint time
+        await checkUserRegistration();
+        const newLastMintTime = await getLastMintTime(connection, userAccountPDA);
+        setLastMintTime(newLastMintTime);
+        console.log('⏰ Updated last mint time:', newLastMintTime);
+        
+        // ✅ COOLDOWN GUARD: End mint successfully - reconcile with on-chain data
+        const now = Math.floor(Date.now() / 1000);
+        CooldownGuard.endMint(walletAddress, true, now, newLastMintTime);
+      } catch (sendTxErr: any) {
+        // Enhanced error logging for wallet adapter sendTransaction failures
+        console.error('❌ wallet.sendTransaction failed:', sendTxErr);
+        console.error('Error details:', {
+          message: sendTxErr?.message,
+          name: sendTxErr?.name,
+          code: sendTxErr?.code,
+          logs: sendTxErr?.logs,
+        });
+        throw sendTxErr; // Re-throw to be caught by outer catch block
+      }
 
     } catch (err: any) {
       console.error('❌ Minting error:', err);
