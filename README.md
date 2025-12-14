@@ -37,7 +37,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 ## Features
 
-- **Solana Integration**: Built on Solana blockchain using Standard SPL Token Program
+- **Solana Integration**: Built on Solana blockchain using Token-2022 Program
 - **On-Chain Only**: All data stored on blockchain - no external database
 - **Wallet Support**: Phantom, Solflare, and other popular Solana wallets
 - **Token Minting**: Mint EQUA tokens with dynamic pricing
@@ -67,6 +67,22 @@ Before registering, ensure your connected wallet has at least 0.05 SOL to cover:
 - Token account creation
 
 If your balance is below this threshold, the registration button will be disabled and an error banner will be shown with instructions.
+
+### Network Configuration
+
+**Token Program:** EQUA uses **Token-2022** (next generation SPL Token) for enhanced features.
+
+**Important for Developers:**
+- Always use `ASSOCIATED_TOKEN_PROGRAM_ID` for ATA creation and Associated Token Program operations
+- Always pass `tokenProgram=TOKEN_PROGRAM_ID` (Token-2022) in instruction accounts
+- Never swap these parameters - the order matters for Anchor program validation
+- Import both constants from `src/lib/constants.ts` to ensure Token-2022 compatibility
+
+**Program IDs:**
+```
+TOKEN_PROGRAM_ID: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb (Token-2022)
+ASSOCIATED_TOKEN_PROGRAM_ID: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+```
 
 ### Elevated Mint Tiers
 

@@ -351,6 +351,7 @@ export async function verifyMintOwner(
     
     // Token program IDs for helpful error messages
     const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+    const STANDARD_TOKEN_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
     
     if (mintOwner !== expectedOwner) {
       const errorMsg = 
@@ -360,7 +361,9 @@ export async function verifyMintOwner(
         `  Expected (TOKEN_PROGRAM_ID): ${expectedOwner}\n` +
         `  \n` +
         `  The mint was created with a different token program than configured.\n` +
-        `  ${mintOwner === TOKEN_2022_PROGRAM_ADDRESS
+        `  ${mintOwner === STANDARD_TOKEN_PROGRAM_ADDRESS
+          ? 'Mint uses Standard SPL Token, but app is configured for Token-2022.'
+          : mintOwner === TOKEN_2022_PROGRAM_ADDRESS
           ? 'Mint uses Token-2022, but app is configured for Standard SPL Token.'
           : 'Mint uses an unknown token program.'}\n` +
         `  \n` +
@@ -371,7 +374,7 @@ export async function verifyMintOwner(
       throw new Error(`Mint owner mismatch: expected ${expectedOwner}, got ${mintOwner}`);
     }
     
-    console.log(`✅ Mint owner verified: ${mintOwner} (Standard SPL Token)`);
+    console.log(`✅ Mint owner verified: ${mintOwner} (Token-2022)`);
     return true;
   } catch (error) {
     if (error instanceof Error && error.message.includes('Mint owner mismatch')) {
@@ -445,6 +448,45 @@ export function createInitializeUserInstruction(
     instruction.keys.forEach((meta, idx) => {
       console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
     });
+  }
+
+  // ✅ PREFLIGHT VALIDATION: Ensure correct program IDs at correct indices
+  // This prevents InvalidProgramId errors from parameter order mistakes
+  if (DEBUG_INSTRUCTIONS || process.env.NODE_ENV === 'development') {
+    const atpIndex = 8;
+    const tokenProgramIndex = 9;
+    
+    const actualAtpAddress = instruction.keys[atpIndex].pubkey.toBase58();
+    const actualTokenProgramAddress = instruction.keys[tokenProgramIndex].pubkey.toBase58();
+    
+    const expectedAtpAddress = ASSOCIATED_TOKEN_PROGRAM_ID.toBase58();
+    const expectedTokenProgramAddress = TOKEN_PROGRAM_ID.toBase58();
+    
+    if (actualAtpAddress !== expectedAtpAddress) {
+      const errorMsg = 
+        `❌ PREFLIGHT CHECK FAILED: associated_token_program at wrong index!\n` +
+        `  Index ${atpIndex} should be ASSOCIATED_TOKEN_PROGRAM_ID: ${expectedAtpAddress}\n` +
+        `  But got: ${actualAtpAddress}\n` +
+        `  This will cause "InvalidProgramId" error on associated_token_program account.\n` +
+        `  Fix: Check parameter order in createInitializeUserInstruction call site.`;
+      console.error(errorMsg);
+      throw new Error('Preflight validation failed: associated_token_program at incorrect index');
+    }
+    
+    if (actualTokenProgramAddress !== expectedTokenProgramAddress) {
+      const errorMsg = 
+        `❌ PREFLIGHT CHECK FAILED: token_program at wrong index!\n` +
+        `  Index ${tokenProgramIndex} should be TOKEN_PROGRAM_ID: ${expectedTokenProgramAddress}\n` +
+        `  But got: ${actualTokenProgramAddress}\n` +
+        `  This will cause "InvalidProgramId" error on token_program account.\n` +
+        `  Fix: Check parameter order in createInitializeUserInstruction call site.`;
+      console.error(errorMsg);
+      throw new Error('Preflight validation failed: token_program at incorrect index');
+    }
+    
+    console.log('✅ Preflight validation passed:');
+    console.log(`  - Index ${atpIndex} = ASSOCIATED_TOKEN_PROGRAM_ID (${expectedAtpAddress})`);
+    console.log(`  - Index ${tokenProgramIndex} = TOKEN_PROGRAM_ID (${expectedTokenProgramAddress})`);
   }
 
   return instruction;

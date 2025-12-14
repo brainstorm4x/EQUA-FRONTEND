@@ -6,12 +6,10 @@ import { PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync, 
   createTransferInstruction,
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import { BN } from '@coral-xyz/anchor';
-import { getMintPDA, getSPLTokenBalance, getUserAccountPDA } from '@/lib/program';
+import { getMintPDA, getSPLTokenBalance, getUserAccountPDA, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@/lib/program';
 import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal } from '@/utils/tokenFormat';

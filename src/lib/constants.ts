@@ -1,14 +1,14 @@
 import { PublicKey } from '@solana/web3.js'; 
-import { TOKEN_PROGRAM_ID as SPL_TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID as SPL_ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID as SPL_ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 // Support both NEXT_PUBLIC_PROGRAM_ID (preferred) and legacy NEXT_PUBLIC_EQUA_PROGRAM_ID
 export const PROGRAM_ID = new PublicKey(
   process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID || '7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP'
 );
 
-// Standard SPL Token Program (not Token-2022)
-// The EQUA mint on devnet is owned by the standard SPL Token program
-export const TOKEN_PROGRAM_ID = SPL_TOKEN_PROGRAM_ID;
+// Token-2022 Program (next generation SPL Token)
+// The EQUA mint on devnet uses Token-2022 for enhanced features
+export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
 
 // Associated Token Program - used for creating ATAs
 // This MUST be ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
@@ -25,16 +25,16 @@ if (typeof window !== 'undefined') {
     throw new Error('Invalid ASSOCIATED_TOKEN_PROGRAM_ID configuration');
   }
   
-  const expectedTokenProgramAddress = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+  const expectedTokenProgramAddress = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
   if (TOKEN_PROGRAM_ID.toBase58() !== expectedTokenProgramAddress) {
     console.error('❌ CRITICAL: TOKEN_PROGRAM_ID mismatch!');
-    console.error('Expected:', expectedTokenProgramAddress, '(Standard SPL Token)');
+    console.error('Expected:', expectedTokenProgramAddress, '(Token-2022)');
     console.error('Got:', TOKEN_PROGRAM_ID.toBase58());
-    throw new Error('Invalid TOKEN_PROGRAM_ID configuration - should be Standard SPL Token, not Token-2022');
+    throw new Error('Invalid TOKEN_PROGRAM_ID configuration - should be Token-2022, not Standard SPL Token');
   }
   
   console.log('✅ Token program IDs validated at startup:');
-  console.log('  - TOKEN_PROGRAM_ID:', TOKEN_PROGRAM_ID.toBase58(), '(Standard SPL Token)');
+  console.log('  - TOKEN_PROGRAM_ID:', TOKEN_PROGRAM_ID.toBase58(), '(Token-2022)');
   console.log('  - ASSOCIATED_TOKEN_PROGRAM_ID:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
 }
 
