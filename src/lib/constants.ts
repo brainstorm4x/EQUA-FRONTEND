@@ -54,15 +54,8 @@ if (typeof window !== 'undefined') {
 // Network configuration
 // Support both legacy (NEXT_PUBLIC_NETWORK, NEXT_PUBLIC_RPC_ENDPOINT) and new naming conventions
 // (NEXT_PUBLIC_SOLANA_NETWORK, NEXT_PUBLIC_SOLANA_RPC_HOST) without breaking existing setups
-export const NETWORK = 
-  process.env.NEXT_PUBLIC_NETWORK || 
-  process.env.NEXT_PUBLIC_SOLANA_NETWORK || 
-  'devnet';
-
-export const RPC_ENDPOINT = 
-  process.env.NEXT_PUBLIC_RPC_ENDPOINT || 
-  process.env.NEXT_PUBLIC_SOLANA_RPC_HOST || 
-  'https://api.devnet.solana.com';
+export const NETWORK = process.env.NEXT_PUBLIC_NETWORK || process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
+export const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT || process.env.NEXT_PUBLIC_SOLANA_RPC_HOST || 'https://api.devnet.solana.com';
 
 /**
  * Check for missing environment variable configuration and return warnings

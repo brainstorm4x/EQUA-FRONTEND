@@ -14,6 +14,8 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   USER_ACCOUNT_REFERRAL_OFFSET,
   USER_ACCOUNT_REFERRAL_SIZE,
+  STANDARD_TOKEN_PROGRAM_ADDRESS,
+  TOKEN_2022_PROGRAM_ADDRESS,
 } from '@/lib/constants';
 import { 
   createInitializeUserInstruction,
@@ -54,6 +56,31 @@ const WalletButton = dynamic(
 
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
+
+// Anchor error codes
+const ERROR_CODE_COOLDOWN = '0x1771';
+const ERROR_CODE_TIER_LIMIT = '0x1772';
+const ERROR_CODE_REFERRAL_REQUIRED = '0x1773';
+const ERROR_CODE_INSUFFICIENT_SOL = '0x1774';
+const ERROR_CODE_CONSTRAINT_MUT = '2000';
+const ERROR_CODE_INSTRUCTION_DESERIALIZE = '0x66';
+
+// Error keywords
+const ERROR_KEYWORD_MINT_AMOUNT_EXCEEDS = 'MintAmountExceedsTierLimit';
+const ERROR_KEYWORD_REFERRAL_REQUIRED = 'ReferralRequired';
+const ERROR_KEYWORD_INSUFFICIENT_SOL = 'InsufficientSolBalance';
+const ERROR_KEYWORD_INVALID_PROGRAM_ID = 'InvalidProgramId';
+const ERROR_KEYWORD_TOKEN_ACCOUNT_NOT_FOUND = 'TokenAccountNotFound';
+const ERROR_KEYWORD_ACCOUNT_NOT_FOUND = 'AccountNotFound';
+const ERROR_KEYWORD_CONSTRAINT_MUT = 'ConstraintMut';
+const ERROR_KEYWORD_BLOCKHASH = 'blockhash';
+const ERROR_KEYWORD_BLOCKHASH_NOT_FOUND = 'BlockhashNotFound';
+const ERROR_KEYWORD_INSUFFICIENT_FUNDS = 'insufficient funds';
+const ERROR_KEYWORD_INSUFFICIENT_LAMPORTS = 'insufficient lamports';
+const ERROR_KEYWORD_INSTRUCTION_FALLBACK = 'InstructionFallbackNotFound';
+const ERROR_KEYWORD_INSTRUCTION_DESERIALIZE = 'InstructionDidNotDeserialize';
+const ERROR_KEYWORD_SIMULATION_FAILED = 'simulation failed';
+const ERROR_KEYWORD_USER_REJECTED = 'user rejected';
 
 // Default EQUA per mint for standard users (100 EQUA) - used as fallback
 const DEFAULT_EQUA_PER_MINT = 100;
@@ -100,65 +127,64 @@ function categorizeError(error: any, logs: string[] = []): string {
   const errorMessage = error?.message || 'Unknown error';
   const logsStr = logs.join(' ');
   
+  // Helper to check if error or logs contain a pattern
+  const hasPattern = (pattern: string) => errorMessage.includes(pattern) || logsStr.includes(pattern);
+  
   // Check for specific Anchor error codes
-  if (errorMessage.includes('0x1771') || logsStr.includes('0x1771')) {
+  if (hasPattern(ERROR_CODE_COOLDOWN)) {
     return '⏰ Cooldown Active: You can only mint once every 24 hours. Please wait for the cooldown period to expire.';
   }
   
-  if (errorMessage.includes('0x1772') || logsStr.includes('0x1772') || 
-      errorMessage.includes('MintAmountExceedsTierLimit') || logsStr.includes('MintAmountExceedsTierLimit')) {
+  if (hasPattern(ERROR_CODE_TIER_LIMIT) || hasPattern(ERROR_KEYWORD_MINT_AMOUNT_EXCEEDS)) {
     return '🚫 Mint Amount Exceeds Tier Limit: You have reached your maximum mint attempts for your tier. Please check your user tier details.';
   }
   
-  if (errorMessage.includes('0x1773') || logsStr.includes('0x1773') || 
-      errorMessage.includes('ReferralRequired') || logsStr.includes('ReferralRequired')) {
+  if (hasPattern(ERROR_CODE_REFERRAL_REQUIRED) || hasPattern(ERROR_KEYWORD_REFERRAL_REQUIRED)) {
     return '🔗 Referral Required: A valid referral code is required for registration after the first 100 users. Please obtain a referral code from an existing user.';
   }
   
-  if (errorMessage.includes('0x1774') || logsStr.includes('0x1774') || 
-      errorMessage.includes('InsufficientSolBalance') || logsStr.includes('InsufficientSolBalance')) {
+  if (hasPattern(ERROR_CODE_INSUFFICIENT_SOL) || hasPattern(ERROR_KEYWORD_INSUFFICIENT_SOL)) {
     return `💰 Insufficient SOL Balance: You need at least ${MIN_SOL_BALANCE} SOL to cover transaction fees. Please add more SOL to your wallet.`;
   }
   
   // Token program errors
-  if (errorMessage.includes('InvalidProgramId') || logsStr.includes('InvalidProgramId')) {
+  if (hasPattern(ERROR_KEYWORD_INVALID_PROGRAM_ID)) {
     return '❌ Invalid Token Program: The token program does not match the mint configuration. This is a configuration issue - please contact support.';
   }
   
-  if (errorMessage.includes('TokenAccountNotFound') || logsStr.includes('TokenAccountNotFound')) {
+  if (hasPattern(ERROR_KEYWORD_TOKEN_ACCOUNT_NOT_FOUND)) {
     return '🪙 Token Account Not Found: Your associated token account needs to be created. Please try the operation again - it will be created automatically.';
   }
   
   // Account errors
-  if (errorMessage.includes('AccountNotFound') || logsStr.includes('AccountNotFound')) {
+  if (hasPattern(ERROR_KEYWORD_ACCOUNT_NOT_FOUND)) {
     return '📋 Account Not Found: Required account does not exist on-chain. Please ensure you are registered and all setup steps are complete.';
   }
   
-  if (errorMessage.includes('ConstraintMut') || logsStr.includes('ConstraintMut') || 
-      errorMessage.includes('2000') || logsStr.includes('error code: 2000')) {
+  if (hasPattern(ERROR_KEYWORD_CONSTRAINT_MUT) || hasPattern(ERROR_CODE_CONSTRAINT_MUT) || hasPattern('error code: 2000')) {
     return '⚠️ Account Constraint Violation: An account that should be writable is not marked as such. This indicates a program version mismatch - please refresh the page.';
   }
   
   // Transaction errors
-  if (errorMessage.includes('blockhash') || errorMessage.includes('BlockhashNotFound')) {
+  if (hasPattern(ERROR_KEYWORD_BLOCKHASH) || hasPattern(ERROR_KEYWORD_BLOCKHASH_NOT_FOUND)) {
     return '⏱️ Transaction Expired: The transaction took too long to process. Please try again.';
   }
   
-  if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
+  if (hasPattern(ERROR_KEYWORD_INSUFFICIENT_FUNDS) || hasPattern(ERROR_KEYWORD_INSUFFICIENT_LAMPORTS)) {
     return `💸 Insufficient Funds: You need at least ${MIN_SOL_BALANCE} SOL for transaction fees. Please add more SOL to your wallet.`;
   }
   
   // Instruction errors
-  if (errorMessage.includes('InstructionFallbackNotFound') || logsStr.includes('InstructionFallbackNotFound')) {
+  if (hasPattern(ERROR_KEYWORD_INSTRUCTION_FALLBACK)) {
     return '🔧 Instruction Not Recognized: The program does not recognize this instruction. This may indicate the smart contract was recently updated. Please refresh the page and try again.';
   }
   
-  if (errorMessage.includes('InstructionDidNotDeserialize') || errorMessage.includes('0x66')) {
+  if (hasPattern(ERROR_KEYWORD_INSTRUCTION_DESERIALIZE) || hasPattern(ERROR_CODE_INSTRUCTION_DESERIALIZE)) {
     return '📦 Instruction Format Error: The instruction data format is incorrect. Please refresh the page and ensure you have the latest version.';
   }
   
   // Simulation failures (generic fallback)
-  if (errorMessage.includes('simulation failed')) {
+  if (hasPattern(ERROR_KEYWORD_SIMULATION_FAILED)) {
     // Try to extract more details from logs
     const anchorLog = extractAnchorLog(logs);
     if (anchorLog) {
@@ -168,7 +194,7 @@ function categorizeError(error: any, logs: string[] = []): string {
   }
   
   // User rejected transaction
-  if (errorMessage.includes('User rejected') || errorMessage.includes('user rejected')) {
+  if (errorMessage.toLowerCase().includes(ERROR_KEYWORD_USER_REJECTED)) {
     return '🙅 Transaction Cancelled: You rejected the transaction in your wallet.';
   }
   
@@ -1100,8 +1126,8 @@ export default function MintPage() {
         console.log('  Configured token program:', configuredTokenProgram);
         
         if (mintOwner !== configuredTokenProgram) {
-          const isStandard = mintOwner === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
-          const isToken2022 = mintOwner === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+          const isStandard = mintOwner === STANDARD_TOKEN_PROGRAM_ADDRESS;
+          const isToken2022 = mintOwner === TOKEN_2022_PROGRAM_ADDRESS;
           
           throw new Error(
             `❌ Token Program Mismatch\n\n` +
