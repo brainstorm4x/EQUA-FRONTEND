@@ -43,6 +43,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
     }
 
     loadReferralData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, publicKey, connection]);
 
   const loadReferralData = async () => {
