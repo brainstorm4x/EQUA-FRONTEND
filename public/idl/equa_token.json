@@ -168,6 +168,10 @@
           "writable": true
         },
         {
+          "name": "user_metadata",
+          "writable": true
+        },
+        {
           "name": "authority",
           "writable": true,
           "signer": true
@@ -199,6 +203,10 @@
         },
         {
           "name": "referral_account",
+          "writable": true
+        },
+        {
+          "name": "referrer_metadata",
           "writable": true
         },
         {
@@ -299,6 +307,10 @@
         {
           "name": "mint_start",
           "type": "i64"
+        },
+        {
+          "name": "user_type",
+          "type": "u8"
         }
       ]
     },

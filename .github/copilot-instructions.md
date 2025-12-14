@@ -1,7 +1,7 @@
 # EQUA Token - AI Coding Agent Instructions
 
 ## Project Overview
-Next.js 14 (App Router) + Solana blockchain dApp for minting EQUA tokens with time-locked rewards, referral system, and dynamic pricing. Uses **Token-2022 Program** on Solana Devnet.
+Next.js 14 (App Router) + Solana blockchain dApp for minting EQUA tokens with time-locked rewards, referral system, and dynamic pricing. Uses **Standard SPL Token Program** on Solana Devnet.
 
 ## Critical Installation Pattern
 **Always use `npm install --legacy-peer-deps`** due to Solana wallet adapter peer dependency conflicts. Never use plain `npm install`.

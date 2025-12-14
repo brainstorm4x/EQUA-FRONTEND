@@ -234,4 +234,48 @@ describe('createInitializeUserInstruction', () => {
     const userTypeByte = instruction.data.readUInt8(48);
     expect(userTypeByte).toBe(1);
   });
+
+  it('should use correct ASSOCIATED_TOKEN_PROGRAM_ID at index 8', () => {
+    const instruction = createInitializeUserInstruction(
+      userAccount,
+      userMetadata,
+      authority,
+      globalState,
+      referralAccount,
+      referrerMetadata,
+      userTokenAccount,
+      mint,
+      associatedTokenProgram,
+      TOKEN_PROGRAM_ID,
+      now,
+      referrer,
+      userType
+    );
+
+    // Index 8 must be ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+    const expectedAddress = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
+    expect(instruction.keys[8].pubkey.toBase58()).toBe(expectedAddress);
+  });
+
+  it('should use standard SPL Token at index 9', () => {
+    const instruction = createInitializeUserInstruction(
+      userAccount,
+      userMetadata,
+      authority,
+      globalState,
+      referralAccount,
+      referrerMetadata,
+      userTokenAccount,
+      mint,
+      associatedTokenProgram,
+      TOKEN_PROGRAM_ID,
+      now,
+      referrer,
+      userType
+    );
+
+    // Index 9 must be standard SPL Token (not Token-2022)
+    const expectedAddress = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+    expect(instruction.keys[9].pubkey.toBase58()).toBe(expectedAddress);
+  });
 });
