@@ -38,6 +38,7 @@ import {
   getMintAuthorityPDA,
   getUserAccountPDA,
   getUserMetadataPDA,
+  getBusinessRegistryPDA,
   createInitializeUserInstruction,
   createMintEquaInstruction,
   createMintTokensInstruction,
@@ -155,11 +156,8 @@ async function main() {
   
   // userMetadataPDA already derived in Step 3
   
-  // Derive business registry PDA
-  const [businessRegistryPDA] = PublicKey.findProgramAddressSync(
-    [Buffer.from('business-registry')],
-    PROGRAM_ID
-  );
+  // Derive business registry PDA using helper function
+  const [businessRegistryPDA] = getBusinessRegistryPDA();
   
   const registerIx = createInitializeUserInstruction(
     userAccountPDA,
