@@ -204,6 +204,10 @@ NEXT_PUBLIC_EQUA_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP  # Lega
 NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com  # Optional, defaults to devnet
 NEXT_PUBLIC_NETWORK=devnet                               # Optional, defaults to devnet
 
+# Note: Alternative naming also supported for compatibility:
+# NEXT_PUBLIC_SOLANA_RPC_HOST=https://api.devnet.solana.com
+# NEXT_PUBLIC_SOLANA_NETWORK=devnet
+
 # Token Program Configuration
 NEXT_PUBLIC_TOKEN_STANDARD=token2022                     # Optional, defaults to token2022; set to 'standard' for SPL Token
 
@@ -237,6 +241,7 @@ Copy `.env.example` to `.env.local` and customize as needed.
    - Try using a custom RPC endpoint in `.env.local`:
      ```bash
      NEXT_PUBLIC_RPC_ENDPOINT=https://your-custom-rpc.com
+     # Or use: NEXT_PUBLIC_SOLANA_RPC_HOST=https://your-custom-rpc.com
      ```
 
 4. **Browser Extension Conflicts**
