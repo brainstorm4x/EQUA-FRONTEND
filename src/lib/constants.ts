@@ -52,8 +52,61 @@ if (typeof window !== 'undefined') {
 }
 
 // Network configuration
-export const NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'devnet';
-export const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT || 'https://api.devnet.solana.com';
+// Support both legacy (NEXT_PUBLIC_NETWORK, NEXT_PUBLIC_RPC_ENDPOINT) and new naming conventions
+// (NEXT_PUBLIC_SOLANA_NETWORK, NEXT_PUBLIC_SOLANA_RPC_HOST) without breaking existing setups
+export const NETWORK = process.env.NEXT_PUBLIC_NETWORK || process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
+export const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT || process.env.NEXT_PUBLIC_SOLANA_RPC_HOST || 'https://api.devnet.solana.com';
+
+/**
+ * Check for missing environment variable configuration and return warnings
+ * Only warns if NEITHER naming convention is set
+ * @returns Array of warning messages (empty if config is valid)
+ */
+export function getEnvConfigWarnings(): string[] {
+  const warnings: string[] = [];
+  
+  // Check if network is configured (either name)
+  const hasNetwork = !!(
+    process.env.NEXT_PUBLIC_NETWORK || 
+    process.env.NEXT_PUBLIC_SOLANA_NETWORK
+  );
+  
+  // Check if RPC endpoint is configured (either name)
+  const hasRpcEndpoint = !!(
+    process.env.NEXT_PUBLIC_RPC_ENDPOINT || 
+    process.env.NEXT_PUBLIC_SOLANA_RPC_HOST
+  );
+  
+  if (!hasNetwork) {
+    warnings.push(
+      'Missing network configuration. Set either NEXT_PUBLIC_NETWORK or NEXT_PUBLIC_SOLANA_NETWORK'
+    );
+  }
+  
+  if (!hasRpcEndpoint) {
+    warnings.push(
+      'Missing RPC endpoint configuration. Set either NEXT_PUBLIC_RPC_ENDPOINT or NEXT_PUBLIC_SOLANA_RPC_HOST'
+    );
+  }
+  
+  // Validate network value if set
+  if (hasNetwork) {
+    const validNetworks = ['devnet', 'testnet', 'mainnet-beta', 'localnet'];
+    // Read current network value directly from env (not the cached NETWORK constant)
+    const currentNetwork = 
+      process.env.NEXT_PUBLIC_NETWORK || 
+      process.env.NEXT_PUBLIC_SOLANA_NETWORK || 
+      'devnet';
+    
+    if (!validNetworks.includes(currentNetwork)) {
+      warnings.push(
+        `Invalid network configuration: ${currentNetwork}. Must be one of: ${validNetworks.join(', ')}`
+      );
+    }
+  }
+  
+  return warnings;
+}
 
 // PDA Seeds (must match Rust backend exactly)
 export const GLOBAL_STATE_SEED = 'global-state';
