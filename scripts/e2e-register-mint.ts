@@ -204,23 +204,24 @@ async function main() {
     process.exit(1);
   }
   
-  // Step 6: Mint 1000 EQUA using new 7-account mint_tokens instruction
+  // Step 6: Mint 1000 EQUA using new 8-account mint_tokens instruction
   console.log('\n🔍 Step 6: Minting 1000 EQUA...');
   console.log('  User Metadata PDA:', userMetadataPDA.toBase58());
   
-  // Use new 7-account mint_tokens instruction
+  // Use new 8-account mint_tokens instruction (with referrerAccount)
   const mintIx = createMintTokensInstruction(
     userAccountPDA,                // user_account (PDA)
     userMetadataPDA,               // user_metadata
     userTokenAccount,              // user_token_account
     mintPDA,                       // mint
     mintAuthority,                 // mint_authority
+    PublicKey.default,             // referrer_account (no referrer)
     payer.publicKey,               // authority
     TOKEN_PROGRAM_ID,              // token_program
     1000_000000                    // 1000 EQUA with 6 decimals
   );
   
-  console.log('\n🧪 Mint Instruction Metas (7-account mint_tokens):');
+  console.log('\n🧪 Mint Instruction Metas (8-account mint_tokens):');
   mintIx.keys.forEach((k, i) => {
     console.log(`  ${i}. ${k.pubkey.toBase58()}`);
     console.log(`     writable=${k.isWritable} signer=${k.isSigner}`);

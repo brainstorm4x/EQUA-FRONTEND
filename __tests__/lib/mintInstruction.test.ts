@@ -113,6 +113,7 @@ describe('createMintTokensInstruction', () => {
 
   it('should create instruction with correct discriminator for mint_tokens', () => {
     const amount = 10_000_000_000; // 10,000 EQUA in base units (6 decimals)
+    const referrerAccount = PublicKey.default; // No referrer
     
     const instruction = createMintTokensInstruction(
       userAccount,
@@ -120,6 +121,7 @@ describe('createMintTokensInstruction', () => {
       userTokenAccount,
       mint,
       mintAuthority,
+      referrerAccount,
       authority,
       TOKEN_PROGRAM_ID,
       amount
@@ -134,6 +136,7 @@ describe('createMintTokensInstruction', () => {
 
   it('should encode amount correctly as u64 little-endian', () => {
     const amount = 10_000_000_000; // 10,000 EQUA in base units
+    const referrerAccount = PublicKey.default; // No referrer
     
     const instruction = createMintTokensInstruction(
       userAccount,
@@ -141,6 +144,7 @@ describe('createMintTokensInstruction', () => {
       userTokenAccount,
       mint,
       mintAuthority,
+      referrerAccount,
       authority,
       TOKEN_PROGRAM_ID,
       amount
@@ -159,8 +163,9 @@ describe('createMintTokensInstruction', () => {
     expect(decodedAmount).toBe(amount);
   });
 
-  it('should have correct 7 account metas in order per backend IDL', () => {
+  it('should have correct 8 account metas in order per backend IDL', () => {
     const amount = 1_000_000; // 1 EQUA
+    const referrerAccount = PublicKey.default; // No referrer
     
     const instruction = createMintTokensInstruction(
       userAccount,
@@ -168,13 +173,14 @@ describe('createMintTokensInstruction', () => {
       userTokenAccount,
       mint,
       mintAuthority,
+      referrerAccount,
       authority,
       TOKEN_PROGRAM_ID,
       amount
     );
 
-    // Verify account order and flags match backend IDL for mint_tokens
-    expect(instruction.keys).toHaveLength(7);
+    // Verify account order and flags match backend IDL for mint_tokens (8 accounts)
+    expect(instruction.keys).toHaveLength(8);
     
     // 0. user_account - writable, not signer
     expect(instruction.keys[0].pubkey).toEqual(userAccount);
@@ -201,15 +207,20 @@ describe('createMintTokensInstruction', () => {
     expect(instruction.keys[4].isWritable).toBe(false);
     expect(instruction.keys[4].isSigner).toBe(false);
     
-    // 5. authority - not writable, signer
-    expect(instruction.keys[5].pubkey).toEqual(authority);
-    expect(instruction.keys[5].isWritable).toBe(false);
-    expect(instruction.keys[5].isSigner).toBe(true);
+    // 5. referrer_account - not writable (PublicKey.default), not signer
+    expect(instruction.keys[5].pubkey).toEqual(referrerAccount);
+    expect(instruction.keys[5].isWritable).toBe(false); // read-only when PublicKey.default
+    expect(instruction.keys[5].isSigner).toBe(false);
     
-    // 6. token_program - not writable, not signer
-    expect(instruction.keys[6].pubkey).toEqual(TOKEN_PROGRAM_ID);
+    // 6. authority - not writable, signer
+    expect(instruction.keys[6].pubkey).toEqual(authority);
     expect(instruction.keys[6].isWritable).toBe(false);
-    expect(instruction.keys[6].isSigner).toBe(false);
+    expect(instruction.keys[6].isSigner).toBe(true);
+    
+    // 7. token_program - not writable, not signer
+    expect(instruction.keys[7].pubkey).toEqual(TOKEN_PROGRAM_ID);
+    expect(instruction.keys[7].isWritable).toBe(false);
+    expect(instruction.keys[7].isSigner).toBe(false);
   });
 
   it('should handle different amount values correctly', () => {
@@ -219,6 +230,7 @@ describe('createMintTokensInstruction', () => {
       10_000_000_000, // 10,000 EQUA (pioneer)
       100_000_000_000, // 100,000 EQUA (early adopter)
     ];
+    const referrerAccount = PublicKey.default; // No referrer
 
     testCases.forEach(amount => {
       const instruction = createMintTokensInstruction(
@@ -227,6 +239,7 @@ describe('createMintTokensInstruction', () => {
         userTokenAccount,
         mint,
         mintAuthority,
+        referrerAccount,
         authority,
         TOKEN_PROGRAM_ID,
         amount

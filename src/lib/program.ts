@@ -10,6 +10,8 @@ import {
   USER_ACCOUNT_SEED,
   USER_META_SEED,
   BUSINESS_REGISTRY_SEED,
+  TOKEN_2022_PROGRAM_ADDRESS,
+  STANDARD_TOKEN_PROGRAM_ADDRESS,
 } from "./constants";
 
 // Debug flag for instruction building logs
@@ -77,6 +79,17 @@ export function getUserMetadataPDA(authority: PublicKey): [PublicKey, number] {
  */
 export function getBusinessRegistryPDA(): [PublicKey, number] {
   return getCachedPDA('business_registry', [Buffer.from(BUSINESS_REGISTRY_SEED)]);
+}
+
+/**
+ * Get referrer account PDA from referrer's wallet public key
+ * Used to derive the UserAccount PDA for a referrer during minting
+ * @param referrerPubkey - The referrer's wallet public key
+ * @returns PDA and bump seed
+ */
+export function getReferrerAccountPDA(referrerPubkey: PublicKey): [PublicKey, number] {
+  const cacheKey = `referrer_account:${referrerPubkey.toBase58()}`;
+  return getCachedPDA(cacheKey, [Buffer.from(USER_ACCOUNT_SEED), referrerPubkey.toBuffer()]);
 }
 
 // ============================================================================
@@ -333,9 +346,8 @@ export function getOrCreateKeypair(): Keypair {
   return keypair;
 }
 
-// Token program addresses for validation and error messages
-const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
-const STANDARD_TOKEN_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+// Token program addresses imported from constants
+// (Used for validation and error messages)
 
 /**
  * Verify that the mint account owner matches the configured TOKEN_PROGRAM_ID
@@ -601,14 +613,16 @@ export function createMintEquaTokensInstruction(
   return instruction;
 }
 
-// ✅ Create mint_tokens instruction (7-account version for deployed program)
+// ✅ Create mint_tokens instruction (8-account version aligned with backend IDL)
 // This is the correct instruction for daily EQUA minting on the deployed program
+// Account order: user_account, user_metadata, user_token_account, mint, mint_authority, referrer_account, authority, token_program
 export function createMintTokensInstruction(
   userAccount: PublicKey,
   userMetadata: PublicKey,
   userTokenAccount: PublicKey,
   mint: PublicKey,
   mintAuthority: PublicKey,
+  referrerAccount: PublicKey,
   authority: PublicKey,
   tokenProgram: PublicKey,
   amount: number
@@ -622,29 +636,60 @@ export function createMintTokensInstruction(
     amountBN.toArrayLike(Buffer, 'le', 8),
   ]);
 
+  // ============================================================================
+  // PREFLIGHT ASSERTIONS
+  // Validate critical parameters before building instruction
+  // ============================================================================
+  
+  // Assert Token-2022 is being used (backend requirement)
+  if (tokenProgram.toBase58() !== TOKEN_2022_PROGRAM_ADDRESS) {
+    const errorMsg = 
+      `❌ CRITICAL: Token program mismatch!\n` +
+      `  Expected: ${TOKEN_2022_PROGRAM_ADDRESS} (Token-2022)\n` +
+      `  Got: ${tokenProgram.toBase58()}\n` +
+      `  The backend requires Token-2022. Update TOKEN_PROGRAM_ID in constants.ts.`;
+    console.error(errorMsg);
+    throw new Error('mint_tokens requires Token-2022 program');
+  }
+
+  // Assert authority is provided (required signer)
+  if (!authority || authority.equals(PublicKey.default)) {
+    throw new Error('mint_tokens requires authority (wallet public key) to be provided');
+  }
+
+  // Log referrer account handling
+  const isReferrerProvided = !referrerAccount.equals(PublicKey.default);
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Building mint_tokens instruction:');
+    console.log('🔧 Building mint_tokens instruction (8 accounts):');
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Amount (raw base units):', amount);
     console.log('  - Amount BN:', amountBN.toString());
+    console.log('  - Token Program:', tokenProgram.toBase58(), '(Token-2022 ✅)');
+    console.log('  - Referrer:', isReferrerProvided ? referrerAccount.toBase58() : 'None (PublicKey.default)');
   }
   
+  // Build keys in exact order matching backend IDL
+  // Note: referrer_account is writable only when a valid referrer is present
+  // This allows the backend to update referral rewards when a referred user mints
+  const keys = [
+    { pubkey: userAccount, isSigner: false, isWritable: true },      // 0. user_account
+    { pubkey: userMetadata, isSigner: false, isWritable: true },     // 1. user_metadata
+    { pubkey: userTokenAccount, isSigner: false, isWritable: true }, // 2. user_token_account
+    { pubkey: mint, isSigner: false, isWritable: true },             // 3. mint
+    { pubkey: mintAuthority, isSigner: false, isWritable: false },   // 4. mint_authority
+    { pubkey: referrerAccount, isSigner: false, isWritable: isReferrerProvided }, // 5. referrer_account (writable if referrer present)
+    { pubkey: authority, isSigner: true, isWritable: false },        // 6. authority (MUST be signer)
+    { pubkey: tokenProgram, isSigner: false, isWritable: false },    // 7. token_program
+  ];
+
   const instruction = new TransactionInstruction({
-    keys: [
-      { pubkey: userAccount, isSigner: false, isWritable: true },      // 0. user_account
-      { pubkey: userMetadata, isSigner: false, isWritable: true },     // 1. user_metadata
-      { pubkey: userTokenAccount, isSigner: false, isWritable: true }, // 2. user_token_account
-      { pubkey: mint, isSigner: false, isWritable: true },             // 3. mint
-      { pubkey: mintAuthority, isSigner: false, isWritable: false },   // 4. mint_authority
-      { pubkey: authority, isSigner: true, isWritable: false },        // 5. authority
-      { pubkey: tokenProgram, isSigner: false, isWritable: false },    // 6. token_program
-    ],
+    keys,
     programId: PROGRAM_ID,
     data,
   });
   
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Instruction account metas:');
+    console.log('🔧 Instruction account metas (8 accounts):');
     instruction.keys.forEach((meta, idx) => {
       console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
     });

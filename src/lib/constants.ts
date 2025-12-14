@@ -11,8 +11,9 @@ export const PROGRAM_ID = new PublicKey(
 );
 
 // Token-2022 Program (SPL Token Extensions)
-// The EQUA backend and deployed mints use Token-2022
-// Can be overridden via NEXT_PUBLIC_TOKEN_STANDARD environment variable
+// CRITICAL: The EQUA backend requires Token-2022. Do not use Standard SPL Token.
+// The mint_tokens instruction specifically validates Token-2022 program ID.
+// Override via NEXT_PUBLIC_TOKEN_STANDARD='standard' only for testing/debugging.
 const useStandardToken = process.env.NEXT_PUBLIC_TOKEN_STANDARD === 'standard';
 export const TOKEN_PROGRAM_ID = useStandardToken ? SPL_TOKEN_PROGRAM_ID : TOKEN_2022_PROGRAM_ID;
 
@@ -61,3 +62,26 @@ export const MINT_AUTHORITY_SEED = 'mint-authority';
 export const USER_ACCOUNT_SEED = 'user-account';
 export const USER_META_SEED = 'user-meta';
 export const BUSINESS_REGISTRY_SEED = 'business-registry';
+
+// Token Program Addresses (for validation)
+export const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+export const STANDARD_TOKEN_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+
+// UserAccount Structure Offsets (136 bytes total)
+// Used for parsing UserAccount data when reading from chain
+export const USER_ACCOUNT_DISCRIMINATOR_OFFSET = 0;
+export const USER_ACCOUNT_DISCRIMINATOR_SIZE = 8;
+export const USER_ACCOUNT_AUTHORITY_OFFSET = 8;
+export const USER_ACCOUNT_AUTHORITY_SIZE = 32;
+export const USER_ACCOUNT_REFERRAL_OFFSET = 40;
+export const USER_ACCOUNT_REFERRAL_SIZE = 32;
+export const USER_ACCOUNT_TOKEN_ACCOUNT_OFFSET = 72;
+export const USER_ACCOUNT_TOKEN_ACCOUNT_SIZE = 32;
+export const USER_ACCOUNT_MINTED_AMOUNT_OFFSET = 104;
+export const USER_ACCOUNT_MINTED_AMOUNT_SIZE = 8;
+export const USER_ACCOUNT_MINT_START_OFFSET = 112;
+export const USER_ACCOUNT_MINT_START_SIZE = 8;
+export const USER_ACCOUNT_REFERRAL_REWARDS_OFFSET = 120;
+export const USER_ACCOUNT_REFERRAL_REWARDS_SIZE = 8;
+export const USER_ACCOUNT_LAST_MINT_TIME_OFFSET = 128;
+export const USER_ACCOUNT_LAST_MINT_TIME_SIZE = 8;
