@@ -5,8 +5,8 @@
  * The smallest unit of EQUA is called Gajbhiye (singular) / Gajbhiyes (plural)
  */
 
-const EQUA_DECIMALS = 6;
-const EQUA_DECIMAL_MULTIPLIER = 1_000_000;
+// EQUA token decimals - imported from centralized config for consistency
+import { EQUA_DECIMALS } from '@/lib/constants';
 
 /**
  * Name of the smallest unit of EQUA

@@ -129,9 +129,16 @@ function saveProcessedSignatures(signatures: Set<string>): void {
   if (typeof window === 'undefined') return;
   
   try {
-    // Keep only most recent 1000 signatures
-    const array = Array.from(signatures).slice(-1000);
-    localStorage.setItem(PROCESSED_SIGNATURES_KEY, JSON.stringify(array));
+    // Keep only most recent 1000 signatures to prevent unbounded growth
+    // Convert to array once for efficiency
+    const allSignatures = Array.from(signatures);
+    
+    // If we have more than 1000, keep only the most recent ones
+    const toSave = allSignatures.length > 1000 
+      ? allSignatures.slice(allSignatures.length - 1000)
+      : allSignatures;
+    
+    localStorage.setItem(PROCESSED_SIGNATURES_KEY, JSON.stringify(toSave));
   } catch {
     console.warn('Failed to save processed signatures');
   }
@@ -163,7 +170,9 @@ export async function syncTransfersFromChain(
     let newTransferCount = 0;
 
     // Process signatures in chronological order (oldest first)
-    for (const sigInfo of signatures.reverse()) {
+    // Iterate backwards to avoid mutating the original array
+    for (let i = signatures.length - 1; i >= 0; i--) {
+      const sigInfo = signatures[i];
       const signature = sigInfo.signature;
       
       // Skip if already processed

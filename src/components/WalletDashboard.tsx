@@ -635,7 +635,11 @@ const SendModal: FC<SendModalProps> = ({
       }
 
       // Add transfer instruction with correct amount
-      // Convert BigInt to number for createTransferInstruction (safe for amounts within JS safe integer range)
+      // Validate BigInt is within safe number range before converting
+      if (amountInBaseUnits > BigInt(Number.MAX_SAFE_INTEGER)) {
+        throw new Error('Transfer amount exceeds maximum safe value');
+      }
+      
       transaction.add(
         createTransferInstruction(
           senderTokenAccount,
