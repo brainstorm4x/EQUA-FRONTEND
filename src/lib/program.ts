@@ -448,7 +448,8 @@ export function createInitializeUserInstruction(
   ];
 
   // Preflight validation: Assert critical program IDs are at correct indices
-  if (keys[9].pubkey.toBase58() !== ASSOCIATED_TOKEN_PROGRAM_ID.toBase58()) {
+  // Use .equals() for performance (avoids string conversions)
+  if (!keys[9].pubkey.equals(ASSOCIATED_TOKEN_PROGRAM_ID)) {
     const errorMsg = 
       `❌ CRITICAL: Program ID mismatch at index 9 (associated_token_program)!\n` +
       `  Expected: ${ASSOCIATED_TOKEN_PROGRAM_ID.toBase58()} (ATokenGP...)\n` +
@@ -459,7 +460,7 @@ export function createInitializeUserInstruction(
     throw new Error('InitializeUser instruction builder: associated_token_program at wrong index');
   }
 
-  if (keys[10].pubkey.toBase58() !== TOKEN_PROGRAM_ID.toBase58()) {
+  if (!keys[10].pubkey.equals(TOKEN_PROGRAM_ID)) {
     const errorMsg = 
       `❌ CRITICAL: Program ID mismatch at index 10 (token_program)!\n` +
       `  Expected: ${TOKEN_PROGRAM_ID.toBase58()} (TokenkegQ... or TokenzQdB...)\n` +
@@ -470,9 +471,11 @@ export function createInitializeUserInstruction(
     throw new Error('InitializeUser instruction builder: token_program at wrong index');
   }
 
-  console.log('✅ Preflight validation passed:');
-  console.log(`  - Index 9 = ${ASSOCIATED_TOKEN_PROGRAM_ID.toBase58()} (associated_token_program)`);
-  console.log(`  - Index 10 = ${TOKEN_PROGRAM_ID.toBase58()} (token_program)`);
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('✅ Preflight validation passed:');
+    console.log(`  - Index 9 = ${ASSOCIATED_TOKEN_PROGRAM_ID.toBase58()} (associated_token_program)`);
+    console.log(`  - Index 10 = ${TOKEN_PROGRAM_ID.toBase58()} (token_program)`);
+  }
 
   const instruction = new TransactionInstruction({
     keys,
