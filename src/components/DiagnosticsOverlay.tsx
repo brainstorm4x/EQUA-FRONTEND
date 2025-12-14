@@ -52,8 +52,11 @@ export function DiagnosticsOverlay() {
     // Check program ID is valid
     try {
       new PublicKey(PROGRAM_ID);
-    } catch {
-      detectedIssues.push(`Invalid PROGRAM_ID: ${PROGRAM_ID.toString()}`);
+    } catch (err) {
+      // Safely convert to string without calling toString() on invalid PublicKey
+      const programIdStr = typeof PROGRAM_ID === 'string' ? PROGRAM_ID : 
+                          (PROGRAM_ID as any).toBase58?.() || String(PROGRAM_ID);
+      detectedIssues.push(`Invalid PROGRAM_ID: ${programIdStr}`);
     }
 
     // Validate token program configuration
