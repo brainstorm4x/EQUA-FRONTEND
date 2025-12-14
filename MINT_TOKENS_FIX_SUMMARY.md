@@ -57,7 +57,7 @@ The backend specifically requires Token-2022 (`TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnB
 #### 2. `app/mint/page.tsx`
 - **Replaced signing method for registration:** Changed from `signTransaction + sendRawTransaction` to `wallet.sendTransaction()`
 - **Replaced signing method for minting:** Changed from `signTransaction + sendRawTransaction` to `wallet.sendTransaction()`
-- **Automatic referrer detection:** Reads the `referral` field from UserAccount data at offset 40-72 and derives the referrer's UserAccount PDA
+- **Automatic referrer detection:** Reads the `referral` field from UserAccount data using `USER_ACCOUNT_REFERRAL_OFFSET` constant and derives the referrer's UserAccount PDA
 - **Enhanced error logging:** Added try-catch blocks around `sendTransaction` calls to surface wallet adapter errors
 - **Used named constants:** Replaced magic numbers with `USER_ACCOUNT_REFERRAL_OFFSET` and `USER_ACCOUNT_REFERRAL_SIZE`
 

@@ -669,6 +669,8 @@ export function createMintTokensInstruction(
   }
   
   // Build keys in exact order matching backend IDL
+  // Note: referrer_account is writable only when a valid referrer is present
+  // This allows the backend to update referral rewards when a referred user mints
   const keys = [
     { pubkey: userAccount, isSigner: false, isWritable: true },      // 0. user_account
     { pubkey: userMetadata, isSigner: false, isWritable: true },     // 1. user_metadata

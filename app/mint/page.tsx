@@ -1003,25 +1003,32 @@ export default function MintPage() {
       // Read referrer from UserAccount to determine referrerAccount
       // UserAccount structure: see USER_ACCOUNT_* constants in constants.ts
       let referrerAccountPDA = PublicKey.default;
-      try {
-        const referralPubkeyBytes = userAccountInfo.data.slice(
-          USER_ACCOUNT_REFERRAL_OFFSET, 
-          USER_ACCOUNT_REFERRAL_OFFSET + USER_ACCOUNT_REFERRAL_SIZE
-        );
-        const referralPubkey = new PublicKey(referralPubkeyBytes);
-        
-        if (!referralPubkey.equals(PublicKey.default)) {
-          // User has a referrer, derive the referrer's UserAccount PDA
-          const [referrerPDA] = getUserAccountPDA(referralPubkey);
-          referrerAccountPDA = referrerPDA;
-          console.log('📋 User has referrer:', referralPubkey.toBase58());
-          console.log('📋 Referrer account PDA:', referrerAccountPDA.toBase58());
-        } else {
-          console.log('📋 No referrer (self-referral)');
+      
+      // Validate account data size before reading referral field
+      const requiredSize = USER_ACCOUNT_REFERRAL_OFFSET + USER_ACCOUNT_REFERRAL_SIZE;
+      if (userAccountInfo.data.length < requiredSize) {
+        console.warn(`⚠️  UserAccount data too short (${userAccountInfo.data.length} bytes) to read referral field (requires ${requiredSize} bytes). Using PublicKey.default.`);
+      } else {
+        try {
+          const referralPubkeyBytes = userAccountInfo.data.slice(
+            USER_ACCOUNT_REFERRAL_OFFSET, 
+            USER_ACCOUNT_REFERRAL_OFFSET + USER_ACCOUNT_REFERRAL_SIZE
+          );
+          const referralPubkey = new PublicKey(referralPubkeyBytes);
+          
+          if (!referralPubkey.equals(PublicKey.default)) {
+            // User has a referrer, derive the referrer's UserAccount PDA
+            const [referrerPDA] = getUserAccountPDA(referralPubkey);
+            referrerAccountPDA = referrerPDA;
+            console.log('📋 User has referrer:', referralPubkey.toBase58());
+            console.log('📋 Referrer account PDA:', referrerAccountPDA.toBase58());
+          } else {
+            console.log('📋 No referrer (self-referral)');
+          }
+        } catch (err) {
+          console.warn('⚠️  Failed to read referrer from UserAccount, using PublicKey.default:', err);
+          referrerAccountPDA = PublicKey.default;
         }
-      } catch (err) {
-        console.warn('⚠️  Failed to read referrer from UserAccount, using PublicKey.default:', err);
-        referrerAccountPDA = PublicKey.default;
       }
       
       // Build the mint_tokens instruction (8-account version for deployed program)

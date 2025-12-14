@@ -756,8 +756,14 @@ import {
 const [userAccountPDA] = getUserAccountPDA(walletPublicKey);
 const [userMetadataPDA] = getUserMetadataPDA(walletPublicKey);
 
-// Read referrer from UserAccount (offset 40-72)
-const referralPubkey = new PublicKey(userAccountData.slice(40, 72));
+// Read referrer from UserAccount using constants
+// USER_ACCOUNT_REFERRAL_OFFSET = 40, USER_ACCOUNT_REFERRAL_SIZE = 32
+const referralPubkey = new PublicKey(
+  userAccountData.slice(
+    USER_ACCOUNT_REFERRAL_OFFSET, 
+    USER_ACCOUNT_REFERRAL_OFFSET + USER_ACCOUNT_REFERRAL_SIZE
+  )
+);
 const referrerAccountPDA = referralPubkey.equals(PublicKey.default) 
   ? PublicKey.default 
   : getUserAccountPDA(referralPubkey)[0];
