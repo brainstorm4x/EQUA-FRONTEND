@@ -29,7 +29,7 @@ describe('verifyMintOwner', () => {
 
   it('should pass when mint owner matches TOKEN_PROGRAM_ID', async () => {
     mockConnection.getAccountInfo.mockResolvedValue({
-      owner: standardTokenProgram,
+      owner: token2022Program, // Now expecting Token-2022
       data: Buffer.alloc(82), // Standard mint account size
       lamports: 1000000
     });
@@ -45,9 +45,9 @@ describe('verifyMintOwner', () => {
       .toThrow('does not exist');
   });
 
-  it('should throw error when mint owner is Token-2022 instead of standard SPL', async () => {
+  it('should throw error when mint owner is standard SPL instead of Token-2022', async () => {
     mockConnection.getAccountInfo.mockResolvedValue({
-      owner: token2022Program,
+      owner: standardTokenProgram, // Wrong token program (we expect Token-2022)
       data: Buffer.alloc(82),
       lamports: 1000000
     });
@@ -57,16 +57,16 @@ describe('verifyMintOwner', () => {
       .toThrow('Mint owner mismatch');
   });
 
-  it('should provide actionable error message for Token-2022 mismatch', async () => {
+  it('should provide actionable error message for standard SPL mismatch', async () => {
     mockConnection.getAccountInfo.mockResolvedValue({
-      owner: token2022Program,
+      owner: standardTokenProgram, // Wrong token program (we expect Token-2022)
       data: Buffer.alloc(82),
       lamports: 1000000
     });
 
     try {
       await verifyMintOwner(mockConnection, mintPubkey);
-      fail('Should have thrown an error');
+      throw new Error('Should have thrown an error');
     } catch (error: any) {
       expect(error.message).toContain('Mint owner mismatch');
       expect(error.message).toContain('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');

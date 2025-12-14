@@ -20,37 +20,38 @@ This audit performs a comprehensive review of the EQUA registration and minting 
 
 ### Current Status: ✅ READY FOR TESTING
 
-The codebase is properly configured to use **Standard SPL Token Program** (`TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`). All major issues from previous fixes have been resolved.
+**UPDATE (December 2025)**: The codebase has been updated to use **Token-2022 (SPL Token Extensions)** (`TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`) to align with the EQUA backend deployment. All major issues from previous fixes have been resolved.
 
 ---
 
 ## 1. Token Program Consistency Audit
 
-### Finding: ✅ CORRECT - Standard SPL Token Program
+### Finding: ✅ CORRECT - Token-2022 (Updated December 2025)
 
 **Current Configuration:**
-- **Frontend (`constants.ts`)**: Uses `TOKEN_PROGRAM_ID` from `@solana/spl-token` (Standard Token)
+- **Frontend (`constants.ts`)**: Uses `TOKEN_2022_PROGRAM_ID` from `@solana/spl-token` (Token-2022)
 - **IDL (`equa_token.json`)**: Flexible - accepts any token program as account parameter
-- **Documentation**: Some confusion exists - `MINT_CREATION_INSTRUCTIONS.md` mentions Token-2022
+- **Backend**: Uses Token-2022 consistently across deployment scripts
 
 **Analysis:**
 ```typescript
-// src/lib/constants.ts
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-export { TOKEN_PROGRAM_ID };
+// src/lib/constants.ts (Updated)
+import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
 ```
 
-This imports the **Standard SPL Token Program ID** (`TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`), not Token-2022.
+This now uses **Token-2022 (SPL Token Extensions)** (`TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`), matching the EQUA backend.
 
 **Verification Points:**
 - ✅ Registration flow uses correct TOKEN_PROGRAM_ID for ATA creation
 - ✅ Minting flow uses correct TOKEN_PROGRAM_ID
-- ✅ Comments explicitly state "Standard SPL Token Program (not Token-2022)"
-- ⚠️  Some documentation mentions Token-2022 (needs clarification)
+- ✅ Comments updated to reflect Token-2022 configuration
+- ✅ Documentation aligned with backend Token-2022 usage
+- ✅ Environment variable override available (NEXT_PUBLIC_TOKEN_STANDARD)
 
 **Recommendation:**
-- If the deployed mint on devnet uses Standard Token: **No changes needed** ✅
-- If the deployed mint on devnet uses Token-2022: **Update constants.ts** (see below)
+- Current configuration matches backend deployment ✅
+- For testing with Standard SPL Token: Set `NEXT_PUBLIC_TOKEN_STANDARD=standard` in `.env.local`
 
 ---
 
@@ -606,25 +607,33 @@ describe('EQUA Minting Flow', () => {
 
 ---
 
-## 16. How to Switch to Token-2022 (If Needed)
+## 16. Token Program Configuration (Updated December 2025)
 
-If devnet testing reveals the mint uses Token-2022, apply this fix:
+**UPDATE**: The frontend has been updated to use Token-2022 by default to match the EQUA backend deployment.
 
 ### File: `src/lib/constants.ts`
 
-**Current:**
-```typescript
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-export { TOKEN_PROGRAM_ID };
-```
-
-**Change to:**
+**Current Configuration:**
 ```typescript
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
 ```
 
-**Verify all usages update correctly:**
+### Alternative: Switch to Standard SPL Token (If Needed)
+
+If you need to test with Standard SPL Token, use the environment variable:
+```bash
+# In .env.local
+NEXT_PUBLIC_TOKEN_STANDARD=standard
+```
+
+Or update `src/lib/constants.ts`:
+```typescript
+import { TOKEN_PROGRAM_ID as SPL_TOKEN_PROGRAM_ID } from '@solana/spl-token';
+export const TOKEN_PROGRAM_ID = SPL_TOKEN_PROGRAM_ID;
+```
+
+**All usages are automatically updated:**
 - Registration flow ATA creation ✅
 - Minting flow ATA verification ✅
 - All instruction builders ✅
@@ -635,27 +644,28 @@ export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
 
 ### Overall Assessment: ✅ READY FOR TESTING
 
-The EQUA frontend code is **well-structured**, **secure**, and **correct** for its current configuration (Standard SPL Token Program). All major issues from previous iterations have been resolved:
+**UPDATE (December 2025)**: The EQUA frontend code is **well-structured**, **secure**, and **correct** for Token-2022 configuration (matching the backend). All major issues from previous iterations have been resolved:
 
 - ✅ ATA creation at correct time (registration, not minting)
 - ✅ Referral account handling (user's own account for self-referral)
-- ✅ Token program consistency (Standard Token throughout)
+- ✅ Token program consistency (Token-2022 throughout, matching backend)
 - ✅ Proper instruction building (matches IDL exactly)
 - ✅ Excellent error messages (user-friendly, actionable)
 - ✅ Cooldown mechanism (working correctly)
 - ✅ Security best practices (simulation, confirmation, validation)
+- ✅ Environment variable override for testing (NEXT_PUBLIC_TOKEN_STANDARD)
 
 ### Next Steps:
 
 1. **Deploy to Devnet** (if not already deployed)
 2. **Test End-to-End** with fresh wallet
-3. **Verify Token Program** matches frontend configuration
+3. **Verify Token Program** matches frontend configuration (Token-2022)
 4. **Update Documentation** if needed
 5. **Monitor and Iterate** based on user feedback
 
-### No Code Changes Required
+### Configuration Aligned with Backend
 
-Unless devnet testing reveals the mint uses Token-2022 (which would require the one-line change above), **no code changes are necessary**. The current implementation is production-ready for devnet testing.
+The frontend is now configured to use Token-2022, matching the EQUA backend's token program choice. This alignment eliminates the "Mint owner mismatch" errors that occurred when the frontend expected Standard SPL Token but the backend used Token-2022.
 
 ---
 
