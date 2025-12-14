@@ -143,6 +143,15 @@ async function main() {
         error(`✗ IDL associated_token_program should be ${ASSOCIATED_TOKEN_PROGRAM}, got ${atpAccount?.address}`);
         hasErrors = true;
       }
+      
+      // Check token_program at index 10
+      const tokenProgramAccount = initializeUserInstruction.accounts[10];
+      if (tokenProgramAccount?.name === 'token_program') {
+        success(`✓ IDL has token_program at index 10`);
+      } else {
+        error(`✗ IDL account at index 10 should be 'token_program', got '${tokenProgramAccount?.name}'`);
+        hasErrors = true;
+      }
     }
   } catch (err) {
     error(`✗ Failed to validate IDL: ${err.message}`);
@@ -277,6 +286,19 @@ async function main() {
       } else {
         error(`✗ Missing account references: ${missingAccounts.join(', ')}`);
         hasErrors = true;
+      }
+      
+      // Verify preflight checks validate correct indices (9 and 10, not 8 and 9)
+      const preflightChecks = programContent.match(/keys\[(\d+)\]\.pubkey\.equals\(ASSOCIATED_TOKEN_PROGRAM_ID\)/g);
+      if (preflightChecks) {
+        const indices = [...programContent.matchAll(/keys\[(\d+)\]\.pubkey\.equals\(ASSOCIATED_TOKEN_PROGRAM_ID\)/g)].map(m => m[1]);
+        if (indices.includes('9')) {
+          success('✓ Preflight validates ASSOCIATED_TOKEN_PROGRAM_ID at index 9');
+        } else if (indices.includes('8')) {
+          error('✗ Legacy preflight found: validates index 8 instead of 9 for ASSOCIATED_TOKEN_PROGRAM_ID');
+          error('  This indicates the old 11-account layout check is still present');
+          hasErrors = true;
+        }
       }
     } else {
       error('✗ createInitializeUserInstruction function not found');

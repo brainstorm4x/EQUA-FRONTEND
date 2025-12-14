@@ -84,6 +84,23 @@ TOKEN_PROGRAM_ID: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb (Token-2022)
 ASSOCIATED_TOKEN_PROGRAM_ID: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
 ```
 
+**InitializeUser Account Structure:**
+The `InitializeUser` instruction requires exactly **12 accounts** in this order:
+1. `user_account` - User's PDA account
+2. `user_metadata` - User's metadata PDA
+3. `authority` - User's wallet (signer)
+4. `global_state` - Global state PDA
+5. `referral_account` - Referrer's user account PDA (or self if no referral)
+6. `referrer_metadata` - Referrer's metadata PDA (or self if no referral)
+7. `user_token_account` - User's associated token account
+8. `mint` - EQUA token mint PDA
+9. **`business_registry`** - Business registry PDA (added in latest version)
+10. `associated_token_program` - Associated Token Program
+11. `token_program` - Token-2022 Program
+12. `system_program` - System Program
+
+⚠️ **Important:** The `business_registry` account at index 8 is required. Omitting it or using the old 11-account structure will cause `InvalidProgramId` errors.
+
 ### Elevated Mint Tiers
 
 Early users benefit from elevated minting rates:
