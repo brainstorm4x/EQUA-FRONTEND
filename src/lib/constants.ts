@@ -99,9 +99,15 @@ export function getEnvConfigWarnings(): string[] {
   // Validate network value if set
   if (hasNetwork) {
     const validNetworks = ['devnet', 'testnet', 'mainnet-beta', 'localnet'];
-    if (!validNetworks.includes(NETWORK)) {
+    // Read current network value directly from env (not the cached NETWORK constant)
+    const currentNetwork = 
+      process.env.NEXT_PUBLIC_NETWORK || 
+      process.env.NEXT_PUBLIC_SOLANA_NETWORK || 
+      'devnet';
+    
+    if (!validNetworks.includes(currentNetwork)) {
       warnings.push(
-        `Invalid network configuration: ${NETWORK}. Must be one of: ${validNetworks.join(', ')}`
+        `Invalid network configuration: ${currentNetwork}. Must be one of: ${validNetworks.join(', ')}`
       );
     }
   }

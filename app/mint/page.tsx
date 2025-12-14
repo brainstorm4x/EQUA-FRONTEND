@@ -1272,15 +1272,12 @@ export default function MintPage() {
         }
       }
       
-      // Log instruction details for debugging
+      // Log instruction details for debugging (if available)
       console.error('🔍 Mint instruction details:');
-      console.error('  - User Account:', userAccountPDA.toBase58());
-      console.error('  - User Metadata:', userMetadataPDA?.toBase58() || 'Not derived');
-      console.error('  - Token Account:', userTokenAccount.toBase58());
-      console.error('  - Mint:', mintPDA.toBase58());
-      console.error('  - Mint Authority:', mintAuthority.toBase58());
-      console.error('  - Token Program:', TOKEN_PROGRAM_ID.toBase58());
-      console.error('  - Mint Amount:', mintAmount);
+      console.error('  - User Account:', userAccountPDA?.toBase58() || 'N/A');
+      console.error('  - Mint:', mintPDA?.toBase58() || 'N/A');
+      console.error('  - Mint Authority:', mintAuthority?.toBase58() || 'N/A');
+      console.error('  - Token Program:', TOKEN_PROGRAM_ID?.toBase58() || 'N/A');
       
       // Use categorized error with actionable guidance
       const categorizedError = categorizeError(err, logs);
