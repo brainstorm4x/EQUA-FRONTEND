@@ -124,7 +124,7 @@ export async function createProgram(
       const idlProgramId = cachedIdl.address || cachedIdl.metadata?.address;
       if (!idlProgramId) {
         const errorMsg = `❌ CRITICAL: IDL is missing program ID!\n` +
-          `  The IDL file at /idl/equa_token.json does not contain an 'address' field.\n` +
+          `  The loaded IDL file does not contain an 'address' field.\n` +
           `  This indicates a malformed or outdated IDL file.\n` +
           `  Fix: Ensure the IDL is properly generated and includes the program address.`;
         console.error(errorMsg);
@@ -677,7 +677,7 @@ export function createMintTokensInstruction(
     console.log('  - Amount (raw base units):', amount);
     console.log('  - Amount BN:', amountBN.toString());
     console.log(`  - Token Program: ${tokenProgram.toBase58()} (${tokenProgramType} ✅)`);
-    console.log('  - Referrer:', isReferrerProvided ? referrerAccount.toBase58() : 'Self-referral (user\'s own userAccountPDA)');
+    console.log('  - Referrer:', isReferrerProvided ? referrerAccount.toBase58() : `Self-referral (${referrerAccount.toBase58()})`);
   }
   
   // Build keys in exact order matching backend IDL
