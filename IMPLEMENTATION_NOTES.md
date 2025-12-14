@@ -1,21 +1,24 @@
 # Implementation Notes: Registration Fix for Consolidated Backend
 
-## ⚠️ BREAKING CHANGE: 11-Account Instruction Structure
+## ⚠️ BREAKING CHANGE: 12-Account Instruction Structure
 
-**Migration Required:** The `initialize_user` instruction has been updated to match the on-chain IDL. All clients (web, mobile, CLI tools) MUST update to the new signature to avoid Anchor 0x66 InstructionDidNotDeserialize errors.
+**Migration Required:** The `initialize_user` instruction has been updated to match the on-chain IDL. All clients (web, mobile, CLI tools) MUST update to the new signature to avoid Anchor 0x66 InstructionDidNotDeserialize and InvalidProgramId errors.
 
 ### What Changed
-- **Accounts:** 9 → 11 (added `user_metadata` and `referrer_metadata` PDAs)
+- **Accounts:** 11 → 12 (added `business_registry` PDA as 9th account)
+- **Previous changes:** 9 → 11 (added `user_metadata` and `referrer_metadata` PDAs)
 - **Data:** Added `user_type` byte (0=individual, 1=business)
 - **Account Order:** Updated to match on-chain program exactly
 
 ### Migration Checklist
-- [ ] Update instruction builder to pass 11 accounts
-- [ ] Derive `user_metadata` PDA: `["user-meta", authority]`
-- [ ] Derive `referrer_metadata` PDA: `["user-meta", referrer]` (or PublicKey.default if no referrer)
-- [ ] Append `user_type` byte to instruction data
-- [ ] Update tests to expect 11 accounts
-- [ ] Verify transactions succeed without 0x66 error
+- [x] Update instruction builder to pass 12 accounts
+- [x] Derive `user_metadata` PDA: `["user-meta", authority]`
+- [x] Derive `referrer_metadata` PDA: `["user-meta", referrer]` (or PublicKey.default if no referrer)
+- [x] Derive `business_registry` PDA: `["business-registry"]`
+- [x] Append `user_type` byte to instruction data
+- [x] Update tests to expect 12 accounts
+- [x] Add preflight validation for program IDs at correct indices
+- [x] Verify transactions succeed without 0x66 or InvalidProgramId errors
 
 ## Summary
 Updated frontend to match the consolidated `initialize_user` instruction in the deployed EQUA backend program (7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP on Devnet).
@@ -42,22 +45,23 @@ createInitializeUserInstruction(
 )
 ```
 
-**After (11 accounts + user_type):**
+**After (12 accounts + user_type):**
 ```typescript
 createInitializeUserInstruction(
   userAccount,         // 0. user_account PDA
-  userMetadata,        // 1. user_metadata PDA ← NEW
+  userMetadata,        // 1. user_metadata PDA
   authority,           // 2. authority (signer, writable)
   globalState,         // 3. global_state
   referralAccount,     // 4. referral_account (unchecked, writable)
-  referrerMetadata,    // 5. referrer_metadata (unchecked, writable) ← NEW
+  referrerMetadata,    // 5. referrer_metadata (unchecked, writable)
   userTokenAccount,    // 6. user_token_account
   mint,                // 7. mint
-  associatedTokenProgram, // 8. associated_token_program
-  tokenProgram,        // 9. token_program
+  businessRegistry,    // 8. business_registry PDA ← NEW (Dec 2024)
+  associatedTokenProgram, // 9. associated_token_program
+  tokenProgram,        // 10. token_program
   mintStart,
   referrer,
-  userType             // user_type (u8) ← NEW: 0=individual, 1=business
+  userType             // user_type (u8): 0=individual, 1=business
 )
 ```
 
@@ -138,18 +142,19 @@ createInitializeUserInstruction(
 )
 ```
 
-### After (11 accounts + user_type):
+### After (12 accounts + user_type):
 ```typescript
 // NEW - REQUIRED
 const [userMetadata] = getUserMetadataPDA(authority);
 const [referrerMetadata] = referrer 
   ? getUserMetadataPDA(referrerPubkey)
   : [PublicKey.default, 0];
+const [businessRegistry] = getBusinessRegistryPDA();
 
 createInitializeUserInstruction(
   userAccount, userMetadata, authority, globalState,
   referralAccount, referrerMetadata, userTokenAccount, mint,
-  associatedTokenProgram, tokenProgram,
+  businessRegistry, associatedTokenProgram, tokenProgram,
   mintStart, referrer, userType  // userType: 0 or 1
 )
 ```
@@ -210,6 +215,7 @@ npm run build
 - `global_state`: `["global-state"]`
 - `mint`: `["equa-mint"]`
 - `mint_authority`: `["mint-authority"]`
+- `business_registry`: `["business-registry"]` ← NEW (Dec 2024)
 
 ## Account Structure
 ```

@@ -38,6 +38,7 @@ import {
   getMintAuthorityPDA,
   getUserAccountPDA,
   getUserMetadataPDA,
+  getBusinessRegistryPDA,
   createInitializeUserInstruction,
   createMintEquaInstruction,
   createMintTokensInstruction,
@@ -155,6 +156,9 @@ async function main() {
   
   // userMetadataPDA already derived in Step 3
   
+  // Derive business registry PDA using helper function
+  const [businessRegistryPDA] = getBusinessRegistryPDA();
+  
   const registerIx = createInitializeUserInstruction(
     userAccountPDA,
     userMetadataPDA,              // User metadata PDA
@@ -164,6 +168,7 @@ async function main() {
     userMetadataPDA,              // Self-referral: use own metadata PDA
     userTokenAccount,
     mintPDA,
+    businessRegistryPDA,          // Business registry PDA
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
     now,
@@ -171,7 +176,7 @@ async function main() {
     0                             // userType: 0 = individual, 1 = business
   );
   
-  console.log('\n🧪 Registration Instruction Metas (11 accounts):');
+  console.log('\n🧪 Registration Instruction Metas (12 accounts):');
   registerIx.keys.forEach((k, i) => {
     console.log(`  ${i}. ${k.pubkey.toBase58()}`);
     console.log(`     writable=${k.isWritable} signer=${k.isSigner}`);

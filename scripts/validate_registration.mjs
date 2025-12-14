@@ -75,11 +75,11 @@ async function main() {
       hasErrors = true;
     } else {
       // Check account count
-      if (initializeUserInstruction.accounts.length !== 11) {
-        error(`✗ Expected 11 accounts, got ${initializeUserInstruction.accounts.length}`);
+      if (initializeUserInstruction.accounts.length !== 12) {
+        error(`✗ Expected 12 accounts, got ${initializeUserInstruction.accounts.length}`);
         hasErrors = true;
       } else {
-        success('✓ IDL has 11 accounts for initialize_user');
+        success('✓ IDL has 12 accounts for initialize_user');
       }
       
       // Check account names
@@ -92,6 +92,7 @@ async function main() {
         'referrer_metadata',
         'user_token_account',
         'mint',
+        'business_registry',
         'associated_token_program',
         'token_program',
         'system_program'
@@ -125,10 +126,19 @@ async function main() {
         }
       }
       
-      // Check associated_token_program address
-      const atpAccount = initializeUserInstruction.accounts[8];
+      // Check business_registry at index 8
+      const businessRegistryAccount = initializeUserInstruction.accounts[8];
+      if (businessRegistryAccount?.name === 'business_registry') {
+        success(`✓ IDL has business_registry at index 8`);
+      } else {
+        error(`✗ IDL account at index 8 should be 'business_registry', got '${businessRegistryAccount?.name}'`);
+        hasErrors = true;
+      }
+      
+      // Check associated_token_program address at index 9
+      const atpAccount = initializeUserInstruction.accounts[9];
       if (atpAccount?.address === ASSOCIATED_TOKEN_PROGRAM) {
-        success(`✓ IDL specifies correct ASSOCIATED_TOKEN_PROGRAM_ID at index 8`);
+        success(`✓ IDL specifies correct ASSOCIATED_TOKEN_PROGRAM_ID at index 9`);
       } else {
         error(`✗ IDL associated_token_program should be ${ASSOCIATED_TOKEN_PROGRAM}, got ${atpAccount?.address}`);
         hasErrors = true;
@@ -243,19 +253,19 @@ async function main() {
     if (programContent.includes('createInitializeUserInstruction')) {
       success('✓ createInitializeUserInstruction function exists');
       
-      // Check for 11 account keys by searching for the instruction comment
+      // Check for 12 account keys by searching for the instruction comment
       // More robust than regex parsing of the actual keys array
-      if (programContent.includes('// Account order matches backend IDL exactly (11 accounts)')) {
-        success('✓ Instruction builder documented to create 11 account keys');
+      if (programContent.includes('// Account order matches backend IDL exactly (12 accounts)')) {
+        success('✓ Instruction builder documented to create 12 account keys');
       } else {
-        warn('⚠ Cannot verify 11-account documentation in instruction builder');
+        warn('⚠ Cannot verify 12-account documentation in instruction builder');
       }
       
       // Check that all expected account variables are used
       const requiredAccounts = [
         'userAccount', 'userMetadata', 'authority', 'globalState',
         'referralAccount', 'referrerMetadata', 'userTokenAccount', 'mint',
-        'associatedTokenProgram', 'tokenProgram', 'SystemProgram.programId'
+        'businessRegistry', 'associatedTokenProgram', 'tokenProgram', 'SystemProgram.programId'
       ];
       
       const missingAccounts = requiredAccounts.filter(acc => 
@@ -263,7 +273,7 @@ async function main() {
       );
       
       if (missingAccounts.length === 0) {
-        success('✓ All 11 required account parameters referenced');
+        success('✓ All 12 required account parameters referenced');
       } else {
         error(`✗ Missing account references: ${missingAccounts.join(', ')}`);
         hasErrors = true;

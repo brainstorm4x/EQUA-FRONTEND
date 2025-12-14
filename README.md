@@ -164,8 +164,11 @@ formatEquaRaw(123_456, { trimTrailingZeros: true }) // "0.123456"
 - **Network**: Solana Devnet
 - **Token Standard**: Token-2022 (SPL Token Extensions) - *See note below*
 - **Program ID**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- **InitializeUser**: 12-account instruction (includes `business_registry` PDA)
 
 > **Important:** The program client has been consolidated (December 2025) to fix `InstructionDidNotDeserialize` errors. All code now uses a single program client with the full IDL. See [docs/PROGRAM_ID_MIGRATION.md](docs/PROGRAM_ID_MIGRATION.md) for details.
+
+> **Critical:** The `initialize_user` instruction requires **12 accounts** including the `business_registry` PDA (seed: `"business-registry"`). Older versions sending 11 accounts will fail with InvalidProgramId errors. See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for details.
 
 > **Note:** The program ID can be overridden using the `NEXT_PUBLIC_PROGRAM_ID` or `NEXT_PUBLIC_EQUA_PROGRAM_ID` (legacy) environment variable. The runtime validates that the configured ID matches the deployed program.
 
