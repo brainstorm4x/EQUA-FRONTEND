@@ -51,6 +51,9 @@ const STANDARD_TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 const TOKEN_2022_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
 const ASSOCIATED_TOKEN_PROGRAM = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
 
+// Expected token program for EQUA (default: Token-2022)
+const EXPECTED_TOKEN_PROGRAM = TOKEN_2022_PROGRAM;
+
 async function main() {
   console.log('='.repeat(80));
   info('EQUA Frontend Registration Validation');
@@ -143,24 +146,25 @@ async function main() {
     const constantsPath = path.join(__dirname, '..', 'src', 'lib', 'constants.ts');
     const constantsContent = fs.readFileSync(constantsPath, 'utf-8');
     
-    // Check for TOKEN_2022_PROGRAM_ID import (should NOT exist)
+    // Check for TOKEN_2022_PROGRAM_ID import (should exist now)
     if (constantsContent.includes('TOKEN_2022_PROGRAM_ID')) {
-      // Check if it's just in comments or actual code
+      // Check if it's imported
       const lines = constantsContent.split('\n').filter(line => 
         line.includes('TOKEN_2022_PROGRAM_ID') && !line.trim().startsWith('//')
       );
       if (lines.length > 0) {
-        warn('⚠ TOKEN_2022_PROGRAM_ID found in constants.ts (should use standard SPL Token)');
-        console.log('  Lines:', lines);
+        success('✓ TOKEN_2022_PROGRAM_ID imported in constants.ts');
       }
+    } else {
+      warn('⚠ TOKEN_2022_PROGRAM_ID not found in constants.ts');
     }
     
-    // Check for standard SPL Token references
-    if (constantsContent.includes('Standard SPL Token') || 
-        constantsContent.includes('TOKEN_PROGRAM_ID as SPL_TOKEN_PROGRAM_ID')) {
-      success('✓ constants.ts configured for Standard SPL Token');
+    // Check for Token-2022 references
+    if (constantsContent.includes('Token-2022') || 
+        constantsContent.includes('TOKEN_2022_PROGRAM_ID')) {
+      success('✓ constants.ts configured for Token-2022');
     } else {
-      warn('⚠ Cannot verify Standard SPL Token configuration in constants.ts');
+      warn('⚠ Cannot verify Token-2022 configuration in constants.ts');
     }
     
     // Check for ASSOCIATED_TOKEN_PROGRAM_ID export
@@ -204,11 +208,11 @@ async function main() {
       const mintOwner = mintInfo.owner.toBase58();
       info(`  Mint owner: ${mintOwner}`);
       
-      if (mintOwner === STANDARD_TOKEN_PROGRAM) {
-        success('✓ Mint uses Standard SPL Token Program (correct)');
-      } else if (mintOwner === TOKEN_2022_PROGRAM) {
-        error('✗ Mint uses Token-2022 but app is configured for Standard SPL Token');
-        error('  Fix: Either update constants.ts or recreate mint with standard SPL Token');
+      if (mintOwner === TOKEN_2022_PROGRAM) {
+        success('✓ Mint uses Token-2022 Program (correct)');
+      } else if (mintOwner === STANDARD_TOKEN_PROGRAM) {
+        error('✗ Mint uses Standard SPL Token but app is configured for Token-2022');
+        error('  Fix: Either set NEXT_PUBLIC_TOKEN_STANDARD=standard or recreate mint with Token-2022');
         hasErrors = true;
       } else {
         error(`✗ Mint uses unknown token program: ${mintOwner}`);
@@ -323,7 +327,7 @@ async function main() {
     process.exit(1);
   } else {
     success('✅ VALIDATION PASSED');
-    success('Registration flow is correctly configured for Standard SPL Token');
+    success('Registration flow is correctly configured for Token-2022');
     console.log();
     info('Next steps:');
     info('  1. Run: npm test -- __tests__/registration/');

@@ -37,7 +37,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 ## Features
 
-- **Solana Integration**: Built on Solana blockchain using Standard SPL Token Program
+- **Solana Integration**: Built on Solana blockchain using Token-2022 (SPL Token Extensions)
 - **On-Chain Only**: All data stored on blockchain - no external database
 - **Wallet Support**: Phantom, Solflare, and other popular Solana wallets
 - **Token Minting**: Mint EQUA tokens with dynamic pricing
@@ -146,13 +146,14 @@ formatEquaRaw(123_456, { trimTrailingZeros: true }) // "0.123456"
 ## Network Configuration
 
 - **Network**: Solana Devnet
-- **Token Standard**: SPL Token (Standard) - *See note below*
+- **Token Standard**: Token-2022 (SPL Token Extensions) - *See note below*
 - **Program ID**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
 
 > **Important:** The program client has been consolidated (December 2025) to fix `InstructionDidNotDeserialize` errors. All code now uses a single program client with the full IDL. See [docs/PROGRAM_ID_MIGRATION.md](docs/PROGRAM_ID_MIGRATION.md) for details.
 
 > **Note:** The program ID can be overridden using the `NEXT_PUBLIC_PROGRAM_ID` or `NEXT_PUBLIC_EQUA_PROGRAM_ID` (legacy) environment variable. The runtime validates that the configured ID matches the deployed program.
-> **Note:** The codebase is currently configured for Standard SPL Token Program. If your deployed mint uses Token-2022, see [AUDIT_REPORT.md](AUDIT_REPORT.md#16-how-to-switch-to-token-2022-if-needed) for configuration instructions.
+
+> **Note:** The EQUA frontend is configured to use Token-2022 (SPL Token Extensions) to match the backend Anchor program. This aligns with the EQUA backend's Token-2022 standardization. If you need to use Standard SPL Token for testing, set `NEXT_PUBLIC_TOKEN_STANDARD=standard` in your `.env.local` file.
 
 ### Environment Variables
 
@@ -166,6 +167,9 @@ NEXT_PUBLIC_EQUA_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP  # Lega
 # Network Configuration
 NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com  # Optional, defaults to devnet
 NEXT_PUBLIC_NETWORK=devnet                               # Optional, defaults to devnet
+
+# Token Program Configuration
+NEXT_PUBLIC_TOKEN_STANDARD=token2022                     # Optional, defaults to token2022; set to 'standard' for SPL Token
 
 # Oracle Configuration
 NEXT_PUBLIC_ENABLE_PYTH=true                            # Optional, defaults to true

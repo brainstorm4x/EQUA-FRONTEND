@@ -355,26 +355,32 @@ NEXT_PUBLIC_MINT_COOLDOWN_SECONDS=86400
 ### Root Causes
 
 #### 1. Mint Created with Wrong Token Program
-The EQUA mint was created with Token-2022, but the frontend is configured for Standard SPL Token.
+The EQUA backend uses Token-2022, but if your mint was created with Standard SPL Token, there will be a mismatch.
 
 **Solution:**
-```typescript
-// In src/lib/constants.ts, check TOKEN_PROGRAM_ID
-// Should be:
-export const TOKEN_PROGRAM_ID = SPL_TOKEN_PROGRAM_ID; // Standard SPL Token
+The EQUA frontend is now configured to use Token-2022 by default (matching the backend). If you need to use Standard SPL Token:
+```bash
+# In .env.local
+NEXT_PUBLIC_TOKEN_STANDARD=standard
+```
 
-// NOT:
-export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID; // Token-2022
+Or update `src/lib/constants.ts`:
+```typescript
+// Force Standard SPL Token (not recommended - backend uses Token-2022)
+export const TOKEN_PROGRAM_ID = SPL_TOKEN_PROGRAM_ID;
 ```
 
 #### 2. Frontend Configured for Wrong Token Program
-The mint uses Standard SPL Token, but frontend is configured for Token-2022.
+By default, the frontend uses Token-2022 to match the EQUA backend deployment.
 
 **Solution:**
 1. Check mint owner on Solana Explorer
-2. Update `src/lib/constants.ts` to match:
+2. Verify it matches the configured token program:
    - Standard SPL Token: `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`
    - Token-2022: `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`
+3. If mismatch, either:
+   - Set `NEXT_PUBLIC_TOKEN_STANDARD=standard` (if mint uses Standard)
+   - Recreate mint with Token-2022 (recommended for EQUA)
 
 #### 3. Incorrect ASSOCIATED_TOKEN_PROGRAM_ID
 Wrong constant passed to instruction builder.
@@ -383,7 +389,7 @@ Wrong constant passed to instruction builder.
 The app now validates this at startup. Check browser console for:
 ```
 ✅ Token program IDs validated at startup:
-  - TOKEN_PROGRAM_ID: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA (Standard SPL Token)
+  - TOKEN_PROGRAM_ID: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb (Token-2022)
   - ASSOCIATED_TOKEN_PROGRAM_ID: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
 ```
 
@@ -422,9 +428,11 @@ The frontend now includes runtime validation:
 If validation fails, you'll see:
 ```
 ❌ Mint owner mismatch - this will cause InvalidProgramId errors!
-  Mint uses Token-2022, but app is configured for Standard SPL Token.
+  Mint owner: [actual owner address] ([Standard SPL Token or Token-2022])
+  Expected (TOKEN_PROGRAM_ID): [configured address] ([Standard SPL Token or Token-2022])
   
-  Fix: Update TOKEN_PROGRAM_ID in src/lib/constants.ts to match the mint owner
+  Fix: Update TOKEN_PROGRAM_ID in src/lib/constants.ts to match the mint owner,
+  or set NEXT_PUBLIC_TOKEN_STANDARD environment variable
 ```
 
 ### Related Issues

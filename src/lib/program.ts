@@ -350,28 +350,42 @@ export async function verifyMintOwner(
     const expectedOwner = TOKEN_PROGRAM_ID.toBase58();
     
     // Token program IDs for helpful error messages
+    const STANDARD_TOKEN_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
     const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
     
     if (mintOwner !== expectedOwner) {
+      // Identify which programs are involved
+      const mintProgramType = mintOwner === TOKEN_2022_PROGRAM_ADDRESS 
+        ? 'Token-2022' 
+        : mintOwner === STANDARD_TOKEN_ADDRESS 
+          ? 'Standard SPL Token'
+          : 'Unknown token program';
+      
+      const expectedProgramType = expectedOwner === TOKEN_2022_PROGRAM_ADDRESS
+        ? 'Token-2022'
+        : expectedOwner === STANDARD_TOKEN_ADDRESS
+          ? 'Standard SPL Token'
+          : 'Unknown token program';
+      
       const errorMsg = 
         `❌ Mint owner mismatch - this will cause InvalidProgramId errors!\n` +
         `  Mint address: ${mintPubkey.toBase58()}\n` +
-        `  Mint owner: ${mintOwner}\n` +
-        `  Expected (TOKEN_PROGRAM_ID): ${expectedOwner}\n` +
+        `  Mint owner: ${mintOwner} (${mintProgramType})\n` +
+        `  Expected (TOKEN_PROGRAM_ID): ${expectedOwner} (${expectedProgramType})\n` +
         `  \n` +
         `  The mint was created with a different token program than configured.\n` +
-        `  ${mintOwner === TOKEN_2022_PROGRAM_ADDRESS
-          ? 'Mint uses Token-2022, but app is configured for Standard SPL Token.'
-          : 'Mint uses an unknown token program.'}\n` +
         `  \n` +
         `  Fix: Update TOKEN_PROGRAM_ID in src/lib/constants.ts to match the mint owner,\n` +
+        `  or set NEXT_PUBLIC_TOKEN_STANDARD environment variable,\n` +
         `  or recreate the mint with the correct token program.`;
       
       console.error(errorMsg);
       throw new Error(`Mint owner mismatch: expected ${expectedOwner}, got ${mintOwner}`);
     }
     
-    console.log(`✅ Mint owner verified: ${mintOwner} (Standard SPL Token)`);
+    // Identify which program is being used for success message
+    const programType = mintOwner === TOKEN_2022_PROGRAM_ADDRESS ? 'Token-2022' : 'Standard SPL Token';
+    console.log(`✅ Mint owner verified: ${mintOwner} (${programType})`);
     return true;
   } catch (error) {
     if (error instanceof Error && error.message.includes('Mint owner mismatch')) {
