@@ -298,6 +298,100 @@ export async function getGlobalState(
   }
 }
 
+// ============================================================================
+// Mint Metadata Fetching
+// ============================================================================
+
+export interface MintMetadata {
+  address: PublicKey;
+  decimals: number;
+  supply: bigint;
+  mintAuthority: PublicKey | null;
+  freezeAuthority: PublicKey | null;
+}
+
+/**
+ * Fetches mint metadata from on-chain account
+ * Uses getParsedAccountInfo for easy parsing of mint data
+ * @param connection - Solana RPC connection
+ * @param mintAddress - Mint account public key
+ * @returns Mint metadata or null if not found
+ */
+export async function getMintMetadata(
+  connection: Connection,
+  mintAddress: PublicKey
+): Promise<MintMetadata | null> {
+  const cacheKey = `mintMetadata:${mintAddress.toBase58()}`;
+  const cached = getCachedRpcResponse<MintMetadata>(cacheKey);
+  if (cached !== null) return cached;
+
+  try {
+    const accountInfo = await connection.getParsedAccountInfo(mintAddress);
+    
+    if (!accountInfo.value) {
+      console.warn('❌ Mint account not found:', mintAddress.toBase58());
+      return null;
+    }
+
+    const data = accountInfo.value.data;
+    if (!data || typeof data === 'string' || !('parsed' in data)) {
+      console.error('❌ Unexpected mint account data format');
+      return null;
+    }
+
+    const parsedData = data.parsed;
+    if (parsedData.type !== 'mint') {
+      console.error('❌ Account is not a mint account');
+      return null;
+    }
+
+    const info = parsedData.info;
+    const metadata: MintMetadata = {
+      address: mintAddress,
+      decimals: info.decimals,
+      supply: BigInt(info.supply),
+      mintAuthority: info.mintAuthority ? new PublicKey(info.mintAuthority) : null,
+      freezeAuthority: info.freezeAuthority ? new PublicKey(info.freezeAuthority) : null,
+    };
+
+    // Cache for 1 hour (mint metadata rarely changes)
+    setCachedRpcResponse(cacheKey, metadata);
+    
+    return metadata;
+  } catch (error) {
+    console.error('❌ Error fetching mint metadata:', error);
+    return null;
+  }
+}
+
+/**
+ * Fetches EQUA mint decimals from on-chain
+ * Returns the expected value (6) as fallback if fetch fails
+ * @param connection - Solana RPC connection
+ * @returns Decimals value
+ */
+export async function getEquaMintDecimals(connection: Connection): Promise<number> {
+  const [mintPDA] = getMintPDA();
+  const metadata = await getMintMetadata(connection, mintPDA);
+  
+  if (!metadata) {
+    console.warn('⚠️ Could not fetch EQUA mint decimals, using default (6)');
+    return 6; // Default to 6 decimals
+  }
+
+  // Validate decimals match expected value
+  if (metadata.decimals !== 6) {
+    console.warn(
+      `⚠️ DECIMALS MISMATCH: Expected 6, got ${metadata.decimals} from on-chain mint. ` +
+      `This may indicate a configuration issue or wrong mint address.`
+    );
+  } else {
+    console.log('✅ EQUA mint decimals verified:', metadata.decimals);
+  }
+
+  return metadata.decimals;
+}
+
 // Keypair storage helpers
 const KEYPAIR_STORAGE_KEY = "equa_user_keypair";
 

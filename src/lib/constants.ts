@@ -51,6 +51,18 @@ if (typeof window !== 'undefined') {
   console.log('  - ASSOCIATED_TOKEN_PROGRAM_ID:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
 }
 
+// ============================================================================
+// Token Mint Configuration
+// ============================================================================
+// EQUA token uses 6 decimals (1 EQUA = 1,000,000 base units)
+// This is the expected decimals value for the on-chain mint account
+export const EQUA_DECIMALS = 6;
+export const EQUA_DECIMAL_MULTIPLIER = Math.pow(10, EQUA_DECIMALS);
+
+// EQUA mint address (derived from PDA in program)
+// This will be computed from getMintPDA() but we document the expected value
+// The actual mint decimals should be fetched from on-chain to ensure accuracy
+
 // Network configuration
 // Support both legacy (NEXT_PUBLIC_NETWORK, NEXT_PUBLIC_RPC_ENDPOINT) and new naming conventions
 // (NEXT_PUBLIC_SOLANA_NETWORK, NEXT_PUBLIC_SOLANA_RPC_HOST) without breaking existing setups
