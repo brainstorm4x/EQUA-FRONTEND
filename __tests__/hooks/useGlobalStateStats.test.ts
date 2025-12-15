@@ -227,14 +227,15 @@ describe('useGlobalStateStats', () => {
   });
 
   it('should update state when subscription receives new data', async () => {
-    let subscriptionCallback: ((accountInfo: any) => void) | null = null;
+    type AccountChangeCallback = (accountInfo: any) => void;
+    let subscriptionCallback: AccountChangeCallback | null = null;
     
     mockConnection.onAccountChange = jest.fn().mockImplementation(
-      (pubkey: PublicKey, callback: (accountInfo: any) => void, commitment: string) => {
+      (_pubkey: PublicKey, callback: AccountChangeCallback, _commitment: string) => {
         subscriptionCallback = callback;
         return 789;
       }
-    );
+    ) as any;
     
     // Initial account info
     const initialAccountData = Buffer.alloc(85);
@@ -265,7 +266,7 @@ describe('useGlobalStateStats', () => {
     new anchor.BN(750).toArrayLike(Buffer, 'le', 8).copy(updatedAccountData, 12); // 750 transactions
     
     if (subscriptionCallback) {
-      subscriptionCallback({
+      (subscriptionCallback as AccountChangeCallback)({
         data: updatedAccountData,
         executable: false,
         lamports: 5000000,

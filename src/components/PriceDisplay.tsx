@@ -1,200 +1,95 @@
 'use client';
 
-import { FC, useEffect, useState, useRef, useCallback } from 'react';
-import { useConnection } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
+import { FC, useEffect, useState } from 'react';
 import { EquaPriceCalculator, PricePhase, formatEquaPrice } from '@/utils/priceCalculator';
-import { PROGRAM_ID, GLOBAL_STATE_SEED } from '@/lib/constants';
-import { safeParseUserCount } from '@/utils/safeAccountParsing';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
-import * as anchor from '@coral-xyz/anchor';
-import { getTotalTransfers } from '@/utils/transferTracking';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat, formatEQXPrice, MultiFormatEquaPrice } from '@/utils/eqxOracle';
-import { resetForNewProgramId } from '@/utils/programIdMigration';
+import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
 
 interface PriceDisplayProps {
   className?: string;
   showStats?: boolean;
 }
 
-// ============================================================================
-// PERFORMANCE OPTIMIZATION: Cached PDA computation
-// Uses GLOBAL_STATE_SEED from lib/constants.ts (matches Rust backend)
-// ============================================================================
-let cachedGlobalStatePDA: PublicKey | null = null;
-
-function getGlobalStatePDA(): PublicKey {
-  if (!cachedGlobalStatePDA) {
-    [cachedGlobalStatePDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from(GLOBAL_STATE_SEED)],
-      PROGRAM_ID
-    );
-  }
-  return cachedGlobalStatePDA;
-}
-
-// ============================================================================
-// PERFORMANCE OPTIMIZATION: Data fetching with caching
-// ============================================================================
-interface PriceData {
-  totalUsers: number;
-  totalTransactions: number;
-  currentPrice: number;
-  currentPhase: PricePhase;
-  currentEpoch: number;
-  mintingRate: string;
-  // EQX-related fields
+// EQX-related fields for price display
+interface EqxPriceData {
   eqxPrice: number;
   eqxValue: number;
   priceSource: 'pyth' | 'coingecko' | 'fallback';
 }
 
-const DEFAULT_PRICE_DATA: PriceData = {
-  totalUsers: 0,
-  totalTransactions: 0,
-  currentPrice: 0.01,
-  currentPhase: 'phase1',
-  currentEpoch: 0,
-  mintingRate: '100,000',
+const DEFAULT_EQX_DATA: EqxPriceData = {
   eqxPrice: 0.01,
   eqxValue: 1.0,
   priceSource: 'fallback',
 };
 
 export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats = false }) => {
-  const { connection } = useConnection();
-  const [priceData, setPriceData] = useState<PriceData>(DEFAULT_PRICE_DATA);
-  const [isLoading, setIsLoading] = useState(true);
-  const [localCurrency, setLocalCurrency] = useState<string>('USD');
+  // Use authoritative global state hook for real-time stats
+  const { totalUsers, totalTransactions, isLoading: isStatsLoading } = useGlobalStateStats();
   
-  // Track mounted state to prevent state updates after unmount
-  const isMountedRef = useRef(true);
-  // Track last fetch time for throttling
-  const lastFetchRef = useRef<number>(0);
-  const FETCH_THROTTLE_MS = 10000; // Minimum 10 seconds between fetches
+  const [localCurrency, setLocalCurrency] = useState<string>('USD');
+  const [eqxData, setEqxData] = useState<EqxPriceData>(DEFAULT_EQX_DATA);
+  const [currentPrice, setCurrentPrice] = useState<number>(0.01);
+  const [currentPhase, setCurrentPhase] = useState<PricePhase>('phase1');
+  const [mintingRate, setMintingRate] = useState<string>('100,000');
 
   // Detect local currency on mount
   useEffect(() => {
     setLocalCurrency(getUserLocaleCurrency());
   }, []);
 
-  const fetchPriceData = useCallback(async () => {
-    // Throttle fetches to reduce RPC calls
-    const now = Date.now();
-    if (now - lastFetchRef.current < FETCH_THROTTLE_MS) {
-      return;
-    }
-    lastFetchRef.current = now;
-    
-    try {
-      const globalStatePDA = getGlobalStatePDA();
-      const accountInfo = await connection.getAccountInfo(globalStatePDA);
-      
-      if (!isMountedRef.current) return;
-      
-      if (accountInfo) {
-        // Parse global state data
-        const users = safeParseUserCount(accountInfo.data);
-        
-        // Get transfers from localStorage (non-authoritative, for UI display only)
-        // The blockchain (GlobalState.total_transactions) is the source of truth
-        const totalTransfers = getTotalTransfers();
-        console.log('✓ Transfers from localStorage:', totalTransfers);
-        
-        // Calculate price based on transfers
-        const price = EquaPriceCalculator.calculatePrice(totalTransfers);
-        const phase = EquaPriceCalculator.getPhase(totalTransfers);
-        const epoch = EquaPriceCalculator.getCurrentEpoch(totalTransfers);
-        
-        // Calculate minting rate based on total users
-        const nextUserNumber = users + 1;
-        const currentTier = ELEVATED_MINT_TIERS.find(
-          tier => nextUserNumber >= tier.minUser && nextUserNumber <= tier.maxUser
-        );
-        
-        const mintingRate = currentTier 
-          ? currentTier.equaPerAttempt.toLocaleString() 
-          : '100';
-        
-        // Get EQX price data (from Pyth Network with fallback)
-        const currencyCode = getUserLocaleCurrency();
-        const exchangeRate = DEFAULT_RATES[currencyCode]?.rate || 1;
-        let eqxPriceData: MultiFormatEquaPrice;
-        try {
-          eqxPriceData = await getEquaPriceMultiFormat(price, currencyCode, exchangeRate);
-        } catch (eqxError) {
-          console.warn('Error fetching EQX price, using defaults:', eqxError);
-          eqxPriceData = {
-            eqx: price,
-            usd: price,
-            localCurrency: price * exchangeRate,
-            localCurrencyCode: currencyCode,
-            eqxValue: 1.0,
-            source: 'fallback',
-          };
-        }
-        
-        if (isMountedRef.current) {
-          setPriceData({
-            totalUsers: users,
-            totalTransactions: totalTransfers,
-            currentPrice: price,
-            currentPhase: phase,
-            currentEpoch: epoch,
-            mintingRate,
-            eqxPrice: eqxPriceData.eqx,
-            eqxValue: eqxPriceData.eqxValue,
-            priceSource: eqxPriceData.source,
-          });
-        }
-      } else if (isMountedRef.current) {
-        setPriceData(DEFAULT_PRICE_DATA);
-      }
-    } catch (error) {
-      console.error('Error fetching price data:', error);
-      if (isMountedRef.current) {
-        setPriceData(DEFAULT_PRICE_DATA);
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setIsLoading(false);
-      }
-    }
-  }, [connection]);
-
+  // Calculate price, phase, and minting rate based on authoritative totalTransactions
   useEffect(() => {
-    isMountedRef.current = true;
+    // Calculate price based on total_transactions from GlobalState (authoritative)
+    const price = EquaPriceCalculator.calculatePrice(totalTransactions);
+    const phase = EquaPriceCalculator.getPhase(totalTransactions);
     
-    // Reset local state if program ID has changed
-    resetForNewProgramId(PROGRAM_ID.toBase58());
+    setCurrentPrice(price);
+    setCurrentPhase(phase);
     
-    fetchPriceData();
+    // Calculate minting rate based on total users
+    const nextUserNumber = totalUsers + 1;
+    const currentTier = ELEVATED_MINT_TIERS.find(
+      tier => nextUserNumber >= tier.minUser && nextUserNumber <= tier.maxUser
+    );
     
-    // Refresh every 30 seconds (reduced frequency for performance)
-    const interval = setInterval(fetchPriceData, 30000);
+    const rate = currentTier 
+      ? currentTier.equaPerAttempt.toLocaleString() 
+      : '100';
+    setMintingRate(rate);
     
-    // Listen for transfer events to update immediately
-    const handleTransferRecorded = () => {
-      // Force immediate refresh on transfer
-      lastFetchRef.current = 0;
-      fetchPriceData();
-    };
-    
-    if (typeof window !== 'undefined') {
-      window.addEventListener('equa_transfer_recorded', handleTransferRecorded);
-    }
-    
-    return () => {
-      isMountedRef.current = false;
-      clearInterval(interval);
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('equa_transfer_recorded', handleTransferRecorded);
+    // Fetch EQX price data
+    const fetchEqxPrice = async () => {
+      const currencyCode = getUserLocaleCurrency();
+      const exchangeRate = DEFAULT_RATES[currencyCode]?.rate || 1;
+      let eqxPriceData: MultiFormatEquaPrice;
+      try {
+        eqxPriceData = await getEquaPriceMultiFormat(price, currencyCode, exchangeRate);
+      } catch (eqxError) {
+        console.warn('Error fetching EQX price, using defaults:', eqxError);
+        eqxPriceData = {
+          eqx: price,
+          usd: price,
+          localCurrency: price * exchangeRate,
+          localCurrencyCode: currencyCode,
+          eqxValue: 1.0,
+          source: 'fallback',
+        };
       }
+      
+      setEqxData({
+        eqxPrice: eqxPriceData.eqx,
+        eqxValue: eqxPriceData.eqxValue,
+        priceSource: eqxPriceData.source,
+      });
     };
-  }, [fetchPriceData]);
+    
+    fetchEqxPrice();
+  }, [totalTransactions, totalUsers]);
 
-  const getPhaseLabel = useCallback((phase: PricePhase): string => {
+  const getPhaseLabel = (phase: PricePhase): string => {
     switch (phase) {
       case 'phase1':
         return 'Phase 1 ($0.01-$1)';
@@ -207,9 +102,9 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
       case 'phase5':
         return 'Phase 5 (Perpetual)';
     }
-  }, []);
+  };
 
-  if (isLoading) {
+  if (isStatsLoading) {
     return (
       <div className={`bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30 ${className}`}>
         <div className="animate-pulse">
@@ -227,29 +122,29 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           <p className="text-purple-200 text-sm mb-2">Current EQUA Price</p>
           {/* EQX Price (Primary) */}
           <p className="text-yellow-300 text-2xl font-bold" data-testid="eqx-price">
-            {formatEQXPrice(priceData.eqxPrice)}
+            {formatEQXPrice(eqxData.eqxPrice)}
           </p>
           {/* USD Price */}
           <p className="text-white text-lg font-semibold mt-1" data-testid="current-price">
-            {formatEquaPrice(priceData.currentPrice)}
+            {formatEquaPrice(currentPrice)}
           </p>
           {/* Local currency equivalent */}
           {localCurrency !== 'USD' && (
             <p className="text-green-300 text-sm mt-1" data-testid="local-currency-price">
-              ≈ {formatLocalCurrency(priceData.currentPrice, localCurrency)}
+              ≈ {formatLocalCurrency(currentPrice, localCurrency)}
             </p>
           )}
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
-            {getPhaseLabel(priceData.currentPhase)}
+            {getPhaseLabel(currentPhase)}
             <span className="ml-2 text-purple-400">
-              ({priceData.priceSource === 'pyth' ? '🟢 Live' : priceData.priceSource === 'coingecko' ? '🟡 API' : '⚪ Fallback'})
+              ({eqxData.priceSource === 'pyth' ? '🟢 Live' : eqxData.priceSource === 'coingecko' ? '🟡 API' : '⚪ Fallback'})
             </span>
           </p>
         </div>
         
         <div>
           <p className="text-purple-200 text-sm mb-2">Minting Rate</p>
-          <p className="text-white text-3xl font-bold" data-testid="mint-rate">{priceData.mintingRate}</p>
+          <p className="text-white text-3xl font-bold" data-testid="mint-rate">{mintingRate}</p>
           <p className="text-purple-300 text-xs mt-1">EQUA/day</p>
         </div>
 
@@ -258,7 +153,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
             <div>
               <p className="text-purple-200 text-sm mb-2">Registered Users</p>
               <p className="text-white text-3xl font-bold" data-testid="total-users">
-                {priceData.totalUsers.toLocaleString()}
+                {totalUsers.toLocaleString()}
               </p>
               <p className="text-purple-300 text-xs mt-1">Total users</p>
             </div>
@@ -266,7 +161,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
             <div>
               <p className="text-purple-200 text-sm mb-2">Transfers</p>
               <p className="text-white text-3xl font-bold" data-testid="total-transactions">
-                {priceData.totalTransactions.toLocaleString()}
+                {totalTransactions.toLocaleString()}
               </p>
               <p className="text-purple-300 text-xs mt-1">Between users</p>
             </div>
