@@ -39,12 +39,14 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 - **Solana Integration**: Built on Solana blockchain using Token-2022 (SPL Token Extensions)
 - **On-Chain Only**: All data stored on blockchain - no external database
+- **Real-Time Data**: Live balance and stats via WebSocket subscriptions
 - **Wallet Support**: Phantom, Solflare, and other popular Solana wallets
 - **Token Minting**: Mint EQUA tokens with dynamic pricing
 - **Time-Locked Rewards**: First 100 users get special 2-year locked rewards
 - **Referral System**: Earn bonuses for referring new users
 - **SOL Balance Gate**: Minimum 0.05 SOL required for registration
 - **Elevated Mint Tiers**: Early users get higher mint limits
+- **Authoritative Stats**: User counts and transaction counts from on-chain GlobalState
 
 ## Registration Guide
 
