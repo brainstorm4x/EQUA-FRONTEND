@@ -19,8 +19,8 @@ const tokenStandardEnv = process.env.NEXT_PUBLIC_TOKEN_STANDARD;
 const useStandardToken = tokenStandardEnv === 'standard';
 export const TOKEN_PROGRAM_ID = useStandardToken ? SPL_TOKEN_PROGRAM_ID : TOKEN_2022_PROGRAM_ID;
 
-// Log token standard selection for debugging
-if (typeof window !== 'undefined') {
+// Log token standard selection for debugging (development only)
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   const selectedProgram = useStandardToken ? 'Standard SPL Token' : 'Token-2022';
   if (tokenStandardEnv && tokenStandardEnv !== 'standard') {
     console.warn(

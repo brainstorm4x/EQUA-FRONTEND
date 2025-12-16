@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
-import { PROGRAM_ID, TOKEN_PROGRAM_ID } from '@/lib/constants';
+import { PROGRAM_ID, TOKEN_PROGRAM_ID, STANDARD_TOKEN_PROGRAM_ADDRESS } from '@/lib/constants';
 import { getGlobalStatePDA, getMintPDA } from '@/lib/program';
 import { getClusterInfo, isClusterAligned, ClusterInfo } from '@/utils/networkDiagnostics';
 
@@ -42,18 +42,31 @@ export interface NetworkDiagnostics {
 
 /**
  * Load IDL address from public IDL file
+ * Returns null on expected errors (like 404 or malformed JSON) and logs appropriately
  */
 async function loadIdlProgramId(): Promise<string | null> {
   try {
     const response = await fetch('/idl/equa_token.json');
     if (!response.ok) {
-      console.warn('Failed to load IDL for diagnostics');
+      if (response.status === 404) {
+        console.warn('IDL file not found at /idl/equa_token.json - program ID validation will be skipped');
+      } else {
+        console.warn(`Failed to load IDL (HTTP ${response.status}) - program ID validation will be skipped`);
+      }
       return null;
     }
     const idl = await response.json();
+    if (!idl.address) {
+      console.warn('IDL file missing "address" field - program ID validation will be skipped');
+    }
     return idl.address || null;
   } catch (error) {
-    console.warn('Error loading IDL for diagnostics:', error);
+    // Network errors, JSON parse errors, etc.
+    if (error instanceof Error) {
+      console.warn('Error loading IDL for diagnostics:', error.message);
+    } else {
+      console.warn('Unexpected error loading IDL for diagnostics');
+    }
     return null;
   }
 }
@@ -161,7 +174,7 @@ export function useNetworkDiagnostics(): NetworkDiagnostics {
               actionableSteps: [
                 'Check NEXT_PUBLIC_TOKEN_STANDARD environment variable',
                 'Set to "standard" for SPL Token or leave unset for Token-2022',
-                `Mint on-chain uses: ${owner === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' ? 'Standard SPL Token' : 'Token-2022'}`,
+                `Mint on-chain uses: ${owner === STANDARD_TOKEN_PROGRAM_ADDRESS ? 'Standard SPL Token' : 'Token-2022'}`,
                 'Update your env to match the on-chain mint program',
               ],
             });
