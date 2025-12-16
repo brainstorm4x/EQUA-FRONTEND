@@ -14,10 +14,11 @@ import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw } from '@/utils/tokenFormat';
 import { getReferrerData } from '@/utils/referralRateLimit';
-import { recordTransfer, syncTransfersFromChain } from '@/utils/transferTracking';
+import { recordTransfer } from '@/utils/transferTracking';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
+import { useEquaBalance } from '@/hooks/useEquaBalance';
 import { getReferralInfo } from '@/utils/onchainRegistration';
 
 interface WalletDashboardProps {
@@ -54,9 +55,11 @@ function generateReferralUrl(pubkeyBase58: string): string {
 export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) => {
   const { publicKey, connected, signTransaction } = useWallet();
   const { connection } = useConnection();
-  const [balance, setBalance] = useState<number>(0);
+  
+  // Use real-time balance hook instead of manual fetching
+  const { balance, isLoading: isBalanceLoading } = useEquaBalance();
+  
   const [mintDecimals, setMintDecimals] = useState<number>(6); // Default to 6
-  const [transferCount, setTransferCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
@@ -77,12 +80,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     { enabled: connected && !!userAccountPDA }
   );
 
-  // Fetch EQUA balance, mint decimals, and update referral rewards from onchain data
+  // Fetch mint decimals and referral data from onchain
   useEffect(() => {
     if (!publicKey || !connected) {
-      setBalance(0);
       setMintDecimals(6);
-      setTransferCount(0);
       setReferralCount(0);
       setReferralRewards(0);
       return;
@@ -90,26 +91,9 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
 
     const fetchData = async () => {
       try {
-        const [mintPDA] = getMintPDA();
-        
         // Fetch mint decimals from on-chain
         const decimals = await getEquaMintDecimals(connection);
         setMintDecimals(decimals);
-        
-        const tokenAccount = getAssociatedTokenAddressSync(
-          mintPDA,
-          publicKey,
-          false,
-          TOKEN_PROGRAM_ID,
-          ASSOCIATED_TOKEN_PROGRAM_ID
-        );
-        
-        const bal = await getSPLTokenBalance(connection, tokenAccount);
-        setBalance(bal);
-        
-        // Sync transfer count from chain
-        const txCount = await syncTransfersFromChain(connection, tokenAccount);
-        setTransferCount(txCount);
         
         // Get referral data from onchain UserAccount (source of truth)
         if (userAccountData) {
@@ -125,8 +109,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         setReferralCount(count24h);
         console.log('✓ Referral count (24h estimate):', count24h);
       } catch (error) {
-        console.error('Error fetching EQUA balance:', error);
-        setBalance(0);
+        console.error('Error fetching data:', error);
       }
     };
 
@@ -259,21 +242,8 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           onClose={() => setShowSendModal(false)}
           onSuccess={() => {
             setShowSendModal(false);
-            // Refresh balance and transfer count after send
-            setTimeout(async () => {
-              const [mintPDA] = getMintPDA();
-              const tokenAccount = getAssociatedTokenAddressSync(
-                mintPDA,
-                publicKey,
-                false,
-                TOKEN_PROGRAM_ID,
-                ASSOCIATED_TOKEN_PROGRAM_ID
-              );
-              const bal = await getSPLTokenBalance(connection, tokenAccount);
-              setBalance(bal);
-              const txCount = await syncTransfersFromChain(connection, tokenAccount);
-              setTransferCount(txCount);
-            }, 2000);
+            // Balance will be updated automatically via useEquaBalance subscription
+            // No manual refresh needed
           }}
         />
       )}

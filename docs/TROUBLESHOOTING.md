@@ -996,3 +996,103 @@ mint_start:        112-119 (8 bytes)
 referral_rewards:  120-127 (8 bytes)
 last_mint_time:    128-135 (8 bytes)
 ```
+
+## Real-Time Data Architecture
+
+### Overview
+The EQUA frontend uses real-time subscriptions to on-chain data for accurate, up-to-date statistics and balances. All UI-critical data is sourced from blockchain accounts with automatic updates via WebSocket subscriptions.
+
+### Authoritative Data Sources
+
+#### 1. Global State (User Count & Total Transactions)
+- **Source**: `GlobalState` account PDA derived from `global-state` seed
+- **Hook**: `useGlobalStateStats()` in `src/hooks/useGlobalStateStats.ts`
+- **Data Structure**:
+  ```
+  user_count (u32):           offset 8  (4 bytes)
+  total_transactions (u64):   offset 12 (8 bytes)
+  current_epoch (u64):        offset 20 (8 bytes)
+  ```
+- **Update Mechanism**: WebSocket subscription with `confirmed` commitment
+- **Usage**:
+  - `PriceDisplay` component displays total users and transactions
+  - Price calculations use `total_transactions` as authoritative source
+  - Phase and epoch derived from transaction count
+
+#### 2. Token Balance
+- **Source**: SPL Token account (Associated Token Account)
+- **Hook**: `useEquaBalance()` in `src/hooks/useEquaBalance.ts`
+- **Data Structure**: SPL Token account layout, balance at offset 64 (8 bytes, u64)
+- **Update Mechanism**: WebSocket subscription with `confirmed` commitment
+- **Usage**:
+  - `WalletDashboard` component displays live balance
+  - Balance updates automatically after minting, transfers, etc.
+
+### Removed: localStorage-Based Counting
+Previous implementation used localStorage (`transferTracking.ts`) for global transaction counts. This has been **removed from UI display** because:
+- Not authoritative (only tracks local user's transfers)
+- No global visibility
+- Can drift from on-chain reality
+
+**Note**: `transferTracking.ts` still exists for:
+- Local event dispatching (optimistic UI updates)
+- Backward compatibility
+- Optional client-side analytics
+
+**For UI display, always use `useGlobalStateStats()` for transaction counts.**
+
+### Troubleshooting Real-Time Data
+
+#### Issue: Stale Balance After Transfer
+**Symptoms:**
+- Balance doesn't update immediately after sending tokens
+- Balance shows old value even after transaction confirmation
+
+**Solution:**
+- Ensure `useEquaBalance` hook is used (not manual fetching)
+- Check browser console for subscription errors
+- Verify RPC endpoint supports WebSocket subscriptions
+- Balance should update within 1-2 seconds (confirmed commitment)
+
+#### Issue: User Count Not Updating After Registration
+**Symptoms:**
+- Registered user count doesn't increase after new registration
+- PriceDisplay shows stale user count
+
+**Solution:**
+- Ensure `useGlobalStateStats` hook is active
+- Check if GlobalState account is being updated on-chain
+- Verify subscription is established (check console logs)
+- User count updates when GlobalState account changes
+
+#### Issue: Transaction Count Mismatch
+**Symptoms:**
+- Transaction count in UI doesn't match expected value
+- Count seems too low or too high
+
+**Root Cause:**
+- Using localStorage-based counting (deprecated for UI)
+- Not using authoritative on-chain data
+
+**Solution:**
+- Ensure `PriceDisplay` uses `totalTransactions` from `useGlobalStateStats`
+- DO NOT use `getTotalTransfers()` from `transferTracking.ts` for display
+- On-chain `GlobalState.total_transactions` is the single source of truth
+- Price calculations automatically use authoritative count
+
+### Migration Notes
+
+#### For Developers
+If you're maintaining or extending the codebase:
+
+**DO:**
+- Use `useGlobalStateStats()` for user counts and transaction counts
+- Use `useEquaBalance()` for token balances
+- Trust subscription updates for real-time data
+- Add proper cleanup in `useEffect` return functions
+
+**DON'T:**
+- Use `getTotalTransfers()` from `transferTracking.ts` for UI display
+- Poll RPC endpoints with `setInterval` for account data
+- Cache subscription data indefinitely
+- Display localStorage-based counts as authoritative
