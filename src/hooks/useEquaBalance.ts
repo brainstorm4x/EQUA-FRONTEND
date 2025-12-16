@@ -89,6 +89,8 @@ export function useEquaBalance(): UseEquaBalanceResult {
       
       if (!accountInfo) {
         // Token account doesn't exist yet (user hasn't registered or received tokens)
+        // This is normal for new users who haven't minted yet
+        console.log('ℹ️ Token account not found - user may not be registered yet:', tokenAccount.toBase58());
         setBalance(0);
         setIsLoading(false);
         return;
@@ -144,6 +146,10 @@ export function useEquaBalance(): UseEquaBalanceResult {
             // Parse updated balance using helper function
             const balanceNumber = parseTokenBalance(accountInfo.data);
             setBalance(balanceNumber);
+          } else if (!accountInfo && isMountedRef.current) {
+            // Account was deleted or doesn't exist on this cluster
+            console.warn('⚠️ Token account subscription returned null - possible cluster/program mismatch');
+            setBalance(0);
           }
         },
         'confirmed'

@@ -10,12 +10,26 @@ export const PROGRAM_ID = new PublicKey(
   process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID || '7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP'
 );
 
-// Token-2022 Program (SPL Token Extensions)
-// CRITICAL: The EQUA backend requires Token-2022. Do not use Standard SPL Token.
-// The mint_tokens instruction specifically validates Token-2022 program ID.
-// Override via NEXT_PUBLIC_TOKEN_STANDARD='standard' only for testing/debugging.
-const useStandardToken = process.env.NEXT_PUBLIC_TOKEN_STANDARD === 'standard';
+// Token Program Selection
+// CRITICAL: The EQUA backend may require Token-2022. Check your deployment.
+// The mint_tokens instruction validates the token program ID.
+// Set NEXT_PUBLIC_TOKEN_STANDARD='standard' to use Standard SPL Token.
+// Any other value (including missing/undefined) defaults to Token-2022.
+const tokenStandardEnv = process.env.NEXT_PUBLIC_TOKEN_STANDARD;
+const useStandardToken = tokenStandardEnv === 'standard';
 export const TOKEN_PROGRAM_ID = useStandardToken ? SPL_TOKEN_PROGRAM_ID : TOKEN_2022_PROGRAM_ID;
+
+// Log token standard selection for debugging
+if (typeof window !== 'undefined') {
+  const selectedProgram = useStandardToken ? 'Standard SPL Token' : 'Token-2022';
+  if (tokenStandardEnv && tokenStandardEnv !== 'standard') {
+    console.warn(
+      `⚠️ NEXT_PUBLIC_TOKEN_STANDARD='${tokenStandardEnv}' is not 'standard', defaulting to Token-2022.`,
+      '\nValid values: "standard" (for SPL Token) or undefined/anything else (for Token-2022)'
+    );
+  }
+  console.log(`📋 Token Program: ${selectedProgram} (${TOKEN_PROGRAM_ID.toBase58()})`);
+}
 
 // Associated Token Program - used for creating ATAs
 // This MUST be ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL

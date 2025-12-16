@@ -877,6 +877,173 @@ The application validates Token-2022 configuration at startup. Check your browse
 
 If you see an error, the configuration is incorrect and must be fixed before using the app.
 
+### Token Standard Environment Variable
+
+The `NEXT_PUBLIC_TOKEN_STANDARD` environment variable controls which token program the frontend uses:
+
+- **`NEXT_PUBLIC_TOKEN_STANDARD='standard'`** - Uses Standard SPL Token
+- **Any other value or unset** - Uses Token-2022 (default)
+
+**Important:** If you set this to any value other than `'standard'`, the frontend will default to Token-2022 and show a warning in the console explaining which token program will be used.
+
+**Example:**
+```bash
+# Use Standard SPL Token
+NEXT_PUBLIC_TOKEN_STANDARD=standard
+
+# Use Token-2022 (default)
+# Leave unset or use any other value
+NEXT_PUBLIC_TOKEN_STANDARD=token-2022
+```
+
+---
+
+## Cluster and Program Alignment
+
+### Overview
+For the EQUA frontend to work correctly, several configuration elements must align:
+
+1. **RPC Endpoint** - Must point to the cluster where the program is deployed
+2. **Program ID** - Must match the deployed program address
+3. **Token Program** - Must match the token program used by the on-chain mint
+4. **On-chain State** - GlobalState and Mint accounts must exist on the target cluster
+
+Misalignment causes stale balances, zero transfer counts, and subscription failures.
+
+### Symptoms of Misalignment
+
+- Balance shows `--` or remains at zero after minting
+- Transfer count doesn't update after sending EQUA
+- GlobalState shows 0 users when you know users are registered
+- Console shows errors like "GlobalState account not found"
+- Network diagnostics banner shows red warning
+
+### Common Scenarios
+
+#### Scenario 1: Wallet on Devnet, Program on Localnet
+**Problem:** Your wallet is connected to Devnet but the program is deployed to Localnet.
+
+**Solution:**
+1. Update `.env.local` to point to Localnet:
+   ```bash
+   NEXT_PUBLIC_RPC_ENDPOINT=http://localhost:8899
+   NEXT_PUBLIC_NETWORK=localnet
+   ```
+2. Or redeploy program to Devnet and update Program ID
+3. Restart the dev server: `npm run dev`
+
+#### Scenario 2: Wrong Program ID
+**Problem:** `NEXT_PUBLIC_PROGRAM_ID` doesn't match the actual deployed program.
+
+**Solution:**
+1. Check your program deployment output for the correct Program ID
+2. Update `.env.local`:
+   ```bash
+   NEXT_PUBLIC_PROGRAM_ID=YourActualProgramIdHere
+   ```
+3. Ensure `public/idl/equa_token.json` has the same address in the `address` field
+4. Restart the dev server: `npm run dev`
+
+#### Scenario 3: Token Program Mismatch
+**Problem:** On-chain mint uses Standard SPL Token but frontend is configured for Token-2022 (or vice versa).
+
+**Solution:**
+1. Check the mint owner on-chain (use Solana Explorer)
+2. If mint owner is `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`:
+   ```bash
+   NEXT_PUBLIC_TOKEN_STANDARD=standard
+   ```
+3. If mint owner is `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`:
+   ```bash
+   # Leave unset or use any value except 'standard'
+   NEXT_PUBLIC_TOKEN_STANDARD=token-2022
+   ```
+4. Restart the dev server: `npm run dev`
+
+#### Scenario 4: Program Not Initialized on Cluster
+**Problem:** Program is deployed but GlobalState/Mint accounts haven't been initialized.
+
+**Solution:**
+1. If you are the deployer, run the initialization instructions
+2. If not, contact the deployer or switch to a cluster where the program is initialized
+3. Check Solana Explorer to verify accounts exist at the expected PDAs
+
+### Network Diagnostics Banner
+
+The frontend includes an automatic network diagnostics system that appears at the top of the dashboard when issues are detected.
+
+**Green Banner (Healthy):**
+- All checks passed
+- Click to expand and view current configuration
+- Can be safely dismissed
+
+**Red Banner (Issues Detected):**
+- Shows detected mismatches
+- Lists current configuration (cluster, RPC, program ID, token program)
+- Provides actionable steps to fix each issue
+- Shows which accounts are missing (GlobalState, Mint)
+
+### Environment Variables Reference
+
+Key environment variables for cluster alignment:
+
+```bash
+# RPC Endpoint (required)
+NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com
+# or
+NEXT_PUBLIC_SOLANA_RPC_HOST=https://api.devnet.solana.com
+
+# Network/Cluster (optional, for validation)
+NEXT_PUBLIC_NETWORK=devnet
+# or
+NEXT_PUBLIC_SOLANA_NETWORK=devnet
+
+# Program ID (required)
+NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+
+# Token Program Selection (optional)
+NEXT_PUBLIC_TOKEN_STANDARD=standard  # for SPL Token
+# Leave unset or any other value for Token-2022
+```
+
+### Validation Checklist
+
+When troubleshooting cluster/program issues:
+
+- [ ] Verify RPC endpoint is accessible (test in browser or with `curl`)
+- [ ] Confirm NEXT_PUBLIC_PROGRAM_ID matches deployed program
+- [ ] Check IDL address matches NEXT_PUBLIC_PROGRAM_ID
+- [ ] Verify token program selection matches on-chain mint owner
+- [ ] Confirm GlobalState PDA exists on target cluster
+- [ ] Confirm Mint PDA exists on target cluster
+- [ ] Check wallet is connected to the intended cluster
+- [ ] Review network diagnostics banner for specific issues
+
+### Testing on Different Clusters
+
+**Devnet (recommended for testing):**
+```bash
+NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com
+NEXT_PUBLIC_NETWORK=devnet
+NEXT_PUBLIC_PROGRAM_ID=<your_devnet_program_id>
+```
+
+**Localnet (for local development):**
+```bash
+NEXT_PUBLIC_RPC_ENDPOINT=http://localhost:8899
+NEXT_PUBLIC_NETWORK=localnet
+NEXT_PUBLIC_PROGRAM_ID=<your_localnet_program_id>
+```
+
+**Mainnet Beta (production):**
+```bash
+NEXT_PUBLIC_RPC_ENDPOINT=https://api.mainnet-beta.solana.com
+NEXT_PUBLIC_NETWORK=mainnet-beta
+NEXT_PUBLIC_PROGRAM_ID=<your_mainnet_program_id>
+```
+
+**Always restart the development server after changing environment variables.**
+
 ---
 
 ## Mint Tokens Instruction Signature

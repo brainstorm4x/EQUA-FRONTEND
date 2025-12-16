@@ -20,6 +20,7 @@ import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
 import { getReferralInfo } from '@/utils/onchainRegistration';
+import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
 
 interface WalletDashboardProps {
   className?: string;
@@ -144,6 +145,9 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
 
   return (
     <div className={`${className}`}>
+      {/* Network Diagnostics Banner */}
+      <NetworkDiagnosticsBanner />
+      
       {/* Balance Card */}
       <div className="bg-gradient-to-br from-purple-500/30 to-purple-600/30 backdrop-blur-md rounded-2xl p-6 border border-purple-400/50 mb-6">
         <div className="flex items-center justify-between mb-4">
