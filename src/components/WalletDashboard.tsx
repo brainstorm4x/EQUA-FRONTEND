@@ -863,14 +863,61 @@ interface ReceiveModalProps {
 
 const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
   const [copied, setCopied] = useState(false);
-  // Using a public QR code API - the address is a public key anyway
-  // Note: For production, consider using a client-side QR library like 'qrcode' package
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(publicKey.toBase58())}`;
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [isGeneratingQR, setIsGeneratingQR] = useState(true);
+  const [solanaPayUrl, setSolanaPayUrl] = useState<string>('');
+
+  // Generate Solana Pay URL and QR code
+  useEffect(() => {
+    const generateQR = async () => {
+      try {
+        setIsGeneratingQR(true);
+        
+        // Lazy load dependencies once
+        const QRCode = (await import('qrcode')).default;
+        const { generateEquaSolanaPayUrl } = await import('@/utils/solanaPay');
+        const { getMintPDA } = await import('@/lib/program');
+        
+        const [mintPDA] = getMintPDA();
+        const paymentUrl = generateEquaSolanaPayUrl(publicKey, mintPDA);
+        setSolanaPayUrl(paymentUrl);
+        
+        // Generate QR code as data URL
+        const dataUrl = await QRCode.toDataURL(paymentUrl, {
+          width: 200,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF',
+          },
+        });
+        
+        setQrDataUrl(dataUrl);
+      } catch (error) {
+        console.error('Failed to generate QR code:', error);
+      } finally {
+        setIsGeneratingQR(false);
+      }
+    };
+    
+    generateQR();
+  }, [publicKey]);
 
   const copyAddress = async () => {
     await navigator.clipboard.writeText(publicKey.toBase58());
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyPaymentUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(solanaPayUrl);
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy payment URL:', error);
+    }
   };
 
   return (
@@ -890,36 +937,66 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
         </div>
 
         <div className="text-center">
-          {/* QR Code */}
+          {/* Solana Pay QR Code */}
           <div className="bg-white rounded-xl p-4 inline-block mb-4">
-            {/* Using img for external QR code API - next/image doesn't support external domains by default */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src={qrCodeUrl} 
-              alt="QR Code"
-              width={200}
-              height={200}
-              className="mx-auto"
-            />
+            {isGeneratingQR ? (
+              <div className="w-[200px] h-[200px] flex items-center justify-center">
+                <div className="text-gray-400 text-sm">Generating QR...</div>
+              </div>
+            ) : qrDataUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img 
+                src={qrDataUrl} 
+                alt="Solana Pay QR Code"
+                width={200}
+                height={200}
+                className="mx-auto"
+              />
+            ) : (
+              <div className="w-[200px] h-[200px] flex items-center justify-center">
+                <div className="text-gray-400 text-sm">QR unavailable</div>
+              </div>
+            )}
           </div>
 
-          <p className="text-purple-200 text-sm mb-4">
-            Scan this QR code or copy your address below to receive EQUA tokens
-          </p>
-
-          {/* Address */}
-          <div className="bg-black/20 rounded-xl p-4 mb-4">
-            <p className="text-white text-xs font-mono break-all">
-              {publicKey.toBase58()}
+          {/* Token-2022 hint */}
+          <div className="bg-purple-500/20 border border-purple-500/30 rounded-xl p-3 mb-4" role="alert" aria-label="Important transfer information">
+            <p className="text-purple-200 text-xs">
+              <span aria-hidden="true">⚠️</span> <strong>EQUA uses Token-2022.</strong> For correct transfers, use the payment link or QR code above.
             </p>
           </div>
 
-          <button
-            onClick={copyAddress}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all"
-          >
-            {copied ? '✅ Copied!' : '📋 Copy Address'}
-          </button>
+          <p className="text-purple-200 text-sm mb-4">
+            Scan the QR code or use the payment link below to receive EQUA tokens
+          </p>
+
+          {/* Buttons */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <button
+              onClick={copyPaymentUrl}
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl transition-all text-sm"
+            >
+              {copiedUrl ? '✅ Copied!' : '🔗 Copy Link'}
+            </button>
+            <button
+              onClick={copyAddress}
+              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-all text-sm"
+            >
+              {copied ? '✅ Copied!' : '📋 Copy Address'}
+            </button>
+          </div>
+
+          {/* Address display */}
+          <details className="text-left">
+            <summary className="text-purple-300 text-xs cursor-pointer hover:text-purple-200 mb-2">
+              Show wallet address
+            </summary>
+            <div className="bg-black/20 rounded-xl p-3">
+              <p className="text-white text-xs font-mono break-all">
+                {publicKey.toBase58()}
+              </p>
+            </div>
+          </details>
         </div>
       </div>
     </div>
