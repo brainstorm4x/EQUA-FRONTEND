@@ -866,6 +866,7 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [isGeneratingQR, setIsGeneratingQR] = useState(true);
+  const [solanaPayUrl, setSolanaPayUrl] = useState<string>('');
 
   // Generate Solana Pay URL and QR code
   useEffect(() => {
@@ -873,16 +874,17 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
       try {
         setIsGeneratingQR(true);
         
-        // Lazy load QR code library
+        // Lazy load dependencies once
         const QRCode = (await import('qrcode')).default;
         const { generateEquaSolanaPayUrl } = await import('@/utils/solanaPay');
         const { getMintPDA } = await import('@/lib/program');
         
         const [mintPDA] = getMintPDA();
-        const solanaPayUrl = generateEquaSolanaPayUrl(publicKey, mintPDA);
+        const paymentUrl = generateEquaSolanaPayUrl(publicKey, mintPDA);
+        setSolanaPayUrl(paymentUrl);
         
         // Generate QR code as data URL
-        const dataUrl = await QRCode.toDataURL(solanaPayUrl, {
+        const dataUrl = await QRCode.toDataURL(paymentUrl, {
           width: 200,
           margin: 2,
           color: {
@@ -910,12 +912,6 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
 
   const copyPaymentUrl = async () => {
     try {
-      const { generateEquaSolanaPayUrl } = await import('@/utils/solanaPay');
-      const { getMintPDA } = await import('@/lib/program');
-      
-      const [mintPDA] = getMintPDA();
-      const solanaPayUrl = generateEquaSolanaPayUrl(publicKey, mintPDA);
-      
       await navigator.clipboard.writeText(solanaPayUrl);
       setCopiedUrl(true);
       setTimeout(() => setCopiedUrl(false), 2000);
@@ -964,9 +960,9 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
           </div>
 
           {/* Token-2022 hint */}
-          <div className="bg-purple-500/20 border border-purple-500/30 rounded-xl p-3 mb-4">
+          <div className="bg-purple-500/20 border border-purple-500/30 rounded-xl p-3 mb-4" role="alert" aria-label="Important transfer information">
             <p className="text-purple-200 text-xs">
-              ⚠️ <strong>EQUA uses Token-2022.</strong> For correct transfers, use the payment link or QR code above.
+              <span aria-hidden="true">⚠️</span> <strong>EQUA uses Token-2022.</strong> For correct transfers, use the payment link or QR code above.
             </p>
           </div>
 

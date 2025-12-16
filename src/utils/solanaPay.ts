@@ -67,7 +67,7 @@ export function generateSolanaPayUrl(params: SolanaPayTransferParams): string {
   }
   
   // Add amount if provided
-  if (amount !== undefined && amount !== null) {
+  if (amount != null) {
     url.searchParams.set('amount', amount.toString());
   }
   
