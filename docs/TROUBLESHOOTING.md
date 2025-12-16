@@ -1263,3 +1263,179 @@ If you're maintaining or extending the codebase:
 - Poll RPC endpoints with `setInterval` for account data
 - Cache subscription data indefinitely
 - Display localStorage-based counts as authoritative
+
+---
+
+## Issue: Balance Not Updating (Token-2022 vs Standard SPL ATA Mismatch)
+
+### Symptoms
+- Balance shows `--` or zero even after minting tokens
+- Balance updates not reflected in UI after transfers
+- Console shows "Token account not found" warnings
+- Balance works in one environment but not another
+
+### Root Cause
+Token-2022 and Standard SPL Token programs derive **different Associated Token Accounts (ATAs)** for the same mint and owner. If the frontend is configured to watch the wrong token program's ATA, it won't see balance updates even though tokens exist in the correct ATA.
+
+**Example on Devnet:**
+- **Token-2022 ATA** (correct): `BQ5iS1ZgytoKwp6XJvgjBrkRcrEPbupZL1TV1VYB9pGX`
+- **Standard SPL ATA** (wrong): Different address entirely
+
+### Understanding ATAs and Token Programs
+
+#### What is an ATA?
+An Associated Token Account (ATA) is deterministically derived from:
+1. The mint address (token type)
+2. The owner's wallet address
+3. **The token program ID** (Standard SPL Token OR Token-2022)
+
+Changing the token program ID produces a completely different ATA address.
+
+#### EQUA Uses Token-2022
+The EQUA backend program uses **Token-2022** (SPL Token Extensions) for advanced features:
+- **Token-2022 Program ID**: `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`
+- **Standard SPL Token Program ID**: `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`
+
+The frontend MUST derive ATAs using Token-2022 to match the on-chain mint.
+
+### Solution
+
+#### 1. Verify Token Program Configuration
+Check that your `.env.local` does NOT set `NEXT_PUBLIC_TOKEN_STANDARD=standard`:
+
+```bash
+# CORRECT (uses Token-2022, the default)
+# Leave NEXT_PUBLIC_TOKEN_STANDARD unset or set to anything except 'standard'
+
+# INCORRECT (uses Standard SPL Token - will cause balance issues)
+NEXT_PUBLIC_TOKEN_STANDARD=standard
+```
+
+#### 2. Check Console Diagnostics
+The `useEquaBalance` hook logs diagnostic information on first load:
+
+```
+🔍 useEquaBalance: ATA Subscription Diagnostics
+  Token Program: Token-2022 (TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb)
+  Associated Token Program: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+  Derived ATA: BQ5iS1ZgytoKwp6XJvgjBrkRcrEPbupZL1TV1VYB9pGX
+  RPC Endpoint: https://api.devnet.solana.com
+  Mint PDA: [mint address]
+```
+
+**Verify:**
+- Token Program shows "Token-2022" (not "Standard SPL Token")
+- Derived ATA matches the expected Token-2022 ATA
+- RPC Endpoint points to the correct cluster
+
+#### 3. Verify On-Chain ATA Exists
+Check if the Token-2022 ATA has been created:
+
+```bash
+# On Devnet
+solana account BQ5iS1ZgytoKwp6XJvgjBrkRcrEPbupZL1TV1VYB9pGX --url devnet
+
+# Or use Solana Explorer
+https://explorer.solana.com/address/BQ5iS1ZgytoKwp6XJvgjBrkRcrEPbupZL1TV1VYB9pGX?cluster=devnet
+```
+
+If the ATA doesn't exist, it will be created during registration or first mint.
+
+#### 4. Clear Cache and Restart
+```bash
+# Clear browser cache
+# Hard refresh: Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac)
+
+# Restart dev server
+npm run dev
+```
+
+### Verification Steps
+
+1. **Check Configured Token Program:**
+   ```typescript
+   // In browser console
+   import('@/lib/constants').then(m => {
+     console.log('Token Program:', m.TOKEN_PROGRAM_ID.toBase58());
+   });
+   // Should show: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb
+   ```
+
+2. **Check Derived ATA:**
+   ```typescript
+   import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+   import { PublicKey } from '@solana/web3.js';
+   
+   const mint = new PublicKey('[MINT_ADDRESS]');
+   const owner = new PublicKey('[YOUR_WALLET_ADDRESS]');
+   const token2022 = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb');
+   const ataProgram = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
+   
+   const ata = getAssociatedTokenAddressSync(mint, owner, false, token2022, ataProgram);
+   console.log('Expected Token-2022 ATA:', ata.toBase58());
+   ```
+
+3. **Verify Balance Hook is Active:**
+   Look for subscription setup logs in console:
+   ```
+   ℹ️ Token account not found - user may not be registered yet: [ATA]
+   ```
+   Or:
+   ```
+   🔍 useEquaBalance: ATA Subscription Diagnostics
+   ```
+
+### Common Mistakes
+
+#### Mistake 1: Setting NEXT_PUBLIC_TOKEN_STANDARD=standard
+**Problem:** Frontend watches Standard SPL ATA, but tokens are in Token-2022 ATA.
+
+**Fix:** Remove or unset `NEXT_PUBLIC_TOKEN_STANDARD` from `.env.local`.
+
+#### Mistake 2: Using Wrong Token Program in Code
+**Problem:** Importing `TOKEN_PROGRAM_ID` directly from `@solana/spl-token` instead of configured constant.
+
+**Fix:** Always import from `@/lib/program` or `@/lib/constants`:
+```typescript
+// CORRECT
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@/lib/program';
+
+// WRONG - bypasses configuration
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
+```
+
+#### Mistake 3: Cluster Mismatch
+**Problem:** Frontend pointing to localnet but mint exists on devnet.
+
+**Fix:** Verify RPC endpoint in `.env.local`:
+```bash
+NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com
+NEXT_PUBLIC_NETWORK=devnet
+```
+
+### Testing Token Program Configuration
+
+Create a test script to verify configuration:
+
+```typescript
+// scripts/verify-token-config.mjs
+import { TOKEN_PROGRAM_ID } from './src/lib/constants.ts';
+
+const expectedToken2022 = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+
+if (TOKEN_PROGRAM_ID.toBase58() === expectedToken2022) {
+  console.log('✅ Token program correctly configured for Token-2022');
+} else {
+  console.error('❌ Token program NOT configured for Token-2022');
+  console.error('Expected:', expectedToken2022);
+  console.error('Got:', TOKEN_PROGRAM_ID.toBase58());
+  process.exit(1);
+}
+```
+
+### Related Documentation
+- See "Token Program Configuration" section above for general Token-2022 setup
+- See "Cluster and Program Alignment" section for RPC/network configuration
+- See TOKEN_DECIMAL_FIX_SUMMARY.md for decimal handling with Token-2022
+
+---
