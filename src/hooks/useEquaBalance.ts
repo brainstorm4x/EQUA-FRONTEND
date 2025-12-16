@@ -12,12 +12,16 @@ import {
   getAssociatedTokenAddressSync,
 } from '@solana/spl-token';
 import { getMintPDA, getSPLTokenBalance, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@/lib/program';
+import { RPC_ENDPOINT } from '@/lib/constants';
 import * as anchor from '@coral-xyz/anchor';
 
 // SPL Token account layout constants
 // See: https://docs.rs/spl-token/latest/spl_token/state/struct.Account.html
 const SPL_TOKEN_BALANCE_OFFSET = 64; // Balance field offset in SPL Token account
 const SPL_TOKEN_BALANCE_LENGTH = 8;  // Balance field length (u64)
+
+// One-time diagnostic log flag (prevents spam)
+let hasLoggedDiagnostics = false;
 
 /**
  * Parses SPL token balance from account data
@@ -137,6 +141,20 @@ export function useEquaBalance(): UseEquaBalanceResult {
         TOKEN_PROGRAM_ID,
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
+
+      // One-time diagnostic log to confirm configuration (helps verify Token-2022 vs Standard SPL)
+      if (!hasLoggedDiagnostics && typeof window !== 'undefined') {
+        hasLoggedDiagnostics = true;
+        const tokenProgramName = TOKEN_PROGRAM_ID.toBase58() === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' 
+          ? 'Token-2022' 
+          : 'Standard SPL Token';
+        console.log('🔍 useEquaBalance: ATA Subscription Diagnostics');
+        console.log('  Token Program:', tokenProgramName, `(${TOKEN_PROGRAM_ID.toBase58()})`);
+        console.log('  Associated Token Program:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
+        console.log('  Derived ATA:', tokenAccount.toBase58());
+        console.log('  RPC Endpoint:', RPC_ENDPOINT);
+        console.log('  Mint PDA:', mintPDA.toBase58());
+      }
 
       // Subscribe to account changes
       const subscriptionId = connection.onAccountChange(
