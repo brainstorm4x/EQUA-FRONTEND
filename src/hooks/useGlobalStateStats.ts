@@ -176,10 +176,20 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
       
       if (!accountInfo) {
         // Global state account doesn't exist yet
+        // This likely means wrong cluster or program not initialized
+        console.error(
+          '❌ GlobalState account not found at',
+          globalStatePDA.toBase58(),
+          '\nThis usually indicates:',
+          '\n  1. Wrong cluster/RPC endpoint (check NEXT_PUBLIC_RPC_ENDPOINT)',
+          '\n  2. Wrong program ID (check NEXT_PUBLIC_PROGRAM_ID)',
+          '\n  3. Program not initialized on this cluster'
+        );
         if (isMountedRef.current) {
           setTotalUsers(0);
           setTotalTransactions(0);
           setCurrentEpoch(0);
+          setError('GlobalState account not found - possible cluster or program ID mismatch');
           setIsLoading(false);
         }
         return;
@@ -245,6 +255,10 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
                 totalTransactions: transactions,
                 currentEpoch: epoch
               });
+            } else if (!accountInfo && isMountedRef.current) {
+              // Account was deleted or doesn't exist on this cluster
+              console.error('❌ GlobalState subscription returned null - cluster/program mismatch likely');
+              setError('GlobalState subscription lost - check cluster and program ID configuration');
             }
           },
           'confirmed' // Use confirmed commitment for balance between speed and reliability
