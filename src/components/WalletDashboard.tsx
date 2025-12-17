@@ -13,13 +13,11 @@ import { getMintPDA, getSPLTokenBalance, getUserAccountPDA, TOKEN_PROGRAM_ID, AS
 import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw } from '@/utils/tokenFormat';
-import { getReferrerData } from '@/utils/referralRateLimit';
 import { recordTransfer } from '@/utils/transferTracking';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
-import { getReferralInfo } from '@/utils/onchainRegistration';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
 
 interface WalletDashboardProps {
@@ -96,19 +94,21 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         const decimals = await getEquaMintDecimals(connection);
         setMintDecimals(decimals);
         
-        // Get referral data from onchain UserAccount (source of truth)
-        if (userAccountData) {
-          const referralInfo = getReferralInfo(userAccountData);
-          setReferralRewards(referralInfo.referralRewards);
-          console.log('✓ Referral rewards from onchain:', referralInfo.referralRewards);
+        // Get COMPUTED referral data from on-chain (not the stored legacy field)
+        if (userAccountPDA) {
+          // Import the referral stats function
+          const { getReferralStats } = await import('@/utils/referralRewards');
+          const stats = await getReferralStats(connection, userAccountPDA);
+          
+          if (stats) {
+            // Use computed rewards (mint-based, not legacy signup bonuses)
+            setReferralRewards(stats.referralRewards.toNumber());
+            // Use on-chain referred user count (not localStorage heuristics)
+            setReferralCount(stats.referredUsersCount);
+            console.log('✓ Computed referral rewards:', stats.referralRewards.toString());
+            console.log('✓ On-chain referral count:', stats.referredUsersCount);
+          }
         }
-        
-        // Note: Referral count would need to be calculated by scanning all user accounts
-        // For now, we use localStorage tracking as an estimate
-        const referrerData = getReferrerData(publicKey.toBase58());
-        const count24h = referrerData?.referrals.length || 0;
-        setReferralCount(count24h);
-        console.log('✓ Referral count (24h estimate):', count24h);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -118,7 +118,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     // Refresh every 30 seconds
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, [publicKey, connected, connection, userAccountData]);
+  }, [publicKey, connected, connection, userAccountPDA]);
 
   // Copy public key to clipboard
   const copyPublicKey = useCallback(async () => {
@@ -198,10 +198,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           Share your referral to earn rewards: 1% for individuals, 2% for businesses!
         </p>
         
-        {/* Referral Rewards Display (from onchain data) */}
+        {/* Referral Rewards Display (computed from minted amounts) */}
         {referralRewards > 0 && (
           <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-3 mb-4">
-            <p className="text-green-300 text-xs mb-1">Referral Rewards Earned (On-Chain)</p>
+            <p className="text-green-300 text-xs mb-1">Referral Rewards (Mint-Based)</p>
             <p className="text-white text-lg font-bold">
               {formatEquaBalance(referralRewards)} EQUA
             </p>

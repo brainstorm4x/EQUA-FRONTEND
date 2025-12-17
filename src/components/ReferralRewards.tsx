@@ -128,9 +128,9 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
 
       {/* Rewards Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {/* Accumulated Rewards */}
+        {/* Accumulated Rewards (computed from minted amounts) */}
         <div className="bg-purple-600/20 border border-purple-500/50 rounded-xl p-4">
-          <div className="text-purple-300 text-sm mb-1">Accumulated Rewards</div>
+          <div className="text-purple-300 text-sm mb-1">Mint-Based Rewards</div>
           <div className="text-3xl font-bold text-white flex items-baseline gap-2">
             {rewardsDisplay}
             <span className="text-lg text-purple-300">EQUA</span>
@@ -203,10 +203,10 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
             <div className="text-sm text-blue-200">
               <p className="font-semibold mb-1">About Referral Rewards</p>
               <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>Rewards are tracked on-chain in your UserAccount</li>
+                <li>Rewards computed as 1% of referred users&apos; minted tokens</li>
+                <li>Values update automatically as referred users mint more</li>
                 <li>Accumulated rewards must be claimed manually</li>
                 <li>Claiming requires backend program support (coming soon)</li>
-                <li>All referral relationships are stored immutably on the blockchain</li>
               </ul>
             </div>
           </div>
