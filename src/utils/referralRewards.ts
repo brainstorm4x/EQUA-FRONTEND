@@ -13,7 +13,10 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { parseUserAccountData, UserAccountData } from './onchainRegistration';
 import { PROGRAM_ID } from '@/lib/constants';
-import { INDIVIDUAL_REFERRAL_PERCENT, BUSINESS_REFERRAL_PERCENT } from './referralCalculator';
+import { 
+  INDIVIDUAL_REFERRAL_PERCENT, 
+  BUSINESS_REFERRAL_PERCENT // Reserved for future use when backend adds referral_type field
+} from './referralCalculator';
 
 /**
  * Get all users referred by a specific address
@@ -101,7 +104,9 @@ export async function computeReferralRewards(
       return new BN(0);
     }
 
-    console.log(`✓ Computing rewards for ${referredUserPubkeys.length} referred users`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✓ Computing rewards for ${referredUserPubkeys.length} referred users`);
+    }
 
     let totalRewards = new BN(0);
 
@@ -127,14 +132,18 @@ export async function computeReferralRewards(
         
         totalRewards = totalRewards.add(reward);
 
-        console.log(`  - User ${userPubkey.toBase58().slice(0, 8)}: minted ${mintedAmount.toString()}, reward ${reward.toString()}`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`  - User ${userPubkey.toBase58().slice(0, 8)}: minted ${mintedAmount.toString()}, reward ${reward.toString()}`);
+        }
       } catch (error) {
         console.error(`Error processing referred user ${userPubkey.toBase58()}:`, error);
         // Continue processing other users
       }
     }
 
-    console.log(`✓ Total computed rewards: ${totalRewards.toString()} base units`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✓ Total computed rewards: ${totalRewards.toString()} base units`);
+    }
     return totalRewards;
   } catch (error) {
     console.error('Error computing referral rewards:', error);

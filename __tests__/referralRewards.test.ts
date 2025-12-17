@@ -226,8 +226,8 @@ describe('Referral Rewards Utilities', () => {
       const mockReferredPubkey = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
       const referredAccountData = Buffer.alloc(136);
       
-      // Set authority in referred account
-      referredAccountData.copy(mockReferredPubkey.toBuffer(), 8);
+      // Set authority in referred account (correct Buffer.copy order)
+      mockReferredPubkey.toBuffer().copy(referredAccountData, 8);
       
       // Set minted_amount at offset 104 (8 + 32 + 32 + 32)
       const mintedAmount = new BN(500_000_000); // 500 EQUA
@@ -288,9 +288,15 @@ describe('Referral Rewards Utilities', () => {
 
       // Mock account data for referred users with different minted amounts
       const accountData1 = Buffer.alloc(136);
+      // Write authority at offset 8
+      referredPubkey1.toBuffer().copy(accountData1, 8);
+      // Write minted_amount at offset 104
       accountData1.writeBigUInt64LE(BigInt(100_000_000), 104); // 100 EQUA
 
       const accountData2 = Buffer.alloc(136);
+      // Write authority at offset 8
+      referredPubkey2.toBuffer().copy(accountData2, 8);
+      // Write minted_amount at offset 104
       accountData2.writeBigUInt64LE(BigInt(200_000_000), 104); // 200 EQUA
 
       mockConnection.getAccountInfo

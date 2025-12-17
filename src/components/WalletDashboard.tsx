@@ -105,8 +105,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
             setReferralRewards(stats.referralRewards.toNumber());
             // Use on-chain referred user count (not localStorage heuristics)
             setReferralCount(stats.referredUsersCount);
-            console.log('✓ Computed referral rewards:', stats.referralRewards.toString());
-            console.log('✓ On-chain referral count:', stats.referredUsersCount);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✓ Computed referral rewards:', stats.referralRewards.toString());
+              console.log('✓ On-chain referral count:', stats.referredUsersCount);
+            }
           }
         }
       } catch (error) {
