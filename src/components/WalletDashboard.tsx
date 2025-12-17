@@ -863,28 +863,21 @@ interface ReceiveModalProps {
 
 const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
   const [copied, setCopied] = useState(false);
-  const [copiedUrl, setCopiedUrl] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [isGeneratingQR, setIsGeneratingQR] = useState(true);
-  const [solanaPayUrl, setSolanaPayUrl] = useState<string>('');
 
-  // Generate Solana Pay URL and QR code
+  // Generate QR code for wallet address only
   useEffect(() => {
     const generateQR = async () => {
       try {
         setIsGeneratingQR(true);
         
-        // Lazy load dependencies once
+        // Lazy load QRCode library
         const QRCode = (await import('qrcode')).default;
-        const { generateEquaSolanaPayUrl } = await import('@/utils/solanaPay');
-        const { getMintPDA } = await import('@/lib/program');
         
-        const [mintPDA] = getMintPDA();
-        const paymentUrl = generateEquaSolanaPayUrl(publicKey, mintPDA);
-        setSolanaPayUrl(paymentUrl);
-        
-        // Generate QR code as data URL
-        const dataUrl = await QRCode.toDataURL(paymentUrl, {
+        // Generate QR code with just the wallet address
+        const walletAddress = publicKey.toBase58();
+        const dataUrl = await QRCode.toDataURL(walletAddress, {
           width: 200,
           margin: 2,
           color: {
@@ -910,16 +903,6 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const copyPaymentUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(solanaPayUrl);
-      setCopiedUrl(true);
-      setTimeout(() => setCopiedUrl(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy payment URL:', error);
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-purple-900 rounded-2xl p-6 max-w-md w-full border border-purple-500/30">
@@ -937,7 +920,7 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
         </div>
 
         <div className="text-center">
-          {/* Solana Pay QR Code */}
+          {/* Wallet Address QR Code */}
           <div className="bg-white rounded-xl p-4 inline-block mb-4">
             {isGeneratingQR ? (
               <div className="w-[200px] h-[200px] flex items-center justify-center">
@@ -947,7 +930,7 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
               /* eslint-disable-next-line @next/next/no-img-element */
               <img 
                 src={qrDataUrl} 
-                alt="Solana Pay QR Code"
+                alt="Wallet Address QR Code"
                 width={200}
                 height={200}
                 className="mx-auto"
@@ -959,44 +942,25 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
             )}
           </div>
 
-          {/* Token-2022 hint */}
-          <div className="bg-purple-500/20 border border-purple-500/30 rounded-xl p-3 mb-4" role="alert" aria-label="Important transfer information">
-            <p className="text-purple-200 text-xs">
-              <span aria-hidden="true">⚠️</span> <strong>EQUA uses Token-2022.</strong> For correct transfers, use the payment link or QR code above.
-            </p>
-          </div>
-
           <p className="text-purple-200 text-sm mb-4">
-            Scan the QR code or use the payment link below to receive EQUA tokens
+            Scan the QR code or copy your wallet address to receive EQUA tokens
           </p>
 
-          {/* Buttons */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <button
-              onClick={copyPaymentUrl}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl transition-all text-sm"
-            >
-              {copiedUrl ? '✅ Copied!' : '🔗 Copy Link'}
-            </button>
-            <button
-              onClick={copyAddress}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-all text-sm"
-            >
-              {copied ? '✅ Copied!' : '📋 Copy Address'}
-            </button>
-          </div>
+          {/* Copy Address Button */}
+          <button
+            onClick={copyAddress}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-all mb-4"
+          >
+            {copied ? '✅ Copied!' : '📋 Copy Address'}
+          </button>
 
           {/* Address display */}
-          <details className="text-left">
-            <summary className="text-purple-300 text-xs cursor-pointer hover:text-purple-200 mb-2">
-              Show wallet address
-            </summary>
-            <div className="bg-black/20 rounded-xl p-3">
-              <p className="text-white text-xs font-mono break-all">
-                {publicKey.toBase58()}
-              </p>
-            </div>
-          </details>
+          <div className="bg-black/20 rounded-xl p-3">
+            <p className="text-purple-300 text-xs mb-2">Your Wallet Address</p>
+            <p className="text-white text-xs font-mono break-all">
+              {publicKey.toBase58()}
+            </p>
+          </div>
         </div>
       </div>
     </div>
