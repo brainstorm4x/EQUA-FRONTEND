@@ -11,6 +11,7 @@ import {
   formatReferralRewards,
   hasClaimableRewards,
   getReferredUsersDetails,
+  computeReferralRewards,
 } from '@/utils/referralRewards';
 import { PROGRAM_ID } from '@/lib/constants';
 
@@ -88,14 +89,14 @@ describe('Referral Rewards Utilities', () => {
   });
 
   describe('getReferralRewardsBalance', () => {
-    it('should return referral rewards balance from account data', async () => {
+    it('should return referral rewards balance from account data (LEGACY stored value)', async () => {
       // Create mock account data with referral_rewards = 1000000 (1 EQUA with 6 decimals)
-      const mockAccountData = Buffer.alloc(144);
+      const mockAccountData = Buffer.alloc(136); // Correct size: no locked_until field
       mockAccountData.writeUInt8(0, 0); // discriminator
       
-      // Write referral_rewards at offset 128 (8 + 32 + 32 + 32 + 8 + 8 + 8 = 128)
+      // Write referral_rewards at offset 120 (8 + 32 + 32 + 32 + 8 + 8 = 120)
       const rewards = new BN(1000000);
-      mockAccountData.writeBigUInt64LE(BigInt(rewards.toString()), 128);
+      mockAccountData.writeBigUInt64LE(BigInt(rewards.toString()), 120);
 
       mockConnection.getAccountInfo.mockResolvedValue({
         data: mockAccountData,
@@ -167,10 +168,10 @@ describe('Referral Rewards Utilities', () => {
   });
 
   describe('hasClaimableRewards', () => {
-    it('should return true when rewards > 0', async () => {
-      const mockAccountData = Buffer.alloc(144);
+    it('should return true when rewards > 0 (checks LEGACY stored value)', async () => {
+      const mockAccountData = Buffer.alloc(136); // Correct size
       const rewards = new BN(1000000);
-      mockAccountData.writeBigUInt64LE(BigInt(rewards.toString()), 128);
+      mockAccountData.writeBigUInt64LE(BigInt(rewards.toString()), 120); // Correct offset
 
       mockConnection.getAccountInfo.mockResolvedValue({
         data: mockAccountData,
@@ -186,9 +187,9 @@ describe('Referral Rewards Utilities', () => {
     });
 
     it('should return false when rewards = 0', async () => {
-      const mockAccountData = Buffer.alloc(144);
+      const mockAccountData = Buffer.alloc(136); // Correct size
       const rewards = new BN(0);
-      mockAccountData.writeBigUInt64LE(BigInt(rewards.toString()), 128);
+      mockAccountData.writeBigUInt64LE(BigInt(rewards.toString()), 120); // Correct offset
 
       mockConnection.getAccountInfo.mockResolvedValue({
         data: mockAccountData,
@@ -213,28 +214,44 @@ describe('Referral Rewards Utilities', () => {
   });
 
   describe('getReferralStats', () => {
-    it('should return complete referral statistics', async () => {
-      // Mock user account data
-      const mockAccountData = Buffer.alloc(144);
-      const rewards = new BN(5000000); // 5 EQUA
+    it('should return complete referral statistics with COMPUTED rewards', async () => {
+      // Mock user account data (correct 136-byte structure)
+      const mockAccountData = Buffer.alloc(136);
       
       // Set authority at offset 8
       const authorityBytes = testUserPubkey.toBuffer();
       authorityBytes.copy(mockAccountData, 8);
-      
-      // Set rewards at offset 128
-      mockAccountData.writeBigUInt64LE(BigInt(rewards.toString()), 128);
 
-      mockConnection.getAccountInfo.mockResolvedValue({
-        data: mockAccountData,
-        executable: false,
-        lamports: 1000000,
-        owner: PROGRAM_ID,
-        rentEpoch: 0,
-      });
-
-      // Mock referred users
+      // Mock referred user account with minted_amount = 500_000_000 (500 EQUA with 6 decimals)
       const mockReferredPubkey = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
+      const referredAccountData = Buffer.alloc(136);
+      
+      // Set authority in referred account (correct Buffer.copy order)
+      mockReferredPubkey.toBuffer().copy(referredAccountData, 8);
+      
+      // Set minted_amount at offset 104 (8 + 32 + 32 + 32)
+      const mintedAmount = new BN(500_000_000); // 500 EQUA
+      referredAccountData.writeBigUInt64LE(BigInt(mintedAmount.toString()), 104);
+
+      // First call: getAccountInfo for referrer's account
+      // Second call: getAccountInfo for referred user's account (during computeReferralRewards)
+      mockConnection.getAccountInfo
+        .mockResolvedValueOnce({
+          data: mockAccountData,
+          executable: false,
+          lamports: 1000000,
+          owner: PROGRAM_ID,
+          rentEpoch: 0,
+        })
+        .mockResolvedValueOnce({
+          data: referredAccountData,
+          executable: false,
+          lamports: 1000000,
+          owner: PROGRAM_ID,
+          rentEpoch: 0,
+        });
+
+      // Mock getProgramAccounts to return the referred user
       mockConnection.getProgramAccounts.mockResolvedValue([
         { pubkey: mockReferredPubkey, account: {} as AccountInfo<Buffer> },
       ]);
@@ -242,6 +259,7 @@ describe('Referral Rewards Utilities', () => {
       const result = await getReferralStats(mockConnection, testUserPubkey);
 
       expect(result).not.toBeNull();
+      // Computed reward should be 1% of 500 EQUA = 5 EQUA = 5_000_000 base units
       expect(result?.referralRewards.toString()).toBe('5000000');
       expect(result?.referredUsersCount).toBe(1);
       expect(result?.referredUsers).toHaveLength(1);
@@ -254,6 +272,75 @@ describe('Referral Rewards Utilities', () => {
       const result = await getReferralStats(mockConnection, testUserPubkey);
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('computeReferralRewards', () => {
+    it('should compute rewards from referred users minted amounts', async () => {
+      const referredPubkey1 = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
+      const referredPubkey2 = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
+
+      // Mock getProgramAccounts to return two referred users
+      mockConnection.getProgramAccounts.mockResolvedValue([
+        { pubkey: referredPubkey1, account: {} as AccountInfo<Buffer> },
+        { pubkey: referredPubkey2, account: {} as AccountInfo<Buffer> },
+      ]);
+
+      // Mock account data for referred users with different minted amounts
+      const accountData1 = Buffer.alloc(136);
+      // Write authority at offset 8
+      referredPubkey1.toBuffer().copy(accountData1, 8);
+      // Write minted_amount at offset 104
+      accountData1.writeBigUInt64LE(BigInt(100_000_000), 104); // 100 EQUA
+
+      const accountData2 = Buffer.alloc(136);
+      // Write authority at offset 8
+      referredPubkey2.toBuffer().copy(accountData2, 8);
+      // Write minted_amount at offset 104
+      accountData2.writeBigUInt64LE(BigInt(200_000_000), 104); // 200 EQUA
+
+      mockConnection.getAccountInfo
+        .mockResolvedValueOnce({
+          data: accountData1,
+          executable: false,
+          lamports: 1000000,
+          owner: PROGRAM_ID,
+          rentEpoch: 0,
+        })
+        .mockResolvedValueOnce({
+          data: accountData2,
+          executable: false,
+          lamports: 1000000,
+          owner: PROGRAM_ID,
+          rentEpoch: 0,
+        });
+
+      const result = await computeReferralRewards(mockConnection, testReferrerPubkey);
+
+      expect(result).not.toBeNull();
+      // Total minted: 300 EQUA = 300_000_000 base units
+      // 1% reward = 3 EQUA = 3_000_000 base units
+      expect(result?.toString()).toBe('3000000');
+    });
+
+    it('should return zero when no referred users', async () => {
+      mockConnection.getProgramAccounts.mockResolvedValue([]);
+
+      const result = await computeReferralRewards(mockConnection, testReferrerPubkey);
+
+      expect(result).not.toBeNull();
+      expect(result?.toString()).toBe('0');
+    });
+
+    it('should handle errors gracefully and return zero when getUsersReferredBy fails', async () => {
+      // getUsersReferredBy catches errors and returns empty array
+      mockConnection.getProgramAccounts.mockRejectedValue(new Error('Network error'));
+
+      const result = await computeReferralRewards(mockConnection, testReferrerPubkey);
+
+      // Should return 0 since getUsersReferredBy returns [] on error
+      expect(result).not.toBeNull();
+      expect(result?.toString()).toBe('0');
     });
   });
 

@@ -2,14 +2,21 @@
  * Referral Rewards Utilities
  * 
  * Functions for querying and managing referral rewards on-chain.
- * These functions allow users to check accumulated rewards and prepare
- * for claiming them (claiming requires backend program support).
+ * 
+ * IMPORTANT: Frontend now displays COMPUTED rewards based on actual minted amounts
+ * of referred users (1% individual / 2% business), NOT the stored `referral_rewards`
+ * field which contains legacy signup bonuses. This ensures displayed rewards reflect
+ * only mint-based percentages and adjust dynamically with changing mint amounts.
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { parseUserAccountData, UserAccountData } from './onchainRegistration';
 import { PROGRAM_ID } from '@/lib/constants';
+import { 
+  INDIVIDUAL_REFERRAL_PERCENT, 
+  BUSINESS_REFERRAL_PERCENT // Reserved for future use when backend adds referral_type field
+} from './referralCalculator';
 
 /**
  * Get all users referred by a specific address
@@ -43,10 +50,15 @@ export async function getUsersReferredBy(
 }
 
 /**
- * Get referral rewards balance for a user account
+ * Get referral rewards balance for a user account (LEGACY - stored value)
+ * 
+ * NOTE: This returns the STORED `referral_rewards` field which includes legacy signup bonuses.
+ * For accurate mint-based rewards, use `computeReferralRewards()` instead.
+ * 
  * @param connection Solana connection
  * @param userAccountPubkey The user account public key
  * @returns The referral rewards balance as a BN, or null if account doesn't exist
+ * @deprecated Use computeReferralRewards for accurate mint-based rewards
  */
 export async function getReferralRewardsBalance(
   connection: Connection,
@@ -67,10 +79,87 @@ export async function getReferralRewardsBalance(
 }
 
 /**
- * Get complete referral statistics for a user
+ * Compute referral rewards from on-chain truth (minted amounts of referred users)
+ * 
+ * This function calculates rewards as a percentage of actual minted tokens by referred users,
+ * ignoring the stored `referral_rewards` field which contains legacy signup bonuses.
+ * 
+ * Percentages:
+ * - Individual referrals: 1% of minted amount
+ * - Business referrals: 2% of minted amount (when backend adds referral_type field)
+ * 
+ * @param connection Solana connection
+ * @param referrerAuthorityPubkey The referrer's wallet authority public key
+ * @returns Computed rewards in base units (6 decimals), or null on error
+ */
+export async function computeReferralRewards(
+  connection: Connection,
+  referrerAuthorityPubkey: PublicKey
+): Promise<BN | null> {
+  try {
+    // Get all users referred by this authority
+    const referredUserPubkeys = await getUsersReferredBy(connection, referrerAuthorityPubkey);
+    
+    if (referredUserPubkeys.length === 0) {
+      return new BN(0);
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✓ Computing rewards for ${referredUserPubkeys.length} referred users`);
+    }
+
+    let totalRewards = new BN(0);
+
+    // For each referred user, calculate reward based on their minted amount
+    for (const userPubkey of referredUserPubkeys) {
+      try {
+        const accountInfo = await connection.getAccountInfo(userPubkey);
+        if (!accountInfo) continue;
+
+        const userData = parseUserAccountData(accountInfo.data);
+        if (!userData) continue;
+
+        // Get minted amount (in base units - 6 decimals)
+        const mintedAmount = userData.mintedAmount;
+
+        // TODO: When backend adds referral_type field, check it here to use 1% or 2%
+        // For now, use INDIVIDUAL_REFERRAL_PERCENT (1%) for all referrals
+        const rewardPercent = INDIVIDUAL_REFERRAL_PERCENT;
+
+        // Calculate reward: (minted_amount * percent) / 100
+        // Use BN arithmetic to avoid overflow
+        const reward = mintedAmount.mul(new BN(rewardPercent)).div(new BN(100));
+        
+        totalRewards = totalRewards.add(reward);
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`  - User ${userPubkey.toBase58().slice(0, 8)}: minted ${mintedAmount.toString()}, reward ${reward.toString()}`);
+        }
+      } catch (error) {
+        console.error(`Error processing referred user ${userPubkey.toBase58()}:`, error);
+        // Continue processing other users
+      }
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✓ Total computed rewards: ${totalRewards.toString()} base units`);
+    }
+    return totalRewards;
+  } catch (error) {
+    console.error('Error computing referral rewards:', error);
+    return null;
+  }
+}
+
+/**
+ * Get complete referral statistics for a user (with COMPUTED rewards)
+ * 
+ * Returns computed mint-based rewards (not the stored legacy value) and actual
+ * on-chain referred user count.
+ * 
  * @param connection Solana connection
  * @param userAccountPubkey The user account public key
- * @returns Referral statistics including rewards and referred users count
+ * @returns Referral statistics with computed rewards and on-chain user count
  */
 export async function getReferralStats(
   connection: Connection,
@@ -91,12 +180,15 @@ export async function getReferralStats(
       return null;
     }
 
-    // Get all users this account has referred
+    // Get all users this account has referred (on-chain source of truth)
     const referredUsers = await getUsersReferredBy(connection, userData.authority);
 
+    // Compute rewards from actual minted amounts (not the stored field)
+    const computedRewards = await computeReferralRewards(connection, userData.authority);
+
     return {
-      referralRewards: userData.referralRewards,
-      referredUsersCount: referredUsers.length,
+      referralRewards: computedRewards || new BN(0),  // Use computed rewards
+      referredUsersCount: referredUsers.length,       // Use on-chain count
       referredUsers,
     };
   } catch (error) {

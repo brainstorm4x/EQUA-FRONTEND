@@ -13,13 +13,27 @@
    - minted_amount (u64)          ← Total minted
    - mint_start (i64)             ← Registration timestamp
    - (locked_until field removed per EQUA Whitepaper 2025)
-   - referral_rewards (u64)       ← Accumulated rewards for this referrer
+   - referral_rewards (u64)       ← LEGACY stored rewards (includes signup bonuses)
    - last_mint_time (i64)         ← Last mint timestamp
    ```
 
 > **Note**: The `locked_until` field has been removed as of December 2025.
 
-2. **Referral Rewards Accumulation**: The `referral_rewards` field in each UserAccount tracks how much reward that account has earned from referring others.
+2. **Referral Rewards Accumulation**: The `referral_rewards` field in each UserAccount tracks the **legacy stored rewards** including signup bonuses. 
+
+   ⚠️ **IMPORTANT**: The frontend now displays **COMPUTED rewards** based on actual minted amounts of referred users (1% individual / 2% business), NOT the stored `referral_rewards` field. This ensures displayed rewards reflect only mint-based percentages and adjust dynamically with changing mint amounts.
+
+### ✅ Frontend Computed Rewards (December 2025)
+
+The frontend now calculates referral rewards on-the-fly by:
+1. Fetching all users referred by a given authority using `getUsersReferredBy()`
+2. Reading each referred user's `minted_amount` from their UserAccount
+3. Applying the correct percentage:
+   - **Individual referrals**: 1% of minted amount
+   - **Business referrals**: 2% of minted amount (when backend adds referral_type field)
+4. Summing the results using BN arithmetic to avoid overflow
+
+This approach automatically removes legacy signup bonuses and ensures rewards adjust dynamically as referred users mint more tokens.
 
 ### ❌ What's NOT Yet Implemented
 
@@ -142,18 +156,56 @@ pub fn mint_equa_tokens(ctx: Context<MintEquaTokens>, amount: u64) -> Result<()>
 
 ## Calculating Referral Rewards
 
-### Option A: Fixed Percentage
-- Simple: Give 10% of minted amount to referrer
-- Example: User mints 100 EQUA → Referrer gets 10 EQUA
+### ✅ Current Implementation (December 2025)
+
+The frontend uses **percentage-based rewards** computed from actual minted amounts:
+
+```typescript
+// From src/utils/referralRewards.ts
+async function computeReferralRewards(
+  connection: Connection,
+  referrerAuthorityPubkey: PublicKey
+): Promise<BN | null> {
+  // 1. Get all users referred by this authority
+  const referredUserPubkeys = await getUsersReferredBy(connection, referrerAuthorityPubkey);
+  
+  // 2. For each referred user, calculate reward based on their minted amount
+  for (const userPubkey of referredUserPubkeys) {
+    const userData = parseUserAccountData(accountInfo.data);
+    const mintedAmount = userData.mintedAmount;
+    
+    // 3. Apply percentage (1% for individuals, 2% for businesses)
+    const rewardPercent = INDIVIDUAL_REFERRAL_PERCENT; // Currently 1% for all
+    const reward = mintedAmount.mul(new BN(rewardPercent)).div(new BN(100));
+    
+    totalRewards = totalRewards.add(reward);
+  }
+  
+  return totalRewards;
+}
+```
+
+**Key Features:**
+- ✅ Rewards computed from on-chain truth (not stored field)
+- ✅ Automatically adjusts as referred users mint more tokens
+- ✅ No hardcoded mint amounts or rates
+- ✅ Uses BN arithmetic to avoid overflow
+- ✅ Strips legacy signup bonuses automatically
+
+### Legacy Approaches (For Reference)
+
+### Option A: Fixed Percentage (IMPLEMENTED)
+- Simple: Give 1-2% of minted amount to referrer
+- Example: User mints 100 EQUA → Referrer gets 1 EQUA (individual) or 2 EQUA (business)
 
 ### Option B: Tiered System
 - First-level referrals: 10%
 - Second-level referrals: 5%
 - Third-level referrals: 2%
 
-### Option C: One-Time Bonus
-- Referrer gets a fixed bonus (e.g., 50 EQUA) when someone they referred completes first mint
-- Stored in referral_rewards field
+### Option C: One-Time Bonus (LEGACY - Being Phased Out)
+- Referrer gets a fixed bonus (e.g., 1,000 EQUA) when someone they referred completes registration
+- This is stored in the `referral_rewards` field but is no longer displayed in the frontend
 
 ## Querying Referral Relationships
 
