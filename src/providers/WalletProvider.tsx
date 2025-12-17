@@ -118,14 +118,16 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   const [walletWarning, setWalletWarning] = useState<string | null>(null);
   
   const wallets = useMemo(() => {
-    // Always include Solflare
-    const adapters = [new SolflareWalletAdapter()];
+    const adapters: (PhantomWalletAdapter | SolflareWalletAdapter)[] = [];
     
     // Only add Phantom adapter if NOT injected (to avoid double registration)
     // The injected provider will be auto-detected by wallet-adapter
     if (!isPhantomInjected()) {
-      adapters.unshift(new PhantomWalletAdapter());
+      adapters.push(new PhantomWalletAdapter());
     }
+    
+    // Always include Solflare
+    adapters.push(new SolflareWalletAdapter());
     
     return adapters;
   }, []);
