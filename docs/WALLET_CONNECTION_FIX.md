@@ -318,5 +318,4 @@ Potential improvements for future versions:
 
 ---
 
-**Last Updated:** December 2024  
-**Version:** 0.1.0
+**Last Updated:** December 2024

@@ -75,21 +75,7 @@ const isPhantomInjected = (): boolean => {
   return !!(solana?.isPhantom || phantom?.solana?.isPhantom);
 };
 
-/**
- * Checks if Phantom wallet is ready (unlocked)
- */
-const isPhantomReady = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  
-  const solana = (window as any).solana;
-  const phantom = (window as any).phantom;
-  
-  // Check if Phantom is connected or ready
-  return !!(
-    (solana?.isPhantom && solana?.publicKey) ||
-    (phantom?.solana?.isPhantom && phantom?.solana?.publicKey)
-  );
-};
+
 
 /**
  * Gets the expected network from the RPC endpoint

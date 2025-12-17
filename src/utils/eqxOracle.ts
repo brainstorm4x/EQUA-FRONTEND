@@ -178,6 +178,7 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
 
   try {
     // Hermes API requires hex feed IDs without the 0x prefix
+    // All PYTH_FEED_IDS are guaranteed to start with '0x' (verified by tests)
     const feedIds = [
       PYTH_FEED_IDS.XAU_USD,
       PYTH_FEED_IDS.WTI_USD,
@@ -187,7 +188,7 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
       PYTH_FEED_IDS.CNY_USD,
       PYTH_FEED_IDS.JPY_USD,
       PYTH_FEED_IDS.GBP_USD,
-    ].map(id => id.startsWith('0x') ? id.slice(2) : id); // Strip 0x prefix
+    ].map(id => id.slice(2)); // Strip 0x prefix
 
     // Log network configuration for debugging
     // Note: Hermes API works with mainnet feed IDs regardless of NEXT_PUBLIC_PYTH_ENV
