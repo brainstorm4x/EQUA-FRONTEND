@@ -22,6 +22,7 @@ import {
 // Mock axios
 jest.mock('axios', () => ({
   get: jest.fn(),
+  post: jest.fn(),
 }));
 
 import axios from 'axios';
@@ -240,45 +241,130 @@ describe('EQX Oracle', () => {
     });
 
     it('should use Pyth when available', async () => {
+      // Mock response from Hermes POST API (array format)
       const mockPythResponse = [
         {
-          id: PYTH_FEED_IDS.XAU_USD.slice(2), // Remove 0x prefix
-          price: { price: '2650000000', expo: -6 },
+          id: PYTH_FEED_IDS.XAU_USD.slice(2), // Response has IDs without 0x prefix
+          price: { price: '2650000000', expo: -6, conf: '1000000', publish_time: 1234567890 },
+          ema_price: { price: '2650000000', expo: -6, conf: '1000000', publish_time: 1234567890 },
         },
         {
           id: PYTH_FEED_IDS.WTI_USD.slice(2),
-          price: { price: '75000000', expo: -6 },
+          price: { price: '75000000', expo: -6, conf: '100000', publish_time: 1234567890 },
+          ema_price: { price: '75000000', expo: -6, conf: '100000', publish_time: 1234567890 },
         },
         {
           id: PYTH_FEED_IDS.COPPER_USD.slice(2),
-          price: { price: '4200000', expo: -6 },
+          price: { price: '4200000', expo: -6, conf: '10000', publish_time: 1234567890 },
+          ema_price: { price: '4200000', expo: -6, conf: '10000', publish_time: 1234567890 },
         },
         {
           id: PYTH_FEED_IDS.WHEAT_USD.slice(2),
-          price: { price: '5500000', expo: -6 },
+          price: { price: '5500000', expo: -6, conf: '10000', publish_time: 1234567890 },
+          ema_price: { price: '5500000', expo: -6, conf: '10000', publish_time: 1234567890 },
         },
         {
           id: PYTH_FEED_IDS.EUR_USD.slice(2),
-          price: { price: '1080000', expo: -6 },
+          price: { price: '1080000', expo: -6, conf: '1000', publish_time: 1234567890 },
+          ema_price: { price: '1080000', expo: -6, conf: '1000', publish_time: 1234567890 },
         },
         {
           id: PYTH_FEED_IDS.CNY_USD.slice(2),
-          price: { price: '138000', expo: -6 },
+          price: { price: '138000', expo: -6, conf: '100', publish_time: 1234567890 },
+          ema_price: { price: '138000', expo: -6, conf: '100', publish_time: 1234567890 },
         },
         {
           id: PYTH_FEED_IDS.JPY_USD.slice(2),
-          price: { price: '6700', expo: -6 },
+          price: { price: '6700', expo: -6, conf: '10', publish_time: 1234567890 },
+          ema_price: { price: '6700', expo: -6, conf: '10', publish_time: 1234567890 },
         },
         {
           id: PYTH_FEED_IDS.GBP_USD.slice(2),
-          price: { price: '1270000', expo: -6 },
+          price: { price: '1270000', expo: -6, conf: '1000', publish_time: 1234567890 },
+          ema_price: { price: '1270000', expo: -6, conf: '1000', publish_time: 1234567890 },
         },
       ];
 
-      mockedAxios.get.mockResolvedValueOnce({ data: mockPythResponse });
+      // Mock POST request (not GET)
+      mockedAxios.post.mockResolvedValueOnce({ data: mockPythResponse });
 
       const data = await getEQXPriceData();
       expect(data.source).toBe('pyth');
+    });
+
+    it('should use POST request with correct shape for Hermes API', async () => {
+      const mockPythResponse = [
+        {
+          id: PYTH_FEED_IDS.XAU_USD.slice(2),
+          price: { price: '2650000000', expo: -6, conf: '1000000', publish_time: 1234567890 },
+          ema_price: { price: '2650000000', expo: -6, conf: '1000000', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.WTI_USD.slice(2),
+          price: { price: '75000000', expo: -6, conf: '100000', publish_time: 1234567890 },
+          ema_price: { price: '75000000', expo: -6, conf: '100000', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.COPPER_USD.slice(2),
+          price: { price: '4200000', expo: -6, conf: '10000', publish_time: 1234567890 },
+          ema_price: { price: '4200000', expo: -6, conf: '10000', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.WHEAT_USD.slice(2),
+          price: { price: '5500000', expo: -6, conf: '10000', publish_time: 1234567890 },
+          ema_price: { price: '5500000', expo: -6, conf: '10000', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.EUR_USD.slice(2),
+          price: { price: '1080000', expo: -6, conf: '1000', publish_time: 1234567890 },
+          ema_price: { price: '1080000', expo: -6, conf: '1000', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.CNY_USD.slice(2),
+          price: { price: '138000', expo: -6, conf: '100', publish_time: 1234567890 },
+          ema_price: { price: '138000', expo: -6, conf: '100', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.JPY_USD.slice(2),
+          price: { price: '6700', expo: -6, conf: '10', publish_time: 1234567890 },
+          ema_price: { price: '6700', expo: -6, conf: '10', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.GBP_USD.slice(2),
+          price: { price: '1270000', expo: -6, conf: '1000', publish_time: 1234567890 },
+          ema_price: { price: '1270000', expo: -6, conf: '1000', publish_time: 1234567890 },
+        },
+      ];
+
+      mockedAxios.post.mockResolvedValueOnce({ data: mockPythResponse });
+
+      await getEQXPriceData();
+
+      // Verify POST was called with correct endpoint and shape
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'https://hermes.pyth.network/api/latest_price_feeds',
+        expect.objectContaining({
+          ids: expect.arrayContaining([
+            PYTH_FEED_IDS.XAU_USD.slice(2), // IDs without 0x prefix
+            PYTH_FEED_IDS.WTI_USD.slice(2),
+            PYTH_FEED_IDS.COPPER_USD.slice(2),
+            PYTH_FEED_IDS.WHEAT_USD.slice(2),
+            PYTH_FEED_IDS.EUR_USD.slice(2),
+            PYTH_FEED_IDS.CNY_USD.slice(2),
+            PYTH_FEED_IDS.JPY_USD.slice(2),
+            PYTH_FEED_IDS.GBP_USD.slice(2),
+          ]),
+          verbose: false,
+          binary: false,
+        }),
+        expect.objectContaining({
+          timeout: 10000,
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          }),
+        })
+      );
     });
 
     it('should fallback to CoinGecko when Pyth fails', async () => {
