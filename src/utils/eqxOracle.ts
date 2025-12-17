@@ -159,7 +159,8 @@ export function getCacheTTL(): number {
 
 // Pyth Hermes API endpoint (stable version)
 // Documentation: https://hermes.pyth.network/docs/
-const PYTH_HERMES_API = 'https://hermes.pyth.network/v2/updates/price/latest';
+// Using POST to /api/latest_price_feeds as the GET endpoint returns 404
+const PYTH_HERMES_API = 'https://hermes.pyth.network/api/latest_price_feeds';
 
 /**
  * Fetches prices from Pyth Network using the Hermes API
@@ -176,6 +177,8 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
   }
 
   try {
+    // Hermes API requires hex feed IDs without the 0x prefix
+    // All PYTH_FEED_IDS are guaranteed to start with '0x' (verified by tests)
     const feedIds = [
       PYTH_FEED_IDS.XAU_USD,
       PYTH_FEED_IDS.WTI_USD,
@@ -185,30 +188,32 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
       PYTH_FEED_IDS.CNY_USD,
       PYTH_FEED_IDS.JPY_USD,
       PYTH_FEED_IDS.GBP_USD,
-    ];
+    ].map(id => id.slice(2)); // Strip 0x prefix
 
-    // Build query parameters per Hermes API docs
-    const params = new URLSearchParams();
-    feedIds.forEach(id => params.append('ids[]', id));
-    // Add parsed=true to get JSON response with parsed prices
-    params.append('parsed', 'true');
-    
     // Log network configuration for debugging
     // Note: Hermes API works with mainnet feed IDs regardless of NEXT_PUBLIC_PYTH_ENV
     // The env variable is primarily for documentation/configuration purposes
     const pythEnv = process.env.NEXT_PUBLIC_PYTH_ENV || 'mainnet-beta';
     console.log(`[EQX Oracle] Configured Pyth environment: ${pythEnv} (using mainnet feed IDs)`);
-
-    const url = `${PYTH_HERMES_API}?${params.toString()}`;
-    console.log('[EQX Oracle] Fetching Pyth prices from:', url.substring(0, 100) + '...');
+    console.log('[EQX Oracle] Fetching Pyth prices via POST to:', PYTH_HERMES_API);
     
-    const response = await axios.get(url, {
-      timeout: 10000, // 10 second timeout
-      headers: {
-        'Accept': 'application/json',
+    // Use POST to Hermes API (stable endpoint)
+    const response = await axios.post(
+      PYTH_HERMES_API,
+      {
+        ids: feedIds,
+        verbose: false,
+        binary: false,
       },
-      validateStatus: (status) => status < 500, // Don't throw on 4xx errors
-    });
+      {
+        timeout: 10000, // 10 second timeout
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        validateStatus: (status) => status < 500, // Don't throw on 4xx errors
+      }
+    );
 
     // Handle rate limiting (429) or client errors (4xx)
     if (response.status === 429) {
@@ -235,10 +240,11 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
       return null;
     }
 
-    // Hermes V2 API returns: { binary: { data: [...], encoding: "hex" }, parsed: [...] }
-    if (!response.data || !response.data.parsed || !Array.isArray(response.data.parsed)) {
+    // Hermes POST API returns an array of price feeds directly
+    // Response shape: [{ id: "hex...", price: { price: "...", conf: "...", expo: -8, ... }, ema_price: {...} }, ...]
+    if (!response.data || !Array.isArray(response.data)) {
       if (!pythErrorWarned) {
-        console.warn('[EQX Oracle] Invalid Pyth response format:', response.data);
+        console.warn('[EQX Oracle] Invalid Pyth response format (expected array):', response.data);
         pythErrorWarned = true;
       }
       return null;
@@ -247,27 +253,28 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
     const prices: Record<string, AssetPrice> = {};
     const now = Date.now();
 
-    // Map feed IDs to symbols
+    // Map feed IDs (without 0x prefix) to symbols
     const feedIdToSymbol: Record<string, string> = {
-      [PYTH_FEED_IDS.XAU_USD]: 'XAU',
-      [PYTH_FEED_IDS.WTI_USD]: 'OIL',
-      [PYTH_FEED_IDS.COPPER_USD]: 'COPPER',
-      [PYTH_FEED_IDS.WHEAT_USD]: 'WHEAT',
-      [PYTH_FEED_IDS.EUR_USD]: 'EUR',
-      [PYTH_FEED_IDS.CNY_USD]: 'CNY',
-      [PYTH_FEED_IDS.JPY_USD]: 'JPY',
-      [PYTH_FEED_IDS.GBP_USD]: 'GBP',
+      [PYTH_FEED_IDS.XAU_USD.slice(2)]: 'XAU',
+      [PYTH_FEED_IDS.WTI_USD.slice(2)]: 'OIL',
+      [PYTH_FEED_IDS.COPPER_USD.slice(2)]: 'COPPER',
+      [PYTH_FEED_IDS.WHEAT_USD.slice(2)]: 'WHEAT',
+      [PYTH_FEED_IDS.EUR_USD.slice(2)]: 'EUR',
+      [PYTH_FEED_IDS.CNY_USD.slice(2)]: 'CNY',
+      [PYTH_FEED_IDS.JPY_USD.slice(2)]: 'JPY',
+      [PYTH_FEED_IDS.GBP_USD.slice(2)]: 'GBP',
     };
 
-    for (const feed of response.data.parsed) {
-      const feedId = feed.id.startsWith('0x') ? feed.id : `0x${feed.id}`;
+    for (const feed of response.data) {
+      // Feed ID comes without 0x prefix in response
+      const feedId = feed.id;
       const symbol = feedIdToSymbol[feedId];
       
       if (symbol && feed.price) {
-        // Pyth V2 API: prices need to be scaled by the exponent
-        // feed.price.price is the raw price value
+        // Pyth Hermes API: prices need to be scaled by the exponent
+        // feed.price.price is the raw price value (string)
         // feed.price.expo is the exponent (usually negative, e.g., -8 for USD prices)
-        // Example: raw price 123456 with expo -2 becomes 1234.56
+        // Example: raw price "123456" with expo -2 becomes 1234.56
         const price = parseFloat(feed.price.price) * Math.pow(10, feed.price.expo);
         
         // Validate price is reasonable (sanity check)

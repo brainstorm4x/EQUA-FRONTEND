@@ -367,30 +367,137 @@ const { balance, isLoading, error } = useEquaBalance();
 
 ---
 
+## Issue: Wallet Connection Errors
+
+### Symptoms
+- "WalletConnectionError: Unexpected error" when clicking "Select Wallet"
+- Phantom wallet listed twice in wallet selection modal
+- Console spam with wallet errors during Fast Refresh
+- Phantom not connecting even when installed
+
+### Root Causes
+
+#### 1. Phantom Double Registration
+**Cause:** Both the injected Phantom provider (`window.solana`) and the PhantomWalletAdapter are active, causing double registration.
+
+**Solution:** The wallet provider now detects injected Phantom and avoids double registration. The adapter automatically uses the injected provider when available.
+
+#### 2. Phantom Wallet Locked or Not Installed
+**Cause:** Phantom extension is installed but wallet is locked, or not installed at all.
+
+**Solution:** 
+- **Locked**: The app now displays a warning banner: "Phantom wallet detected but locked. Please unlock your wallet to connect."
+- **Not Installed**: On desktop, you'll see: "Phantom wallet not detected. Please install the Phantom browser extension from phantom.app"
+- **Mobile**: Prompts to download from app store (iOS/Android)
+
+#### 3. Network Mismatch (Devnet vs Mainnet)
+**Cause:** Your wallet is connected to mainnet but the app is configured for devnet (or vice versa).
+
+**Solution:** 
+- Check the expected network in `.env.local`:
+  ```bash
+  NEXT_PUBLIC_NETWORK=devnet
+  NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com
+  ```
+- Change your wallet's network in wallet settings to match
+- The app will show a warning: "Connection error. Please ensure your wallet is connected to devnet network."
+
+#### 4. Console Spam During Fast Refresh
+**Cause:** Wallet errors are logged repeatedly when Next.js Fast Refresh occurs in development.
+
+**Solution:** Error logging is now throttled to once every 5 seconds to prevent console spam.
+
+### Wallet Readiness Checks
+
+The app now includes automatic readiness detection:
+
+1. **On Load**: Checks if Phantom is injected and ready
+2. **Locked Wallet**: Detects locked wallet and shows user guidance
+3. **Network Check**: Validates wallet is on the correct network
+4. **Clear Errors**: User-friendly error messages instead of cryptic wallet adapter errors
+
+### Troubleshooting Steps
+
+1. **Phantom Not Connecting:**
+   - Check if Phantom extension is installed (look for Phantom icon in browser toolbar)
+   - Click the Phantom icon and ensure wallet is unlocked
+   - Check wallet network matches app network (devnet for testing, mainnet for production)
+
+2. **Double Wallet Entry:**
+   - Update to latest version (this issue is now fixed)
+   - You should see only ONE "Phantom" entry in the wallet selection modal
+
+3. **Connection Timeout:**
+   - Check browser console for specific error messages
+   - Ensure you're not blocking wallet popups in browser settings
+   - Try disconnecting and reconnecting the wallet
+   - Refresh the page
+
+4. **Network Mismatch:**
+   - Open Phantom wallet settings
+   - Navigate to "Network" settings
+   - Change to the network the app is using (check app banner or console logs)
+   - Disconnect and reconnect wallet
+
+### Expected Behavior
+
+After the fix:
+- ✅ Phantom appears only ONCE in wallet selection
+- ✅ Clear error messages when wallet is locked/missing
+- ✅ Network mismatch warnings guide users to fix
+- ✅ No console spam during development Fast Refresh
+- ✅ Solflare and other wallets work normally
+
+---
+
 ## Issue: Pyth Hermes API 404 Errors
 
 ### Symptoms
 Console shows repeated 404 errors from Pyth Hermes API endpoint.
 
 ### Root Causes
-- Missing `parsed=true` query parameter
+- Using deprecated GET endpoint instead of POST
+- Feed IDs sent with incorrect format (with `0x` prefix)
 - Rate limiting (HTTP 429)
 - Invalid or unavailable feed IDs
 - Network configuration mismatch
 
 ### Solution
 
-1. **Temporary Disable**: Set `NEXT_PUBLIC_ENABLE_PYTH=false` in `.env.local`
+**The Pyth integration has been updated to use the stable POST endpoint.**
 
-2. **Configure Network**: Add to `.env.local`:
+1. **Temporary Disable**: Set `NEXT_PUBLIC_ENABLE_PYTH=false` in `.env.local` if you're in an environment without Hermes access (firewall, VPN, etc.)
+
+2. **Configure Network** (optional): Add to `.env.local`:
    ```bash
    NEXT_PUBLIC_PYTH_ENV=mainnet-beta
    ```
 
 3. **Error Handling**: The system automatically falls back to:
-   - Pyth Network (primary)
+   - Pyth Network via POST (primary)
    - CoinGecko API (fallback)
    - Hardcoded fallback prices (last resort)
+
+### Technical Details
+
+The fix includes:
+- Switched from GET `https://hermes.pyth.network/v2/updates/price/latest` (404) to POST `https://hermes.pyth.network/api/latest_price_feeds` (stable)
+- Feed IDs are now sent without `0x` prefix as required by Hermes
+- Response parsing updated to handle array format from POST endpoint
+- Session-based warning throttling (warns only once per session about Pyth errors)
+
+### Testing the Fix
+
+Run the oracle tests to verify:
+```bash
+npm test -- __tests__/pricing/eqxOracle.test.ts
+```
+
+Should see:
+```
+✓ should use Pyth when available
+✓ should use POST request with correct shape for Hermes API
+```
 
 ---
 

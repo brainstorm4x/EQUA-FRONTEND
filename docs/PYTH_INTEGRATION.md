@@ -43,8 +43,24 @@ Source: https://pyth.network/developers/price-feed-ids
 
 ### API Endpoint
 ```
-https://hermes.pyth.network/api/latest_price_feeds
+POST https://hermes.pyth.network/api/latest_price_feeds
 ```
+
+**Important:** The EQUA frontend uses the POST endpoint, not GET. The previous GET endpoint (`/v2/updates/price/latest`) returns 404 errors and should not be used.
+
+**Request Format:**
+```json
+{
+  "ids": [
+    "765de816845861e75a25fca122bb6898a63d49e6fa51a6f8b4303c61cb1fc1b9",
+    "925c4ef7ee2b7b4c19a23b04d80187b3e687b3e6e65a97cf93bf3cce8db3b8a2"
+  ],
+  "verbose": false,
+  "binary": false
+}
+```
+
+**Note:** Feed IDs must be sent WITHOUT the `0x` prefix. The response is an array of price feed objects.
 
 This is the official Pyth Hermes REST API that works without requiring the Pyth SDK.
 
@@ -104,6 +120,14 @@ NEXT_PUBLIC_ENABLE_PYTH=false
 
 If disabled, the system automatically falls back to CoinGecko or hardcoded prices.
 
+**When to Disable Pyth:**
+- Firewall blocking access to `hermes.pyth.network`
+- Corporate VPN preventing external API calls
+- Rate limiting issues (though the app handles this automatically)
+- Testing fallback behavior
+
+After disabling, the app will log once: `[EQX Oracle] Pyth Network is disabled via NEXT_PUBLIC_ENABLE_PYTH=false`
+
 ## Testing Pyth Integration
 
 ### Verify Pyth API Works
@@ -116,13 +140,22 @@ npm test __tests__/pricing/eqxOracle.test.ts
 
 ### Manual API Test
 
-Test the Pyth Hermes API directly:
+Test the Pyth Hermes API directly using POST:
 
 ```bash
-curl "https://hermes.pyth.network/api/latest_price_feeds?ids[]=0x765de816845861e75a25fca122bb6898a63d49e6fa51a6f8b4303c61cb1fc1b9"
+curl -X POST "https://hermes.pyth.network/api/latest_price_feeds" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "ids": ["765de816845861e75a25fca122bb6898a63d49e6fa51a6f8b4303c61cb1fc1b9"],
+    "verbose": false,
+    "binary": false
+  }'
 ```
 
-This should return JSON with the gold (XAU/USD) price feed data.
+**Important:** Note the feed ID is sent WITHOUT the `0x` prefix.
+
+This should return JSON with the gold (XAU/USD) price feed data as an array.
 
 ## Code Examples
 
