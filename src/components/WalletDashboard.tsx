@@ -14,6 +14,7 @@ import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw } from '@/utils/tokenFormat';
 import { recordTransfer } from '@/utils/transferTracking';
+import { recordTransaction } from '@/utils/recordTransaction';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
@@ -651,6 +652,20 @@ const SendModal: FC<SendModalProps> = ({
         sendAmountDecimal,
         signature
       );
+      
+      // Record transaction on-chain to increment GlobalState.total_transactions
+      // This is non-blocking - if it fails, the transfer is still successful
+      const recordTxSignature = await recordTransaction(
+        connection,
+        signTransaction,
+        publicKey
+      );
+      
+      if (recordTxSignature) {
+        console.log('✅ Transaction recorded on-chain:', recordTxSignature);
+      } else {
+        console.warn('⚠️ Failed to record transaction on-chain (non-blocking)');
+      }
       
       setTimeout(onSuccess, 2000);
     } catch (err: any) {
