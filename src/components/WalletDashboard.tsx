@@ -5,11 +5,21 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey, Transaction, SystemProgram, SendTransactionError } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync, 
-  createTransferInstruction,
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import { BN } from '@coral-xyz/anchor';
-import { getMintPDA, getSPLTokenBalance, getUserAccountPDA, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, getEquaMintDecimals } from '@/lib/program';
+import { 
+  getMintPDA, 
+  getSPLTokenBalance, 
+  getUserAccountPDA, 
+  TOKEN_PROGRAM_ID, 
+  ASSOCIATED_TOKEN_PROGRAM_ID, 
+  getEquaMintDecimals,
+  getMintAuthorityPDA,
+  verifyMintOwner,
+  createTransferTokensInstruction,
+  clearRpcCache
+} from '@/lib/program';
 import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw } from '@/utils/tokenFormat';
@@ -555,6 +565,10 @@ const SendModal: FC<SendModalProps> = ({
       }
 
       const [mintPDA] = getMintPDA();
+      const [mintAuthorityPDA] = getMintAuthorityPDA();
+      
+      // Verify mint owner is Token-2022 (preflight validation)
+      await verifyMintOwner(connection, mintPDA);
       
       // Get sender's token account
       const senderTokenAccount = getAssociatedTokenAddressSync(
@@ -594,6 +608,10 @@ const SendModal: FC<SendModalProps> = ({
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
+      // Get sender and recipient UserAccount PDAs (required for transfer_tokens)
+      const [senderUserAccount] = getUserAccountPDA(publicKey);
+      const [recipientUserAccount] = getUserAccountPDA(recipientPubkey);
+
       const transaction = new Transaction();
 
       // Check if recipient token account exists, if not create it
@@ -611,20 +629,23 @@ const SendModal: FC<SendModalProps> = ({
         );
       }
 
-      // Add transfer instruction with correct amount
+      // Add Anchor transfer_tokens instruction (uses Token-2022 transfer_checked via CPI)
       // Validate BigInt is within safe number range before converting
       if (amountInBaseUnits > BigInt(Number.MAX_SAFE_INTEGER)) {
         throw new Error('Transfer amount exceeds maximum safe value');
       }
       
       transaction.add(
-        createTransferInstruction(
+        createTransferTokensInstruction(
+          senderUserAccount,
           senderTokenAccount,
+          recipientUserAccount,
           recipientTokenAccount,
+          mintPDA,
+          mintAuthorityPDA,
           publicKey,
-          Number(amountInBaseUnits),
-          [],
-          TOKEN_PROGRAM_ID
+          TOKEN_PROGRAM_ID,
+          Number(amountInBaseUnits)
         )
       );
 
@@ -645,6 +666,9 @@ const SendModal: FC<SendModalProps> = ({
       }, 'confirmed');
 
       setTxSignature(signature);
+      
+      // Clear RPC cache to force fresh balance fetch
+      clearRpcCache();
       
       // Record the transfer for anonymous analytics tracking (NO PII stored)
       const sendAmountDecimal = parseFloat(amount);
