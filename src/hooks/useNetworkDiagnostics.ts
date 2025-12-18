@@ -166,16 +166,18 @@ export function useNetworkDiagnostics(): NetworkDiagnostics {
           const owner = mintInfo.owner.toBase58();
           setMintOwner(owner);
           
-          // Check if mint owner matches configured token program
+          // Check if mint owner matches configured token program (must be Token-2022)
           if (owner !== TOKEN_PROGRAM_ID.toBase58()) {
+            const isToken2022 = owner === TOKEN_2022_PROGRAM_ADDRESS;
             detectedErrors.push({
               code: 'MINT_OWNER_MISMATCH',
               message: `Mint owner (${owner}) does not match configured TOKEN_PROGRAM_ID (${TOKEN_PROGRAM_ID.toBase58()})`,
               actionableSteps: [
-                'Check NEXT_PUBLIC_TOKEN_STANDARD environment variable',
-                'Set to "standard" for SPL Token or leave unset for Token-2022',
-                `Mint on-chain uses: ${owner === STANDARD_TOKEN_PROGRAM_ADDRESS ? 'Standard SPL Token' : 'Token-2022'}`,
-                'Update your env to match the on-chain mint program',
+                `Mint on-chain uses: ${isToken2022 ? 'Token-2022' : owner === STANDARD_TOKEN_PROGRAM_ADDRESS ? 'Standard SPL Token' : 'Unknown'}`,
+                'EQUA requires Token-2022 only',
+                isToken2022 
+                  ? 'Frontend is misconfigured - TOKEN_PROGRAM_ID should be Token-2022'
+                  : 'Recreate the mint with Token-2022 program',
               ],
             });
           }
