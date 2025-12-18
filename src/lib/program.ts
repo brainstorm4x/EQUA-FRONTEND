@@ -852,7 +852,14 @@ export function createTransferTokensInstruction(
   const discriminator = Buffer.from([54, 180, 238, 175, 74, 85, 126, 188]);
   
   // Convert amount to BN (supports both number and bigint)
-  const amountBN = typeof amount === 'bigint' ? new BN(amount.toString()) : new BN(amount);
+  // For bigint: convert to string to preserve precision, BN constructor handles it efficiently
+  let amountBN: BN;
+  if (typeof amount === 'bigint') {
+    // Convert bigint to string without losing precision
+    amountBN = new BN(amount.toString(10));
+  } else {
+    amountBN = new BN(amount);
+  }
   
   const data = Buffer.concat([
     discriminator,

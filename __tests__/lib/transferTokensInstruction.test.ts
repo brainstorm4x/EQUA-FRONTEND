@@ -198,7 +198,7 @@ describe('createTransferTokensInstruction', () => {
   });
 
   it('should handle bigint amounts correctly', () => {
-    const bigAmount = 1000000000000n; // 1 million EQUA as bigint
+    const bigAmount = 1000000000000n; // 1 million EQUA (1000000000000 base units with 6 decimals) as bigint
     
     const instruction = createTransferTokensInstruction(
       senderUserAccount,

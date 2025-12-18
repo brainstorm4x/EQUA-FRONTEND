@@ -630,11 +630,7 @@ const SendModal: FC<SendModalProps> = ({
       }
 
       // Add Anchor transfer_tokens instruction (uses Token-2022 transfer_checked via CPI)
-      // Validate BigInt is within safe number range before converting
-      if (amountInBaseUnits > BigInt(Number.MAX_SAFE_INTEGER)) {
-        throw new Error('Transfer amount exceeds maximum safe value');
-      }
-      
+      // Pass bigint directly - createTransferTokensInstruction handles the conversion
       transaction.add(
         createTransferTokensInstruction(
           senderUserAccount,
@@ -645,7 +641,7 @@ const SendModal: FC<SendModalProps> = ({
           mintAuthorityPDA,
           publicKey,
           TOKEN_PROGRAM_ID,
-          Number(amountInBaseUnits)
+          amountInBaseUnits
         )
       );
 
