@@ -3,9 +3,9 @@
  * E2E Validation Script for Registration Flow
  * 
  * This script validates:
- * 1. Mint owner matches TOKEN_PROGRAM_ID (standard SPL Token)
+ * 1. Mint owner matches Token-2022 (EQUA requires Token-2022 only)
  * 2. ASSOCIATED_TOKEN_PROGRAM_ID is correct
- * 3. Instruction accounts are in correct order (11-account structure)
+ * 3. Instruction accounts are in correct order (12-account structure)
  * 4. IDL matches backend expectations
  * 
  * Run: node scripts/validate_registration.mjs
@@ -45,13 +45,13 @@ function info(msg) {
 }
 
 // Configuration
-const PROGRAM_ID = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
+// EQUA Token Program ID (Token-2022 only)
+const PROGRAM_ID = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
 const MINT_SEED = 'equa-mint';
-const STANDARD_TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 const TOKEN_2022_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
 const ASSOCIATED_TOKEN_PROGRAM = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
 
-// Expected token program for EQUA (default: Token-2022)
+// EQUA requires Token-2022 only (no Standard SPL support)
 const EXPECTED_TOKEN_PROGRAM = TOKEN_2022_PROGRAM;
 
 async function main() {
@@ -229,12 +229,11 @@ async function main() {
       
       if (mintOwner === TOKEN_2022_PROGRAM) {
         success('✓ Mint uses Token-2022 Program (correct)');
-      } else if (mintOwner === STANDARD_TOKEN_PROGRAM) {
-        error('✗ Mint uses Standard SPL Token but app is configured for Token-2022');
-        error('  Fix: Either set NEXT_PUBLIC_TOKEN_STANDARD=standard or recreate mint with Token-2022');
-        hasErrors = true;
       } else {
-        error(`✗ Mint uses unknown token program: ${mintOwner}`);
+        error(`✗ Mint does not use Token-2022! EQUA requires Token-2022 only.`);
+        error(`  Found: ${mintOwner}`);
+        error(`  Expected: ${TOKEN_2022_PROGRAM}`);
+        error('  Fix: Recreate the mint with Token-2022 program');
         hasErrors = true;
       }
     }

@@ -11,24 +11,13 @@ export const PROGRAM_ID = new PublicKey(
 );
 
 // Token Program Selection
-// CRITICAL: The EQUA backend may require Token-2022. Check your deployment.
-// The mint_tokens instruction validates the token program ID.
-// Set NEXT_PUBLIC_TOKEN_STANDARD='standard' to use Standard SPL Token.
-// Any other value (including missing/undefined) defaults to Token-2022.
-const tokenStandardEnv = process.env.NEXT_PUBLIC_TOKEN_STANDARD;
-const useStandardToken = tokenStandardEnv === 'standard';
-export const TOKEN_PROGRAM_ID = useStandardToken ? SPL_TOKEN_PROGRAM_ID : TOKEN_2022_PROGRAM_ID;
+// CRITICAL: EQUA uses Token-2022 ONLY. Standard SPL Token is not supported.
+// The backend program is deployed with Token-2022 and all operations require it.
+export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
 
-// Log token standard selection for debugging (development only)
+// Log token program for debugging (development only)
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  const selectedProgram = useStandardToken ? 'Standard SPL Token' : 'Token-2022';
-  if (tokenStandardEnv && tokenStandardEnv !== 'standard') {
-    console.warn(
-      `⚠️ NEXT_PUBLIC_TOKEN_STANDARD='${tokenStandardEnv}' is not 'standard', defaulting to Token-2022.`,
-      '\nValid values: "standard" (for SPL Token) or undefined/anything else (for Token-2022)'
-    );
-  }
-  console.log(`📋 Token Program: ${selectedProgram} (${TOKEN_PROGRAM_ID.toBase58()})`);
+  console.log(`📋 Token Program: Token-2022 (${TOKEN_PROGRAM_ID.toBase58()})`);
 }
 
 // Associated Token Program - used for creating ATAs
@@ -46,22 +35,20 @@ if (typeof window !== 'undefined') {
     throw new Error('Invalid ASSOCIATED_TOKEN_PROGRAM_ID configuration');
   }
   
-  // Token program IDs for validation
-  const standardTokenAddress = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+  // Token program ID validation - must be Token-2022
   const token2022Address = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
   const configuredAddress = TOKEN_PROGRAM_ID.toBase58();
   
-  // Verify configured token program is valid
-  if (configuredAddress !== standardTokenAddress && configuredAddress !== token2022Address) {
-    console.error('❌ CRITICAL: TOKEN_PROGRAM_ID is not a valid token program!');
-    console.error('Expected: Either', standardTokenAddress, '(Standard) or', token2022Address, '(Token-2022)');
+  // Verify configured token program is Token-2022 only
+  if (configuredAddress !== token2022Address) {
+    console.error('❌ CRITICAL: TOKEN_PROGRAM_ID must be Token-2022!');
+    console.error('Expected:', token2022Address, '(Token-2022)');
     console.error('Got:', configuredAddress);
-    throw new Error('Invalid TOKEN_PROGRAM_ID configuration');
+    throw new Error('Invalid TOKEN_PROGRAM_ID configuration - must be Token-2022');
   }
   
-  const tokenProgramName = configuredAddress === token2022Address ? 'Token-2022' : 'Standard SPL Token';
   console.log('✅ Token program IDs validated at startup:');
-  console.log(`  - TOKEN_PROGRAM_ID: ${configuredAddress} (${tokenProgramName})`);
+  console.log(`  - TOKEN_PROGRAM_ID: ${configuredAddress} (Token-2022)`);
   console.log('  - ASSOCIATED_TOKEN_PROGRAM_ID:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
 }
 
