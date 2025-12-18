@@ -835,6 +835,98 @@ export function createRecordTransactionInstruction(
   return instruction;
 }
 
+// ✅ Create transfer_tokens instruction (Anchor IDL-driven for Token-2022)
+// Uses the EQUA program's CPI to transfer_checked, ensuring proper Token-2022 handling
+export function createTransferTokensInstruction(
+  senderUserAccount: PublicKey,
+  senderTokenAccount: PublicKey,
+  recipientUserAccount: PublicKey,
+  recipientTokenAccount: PublicKey,
+  mint: PublicKey,
+  mintAuthority: PublicKey,
+  senderAuthority: PublicKey,
+  tokenProgram: PublicKey,
+  amount: number | bigint
+): TransactionInstruction {
+  // Discriminator from IDL for transfer_tokens instruction
+  const discriminator = Buffer.from([54, 180, 238, 175, 74, 85, 126, 188]);
+  
+  // Convert amount to BN (supports both number and bigint)
+  // For bigint: convert to string to preserve precision, BN constructor handles it efficiently
+  let amountBN: BN;
+  if (typeof amount === 'bigint') {
+    // Convert bigint to string without losing precision
+    amountBN = new BN(amount.toString(10));
+  } else {
+    amountBN = new BN(amount);
+  }
+  
+  const data = Buffer.concat([
+    discriminator,
+    amountBN.toArrayLike(Buffer, 'le', 8),
+  ]);
+
+  // ============================================================================
+  // PREFLIGHT ASSERTIONS
+  // ============================================================================
+  
+  // Validate token program is Token-2022 (EQUA requires Token-2022 only)
+  const isToken2022 = tokenProgram.toBase58() === TOKEN_2022_PROGRAM_ADDRESS;
+  
+  if (!isToken2022) {
+    const errorMsg = 
+      `❌ CRITICAL: Invalid token program - EQUA requires Token-2022!\n` +
+      `  Expected: ${TOKEN_2022_PROGRAM_ADDRESS} (Token-2022)\n` +
+      `  Got: ${tokenProgram.toBase58()}\n` +
+      `  This indicates a configuration error. Check TOKEN_PROGRAM_ID in constants.ts.`;
+    console.error(errorMsg);
+    throw new Error('transfer_tokens requires Token-2022 program');
+  }
+
+  // Assert sender authority is provided (required signer)
+  if (!senderAuthority || senderAuthority.equals(PublicKey.default)) {
+    throw new Error('transfer_tokens requires sender_authority (wallet public key) to be provided');
+  }
+
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Building transfer_tokens instruction (8 accounts):');
+    console.log('  - Discriminator:', Array.from(discriminator).join(', '));
+    console.log('  - Amount (raw base units):', amountBN.toString());
+    console.log(`  - Token Program: ${tokenProgram.toBase58()} (Token-2022 ✅)`);
+    console.log('  - Sender User Account:', senderUserAccount.toBase58());
+    console.log('  - Recipient User Account:', recipientUserAccount.toBase58());
+  }
+  
+  // Build keys in exact order matching backend IDL
+  // Order: sender_user_account, sender_token_account, recipient_user_account, 
+  //        recipient_token_account, mint, mint_authority, sender_authority, token_program
+  const keys = [
+    { pubkey: senderUserAccount, isSigner: false, isWritable: true },      // 0. sender_user_account
+    { pubkey: senderTokenAccount, isSigner: false, isWritable: true },     // 1. sender_token_account
+    { pubkey: recipientUserAccount, isSigner: false, isWritable: true },   // 2. recipient_user_account
+    { pubkey: recipientTokenAccount, isSigner: false, isWritable: true },  // 3. recipient_token_account
+    { pubkey: mint, isSigner: false, isWritable: true },                   // 4. mint
+    { pubkey: mintAuthority, isSigner: false, isWritable: false },         // 5. mint_authority
+    { pubkey: senderAuthority, isSigner: true, isWritable: false },        // 6. sender_authority (MUST be signer)
+    { pubkey: tokenProgram, isSigner: false, isWritable: false },          // 7. token_program
+  ];
+
+  const instruction = new TransactionInstruction({
+    keys,
+    programId: PROGRAM_ID,
+    data,
+  });
+  
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Instruction account metas (8 accounts):');
+    instruction.keys.forEach((meta, idx) => {
+      console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
+    });
+  }
+
+  return instruction;
+}
+
 /**
  * Clear all cached RPC responses
  * Call this after mutations (registration, minting, transfers)

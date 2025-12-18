@@ -1,7 +1,7 @@
 # EQUA Token - AI Coding Agent Instructions
 
 ## Project Overview
-Next.js 14 (App Router) + Solana blockchain dApp for minting EQUA tokens with time-locked rewards, referral system, and dynamic pricing. Uses **Standard SPL Token Program** on Solana Devnet.
+Next.js 14 (App Router) + Solana blockchain dApp for minting EQUA tokens with time-locked rewards, referral system, and dynamic pricing. Uses **Token-2022 (SPL Token Extensions)** on Solana Devnet.
 
 ## Critical Installation Pattern
 **Always use `npm install --legacy-peer-deps`** due to Solana wallet adapter peer dependency conflicts. Never use plain `npm install`.
@@ -160,8 +160,8 @@ npm test:coverage     # Generate coverage report
 
 ## Configuration Notes
 - **Network**: Solana Devnet (`https://api.devnet.solana.com`)
-- **Program ID**: `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL`
-- **Token Program**: Standard SPL Token (NOT Token-2022)
+- **Program ID**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- **Token Program**: Token-2022 (SPL Token Extensions) ONLY - Standard SPL Token is not supported
 - **Webpack**: Node.js polyfills disabled for `fs` and `pino-pretty` (see `next.config.js`)
 - **TypeScript**: Paths alias `@/*` maps to `src/*`
 

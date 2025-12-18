@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
-import { PROGRAM_ID, TOKEN_PROGRAM_ID, STANDARD_TOKEN_PROGRAM_ADDRESS } from '@/lib/constants';
+import { PROGRAM_ID, TOKEN_PROGRAM_ID, STANDARD_TOKEN_PROGRAM_ADDRESS, TOKEN_2022_PROGRAM_ADDRESS } from '@/lib/constants';
 import { getGlobalStatePDA, getMintPDA } from '@/lib/program';
 import { getClusterInfo, isClusterAligned, ClusterInfo } from '@/utils/networkDiagnostics';
 
