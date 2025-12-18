@@ -1,6 +1,7 @@
 import { PublicKey, Connection } from '@solana/web3.js';
 
-const PROGRAM_ID = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
+// EQUA Token Program ID (Token-2022)
+const PROGRAM_ID = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
 const MINT_SEED = 'equa-mint';
 
 async function checkMint() {
@@ -24,16 +25,15 @@ async function checkMint() {
   console.log('Data length:', mintInfo.data.length);
   console.log('Lamports:', mintInfo.lamports);
   
-  // Check if it's Token-2022 or standard Token
-  const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+  // EQUA requires Token-2022 only
   const TOKEN_2022_PROGRAM_ID = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
   
-  if (mintInfo.owner.toBase58() === TOKEN_PROGRAM_ID) {
-    console.log('🔵 Using STANDARD SPL Token Program');
-  } else if (mintInfo.owner.toBase58() === TOKEN_2022_PROGRAM_ID) {
-    console.log('🟢 Using Token-2022 (Token Extensions)');
+  if (mintInfo.owner.toBase58() === TOKEN_2022_PROGRAM_ID) {
+    console.log('✅ Using Token-2022 (Token Extensions) - CORRECT');
   } else {
-    console.log('⚠️  Unknown token program owner');
+    console.log('❌ ERROR: Mint is not using Token-2022!');
+    console.log('   EQUA requires Token-2022 program:', TOKEN_2022_PROGRAM_ID);
+    console.log('   Found:', mintInfo.owner.toBase58());
   }
 }
 

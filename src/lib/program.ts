@@ -473,45 +473,31 @@ export async function verifyMintOwner(
     }
     
     const mintOwner = mintAccountInfo.owner.toBase58();
-    const expectedOwner = TOKEN_PROGRAM_ID.toBase58();
-    
-    // Token program IDs for helpful error messages
-    const STANDARD_TOKEN_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
-    const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+    const expectedOwner = TOKEN_2022_PROGRAM_ADDRESS;
     
     if (mintOwner !== expectedOwner) {
-      // Identify which programs are involved
+      // Identify which program the mint is using
       const mintProgramType = mintOwner === TOKEN_2022_PROGRAM_ADDRESS 
         ? 'Token-2022' 
-        : mintOwner === STANDARD_TOKEN_ADDRESS 
-          ? 'Standard SPL Token'
-          : 'Unknown token program';
-      
-      const expectedProgramType = expectedOwner === TOKEN_2022_PROGRAM_ADDRESS
-        ? 'Token-2022'
-        : expectedOwner === STANDARD_TOKEN_ADDRESS
+        : mintOwner === STANDARD_TOKEN_PROGRAM_ADDRESS 
           ? 'Standard SPL Token'
           : 'Unknown token program';
       
       const errorMsg = 
-        `❌ Mint owner mismatch - this will cause InvalidProgramId errors!\n` +
+        `❌ Mint owner mismatch - EQUA requires Token-2022!\n` +
         `  Mint address: ${mintPubkey.toBase58()}\n` +
         `  Mint owner: ${mintOwner} (${mintProgramType})\n` +
-        `  Expected (TOKEN_PROGRAM_ID): ${expectedOwner} (${expectedProgramType})\n` +
+        `  Expected: ${expectedOwner} (Token-2022)\n` +
         `  \n` +
-        `  The mint was created with a different token program than configured.\n` +
+        `  EQUA only supports Token-2022. The mint was created with the wrong token program.\n` +
         `  \n` +
-        `  Fix: Update TOKEN_PROGRAM_ID in src/lib/constants.ts to match the mint owner,\n` +
-        `  or set NEXT_PUBLIC_TOKEN_STANDARD environment variable,\n` +
-        `  or recreate the mint with the correct token program.`;
+        `  Fix: Recreate the mint with Token-2022 program, or use the correct mint address.`;
       
       console.error(errorMsg);
-      throw new Error(`Mint owner mismatch: expected ${expectedOwner}, got ${mintOwner}`);
+      throw new Error(`Mint owner mismatch: expected Token-2022 (${expectedOwner}), got ${mintOwner}`);
     }
     
-    // Identify which program is being used for success message
-    const programType = mintOwner === TOKEN_2022_PROGRAM_ADDRESS ? 'Token-2022' : 'Standard SPL Token';
-    console.log(`✅ Mint owner verified: ${mintOwner} (${programType})`);
+    console.log(`✅ Mint owner verified: ${mintOwner} (Token-2022)`);
     return true;
   } catch (error) {
     if (error instanceof Error && error.message.includes('Mint owner mismatch')) {
@@ -742,19 +728,17 @@ export function createMintTokensInstruction(
   // Validate critical parameters before building instruction
   // ============================================================================
   
-  // Validate token program is configured correctly (Token-2022 by default)
-  // Verify it matches one of the known token program addresses
-  const isStandardToken = tokenProgram.toBase58() === STANDARD_TOKEN_PROGRAM_ADDRESS;
+  // Validate token program is Token-2022 (EQUA requires Token-2022 only)
   const isToken2022 = tokenProgram.toBase58() === TOKEN_2022_PROGRAM_ADDRESS;
   
-  if (!isStandardToken && !isToken2022) {
+  if (!isToken2022) {
     const errorMsg = 
-      `❌ CRITICAL: Invalid token program!\n` +
-      `  Expected: ${TOKEN_2022_PROGRAM_ADDRESS} (Token-2022) or ${STANDARD_TOKEN_PROGRAM_ADDRESS} (Standard SPL Token)\n` +
+      `❌ CRITICAL: Invalid token program - EQUA requires Token-2022!\n` +
+      `  Expected: ${TOKEN_2022_PROGRAM_ADDRESS} (Token-2022)\n` +
       `  Got: ${tokenProgram.toBase58()}\n` +
       `  This indicates a configuration error. Check TOKEN_PROGRAM_ID in constants.ts.`;
     console.error(errorMsg);
-    throw new Error('mint_tokens requires a valid token program (Token-2022 or Standard SPL Token)');
+    throw new Error('mint_tokens requires Token-2022 program');
   }
 
   // Assert authority is provided (required signer)
@@ -764,13 +748,12 @@ export function createMintTokensInstruction(
 
   // Log referrer account handling
   const isReferrerProvided = !referrerAccount.equals(PublicKey.default);
-  const tokenProgramType = isToken2022 ? 'Token-2022' : 'Standard SPL Token';
   if (DEBUG_INSTRUCTIONS) {
     console.log('🔧 Building mint_tokens instruction (8 accounts):');
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Amount (raw base units):', amount);
     console.log('  - Amount BN:', amountBN.toString());
-    console.log(`  - Token Program: ${tokenProgram.toBase58()} (${tokenProgramType} ✅)`);
+    console.log(`  - Token Program: ${tokenProgram.toBase58()} (Token-2022 ✅)`);
     console.log('  - Referrer:', isReferrerProvided ? referrerAccount.toBase58() : `Self-referral (${referrerAccount.toBase58()})`);
   }
   

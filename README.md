@@ -191,7 +191,7 @@ formatEquaRaw(123_456, { trimTrailingZeros: true }) // "0.123456"
 
 > **Note:** The program ID can be overridden using the `NEXT_PUBLIC_PROGRAM_ID` or `NEXT_PUBLIC_EQUA_PROGRAM_ID` (legacy) environment variable. The runtime validates that the configured ID matches the deployed program.
 
-> **Note:** The EQUA frontend is configured to use Token-2022 (SPL Token Extensions) to match the backend Anchor program. This aligns with the EQUA backend's Token-2022 standardization. If you need to use Standard SPL Token for testing, set `NEXT_PUBLIC_TOKEN_STANDARD=standard` in your `.env.local` file.
+> **Note:** EQUA uses **Token-2022 (SPL Token Extensions) ONLY**. The backend program requires Token-2022 and Standard SPL Token is not supported. The frontend is hardcoded to use Token-2022 for all token operations.
 
 ### Environment Variables
 
@@ -210,8 +210,9 @@ NEXT_PUBLIC_NETWORK=devnet                               # Optional, defaults to
 # NEXT_PUBLIC_SOLANA_RPC_HOST=https://api.devnet.solana.com
 # NEXT_PUBLIC_SOLANA_NETWORK=devnet
 
-# Token Program Configuration
-NEXT_PUBLIC_TOKEN_STANDARD=token2022                     # Optional, defaults to token2022; set to 'standard' for SPL Token
+# Token Program: Token-2022 (hardcoded, cannot be changed)
+# Token Program ID: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb
+# Mint PDA seed: "equa-mint" derived under program ID above
 
 # Oracle Configuration
 NEXT_PUBLIC_ENABLE_PYTH=true                            # Optional, defaults to true

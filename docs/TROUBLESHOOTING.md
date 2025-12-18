@@ -772,32 +772,20 @@ NEXT_PUBLIC_MINT_COOLDOWN_SECONDS=86400
 ### Root Causes
 
 #### 1. Mint Created with Wrong Token Program
-The EQUA backend uses Token-2022, but if your mint was created with Standard SPL Token, there will be a mismatch.
+EQUA requires Token-2022. The frontend is hardcoded to use Token-2022 only.
 
 **Solution:**
-The EQUA frontend is now configured to use Token-2022 by default (matching the backend). If you need to use Standard SPL Token:
-```bash
-# In .env.local
-NEXT_PUBLIC_TOKEN_STANDARD=standard
-```
+If your mint was created with Standard SPL Token, you must recreate it with Token-2022. The EQUA backend only supports Token-2022.
 
-Or update `src/lib/constants.ts`:
-```typescript
-// Force Standard SPL Token (not recommended - backend uses Token-2022)
-export const TOKEN_PROGRAM_ID = SPL_TOKEN_PROGRAM_ID;
-```
-
-#### 2. Frontend Configured for Wrong Token Program
-By default, the frontend uses Token-2022 to match the EQUA backend deployment.
+#### 2. Mint Not Using Token-2022
+The frontend is hardcoded to use Token-2022 to match the EQUA backend deployment.
 
 **Solution:**
 1. Check mint owner on Solana Explorer
-2. Verify it matches the configured token program:
-   - Standard SPL Token: `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`
-   - Token-2022: `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`
-3. If mismatch, either:
-   - Set `NEXT_PUBLIC_TOKEN_STANDARD=standard` (if mint uses Standard)
-   - Recreate mint with Token-2022 (recommended for EQUA)
+2. Verify it is Token-2022: `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`
+3. If the mint uses a different token program (e.g., Standard SPL Token: `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`):
+   - Recreate the mint with Token-2022
+   - EQUA does not support Standard SPL Token
 
 #### 3. Incorrect ASSOCIATED_TOKEN_PROGRAM_ID
 Wrong constant passed to instruction builder.
@@ -845,11 +833,10 @@ The frontend now includes runtime validation:
 If validation fails, you'll see:
 ```
 ❌ Mint owner mismatch - this will cause InvalidProgramId errors!
-  Mint owner: [actual owner address] ([Standard SPL Token or Token-2022])
-  Expected (TOKEN_PROGRAM_ID): [configured address] ([Standard SPL Token or Token-2022])
+  Mint owner: [actual owner address] ([Token program type])
+  Expected: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb (Token-2022)
   
-  Fix: Update TOKEN_PROGRAM_ID in src/lib/constants.ts to match the mint owner,
-  or set NEXT_PUBLIC_TOKEN_STANDARD environment variable
+  Fix: Recreate the mint with Token-2022. EQUA only supports Token-2022.
 ```
 
 ### Related Issues
@@ -972,7 +959,7 @@ The frontend is configured to use Token-2022 by default in `src/lib/constants.ts
 export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
 ```
 
-**Do not change this unless you are testing with a different token program.** Using Standard SPL Token will cause `InvalidProgramId` errors during minting.
+**This cannot be changed.** EQUA requires Token-2022 only. Standard SPL Token is not supported.
 
 ### Verification
 The application validates Token-2022 configuration at startup. Check your browser console for:
@@ -982,26 +969,7 @@ The application validates Token-2022 configuration at startup. Check your browse
   - ASSOCIATED_TOKEN_PROGRAM_ID: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
 ```
 
-If you see an error, the configuration is incorrect and must be fixed before using the app.
-
-### Token Standard Environment Variable
-
-The `NEXT_PUBLIC_TOKEN_STANDARD` environment variable controls which token program the frontend uses:
-
-- **`NEXT_PUBLIC_TOKEN_STANDARD='standard'`** - Uses Standard SPL Token
-- **Any other value or unset** - Uses Token-2022 (default)
-
-**Important:** If you set this to any value other than `'standard'`, the frontend will default to Token-2022 and show a warning in the console explaining which token program will be used.
-
-**Example:**
-```bash
-# Use Standard SPL Token
-NEXT_PUBLIC_TOKEN_STANDARD=standard
-
-# Use Token-2022 (default)
-# Leave unset or use any other value
-NEXT_PUBLIC_TOKEN_STANDARD=token-2022
-```
+If you see an error, the configuration is incorrect and the app will not work properly.
 
 ---
 
