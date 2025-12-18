@@ -804,6 +804,54 @@ export function createMintTokensInstruction(
   return instruction;
 }
 
+// ✅ Create record_transaction instruction (for post-transfer transaction counting)
+/**
+ * Creates a record_transaction instruction to increment GlobalState.total_transactions
+ * Should be called after successful SPL token transfers to track transaction count
+ * 
+ * @param globalState - GlobalState PDA (derived from GLOBAL_STATE_SEED)
+ * @param authority - Wallet public key (must be signer)
+ * @returns TransactionInstruction for record_transaction
+ */
+export function createRecordTransactionInstruction(
+  globalState: PublicKey,
+  authority: PublicKey
+): TransactionInstruction {
+  // Discriminator from IDL for record_transaction instruction
+  const discriminator = Buffer.from([134, 39, 187, 220, 192, 43, 119, 10]);
+  
+  // No arguments for this instruction (per IDL)
+  const data = discriminator;
+
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Building record_transaction instruction:');
+    console.log('  - Discriminator:', Array.from(discriminator).join(', '));
+    console.log('  - Global State:', globalState.toBase58());
+    console.log('  - Authority:', authority.toBase58());
+  }
+  
+  // Account order matches backend IDL: global_state (writable), authority (signer)
+  const keys = [
+    { pubkey: globalState, isSigner: false, isWritable: true },  // 0. global_state
+    { pubkey: authority, isSigner: true, isWritable: false },    // 1. authority
+  ];
+
+  const instruction = new TransactionInstruction({
+    keys,
+    programId: PROGRAM_ID,
+    data,
+  });
+  
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Instruction account metas (2 accounts):');
+    instruction.keys.forEach((meta, idx) => {
+      console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
+    });
+  }
+
+  return instruction;
+}
+
 /**
  * Clear all cached RPC responses
  * Call this after mutations (registration, minting, transfers)
