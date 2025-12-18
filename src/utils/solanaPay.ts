@@ -6,7 +6,7 @@
  */
 
 import { PublicKey } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from '@/lib/constants';
+import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ADDRESS } from '@/lib/constants';
 
 export interface SolanaPayTransferParams {
   /** Recipient wallet address */
@@ -116,6 +116,14 @@ export function generateEquaSolanaPayUrl(
   recipientAddress: PublicKey | string,
   mintAddress: PublicKey | string
 ): string {
+  // Runtime validation: Ensure TOKEN_PROGRAM_ID is Token-2022
+  if (TOKEN_PROGRAM_ID.toBase58() !== TOKEN_2022_PROGRAM_ADDRESS) {
+    throw new Error(
+      `EQUA Solana Pay URLs require Token-2022. ` +
+      `Configured TOKEN_PROGRAM_ID (${TOKEN_PROGRAM_ID.toBase58()}) does not match Token-2022 (${TOKEN_2022_PROGRAM_ADDRESS})`
+    );
+  }
+  
   return generateSolanaPayUrl({
     recipient: recipientAddress,
     splToken: mintAddress,
