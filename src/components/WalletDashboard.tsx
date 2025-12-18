@@ -16,6 +16,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID, 
   getEquaMintDecimals,
   getMintAuthorityPDA,
+  getGlobalStatePDA,
   verifyMintOwner,
   createTransferTokensInstruction,
   clearRpcCache
@@ -566,6 +567,7 @@ const SendModal: FC<SendModalProps> = ({
 
       const [mintPDA] = getMintPDA();
       const [mintAuthorityPDA] = getMintAuthorityPDA();
+      const [globalStatePDA] = getGlobalStatePDA();
       
       // Verify mint owner is Token-2022 (preflight validation)
       await verifyMintOwner(connection, mintPDA);
@@ -639,6 +641,7 @@ const SendModal: FC<SendModalProps> = ({
           recipientTokenAccount,
           mintPDA,
           mintAuthorityPDA,
+          globalStatePDA,
           publicKey,
           TOKEN_PROGRAM_ID,
           amountInBaseUnits
