@@ -63,9 +63,16 @@ export interface UserMetadata {
 **After:**
 - Fetch UserMetadata from on-chain using `fetchUserMetadata()`
 - Fail-fast if UserMetadata cannot be fetched or is invalid
-- Use `metadata.elevated_mint_attempts_used` directly for total mints
+- Calculate totalMints based on user tier:
+  - **Elevated users (1-100)**: Use `metadata.elevated_mint_attempts_used` directly
+  - **Standard users (101+)**: Calculate from `minted_amount / equaPerMint`
 - Set error state if UserMetadata is unavailable
 - No localStorage reads for user_number
+
+**Rationale for totalMints calculation:**
+- `elevated_mint_attempts_used` only tracks elevated tier attempts (first 100 users)
+- Standard users don't have elevated attempts, so we calculate from total minted amount
+- This ensures accurate mint count display for all user tiers
 
 #### Minting Logic (`handleMint`)
 **Before:**

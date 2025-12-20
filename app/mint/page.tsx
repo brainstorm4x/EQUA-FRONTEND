@@ -466,18 +466,35 @@ export default function MintPage() {
           });
           
           if (accountInfo && accountInfo.data.length >= 136) {
-            // Use metadata.elevated_mint_attempts_used as the source of truth for total mints
-            // This is the canonical on-chain count
-            setTotalMints(metadata.elevated_mint_attempts_used);
-            
-            // If the on-chain minted amount is zero (never minted), show 0 balance
-            // Even if token account shows balance, a fresh account shouldn't show tokens
+            // Read minted_amount from UserAccount to calculate total mints
             const mintedAmountRaw = new anchor.BN(
               accountInfo.data.slice(104, 112),
               'le'
             );
             const mintedAmount = mintedAmountRaw.toNumber();
             
+            // Calculate total mints based on user's tier
+            // For elevated users (1-100): Use elevated_mint_attempts_used
+            // For standard users (101+): Calculate from minted_amount / equaPerMint
+            const userTier = getUserMintTier(metadata.user_index);
+            
+            if (userTier && userTier.elevatedAttempts > 0) {
+              // Elevated user: use on-chain elevated attempts counter
+              setTotalMints(metadata.elevated_mint_attempts_used);
+            } else if (userTier) {
+              // Standard user: calculate from total minted amount
+              const equaPerMint = userTier.equaPerAttempt;
+              const baseUnitsPerMint = decimalToRaw(equaPerMint);
+              const calculatedTotalMints = baseUnitsPerMint > 0
+                ? Math.floor(mintedAmount / baseUnitsPerMint)
+                : 0;
+              setTotalMints(calculatedTotalMints);
+            } else {
+              // Unknown tier: default to 0
+              setTotalMints(0);
+            }
+            
+            // If the on-chain minted amount is zero (never minted), show 0 balance
             if (mintedAmount === 0 && lastMint === 0) {
               console.log('💰 User has never minted. Setting balance to 0 (minted_amount:', mintedAmount, ', last_mint:', lastMint, ')');
               setBalance(0);
