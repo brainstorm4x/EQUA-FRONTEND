@@ -444,8 +444,11 @@ export default function MintPage() {
         
         if (!metadata) {
           console.error('❌ Failed to fetch UserMetadata - user may not be fully registered');
-          setError('Unable to fetch user registration data from blockchain. Please refresh the page.');
+          // Clear registration state and show registration-required UI
+          setRegistered(false);
           setUserMetadata(null);
+          // Don't set error here - let the UI show the registration form instead
+          console.log('💡 UserMetadata not found - user needs to register or re-register');
           return;
         }
         
