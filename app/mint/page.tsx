@@ -47,6 +47,7 @@ import {
 } from '@/utils/registrationGuard';
 import { isUserAccountRegisteredOnchain } from '@/utils/onchainRegistration';
 import * as CooldownGuard from '@/utils/cooldown';
+import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -82,14 +83,8 @@ const ERROR_KEYWORD_INSTRUCTION_DESERIALIZE = 'InstructionDidNotDeserialize';
 const ERROR_KEYWORD_SIMULATION_FAILED = 'simulation failed';
 const ERROR_KEYWORD_USER_REJECTED = 'user rejected';
 
-// Default EQUA per mint for standard users (100 EQUA) - used as fallback
-const DEFAULT_EQUA_PER_MINT = 100;
-
 // Maximum reasonable user count (prevents overflow/invalid values)
 const MAX_REASONABLE_USERS = 10_000_000;
-
-// Maximum reasonable user number for sanity checks
-const MAX_REASONABLE_USER_NUMBER = 1_000_000;
 
 // Delay for on-chain state propagation after transactions (in milliseconds)
 const CHAIN_STATE_UPDATE_DELAY_MS = 2000;
@@ -348,11 +343,8 @@ export default function MintPage() {
   const [canMint, setCanMint] = useState<boolean>(true);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [totalUsers, setTotalUsers] = useState<number>(0);
-  const [userNumber, setUserNumber] = useState<number>(0);
+  const [userMetadata, setUserMetadata] = useState<UserMetadata | null>(null);
   const [totalMints, setTotalMints] = useState<number>(0);
-
-  // Use a consistent fallback so unknown users default to the first tier (100,000 EQUA)
-  const effectiveUserNumber = userNumber > 0 ? userNumber : Math.max(totalUsers || 0, 1);
 
   useEffect(() => {
     setMounted(true);
@@ -445,6 +437,25 @@ export default function MintPage() {
         setLastMintTime(lastMint);
         console.log('⏰ Last mint time:', lastMint);
 
+        // Fetch user metadata from on-chain (canonical source of truth)
+        // This contains user_index and elevated_mint_attempts_used
+        console.log('📋 Fetching UserMetadata from on-chain...');
+        const metadata = await fetchUserMetadata(connection, publicKey);
+        
+        if (!metadata) {
+          console.error('❌ Failed to fetch UserMetadata - user may not be fully registered');
+          setError('Unable to fetch user registration data from blockchain. Please refresh the page.');
+          setUserMetadata(null);
+          return;
+        }
+        
+        console.log('✅ UserMetadata loaded:', {
+          user_index: metadata.user_index,
+          elevated_mint_attempts_used: metadata.elevated_mint_attempts_used
+        });
+        
+        setUserMetadata(metadata);
+        
         // Get user's registration number and total mints from account
         try {
           const accountInfo = await connection.getAccountInfo(userAccountPDA);
@@ -453,65 +464,20 @@ export default function MintPage() {
             dataLength: accountInfo?.data.length || 0,
             minRequired: 136  // Updated: locked_until field removed (was 144)
           });
+          
           if (accountInfo && accountInfo.data.length >= 136) {
-            // Note: user_number might not be stored in the account structure
-            // Check if there's additional data beyond the standard fields
-            let currentUserNumber = 0;
-            if (accountInfo.data.length >= 144) {
-              // Read user_number at offset 136 if it exists (offset reduced by 8 after locked_until removal)
-              const userNumRaw = new anchor.BN(
-                accountInfo.data.slice(136, 144),
-                'le'
-              );
-              const userNum = userNumRaw.toNumber();
-              if (userNum > 0 && userNum < MAX_REASONABLE_USER_NUMBER) { // Sanity check
-                setUserNumber(userNum);
-                currentUserNumber = userNum;
-              } else {
-                // Fallback: use stored value or estimate from global state
-                const stored = localStorage.getItem('equa_user_number');
-                if (stored) {
-                  const storedNum = parseInt(stored, 10);
-                  setUserNumber(storedNum);
-                  currentUserNumber = storedNum;
-                }
-              }
-            } else {
-              // No user_number in account, try to get from localStorage
-              const stored = localStorage.getItem('equa_user_number');
-              if (stored) {
-                const storedNum = parseInt(stored, 10);
-                setUserNumber(storedNum);
-                currentUserNumber = storedNum;
-              }
-            }
-
-            // If we still don't have a user number, fall back to the current total user count (includes self)
-            if (currentUserNumber === 0) {
-              const fallbackUserNumber = Math.max(totalUsers || 0, 1);
-              setUserNumber(fallbackUserNumber);
-              currentUserNumber = fallbackUserNumber;
-            }
+            // Use metadata.elevated_mint_attempts_used as the source of truth for total mints
+            // This is the canonical on-chain count
+            setTotalMints(metadata.elevated_mint_attempts_used);
             
-            // Read total_mints from minted_amount offset
+            // If the on-chain minted amount is zero (never minted), show 0 balance
+            // Even if token account shows balance, a fresh account shouldn't show tokens
             const mintedAmountRaw = new anchor.BN(
               accountInfo.data.slice(104, 112),
               'le'
             );
-            // Calculate total mints based on user's tier rate
-            // Get the user's tier to know how many EQUA they get per mint
-            const userTier = getUserMintTier(currentUserNumber);
-            const equaPerMint = userTier?.equaPerAttempt || DEFAULT_EQUA_PER_MINT;
-            const baseUnitsPerMint = decimalToRaw(equaPerMint); // Use decimalToRaw utility
             const mintedAmount = mintedAmountRaw.toNumber();
-            const calculatedTotalMints = baseUnitsPerMint > 0
-              ? Math.floor(mintedAmount / baseUnitsPerMint)
-              : 0;
-
-            setTotalMints(calculatedTotalMints);
-
-            // If the on-chain minted amount is zero (never minted), show 0 balance
-            // Even if token account shows balance, a fresh account shouldn't show tokens
+            
             if (mintedAmount === 0 && lastMint === 0) {
               console.log('💰 User has never minted. Setting balance to 0 (minted_amount:', mintedAmount, ', last_mint:', lastMint, ')');
               setBalance(0);
@@ -838,20 +804,11 @@ export default function MintPage() {
         setTxSignature(tx);
         setRegistered(true);
 
-        // Store the user's registration number for future reference
-        // This is totalUsers + 1 at the time of registration
-        const registrationNumber = totalUsers + 1;
-        setUserNumber(registrationNumber);
-        console.log(`📝 Set user number to: ${registrationNumber}`);
-        
         // Note: Registration is now persisted on-chain only. No database storage needed.
         // The blockchain is the source of truth for all registration data.
         console.log('✅ Registration persisted on-chain (blockchain is source of truth)');
         
         if (typeof window !== 'undefined') {
-          localStorage.setItem('equa_user_number', registrationNumber.toString());
-          console.log(`📝 Saved user registration number to localStorage: ${registrationNumber}`);
-          
           // Record the public key as registered (prevent duplicate registration)
           recordRegisteredKey(publicKey.toBase58(), metadata?.fingerprint?.fingerprint);
           console.log('🔑 Public key recorded to prevent duplicate registration');
@@ -1103,13 +1060,27 @@ export default function MintPage() {
       // ============================================================================
       console.log('🔍 Running preflight diagnostics...');
       
-      // Calculate mint amount based on user tier (EQUA has 6 decimals)
-      const mintUserNumber = userNumber > 0 ? userNumber : Math.max(totalUsers || 0, 1);
-      const userTier = getUserMintTier(mintUserNumber);
-      const equaAmount = userTier?.equaPerAttempt || DEFAULT_EQUA_PER_MINT;
+      // Calculate mint amount based on user tier from on-chain metadata (EQUA has 6 decimals)
+      // CRITICAL: This must use on-chain UserMetadata as the source of truth
+      if (!userMetadata) {
+        throw new Error(
+          '❌ User metadata not available. Cannot determine minting tier.\n\n' +
+          'Please ensure your account is fully registered and refresh the page.'
+        );
+      }
+      
+      const userTier = getUserMintTier(userMetadata.user_index);
+      if (!userTier) {
+        throw new Error(
+          `❌ Unable to determine minting tier for user #${userMetadata.user_index}.\n\n` +
+          'This may indicate an issue with the tier configuration. Please contact support.'
+        );
+      }
+      
+      const equaAmount = userTier.equaPerAttempt;
       const mintAmount = decimalToRaw(equaAmount); // Convert to base units using utility
       
-      console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${mintUserNumber}`);
+      console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${userMetadata.user_index} (tier: ${userTier.minUser}-${userTier.maxUser})`);
       
       // Verify mint authority PDA is correct
       console.log('🔍 Verifying mint authority PDA...');
@@ -1573,7 +1544,7 @@ export default function MintPage() {
                         <>
                           <p className="text-green-100 text-3xl font-bold mb-2">✅ Ready to mint!</p>
                           <p className="text-green-200 text-lg">
-                            Claim your {getUserMintTier(effectiveUserNumber)?.equaPerAttempt.toLocaleString() || '1,000'} EQUA
+                            Claim your {userMetadata && getUserMintTier(userMetadata.user_index)?.equaPerAttempt.toLocaleString() || '...'} EQUA
                           </p>
                         </>
                       ) : (
@@ -1628,16 +1599,16 @@ export default function MintPage() {
                       {formatEquaBalance(balance)}
                     </p>
                     <p className="text-purple-300 text-center">EQUA</p>
-                    {userNumber > 0 && (
+                    {userMetadata && (
                       <p className="text-purple-400 text-sm text-center mt-2">
-                        User #{userNumber}
+                        User #{userMetadata.user_index}
                       </p>
                     )}
                   </div>
                   
                   {/* Mint Tier Card for registered users - only show for elevated users (first 100) */}
-                  {userNumber > 0 && userNumber <= 100 && (
-                    <MintTierCard userNumber={userNumber} totalMints={totalMints} />
+                  {userMetadata && userMetadata.user_index <= 100 && (
+                    <MintTierCard userNumber={userMetadata.user_index} totalMints={totalMints} />
                   )}
                 </div>
               </>
