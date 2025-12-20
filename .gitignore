@@ -55,3 +55,4 @@ test-format.mjs
 *.sqlite3
 *.sqlite-wal
 *.sqlite-shm
+verify-usermetadata-fix.js
