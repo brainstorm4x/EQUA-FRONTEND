@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { useProgram } from '@/hooks/useProgram';
 import { Logo } from '@/components/Logo';
 import { PublicKey, Transaction, Connection } from '@solana/web3.js';
@@ -331,6 +332,7 @@ export default function MintPage() {
     fetchGlobalState,
   } = useProgram();
 
+  const router = useRouter();
   const [registered, setRegistered] = useState(false);
   const [balance, setBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -349,6 +351,48 @@ export default function MintPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+  
+  // Check registration status on mount and when wallet changes
+  useEffect(() => {
+    async function checkRegistrationForMintPage() {
+      // No wallet connected → redirect to home
+      if (!publicKey) {
+        console.log('💡 No wallet connected, redirecting to home');
+        router.push('/');
+        return;
+      }
+      
+      if (!isReady) {
+        // Wait for program to be ready
+        return;
+      }
+      
+      setIsCheckingRegistration(true);
+      
+      try {
+        // ✅ Check on-chain registration status (source of truth)
+        const metadata = await fetchUserMetadata(connection, publicKey);
+        
+        if (!metadata) {
+          // ✅ Not registered → redirect to home
+          console.log('💡 User not registered, redirecting to home');
+          router.push('/');
+          return;
+        }
+        
+        // ✅ Registered → allow access to mint page
+        console.log('✅ User registered, allowing access to mint page');
+        setRegistered(true);
+      } catch (error) {
+        console.error('❌ Error checking registration:', error);
+        router.push('/');
+      } finally {
+        setIsCheckingRegistration(false);
+      }
+    }
+    
+    checkRegistrationForMintPage();
+  }, [publicKey, connection, router, isReady]);
 
   // Fetch wallet SOL balance
   useEffect(() => {
@@ -896,15 +940,26 @@ export default function MintPage() {
         }
       }
       
-      // Provide user-friendly error messages
-      if (errorMessage.includes('ConstraintMut') || errorMessage.includes('2000')) {
-        errorMessage = 'Registration failed: Account constraint violation. Please ensure you have the latest app version and try again.';
+      // ✅ Provide specific error messages based on error type
+      if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
+        errorMessage = '❌ Insufficient SOL balance. You need at least 0.1 SOL for registration fees. Please add SOL to your wallet and try again.';
+      } else if (errorMessage.includes('User rejected') || errorMessage.includes('User denied')) {
+        errorMessage = '❌ Transaction rejected. Please approve the transaction in your wallet to continue.';
+      } else if (errorMessage.includes('0x0') || errorMessage.includes('already in use')) {
+        errorMessage = '❌ Account already exists. You may already be registered. Try refreshing the page.';
+      } else if (errorMessage.includes('blockhash') || errorMessage.includes('timeout')) {
+        errorMessage = '❌ Network timeout. Please check your connection and try again.';
+      } else if (errorMessage.includes('Simulation failed') || errorMessage.includes('simulation failed')) {
+        errorMessage = '❌ Transaction simulation failed. This may be due to insufficient SOL or invalid referral code. Please check and try again.';
+      } else if (errorMessage.includes('ConstraintMut') || errorMessage.includes('2000')) {
+        errorMessage = '❌ Account constraint violation. Please ensure you have the latest app version and try again.';
       } else if (errorMessage.includes('0x66') || errorMessage.includes('InstructionDidNotDeserialize')) {
-        errorMessage = 'Registration failed: Instruction format mismatch. Please refresh the page and try again.';
-      } else if (errorMessage.includes('insufficient')) {
-        errorMessage = `Registration failed: Insufficient SOL balance. You need at least ${MIN_SOL_BALANCE} SOL for transaction fees.`;
+        errorMessage = '❌ Instruction format mismatch. Please refresh the page and try again.';
       } else if (totalUsers >= REFERRAL_FREE_LIMIT && !referrer) {
-        errorMessage = `Registration failed: A referral code is required after the first ${REFERRAL_FREE_LIMIT} users. Please enter a valid referral code.`;
+        errorMessage = `❌ A referral code is required after the first ${REFERRAL_FREE_LIMIT} users. Please enter a valid referral code.`;
+      } else if (!errorMessage.startsWith('❌')) {
+        // Add generic error prefix if not already present
+        errorMessage = `❌ Registration failed: ${errorMessage}. Please try again or contact support if the issue persists.`;
       }
       
       setError(errorMessage);

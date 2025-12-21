@@ -7,15 +7,31 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+// Mock Next.js router
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  })),
+}));
+
 // Mock all the dependencies
 jest.mock('@/hooks/useProgram', () => ({
   useProgram: () => ({
     program: null,
-    connection: null,
+    connection: {
+      getAccountInfo: jest.fn(() => Promise.resolve(null)),
+      getBalance: jest.fn(() => Promise.resolve(0)),
+    },
     wallet: { connected: false },
     publicKey: null,
     userAccountKeypair: null,
-    isReady: false,
+    userAccountPDA: null,
+    isReady: true,
+    isProgramLoading: false,
+    programError: null,
+    retryProgramInit: jest.fn(),
     globalStatePDA: null,
     mintPDA: null,
     mintAuthority: null,
@@ -24,6 +40,11 @@ jest.mock('@/hooks/useProgram', () => ({
     getTokenBalance: jest.fn(),
     fetchGlobalState: jest.fn(),
   }),
+}));
+
+// Mock userMetadata utility
+jest.mock('@/utils/userMetadata', () => ({
+  fetchUserMetadata: jest.fn(() => Promise.resolve(null)),
 }));
 
 jest.mock('next/link', () => {

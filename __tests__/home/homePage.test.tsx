@@ -7,6 +7,35 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+// Mock Next.js router
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  })),
+}));
+
+// Mock Solana wallet adapter hooks
+jest.mock('@solana/wallet-adapter-react', () => ({
+  useWallet: jest.fn(() => ({
+    publicKey: null,
+    connected: false,
+    wallet: null,
+  })),
+  useConnection: jest.fn(() => ({
+    connection: {
+      getBalance: jest.fn(),
+      getAccountInfo: jest.fn(),
+    },
+  })),
+}));
+
+// Mock userMetadata utility
+jest.mock('@/utils/userMetadata', () => ({
+  fetchUserMetadata: jest.fn(() => Promise.resolve(null)),
+}));
+
 // Mock Next.js components and modules
 jest.mock('next/link', () => {
   return ({ children, href, ...props }: any) => {
