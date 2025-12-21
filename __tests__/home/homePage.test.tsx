@@ -256,4 +256,144 @@ describe('Home/Landing Page', () => {
       expect(screen.getByText('SPL Token-2022')).toBeInTheDocument();
     });
   });
+
+  describe('Registered User Behavior', () => {
+    beforeEach(() => {
+      // Reset mocks
+      jest.clearAllMocks();
+    });
+
+    it('should show "Mint EQUA" button for registered users', async () => {
+      const { useWallet } = require('@solana/wallet-adapter-react');
+      const { fetchUserMetadata } = require('@/utils/userMetadata');
+      
+      // Mock registered user
+      useWallet.mockReturnValue({
+        publicKey: { toBase58: () => 'mock-public-key' },
+        connected: true,
+        wallet: {},
+      });
+      
+      // Mock user metadata returning registered user data
+      fetchUserMetadata.mockResolvedValue({
+        user_index: 1,
+        elevated_mint_attempts_used: 0,
+      });
+      
+      render(<HomePage />);
+      
+      // Wait for async check to complete
+      await screen.findByTestId('mint-equa-cta');
+      
+      // Should show "Mint EQUA" button
+      const mintButton = screen.getByTestId('mint-equa-cta');
+      expect(mintButton).toBeInTheDocument();
+      expect(mintButton).toHaveTextContent('Mint EQUA');
+      expect(mintButton).toHaveAttribute('href', '/mint');
+      
+      // Should NOT show "Get Started" button
+      expect(screen.queryByTestId('get-started-cta')).not.toBeInTheDocument();
+    });
+
+    it('should show "Get Started" button for unregistered users', async () => {
+      const { useWallet } = require('@solana/wallet-adapter-react');
+      const { fetchUserMetadata } = require('@/utils/userMetadata');
+      
+      // Mock connected but unregistered user
+      useWallet.mockReturnValue({
+        publicKey: { toBase58: () => 'mock-public-key' },
+        connected: true,
+        wallet: {},
+      });
+      
+      // Mock user metadata returning null (not registered)
+      fetchUserMetadata.mockResolvedValue(null);
+      
+      render(<HomePage />);
+      
+      // Wait a bit for state to settle
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Should show "Get Started" button
+      const getStartedButton = screen.getByTestId('get-started-cta');
+      expect(getStartedButton).toBeInTheDocument();
+      expect(getStartedButton).toHaveTextContent('Get Started');
+      
+      // Should NOT show "Mint EQUA" button
+      expect(screen.queryByTestId('mint-equa-cta')).not.toBeInTheDocument();
+    });
+
+    it('should not redirect registered users to mint page', async () => {
+      const { useRouter } = require('next/navigation');
+      const { useWallet } = require('@solana/wallet-adapter-react');
+      const { fetchUserMetadata } = require('@/utils/userMetadata');
+      
+      const mockPush = jest.fn();
+      useRouter.mockReturnValue({
+        push: mockPush,
+        replace: jest.fn(),
+        prefetch: jest.fn(),
+      });
+      
+      // Mock registered user
+      useWallet.mockReturnValue({
+        publicKey: { toBase58: () => 'mock-public-key' },
+        connected: true,
+        wallet: {},
+      });
+      
+      fetchUserMetadata.mockResolvedValue({
+        user_index: 1,
+        elevated_mint_attempts_used: 0,
+      });
+      
+      render(<HomePage />);
+      
+      // Wait for async check to complete
+      await screen.findByTestId('mint-equa-cta');
+      
+      // Should NOT have called router.push
+      expect(mockPush).not.toHaveBeenCalled();
+      
+      // Page should still be rendered (not redirected)
+      expect(screen.getByText('Welcome to EQUA Token')).toBeInTheDocument();
+    });
+
+    it('should handle registration check errors gracefully', async () => {
+      const { useWallet } = require('@solana/wallet-adapter-react');
+      const { fetchUserMetadata } = require('@/utils/userMetadata');
+      
+      // Mock connected user
+      useWallet.mockReturnValue({
+        publicKey: { toBase58: () => 'mock-public-key' },
+        connected: true,
+        wallet: {},
+      });
+      
+      // Mock error during metadata fetch
+      fetchUserMetadata.mockRejectedValue(new Error('Network error'));
+      
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      
+      render(<HomePage />);
+      
+      // Wait for error handling
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Should show "Get Started" button as fallback
+      const getStartedButton = screen.getByTestId('get-started-cta');
+      expect(getStartedButton).toBeInTheDocument();
+      
+      // Should NOT show "Mint EQUA" button
+      expect(screen.queryByTestId('mint-equa-cta')).not.toBeInTheDocument();
+      
+      // Should have logged error
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Error checking registration'),
+        expect.any(Error)
+      );
+      
+      consoleSpy.mockRestore();
+    });
+  });
 });

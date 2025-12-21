@@ -53,52 +53,36 @@ export default function HomePage() {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
   const router = useRouter();
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isRegistered, setIsRegistered] = useState<boolean>(false);
   
-  // Check if user is already registered and redirect to mint page
+  // Check if user is registered (for UI state only, no redirect)
   useEffect(() => {
     async function checkRegistration() {
-      // No wallet → show home page (correct behavior)
       if (!publicKey) {
+        setIsRegistered(false); // No wallet = not registered
         return;
       }
       
-      // ✅ NO loading state while checking - prevents flash
-      
       try {
-        // ✅ Check on-chain registration status
         const metadata = await fetchUserMetadata(connection, publicKey);
         
         if (metadata) {
-          // ✅ ONLY set loading when redirecting registered users
-          setIsRedirecting(true);
-          console.log('✅ User already registered, redirecting to mint page');
-          router.push('/mint');
-          return;
+          // ✅ Just set state, don't redirect
+          console.log('✅ User is registered');
+          setIsRegistered(true);
+        } else {
+          console.log('💡 User not registered');
+          setIsRegistered(false);
         }
-        
-        // Not registered → stay on home page (no loading state shown)
-        console.log('💡 User not registered, staying on home page');
       } catch (error) {
         console.error('❌ Error checking registration:', error);
+        // On error, assume not registered (safe fallback)
+        setIsRegistered(false);
       }
-      // ✅ NO finally block setting loading to false - prevents flash
     }
     
     checkRegistration();
-  }, [publicKey, connection, router]);
-  
-  // Show loading state ONLY during redirect
-  if (isRedirecting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-          <p className="text-white text-xl">Redirecting to mint page...</p>
-        </div>
-      </div>
-    );
-  }
+  }, [publicKey, connection]);
   
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
@@ -145,7 +129,21 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center mb-16">
-            <GetStartedButton />
+            {/* Conditional rendering based on registration status */}
+            {!isRegistered ? (
+              // ✅ Show "Get Started" for UNREGISTERED users
+              <GetStartedButton />
+            ) : (
+              // ✅ Show "Mint EQUA" for REGISTERED users
+              <Link
+                href="/mint"
+                data-testid="mint-equa-cta"
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg"
+              >
+                Mint EQUA →
+              </Link>
+            )}
+            
             <Link
               href="/whitepaper"
               className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg backdrop-blur-sm"
