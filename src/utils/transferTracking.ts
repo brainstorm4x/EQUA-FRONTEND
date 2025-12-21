@@ -148,6 +148,9 @@ function saveProcessedSignatures(signatures: Set<string>): void {
  * Fetches transfer count from chain by scanning token account signatures
  * Updates localStorage with new transfers found
  * 
+ * Only counts actual user-to-user transfers (transfer/transferChecked instructions)
+ * Excludes mint operations (mintTo/mintToChecked) and other non-transfer activity
+ * 
  * @param connection - Solana RPC connection
  * @param tokenAccountAddress - Token account address (ATA)
  * @returns Updated transfer count
@@ -160,6 +163,21 @@ export async function syncTransfersFromChain(
     const processedSignatures = getProcessedSignatures();
     const stats = getTransferStats();
     
+    // Fetch the mint address from the token account
+    const accountInfo = await connection.getParsedAccountInfo(tokenAccountAddress);
+    if (!accountInfo.value || !accountInfo.value.data) {
+      console.warn('Token account not found or invalid');
+      return stats.totalTransfers;
+    }
+    
+    // Extract mint from parsed account data
+    const parsedData = accountInfo.value.data as any;
+    const tokenAccountMint = parsedData.parsed?.info?.mint;
+    if (!tokenAccountMint) {
+      console.warn('Could not determine mint from token account');
+      return stats.totalTransfers;
+    }
+    
     // Fetch recent signatures for this token account
     // Limit to 100 to avoid rate limiting
     const signatures = await connection.getSignaturesForAddress(
@@ -168,6 +186,10 @@ export async function syncTransfersFromChain(
     );
 
     let newTransferCount = 0;
+    
+    // Token program IDs (Token-2022 and legacy Token Program)
+    const TOKEN_2022_ID = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+    const LEGACY_TOKEN_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
     // Process signatures in chronological order (oldest first)
     // Iterate backwards to avoid mutating the original array
@@ -180,9 +202,62 @@ export async function syncTransfersFromChain(
         continue;
       }
 
-      // Mark as processed
+      // Mark as processed to avoid double-counting
       processedSignatures.add(signature);
-      newTransferCount++;
+      
+      // Fetch parsed transaction to examine instructions
+      const parsedTx = await connection.getParsedTransaction(signature, {
+        maxSupportedTransactionVersion: 0
+      });
+      
+      // Skip if transaction is null or missing
+      if (!parsedTx || !parsedTx.transaction) {
+        continue;
+      }
+      
+      const instructions = parsedTx.transaction.message.instructions;
+      if (!instructions || instructions.length === 0) {
+        continue;
+      }
+      
+      // Check if transaction contains a valid transfer instruction
+      let hasValidTransfer = false;
+      
+      for (const instruction of instructions) {
+        // Only process parsed instructions
+        const parsed = (instruction as any).parsed;
+        if (!parsed) {
+          continue;
+        }
+        
+        // Check if instruction is from a token program
+        const programId = (instruction as any).programId?.toBase58();
+        const isTokenProgram = programId === TOKEN_2022_ID || programId === LEGACY_TOKEN_ID;
+        
+        if (!isTokenProgram) {
+          continue;
+        }
+        
+        const instructionType = parsed.type;
+        
+        // Only count transfer and transferChecked instructions
+        // Exclude: mintTo, mintToChecked, and other instruction types
+        if (instructionType !== 'transfer' && instructionType !== 'transferChecked') {
+          continue;
+        }
+        
+        // Verify the mint matches our token account's mint
+        const instructionMint = parsed.info?.mint;
+        if (instructionMint && instructionMint === tokenAccountMint) {
+          hasValidTransfer = true;
+          break;
+        }
+      }
+      
+      // Only increment count if we found a valid transfer
+      if (hasValidTransfer) {
+        newTransferCount++;
+      }
     }
 
     // Update stats if we found new transfers
