@@ -161,7 +161,9 @@ function saveProcessedSignatures(signatures: Set<string>): void {
  * Updates localStorage with new transfers found
  * 
  * Only counts actual user-to-user transfers (transfer/transferChecked instructions)
- * Excludes mint operations (mintTo/mintToChecked) and other non-transfer activity
+ * Excludes:
+ * - Mint operations (mintTo/mintToChecked) and other non-transfer activity
+ * - Program/PDA-driven transfers (signed by program ID or PDAs like mint authority)
  * 
  * @param connection - Solana RPC connection
  * @param tokenAccountAddress - Token account address (ATA)
