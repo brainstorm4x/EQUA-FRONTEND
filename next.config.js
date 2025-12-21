@@ -92,6 +92,15 @@ const nextConfig = {
         },
       };
     }
+    
+    // Handle ES module resolution issues that can cause syntax errors in compiled chunks
+    config.module.rules.push({
+      test: /\.m?js$/,
+      resolve: {
+        fullySpecified: false,
+      },
+    });
+    
     return config;
   },
   // Note: Turbopack doesn't need explicit fs fallback configuration
