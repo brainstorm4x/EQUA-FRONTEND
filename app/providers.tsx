@@ -1,19 +1,31 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, Suspense, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { WebVitalsClient } from '@/components/WebVitalsClient';
-import { useState } from 'react';
 import dynamic from 'next/dynamic';
 
 // Import process shim to execute it
 import '@/lib/clientProcessShim';
 
 // Dynamically import WalletProvider with no SSR to prevent hydration issues
+// Simplified import pattern without module transformation
 const WalletProvider = dynamic(
-  () => import('@/providers/WalletProvider').then((mod) => ({ default: mod.WalletProvider })),
-  { ssr: false }
+  () => import('@/providers/WalletProvider').then((mod) => mod.WalletProvider),
+  { 
+    ssr: false,
+    loading: () => <div className="min-h-screen bg-gray-900" />
+  }
+);
+
+// DiagnosticsOverlay - only in development, with safe loading
+const DiagnosticsOverlay = dynamic(
+  () => import('@/components/DiagnosticsOverlay').then((mod) => mod.DiagnosticsOverlay),
+  { 
+    ssr: false,
+    loading: () => null
+  }
 );
 
 interface ProvidersProps {
@@ -55,10 +67,14 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <WalletProvider>
-          {children}
-          <WebVitalsClient />
-        </WalletProvider>
+        <Suspense fallback={<div className="min-h-screen bg-gray-900" />}>
+          <WalletProvider>
+            {children}
+            <WebVitalsClient />
+          </WalletProvider>
+        </Suspense>
+        {/* Development-only diagnostics overlay - outside Suspense for independent loading */}
+        {process.env.NODE_ENV === 'development' && <DiagnosticsOverlay />}
       </QueryClientProvider>
     </ErrorBoundary>
   );
