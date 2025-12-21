@@ -53,7 +53,7 @@ export default function HomePage() {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
   // Check if user is already registered and redirect to mint page
   useEffect(() => {
@@ -63,38 +63,38 @@ export default function HomePage() {
         return;
       }
       
-      setLoading(true);
+      // ✅ NO loading state while checking - prevents flash
       
       try {
         // ✅ Check on-chain registration status
         const metadata = await fetchUserMetadata(connection, publicKey);
         
         if (metadata) {
-          // ✅ Already registered → redirect to mint page
+          // ✅ ONLY set loading when redirecting registered users
+          setIsRedirecting(true);
           console.log('✅ User already registered, redirecting to mint page');
           router.push('/mint');
           return;
         }
         
-        // Not registered → stay on home page
+        // Not registered → stay on home page (no loading state shown)
         console.log('💡 User not registered, staying on home page');
       } catch (error) {
         console.error('❌ Error checking registration:', error);
-      } finally {
-        setLoading(false);
       }
+      // ✅ NO finally block setting loading to false - prevents flash
     }
     
     checkRegistration();
   }, [publicKey, connection, router]);
   
-  // Show loading state during redirect
-  if (loading) {
+  // Show loading state ONLY during redirect
+  if (isRedirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-          <p className="text-white text-xl">Loading...</p>
+          <p className="text-white text-xl">Redirecting to mint page...</p>
         </div>
       </div>
     );
