@@ -11,6 +11,18 @@ import { Connection, PublicKey } from '@solana/web3.js';
 const STORAGE_KEY = 'equa_transfer_stats';
 const PROCESSED_SIGNATURES_KEY = 'equa_processed_signatures';
 
+// Authority blocklist - exclude transfers signed by these PDAs/programs
+// Only user-signed transfers should be counted
+const PROGRAM_ID = '7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP';
+const MINT_AUTHORITY_PDA = 'HGkf8CpCU8GZbD6JS2WcYeJCdJnG7qAh6TiDErUMktVC';
+const GLOBAL_STATE_PDA = 'F6HyQcuQfMc1RuSCxq5dAYNoERMkdyAt65fUPajudPpc';
+
+const AUTHORITY_BLOCKLIST = new Set([
+  PROGRAM_ID,
+  MINT_AUTHORITY_PDA,
+  GLOBAL_STATE_PDA,
+]);
+
 export interface TransferStats {
   totalTransfers: number;
   lastUpdated: number;
@@ -149,7 +161,9 @@ function saveProcessedSignatures(signatures: Set<string>): void {
  * Updates localStorage with new transfers found
  * 
  * Only counts actual user-to-user transfers (transfer/transferChecked instructions)
- * Excludes mint operations (mintTo/mintToChecked) and other non-transfer activity
+ * Excludes:
+ * - Mint operations (mintTo/mintToChecked) and other non-transfer activity
+ * - Program/PDA-driven transfers (signed by program ID or PDAs like mint authority)
  * 
  * @param connection - Solana RPC connection
  * @param tokenAccountAddress - Token account address (ATA)
@@ -249,6 +263,16 @@ export async function syncTransfersFromChain(
         // Verify the mint matches our token account's mint
         const instructionMint = parsed.info?.mint;
         if (instructionMint && instructionMint === tokenAccountMint) {
+          // Check if authority is blocklisted (PDA/program-driven transfer)
+          // For transfer: check 'authority' field
+          // For transferChecked: check 'authority' field (same as transfer)
+          const authority = parsed.info?.authority;
+          
+          if (authority && AUTHORITY_BLOCKLIST.has(authority)) {
+            // Skip program/PDA-driven transfers
+            continue;
+          }
+          
           hasValidTransfer = true;
           break;
         }

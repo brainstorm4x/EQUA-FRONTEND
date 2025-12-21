@@ -583,5 +583,297 @@ describe('transferTracking', () => {
       // Unparsed instruction should be ignored
       expect(count).toBe(0);
     });
+
+    it('should exclude transfers signed by mint authority PDA', async () => {
+      mockConnection.getParsedAccountInfo.mockResolvedValue({
+        context: { slot: 123 },
+        value: {
+          data: {
+            parsed: {
+              info: {
+                mint: mockMint.toBase58(),
+              },
+            },
+          },
+        },
+      } as any);
+
+      mockConnection.getSignaturesForAddress.mockResolvedValue([
+        { signature: 'mint_auth_transfer_sig', slot: 100, err: null, memo: null, blockTime: 1000 },
+      ] as any);
+
+      // Transfer signed by mint authority PDA - should be excluded
+      mockConnection.getParsedTransaction.mockResolvedValue({
+        transaction: {
+          message: {
+            instructions: [
+              {
+                programId: token2022Program,
+                parsed: {
+                  type: 'transfer',
+                  info: {
+                    mint: mockMint.toBase58(),
+                    source: 'SourceAddr1',
+                    destination: 'DestAddr1',
+                    amount: '1000000',
+                    authority: 'HGkf8CpCU8GZbD6JS2WcYeJCdJnG7qAh6TiDErUMktVC', // Mint authority PDA
+                  },
+                },
+              },
+            ],
+          },
+        },
+      } as any);
+
+      const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
+
+      // Should not count PDA-signed transfers
+      expect(count).toBe(0);
+    });
+
+    it('should exclude transfers signed by program ID', async () => {
+      mockConnection.getParsedAccountInfo.mockResolvedValue({
+        context: { slot: 123 },
+        value: {
+          data: {
+            parsed: {
+              info: {
+                mint: mockMint.toBase58(),
+              },
+            },
+          },
+        },
+      } as any);
+
+      mockConnection.getSignaturesForAddress.mockResolvedValue([
+        { signature: 'program_transfer_sig', slot: 100, err: null, memo: null, blockTime: 1000 },
+      ] as any);
+
+      // Transfer signed by program ID - should be excluded
+      mockConnection.getParsedTransaction.mockResolvedValue({
+        transaction: {
+          message: {
+            instructions: [
+              {
+                programId: token2022Program,
+                parsed: {
+                  type: 'transfer',
+                  info: {
+                    mint: mockMint.toBase58(),
+                    source: 'SourceAddr1',
+                    destination: 'DestAddr1',
+                    amount: '1000000',
+                    authority: '7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP', // Program ID
+                  },
+                },
+              },
+            ],
+          },
+        },
+      } as any);
+
+      const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
+
+      // Should not count program-signed transfers
+      expect(count).toBe(0);
+    });
+
+    it('should exclude transfers signed by global state PDA', async () => {
+      mockConnection.getParsedAccountInfo.mockResolvedValue({
+        context: { slot: 123 },
+        value: {
+          data: {
+            parsed: {
+              info: {
+                mint: mockMint.toBase58(),
+              },
+            },
+          },
+        },
+      } as any);
+
+      mockConnection.getSignaturesForAddress.mockResolvedValue([
+        { signature: 'global_state_transfer_sig', slot: 100, err: null, memo: null, blockTime: 1000 },
+      ] as any);
+
+      // Transfer signed by global state PDA - should be excluded
+      mockConnection.getParsedTransaction.mockResolvedValue({
+        transaction: {
+          message: {
+            instructions: [
+              {
+                programId: token2022Program,
+                parsed: {
+                  type: 'transfer',
+                  info: {
+                    mint: mockMint.toBase58(),
+                    source: 'SourceAddr1',
+                    destination: 'DestAddr1',
+                    amount: '1000000',
+                    authority: 'F6HyQcuQfMc1RuSCxq5dAYNoERMkdyAt65fUPajudPpc', // Global state PDA
+                  },
+                },
+              },
+            ],
+          },
+        },
+      } as any);
+
+      const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
+
+      // Should not count global-state-signed transfers
+      expect(count).toBe(0);
+    });
+
+    it('should include transfers signed by regular user authority', async () => {
+      const userAuthority = Keypair.generate().publicKey.toBase58();
+
+      mockConnection.getParsedAccountInfo.mockResolvedValue({
+        context: { slot: 123 },
+        value: {
+          data: {
+            parsed: {
+              info: {
+                mint: mockMint.toBase58(),
+              },
+            },
+          },
+        },
+      } as any);
+
+      mockConnection.getSignaturesForAddress.mockResolvedValue([
+        { signature: 'user_transfer_sig', slot: 100, err: null, memo: null, blockTime: 1000 },
+      ] as any);
+
+      // Transfer signed by regular user - should be counted
+      mockConnection.getParsedTransaction.mockResolvedValue({
+        transaction: {
+          message: {
+            instructions: [
+              {
+                programId: token2022Program,
+                parsed: {
+                  type: 'transfer',
+                  info: {
+                    mint: mockMint.toBase58(),
+                    source: 'SourceAddr1',
+                    destination: 'DestAddr1',
+                    amount: '1000000',
+                    authority: userAuthority, // Regular user authority
+                  },
+                },
+              },
+            ],
+          },
+        },
+      } as any);
+
+      const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
+
+      // Should count user-signed transfers
+      expect(count).toBe(1);
+    });
+
+    it('should include transferChecked signed by regular user authority', async () => {
+      const userAuthority = Keypair.generate().publicKey.toBase58();
+
+      mockConnection.getParsedAccountInfo.mockResolvedValue({
+        context: { slot: 123 },
+        value: {
+          data: {
+            parsed: {
+              info: {
+                mint: mockMint.toBase58(),
+              },
+            },
+          },
+        },
+      } as any);
+
+      mockConnection.getSignaturesForAddress.mockResolvedValue([
+        { signature: 'user_transfer_checked_sig', slot: 100, err: null, memo: null, blockTime: 1000 },
+      ] as any);
+
+      // TransferChecked signed by regular user - should be counted
+      mockConnection.getParsedTransaction.mockResolvedValue({
+        transaction: {
+          message: {
+            instructions: [
+              {
+                programId: token2022Program,
+                parsed: {
+                  type: 'transferChecked',
+                  info: {
+                    mint: mockMint.toBase58(),
+                    source: 'SourceAddr1',
+                    destination: 'DestAddr1',
+                    tokenAmount: {
+                      amount: '1000000',
+                      decimals: 6,
+                    },
+                    authority: userAuthority, // Regular user authority
+                  },
+                },
+              },
+            ],
+          },
+        },
+      } as any);
+
+      const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
+
+      // Should count user-signed transfers
+      expect(count).toBe(1);
+    });
+
+    it('should exclude transferChecked signed by mint authority PDA', async () => {
+      mockConnection.getParsedAccountInfo.mockResolvedValue({
+        context: { slot: 123 },
+        value: {
+          data: {
+            parsed: {
+              info: {
+                mint: mockMint.toBase58(),
+              },
+            },
+          },
+        },
+      } as any);
+
+      mockConnection.getSignaturesForAddress.mockResolvedValue([
+        { signature: 'mint_auth_transfer_checked_sig', slot: 100, err: null, memo: null, blockTime: 1000 },
+      ] as any);
+
+      // TransferChecked signed by mint authority PDA - should be excluded
+      mockConnection.getParsedTransaction.mockResolvedValue({
+        transaction: {
+          message: {
+            instructions: [
+              {
+                programId: token2022Program,
+                parsed: {
+                  type: 'transferChecked',
+                  info: {
+                    mint: mockMint.toBase58(),
+                    source: 'SourceAddr1',
+                    destination: 'DestAddr1',
+                    tokenAmount: {
+                      amount: '1000000',
+                      decimals: 6,
+                    },
+                    authority: 'HGkf8CpCU8GZbD6JS2WcYeJCdJnG7qAh6TiDErUMktVC', // Mint authority PDA
+                  },
+                },
+              },
+            ],
+          },
+        },
+      } as any);
+
+      const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
+
+      // Should not count PDA-signed transfers
+      expect(count).toBe(0);
+    });
   });
 });
