@@ -347,45 +347,54 @@ export default function MintPage() {
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [userMetadata, setUserMetadata] = useState<UserMetadata | null>(null);
   const [totalMints, setTotalMints] = useState<number>(0);
+  const [minLoadingComplete, setMinLoadingComplete] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
   
+  // Minimum loading time to prevent flicker
+  useEffect(() => {
+    const timer = setTimeout(() => setMinLoadingComplete(true), 300);
+    return () => clearTimeout(timer);
+  }, []);
+  
   // Check registration status on mount and when wallet changes
   useEffect(() => {
     async function checkRegistrationForMintPage() {
-      // No wallet connected → redirect to home
+      // No wallet connected → CAN'T register or mint → redirect to home (OK)
       if (!publicKey) {
         console.log('💡 No wallet connected, redirecting to home');
         router.push('/');
         return;
       }
       
+      // Wait for program to be ready
       if (!isReady) {
-        // Wait for program to be ready
         return;
       }
       
       setIsCheckingRegistration(true);
       
       try {
-        // ✅ Check on-chain registration status (source of truth)
+        // ✅ Check on-chain registration status
         const metadata = await fetchUserMetadata(connection, publicKey);
         
-        if (!metadata) {
-          // ✅ Not registered → redirect to home
-          console.log('💡 User not registered, redirecting to home');
-          router.push('/');
-          return;
+        if (metadata) {
+          // ✅ Registered → show mint interface
+          console.log('✅ User registered, showing mint interface');
+          setRegistered(true);
+        } else {
+          // ✅ NOT registered → show registration form (don't redirect)
+          console.log('💡 User not registered, showing registration form');
+          setRegistered(false);
         }
-        
-        // ✅ Registered → allow access to mint page
-        console.log('✅ User registered, allowing access to mint page');
-        setRegistered(true);
       } catch (error) {
         console.error('❌ Error checking registration:', error);
-        router.push('/');
+        // ✅ On error, assume not registered and show registration form
+        // This is safer than redirecting - user can still attempt to register
+        console.log('💡 Error checking registration, showing registration form as fallback');
+        setRegistered(false);
       } finally {
         setIsCheckingRegistration(false);
       }
@@ -599,6 +608,27 @@ export default function MintPage() {
     const interval = setInterval(updateCooldown, 1000);
     return () => clearInterval(interval);
   }, [lastMintTime]);
+
+  // Listen for registration completion events
+  useEffect(() => {
+    if (!publicKey) return;
+    
+    const handleRegistrationComplete = () => {
+      console.log('📢 Registration complete event received, refreshing status...');
+      
+      // Wait 500ms for on-chain confirmation propagation
+      setTimeout(() => {
+        checkUserRegistration();
+      }, 500);
+    };
+    
+    // Listen for custom event dispatched after successful registration
+    window.addEventListener('equa_registration_complete', handleRegistrationComplete);
+    
+    return () => {
+      window.removeEventListener('equa_registration_complete', handleRegistrationComplete);
+    };
+  }, [publicKey, checkUserRegistration]);
 
   // Validate referrer address on-chain (blockchain is source of truth)
   const validateReferrer = useCallback(async (referrerAddress: string): Promise<boolean> => {
@@ -1405,7 +1435,7 @@ export default function MintPage() {
     );
   }
 
-  if (isCheckingRegistration) {
+  if (isCheckingRegistration || !minLoadingComplete) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
         <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
@@ -1420,9 +1450,16 @@ export default function MintPage() {
           </div>
         </header>
         <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
-          <div className="text-center">
-            <div className="text-6xl mb-4">⏳</div>
-            <p className="text-white text-xl">Checking registration status...</p>
+          <div className="flex flex-col items-center gap-6">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-white"></div>
+            <div className="text-center">
+              <p className="text-white text-2xl font-bold mb-2">
+                Checking Registration Status
+              </p>
+              <p className="text-purple-200 text-sm">
+                Verifying on-chain account...
+              </p>
+            </div>
           </div>
         </div>
       </main>
