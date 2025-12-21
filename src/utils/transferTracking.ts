@@ -7,21 +7,58 @@
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';
+import { PROGRAM_ID, getMintAuthorityPDA, getGlobalStatePDA } from '@/lib/program';
 
 const STORAGE_KEY = 'equa_transfer_stats';
 const PROCESSED_SIGNATURES_KEY = 'equa_processed_signatures';
 
-// Authority blocklist - exclude transfers signed by these PDAs/programs
-// Only user-signed transfers should be counted
-const PROGRAM_ID = '7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP';
-const MINT_AUTHORITY_PDA = 'HGkf8CpCU8GZbD6JS2WcYeJCdJnG7qAh6TiDErUMktVC';
-const GLOBAL_STATE_PDA = 'F6HyQcuQfMc1RuSCxq5dAYNoERMkdyAt65fUPajudPpc';
+// Cached authority blocklist (computed once at module load)
+let cachedAuthorityBlocklist: Set<string> | null = null;
 
-const AUTHORITY_BLOCKLIST = new Set([
-  PROGRAM_ID,
-  MINT_AUTHORITY_PDA,
-  GLOBAL_STATE_PDA,
-]);
+/**
+ * Get dynamic authority blocklist derived from program constants and PDA helpers
+ * Only user-signed transfers should be counted - exclude program/PDA-driven transfers
+ * Cached after first computation for performance
+ * @returns Set of blocklisted authority addresses (as base58 strings)
+ */
+function getAuthorityBlocklist(): Set<string> {
+  if (cachedAuthorityBlocklist) {
+    return cachedAuthorityBlocklist;
+  }
+  
+  try {
+    // Derive PDAs at runtime (no RPC calls - pure computation)
+    const [mintAuthorityPDA] = getMintAuthorityPDA();
+    const [globalStatePDA] = getGlobalStatePDA();
+    
+    cachedAuthorityBlocklist = new Set([
+      PROGRAM_ID.toBase58(),
+      mintAuthorityPDA.toBase58(),
+      globalStatePDA.toBase58(),
+    ]);
+    
+    return cachedAuthorityBlocklist;
+  } catch (error) {
+    // PDA derivation can fail in test environments or with invalid program IDs
+    // Fall back to just blocking the program ID if it's valid
+    console.warn('Failed to derive PDAs for authority blocklist:', error);
+    
+    try {
+      if (PROGRAM_ID && typeof PROGRAM_ID.toBase58 === 'function') {
+        cachedAuthorityBlocklist = new Set([PROGRAM_ID.toBase58()]);
+        return cachedAuthorityBlocklist;
+      }
+    } catch {
+      // PROGRAM_ID is completely invalid
+    }
+    
+    // Return empty set if we can't derive any blocklist entries
+    // This means we won't filter out any transfers, which is safer than crashing
+    console.warn('Could not create authority blocklist, no filtering will be applied');
+    cachedAuthorityBlocklist = new Set();
+    return cachedAuthorityBlocklist;
+  }
+}
 
 export interface TransferStats {
   totalTransfers: number;
@@ -108,6 +145,8 @@ export function resetTransferStats(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROCESSED_SIGNATURES_KEY);
+    // Also clear the cached blocklist for testing
+    cachedAuthorityBlocklist = null;
   } catch {
     console.warn('Failed to reset transfer stats');
   }
@@ -234,6 +273,46 @@ export async function syncTransfersFromChain(
         continue;
       }
       
+      // Get dynamic authority blocklist (derived at runtime from program constants)
+      const authorityBlocklist = getAuthorityBlocklist();
+      
+      // Extract transaction signatures for signer correlation check
+      // In getParsedTransaction, accountKeys contains all accounts, and signatures array tells us how many are signers
+      const txSignatures = parsedTx.transaction.signatures || [];
+      const accountKeys = parsedTx.transaction.message.accountKeys || [];
+      
+      // First N accounts in accountKeys are signers (where N = # of signatures)
+      // Only apply signer check if we have both signatures AND accountKeys
+      const hasSignatureData = txSignatures.length > 0 && accountKeys.length > 0;
+      const signerKeys = hasSignatureData
+        ? new Set(
+            accountKeys
+              .slice(0, txSignatures.length)
+              .map((key: any) => {
+                try {
+                  // Handle both PublicKey objects and parsed account objects
+                  if (typeof key === 'object' && key !== null) {
+                    // Try pubkey first (parsed format), then toBase58 (PublicKey object)
+                    if (key.pubkey && typeof key.pubkey.toBase58 === 'function') {
+                      return key.pubkey.toBase58();
+                    }
+                    if (typeof key.toBase58 === 'function') {
+                      return key.toBase58();
+                    }
+                  }
+                  // If it's already a string, return it
+                  if (typeof key === 'string') {
+                    return key;
+                  }
+                  return null;
+                } catch {
+                  return null;
+                }
+              })
+              .filter((pk): pk is string => pk !== null)
+          )
+        : null;
+      
       // Check if transaction contains a valid transfer instruction
       let hasValidTransfer = false;
       
@@ -268,10 +347,21 @@ export async function syncTransfersFromChain(
           // For transferChecked: check 'authority' field (same as transfer)
           const authority = parsed.info?.authority;
           
-          if (authority && AUTHORITY_BLOCKLIST.has(authority)) {
+          if (authority && authorityBlocklist.has(authority)) {
             // Skip program/PDA-driven transfers
             continue;
           }
+          
+          // Signer correlation check: only count transfers if authority appears in transaction signatures
+          // Only enforce if we have signature data; otherwise default to blocklist-only (don't over-count)
+          if (signerKeys !== null) {
+            // We have signature info - verify authority is a signer
+            if (!authority || !signerKeys.has(authority)) {
+              // Authority not in signers - skip this transfer (likely CPI/program-driven)
+              continue;
+            }
+          }
+          // If no signature info available (signerKeys === null), we've already filtered by blocklist - accept transfer
           
           hasValidTransfer = true;
           break;

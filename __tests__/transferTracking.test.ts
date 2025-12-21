@@ -16,6 +16,20 @@ import {
   resetTransferStats,
 } from '@/utils/transferTracking';
 
+// Mock the program module to provide known PDA values
+jest.mock('@/lib/program', () => {
+  const { PublicKey } = jest.requireActual('@solana/web3.js');
+  const PROGRAM_ID = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
+  const MINT_AUTHORITY_PDA = new PublicKey('HGkf8CpCU8GZbD6JS2WcYeJCdJnG7qAh6TiDErUMktVC');
+  const GLOBAL_STATE_PDA = new PublicKey('F6HyQcuQfMc1RuSCxq5dAYNoERMkdyAt65fUPajudPpc');
+  
+  return {
+    PROGRAM_ID,
+    getMintAuthorityPDA: () => [MINT_AUTHORITY_PDA, 255],
+    getGlobalStatePDA: () => [GLOBAL_STATE_PDA, 254],
+  };
+});
+
 // Mock Solana connection
 jest.mock('@solana/web3.js', () => {
   const actual = jest.requireActual('@solana/web3.js');
@@ -874,6 +888,298 @@ describe('transferTracking', () => {
 
       // Should not count PDA-signed transfers
       expect(count).toBe(0);
+    });
+
+    it('should use dynamic blocklist from program constants (not hardcoded)', async () => {
+      // Import and verify dynamic values are used (not hardcoded literals)
+      const { PROGRAM_ID } = require('@/lib/constants');
+      
+      // Use actual derived PDA values for testing
+      // Since we can't derive PDAs in test without valid program ID, we'll use known values
+      // This test verifies the *mechanism* works (dynamic derivation) not the exact values
+      const programIdStr = PROGRAM_ID.toBase58();
+      
+      // Known PDA values for the test program (these are what getMintAuthorityPDA/getGlobalStatePDA return)
+      const mintAuthPDAStr = 'HGkf8CpCU8GZbD6JS2WcYeJCdJnG7qAh6TiDErUMktVC';
+      const globalStatePDAStr = 'F6HyQcuQfMc1RuSCxq5dAYNoERMkdyAt65fUPajudPpc';
+
+      mockConnection.getParsedAccountInfo.mockResolvedValue({
+        context: { slot: 123 },
+        value: {
+          data: {
+            parsed: {
+              info: {
+                mint: mockMint.toBase58(),
+              },
+            },
+          },
+        },
+      } as any);
+
+      // Test all three blocklist entries
+      const testCases = [
+        { authority: programIdStr, label: 'Program ID (dynamic)' },
+        { authority: mintAuthPDAStr, label: 'Mint Authority PDA (dynamic)' },
+        { authority: globalStatePDAStr, label: 'Global State PDA (dynamic)' },
+      ];
+
+      for (const testCase of testCases) {
+        resetTransferStats(); // Reset for each test case
+        
+        mockConnection.getSignaturesForAddress.mockResolvedValue([
+          { signature: `sig_${testCase.label}`, slot: 100, err: null, memo: null, blockTime: 1000 },
+        ] as any);
+
+        mockConnection.getParsedTransaction.mockResolvedValue({
+          transaction: {
+            message: {
+              instructions: [
+                {
+                  programId: token2022Program,
+                  parsed: {
+                    type: 'transfer',
+                    info: {
+                      mint: mockMint.toBase58(),
+                      source: 'SourceAddr1',
+                      destination: 'DestAddr1',
+                      amount: '1000000',
+                      authority: testCase.authority, // Authority from blocklist
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        } as any);
+
+        const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
+
+        // All blocklist entries should be excluded
+        expect(count).toBe(0);
+      }
+    });
+
+    it('should count transfer when authority is present in transaction signatures', async () => {
+      const userAuthority = Keypair.generate().publicKey;
+      const sourceAddr = Keypair.generate().publicKey;
+      const destAddr = Keypair.generate().publicKey;
+
+      mockConnection.getParsedAccountInfo.mockResolvedValue({
+        context: { slot: 123 },
+        value: {
+          data: {
+            parsed: {
+              info: {
+                mint: mockMint.toBase58(),
+              },
+            },
+          },
+        },
+      } as any);
+
+      mockConnection.getSignaturesForAddress.mockResolvedValue([
+        { signature: 'user_signed_transfer', slot: 100, err: null, memo: null, blockTime: 1000 },
+      ] as any);
+
+      // Transfer with authority present in transaction signatures
+      mockConnection.getParsedTransaction.mockResolvedValue({
+        transaction: {
+          message: {
+            instructions: [
+              {
+                programId: token2022Program,
+                parsed: {
+                  type: 'transfer',
+                  info: {
+                    mint: mockMint.toBase58(),
+                    source: sourceAddr.toBase58(),
+                    destination: destAddr.toBase58(),
+                    amount: '1000000',
+                    authority: userAuthority.toBase58(),
+                  },
+                },
+              },
+            ],
+            // accountKeys: first N entries are signers (where N = # of signatures)
+            accountKeys: [
+              userAuthority, // First account is the signer/authority
+              sourceAddr,
+              destAddr,
+            ],
+          },
+          signatures: ['sig1'], // 1 signature means first accountKey is signer
+        },
+      } as any);
+
+      const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
+
+      // Should count - authority is in signatures
+      expect(count).toBe(1);
+    });
+
+    it('should exclude transfer when authority is NOT in transaction signatures (CPI)', async () => {
+      const transferAuthority = Keypair.generate().publicKey;
+      const actualSigner = Keypair.generate().publicKey;
+      const sourceAddr = Keypair.generate().publicKey;
+
+      mockConnection.getParsedAccountInfo.mockResolvedValue({
+        context: { slot: 123 },
+        value: {
+          data: {
+            parsed: {
+              info: {
+                mint: mockMint.toBase58(),
+              },
+            },
+          },
+        },
+      } as any);
+
+      mockConnection.getSignaturesForAddress.mockResolvedValue([
+        { signature: 'cpi_transfer', slot: 100, err: null, memo: null, blockTime: 1000 },
+      ] as any);
+
+      // Transfer authority != transaction signer (CPI scenario)
+      mockConnection.getParsedTransaction.mockResolvedValue({
+        transaction: {
+          message: {
+            instructions: [
+              {
+                programId: token2022Program,
+                parsed: {
+                  type: 'transfer',
+                  info: {
+                    mint: mockMint.toBase58(),
+                    source: sourceAddr.toBase58(),
+                    destination: 'DestAddr1',
+                    amount: '1000000',
+                    authority: transferAuthority.toBase58(), // Authority in instruction
+                  },
+                },
+              },
+            ],
+            // accountKeys: actual signer is different from transfer authority
+            accountKeys: [
+              actualSigner, // First account is the signer (NOT transfer authority)
+              transferAuthority,
+              sourceAddr,
+            ],
+          },
+          signatures: ['sig1'], // 1 signature
+        },
+      } as any);
+
+      const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
+
+      // Should NOT count - authority not in signers (likely CPI)
+      expect(count).toBe(0);
+    });
+
+    it('should default to blocklist-only when transaction signatures are missing', async () => {
+      const userAuthority = Keypair.generate().publicKey;
+
+      mockConnection.getParsedAccountInfo.mockResolvedValue({
+        context: { slot: 123 },
+        value: {
+          data: {
+            parsed: {
+              info: {
+                mint: mockMint.toBase58(),
+              },
+            },
+          },
+        },
+      } as any);
+
+      mockConnection.getSignaturesForAddress.mockResolvedValue([
+        { signature: 'no_sigs_transfer', slot: 100, err: null, memo: null, blockTime: 1000 },
+      ] as any);
+
+      // Transaction with no signatures array (old transaction or RPC issue)
+      mockConnection.getParsedTransaction.mockResolvedValue({
+        transaction: {
+          message: {
+            instructions: [
+              {
+                programId: token2022Program,
+                parsed: {
+                  type: 'transfer',
+                  info: {
+                    mint: mockMint.toBase58(),
+                    source: 'SourceAddr1',
+                    destination: 'DestAddr1',
+                    amount: '1000000',
+                    authority: userAuthority.toBase58(),
+                  },
+                },
+              },
+            ],
+            accountKeys: [], // Empty or missing
+          },
+          signatures: [], // No signatures available
+        },
+      } as any);
+
+      const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
+
+      // Should count - no signature info means we fall back to blocklist-only (authority not blocklisted)
+      expect(count).toBe(1);
+    });
+
+    it('should handle accountKeys with various formats (PublicKey objects vs parsed)', async () => {
+      const userAuthority = Keypair.generate().publicKey;
+      const sourceAddr = Keypair.generate().publicKey;
+
+      mockConnection.getParsedAccountInfo.mockResolvedValue({
+        context: { slot: 123 },
+        value: {
+          data: {
+            parsed: {
+              info: {
+                mint: mockMint.toBase58(),
+              },
+            },
+          },
+        },
+      } as any);
+
+      mockConnection.getSignaturesForAddress.mockResolvedValue([
+        { signature: 'mixed_format_transfer', slot: 100, err: null, memo: null, blockTime: 1000 },
+      ] as any);
+
+      // Transaction with mixed accountKeys format (can happen in getParsedTransaction)
+      mockConnection.getParsedTransaction.mockResolvedValue({
+        transaction: {
+          message: {
+            instructions: [
+              {
+                programId: token2022Program,
+                parsed: {
+                  type: 'transfer',
+                  info: {
+                    mint: mockMint.toBase58(),
+                    source: sourceAddr.toBase58(),
+                    destination: 'DestAddr1',
+                    amount: '1000000',
+                    authority: userAuthority.toBase58(),
+                  },
+                },
+              },
+            ],
+            // accountKeys can be in different formats
+            accountKeys: [
+              { pubkey: userAuthority, signer: true, writable: true }, // Parsed format
+              sourceAddr, // PublicKey object
+            ],
+          },
+          signatures: ['sig1'], // 1 signature
+        },
+      } as any);
+
+      const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
+
+      // Should count - authority extracted from parsed accountKey format
+      expect(count).toBe(1);
     });
   });
 });

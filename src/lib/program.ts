@@ -950,4 +950,4 @@ export function invalidateUserCache(userPubkey: PublicKey): void {
 }
 
 // Re-export token program constants for convenience
-export { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
+export { PROGRAM_ID, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
