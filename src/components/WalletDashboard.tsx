@@ -31,6 +31,7 @@ import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
+import { fetchUserMetadata } from '@/utils/userMetadata';
 
 interface WalletDashboardProps {
   className?: string;
@@ -79,6 +80,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const [shareMessage, setShareMessage] = useState('');
   const [referralCount, setReferralCount] = useState<number>(0);
   const [referralRewards, setReferralRewards] = useState<number>(0);
+  
+  // ✅ Registration check state
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [isCheckingRegistration, setIsCheckingRegistration] = useState(true);
 
   // Get user account PDA derived from connected wallet (memoized to prevent repeated calls)
   const userAccountPDA = useMemo(() => {
@@ -90,6 +95,37 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     userAccountPDA,
     { enabled: connected && !!userAccountPDA }
   );
+
+  // ✅ Check registration status
+  useEffect(() => {
+    async function checkRegistration() {
+      if (!publicKey) {
+        setIsRegistered(false);
+        setIsCheckingRegistration(false);
+        return;
+      }
+      
+      setIsCheckingRegistration(true);
+      
+      try {
+        const metadata = await fetchUserMetadata(connection, publicKey);
+        setIsRegistered(metadata !== null);
+        
+        if (metadata) {
+          console.log('✅ [WalletDashboard] User is registered, showing Send/Receive');
+        } else {
+          console.log('💡 [WalletDashboard] User not registered, hiding Send/Receive');
+        }
+      } catch (error) {
+        console.error('❌ [WalletDashboard] Error checking registration:', error);
+        setIsRegistered(false);
+      } finally {
+        setIsCheckingRegistration(false);
+      }
+    }
+    
+    checkRegistration();
+  }, [publicKey, connection]);
 
   // Fetch mint decimals and referral data from onchain
   useEffect(() => {
@@ -157,6 +193,17 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     return null;
   }
 
+  // ✅ Show loading state while checking (silent - no flicker)
+  if (isCheckingRegistration) {
+    return null;
+  }
+
+  // ✅ Hide Send/Receive for unregistered users
+  if (!isRegistered) {
+    return null;
+  }
+
+  // ✅ Only registered users reach here
   return (
     <div className={`${className}`}>
       {/* Network Diagnostics Banner */}
