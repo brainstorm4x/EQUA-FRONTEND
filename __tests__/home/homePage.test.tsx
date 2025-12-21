@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // Mock Next.js router
@@ -311,12 +311,13 @@ describe('Home/Landing Page', () => {
       
       render(<HomePage />);
       
-      // Wait a bit for state to settle
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Wait for state to settle by checking for the Get Started button
+      await waitFor(() => {
+        expect(screen.getByTestId('get-started-cta')).toBeInTheDocument();
+      });
       
       // Should show "Get Started" button
       const getStartedButton = screen.getByTestId('get-started-cta');
-      expect(getStartedButton).toBeInTheDocument();
       expect(getStartedButton).toHaveTextContent('Get Started');
       
       // Should NOT show "Mint EQUA" button
@@ -377,8 +378,10 @@ describe('Home/Landing Page', () => {
       
       render(<HomePage />);
       
-      // Wait for error handling
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Wait for error handling and state to settle
+      await waitFor(() => {
+        expect(screen.getByTestId('get-started-cta')).toBeInTheDocument();
+      });
       
       // Should show "Get Started" button as fallback
       const getStartedButton = screen.getByTestId('get-started-cta');
@@ -388,10 +391,12 @@ describe('Home/Landing Page', () => {
       expect(screen.queryByTestId('mint-equa-cta')).not.toBeInTheDocument();
       
       // Should have logged error
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Error checking registration'),
-        expect.any(Error)
-      );
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Error checking registration'),
+          expect.any(Error)
+        );
+      });
       
       consoleSpy.mockRestore();
     });
