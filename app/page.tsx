@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { Logo } from '@/components/Logo';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { fetchUserMetadata } from '@/utils/userMetadata';
 
 // Loading placeholder components
@@ -52,8 +51,7 @@ const GetStartedButton = dynamic(
 export default function HomePage() {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
-  const router = useRouter();
-  const [isRegistered, setIsRegistered] = useState<boolean>(false);
+  const [isRegistered, setIsRegistered] = useState(false);
   
   // Check if user is registered (for UI state only, no redirect)
   useEffect(() => {
