@@ -3,6 +3,10 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Logo } from '@/components/Logo';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { fetchUserMetadata } from '@/utils/userMetadata';
 
 // Loading placeholder components
 const WalletButtonLoading = () => (
@@ -46,6 +50,56 @@ const GetStartedButton = dynamic(
 
 
 export default function HomePage() {
+  const { publicKey } = useWallet();
+  const { connection } = useConnection();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  
+  // Check if user is already registered and redirect to mint page
+  useEffect(() => {
+    async function checkRegistration() {
+      // No wallet → show home page (correct behavior)
+      if (!publicKey) {
+        return;
+      }
+      
+      setLoading(true);
+      
+      try {
+        // ✅ Check on-chain registration status
+        const metadata = await fetchUserMetadata(connection, publicKey);
+        
+        if (metadata) {
+          // ✅ Already registered → redirect to mint page
+          console.log('✅ User already registered, redirecting to mint page');
+          router.push('/mint');
+          return;
+        }
+        
+        // Not registered → stay on home page
+        console.log('💡 User not registered, staying on home page');
+      } catch (error) {
+        console.error('❌ Error checking registration:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    checkRegistration();
+  }, [publicKey, connection, router]);
+  
+  // Show loading state during redirect
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+          <p className="text-white text-xl">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
       {/* Header */}
@@ -150,7 +204,7 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="text-purple-300 text-sm mb-2">Token Standard</p>
-                <p className="text-white text-xl font-bold">SPL Token</p>
+                <p className="text-white text-xl font-bold">SPL Token-2022</p>
               </div>
               <div>
                 <p className="text-purple-300 text-sm mb-2">Program ID</p>
