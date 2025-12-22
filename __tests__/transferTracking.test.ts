@@ -554,8 +554,8 @@ describe('transferTracking', () => {
 
       const count = await syncTransfersFromChain(mockConnection, mockTokenAccount);
 
-      // Should count the transaction once (it has at least one valid transfer)
-      expect(count).toBe(1);
+      // Should NOT count - transaction contains mint instruction (it's a minting operation)
+      expect(count).toBe(0);
     });
 
     it('should ignore unparsed instructions', async () => {

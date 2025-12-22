@@ -359,6 +359,21 @@ export async function syncTransfersFromChain(
         // Verify the mint matches our token account's mint
         const instructionMint = parsed.info?.mint;
         if (instructionMint && instructionMint === tokenAccountMint) {
+          // Check if this transaction contains minting instructions
+          // Minting transactions should NOT be counted as peer-to-peer transfers
+          const hasMintInstruction = instructions.some((ix: any) => {
+            const parsed = ix.parsed;
+            if (!parsed) return false;
+            const type = parsed.type;
+            return type === 'mintTo' || type === 'mintToChecked';
+          });
+
+          // Skip transfers that are part of minting transactions
+          if (hasMintInstruction) {
+            console.log(`Skipping transfer in minting transaction: ${signature.slice(0, 8)}...`);
+            continue; // This is a mint, not a peer-to-peer transfer
+          }
+          
           // Check if authority is blocklisted (PDA/program-driven transfer)
           // For transfer: check 'authority' field
           // For transferChecked: check 'authority' field (same as transfer)
