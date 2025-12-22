@@ -359,6 +359,33 @@ export async function syncTransfersFromChain(
         // Verify the mint matches our token account's mint
         const instructionMint = parsed.info?.mint;
         if (instructionMint && instructionMint === tokenAccountMint) {
+          // Check if this transaction contains minting instructions
+          // Minting transactions should NOT be counted as peer-to-peer transfers
+          const hasMintInstruction = instructions.some((ix: any) => {
+            const parsed = ix.parsed;
+            if (!parsed) return false;
+            
+            // Verify instruction is from a token program
+            const programId = ix.programId?.toBase58();
+            const isTokenProgram = programId === TOKEN_2022_ID || programId === LEGACY_TOKEN_ID;
+            if (!isTokenProgram) return false;
+            
+            const type = parsed.type;
+            const isMint = type === 'mintTo' || type === 'mintToChecked';
+            
+            if (isMint) {
+              console.log(`Found mint instruction in tx ${signature.slice(0, 8)}...: type=${type}, program=${programId?.slice(0, 8)}...`);
+            }
+            
+            return isMint;
+          });
+
+          // Skip transfers that are part of minting transactions
+          if (hasMintInstruction) {
+            console.log(`Skipping transfer in minting transaction: ${signature.slice(0, 8)}...`);
+            continue; // This is a mint, not a peer-to-peer transfer
+          }
+          
           // Check if authority is blocklisted (PDA/program-driven transfer)
           // For transfer: check 'authority' field
           // For transferChecked: check 'authority' field (same as transfer)
@@ -381,6 +408,7 @@ export async function syncTransfersFromChain(
           // If no signature info available (signerKeys === null), we've already filtered by blocklist - accept transfer
           
           hasValidTransfer = true;
+          console.log(`✓ Counting transfer in tx ${signature.slice(0, 8)}...: authority=${authority?.slice(0, 8)}..., mint matches`);
           break;
         }
       }
