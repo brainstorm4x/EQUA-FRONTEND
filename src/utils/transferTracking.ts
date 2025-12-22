@@ -1,9 +1,26 @@
 /**
  * Transfer Tracking Utility
  * 
- * Tracks EQUA token transfers for UI display purposes using localStorage only.
- * All tracking is done locally without external database dependencies.
- * Supports both outbound (sends) and inbound (receives) tracking via chain signatures.
+ * ⚠️ DEPRECATED FOR UI DISPLAY - DO NOT USE IN PRODUCTION UI COMPONENTS
+ * 
+ * This module provides localStorage-based transfer tracking for TESTING and LOCAL DEVELOPMENT only.
+ * It is NOT the source of truth for production UI display.
+ * 
+ * FOR UI DISPLAY: Use `useGlobalStateStats()` hook which reads from on-chain GlobalState account.
+ * The blockchain is the single source of truth for all transaction counts and statistics.
+ * 
+ * This module is kept only for:
+ * - Local testing and development convenience
+ * - Optional analytics logging (non-authoritative)
+ * 
+ * DO NOT import `getTotalTransfers`, `recordTransfer`, or other functions from this module
+ * in UI components. All transfer counts displayed to users MUST come from on-chain data
+ * via the `useGlobalStateStats()` hook.
+ * 
+ * Legacy functionality (deprecated):
+ * - Tracks EQUA token transfers for UI display purposes using localStorage only.
+ * - All tracking is done locally without external database dependencies.
+ * - Supports both outbound (sends) and inbound (receives) tracking via chain signatures.
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';

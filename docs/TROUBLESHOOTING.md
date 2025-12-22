@@ -1548,3 +1548,105 @@ if (TOKEN_PROGRAM_ID.toBase58() === expectedToken2022) {
 - See TOKEN_DECIMAL_FIX_SUMMARY.md for decimal handling with Token-2022
 
 ---
+
+## Architecture: Folder Structure and Data Sources
+
+### Directory Roles
+
+The EQUA frontend follows Next.js 14 App Router conventions with a clear separation of concerns:
+
+#### `app/` Directory - Route Definitions
+- **Purpose**: Contains Next.js App Router pages, layouts, and route handlers
+- **Examples**: `app/page.tsx`, `app/mint/page.tsx`, `app/layout.tsx`
+- **Pattern**: Maps directly to URL routes (e.g., `app/merchants/page.tsx` → `/merchants`)
+- **Important**: Only the root `app/` directory should exist (NOT `src/app/`)
+  - Build script validates this automatically via `scripts/check-app-directory.sh`
+  - Having `src/app/` will cause build failures
+
+#### `src/` Directory - Shared Application Code
+- **Purpose**: Reusable components, hooks, utilities, and business logic
+- **Structure**:
+  - `src/components/` - React components used across pages
+  - `src/hooks/` - Custom React hooks (e.g., `useGlobalStateStats`, `useEquaBalance`)
+  - `src/utils/` - Pure utility functions (token formatting, referral logic)
+  - `src/lib/` - Core blockchain interaction (PDAs, instructions, program interfaces)
+  - `src/providers/` - React context providers
+  - `src/types/` - TypeScript type definitions
+
+**Key Principle**: Pages in `app/` consume shared code from `src/`. Never duplicate logic between the two.
+
+### Single Source of Truth: On-Chain Data
+
+#### Transaction Counts and Statistics
+
+**✅ CORRECT - Use `useGlobalStateStats()` Hook**
+
+For displaying user counts, transaction counts, and computing token prices, ALWAYS use the `useGlobalStateStats` hook:
+
+```typescript
+import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
+
+function MyComponent() {
+  const { totalUsers, totalTransactions, isLoading } = useGlobalStateStats();
+  
+  // Use totalTransactions for price calculation and display
+  const price = calculatePrice(totalTransactions);
+  
+  return <div>Total Transactions: {totalTransactions}</div>;
+}
+```
+
+**Why?**
+- `useGlobalStateStats` reads directly from the on-chain `GlobalState` account
+- Subscribes to real-time updates via WebSocket
+- Blockchain is the single source of truth - always authoritative
+- No local state synchronization issues
+
+#### What About `transferTracking.ts`?
+
+**❌ DEPRECATED FOR UI DISPLAY**
+
+The `src/utils/transferTracking.ts` module is **deprecated for production UI components**:
+
+- **DO NOT** import `getTotalTransfers()` in components
+- **DO NOT** import `recordTransfer()` in components  
+- **DO NOT** use localStorage-based counts for display
+
+**Why it exists:**
+- Legacy code kept for local testing convenience only
+- Optional analytics logging (non-authoritative)
+- Should NOT be used as a data source for UI
+
+**The Rule:**
+> All transaction counts, user counts, and statistics displayed to users MUST come from on-chain data via `useGlobalStateStats()`.
+
+#### Price Calculation Flow
+
+```
+On-Chain GlobalState → useGlobalStateStats() → PriceDisplay Component
+                                              → calculateEquaPrice()
+```
+
+The `PriceDisplay` component correctly uses `useGlobalStateStats`:
+
+```typescript
+// ✅ CORRECT pattern (from src/components/PriceDisplay.tsx)
+const { totalTransactions } = useGlobalStateStats();
+const price = calculateEquaPrice(totalTransactions);
+```
+
+**Never** use localStorage or other local state for price calculation, as it may become stale or out of sync with the blockchain.
+
+### Summary
+
+| Concern | Correct Approach | Deprecated Approach |
+|---------|------------------|---------------------|
+| **Folder structure** | `app/` for routes, `src/` for shared code | Creating `src/app/` (causes build failures) |
+| **Transaction counts** | `useGlobalStateStats()` hook | `getTotalTransfers()` from `transferTracking.ts` |
+| **User counts** | `useGlobalStateStats()` hook | Any local/localStorage approach |
+| **Price calculation** | Use `totalTransactions` from `useGlobalStateStats()` | Using localStorage-based counts |
+| **Source of truth** | On-chain `GlobalState` account | localStorage, client-side caching |
+
+**Remember**: The blockchain is always the authoritative source. UI components should reflect on-chain state, not maintain their own state.
+
+---

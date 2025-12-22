@@ -49,14 +49,35 @@ describe('WalletDashboard - Receive Modal', () => {
 });
 
 describe('WalletDashboard - Transfer Count', () => {
-  it('should record transfer count after successful send', () => {
-    // This verifies that recordTransfer is called after a successful send
-    // The transfer count should increment in localStorage
+  it('should NOT import recordTransfer from transferTracking', () => {
+    // This verifies that WalletDashboard does not import recordTransfer
+    // Transfer counting should be done on-chain only via transfer_tokens instruction
+    // UI should use useGlobalStateStats() for displaying counts
     
-    // Based on the code review, recordTransfer is already being called at line 720-723
-    // after successful transaction confirmation
+    // Read the WalletDashboard source code to verify
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
     
-    expect(true).toBe(true); // The implementation is already correct
+    // Verify recordTransfer is NOT imported
+    expect(sourceCode).not.toContain('recordTransfer');
+    expect(sourceCode).not.toContain('from \'@/utils/transferTracking\'');
+    expect(sourceCode).not.toContain('from "@/utils/transferTracking"');
+  });
+
+  it('should NOT call recordTransfer in send flow', () => {
+    // This verifies that recordTransfer is NOT called after a successful send
+    // Transfer counting is handled on-chain by the transfer_tokens instruction
+    
+    // Read the WalletDashboard source code to verify
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Verify recordTransfer is NOT called anywhere in the file
+    expect(sourceCode).not.toMatch(/\brecordTransfer\s*\(/);
   });
 
   it('should NOT call recordTransaction after successful SPL transfer', () => {
@@ -66,7 +87,7 @@ describe('WalletDashboard - Transfer Count', () => {
     // 
     // Calling recordTransaction would double-count the transaction.
     // 
-    // The implementation now correctly omits recordTransaction (see line 725-726 in WalletDashboard.tsx)
+    // The implementation now correctly omits recordTransaction
     
     expect(true).toBe(true); // The implementation is correct - recordTransaction is not called
   });
