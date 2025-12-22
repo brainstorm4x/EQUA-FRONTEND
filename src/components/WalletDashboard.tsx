@@ -24,7 +24,6 @@ import {
 import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw } from '@/utils/tokenFormat';
-import { recordTransfer } from '@/utils/transferTracking';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
@@ -715,15 +714,9 @@ const SendModal: FC<SendModalProps> = ({
       // Clear RPC cache to force fresh balance fetch
       clearRpcCache();
       
-      // Record the transfer for anonymous analytics tracking (NO PII stored)
-      const sendAmountDecimal = parseFloat(amount);
-      await recordTransfer(
-        sendAmountDecimal,
-        signature
-      );
-      
       // Note: GlobalState.total_transactions is already incremented by the
-      // transfer_tokens instruction on-chain. No need to call recordTransaction.
+      // transfer_tokens instruction on-chain. Transfer count is tracked on-chain only.
+      // UI components should use useGlobalStateStats() to display transaction counts.
       
       setTimeout(onSuccess, 2000);
     } catch (err: any) {
