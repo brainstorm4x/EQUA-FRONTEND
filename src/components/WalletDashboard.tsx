@@ -24,9 +24,9 @@ import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw } from '@/utils/tokenFormat';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
-import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
+import { useEquaPrice } from '@/hooks/useEquaPrice';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
 import { fetchUserMetadata } from '@/utils/userMetadata';
 
@@ -349,12 +349,12 @@ const SendModal: FC<SendModalProps> = ({
   onClose, 
   onSuccess 
 }) => {
+  // Use shared reactive price hook - updates when global state changes
+  const { priceLocal: equaPrice, localCurrency, isLoading: isLoadingPrice } = useEquaPrice();
+  
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [localCurrencyAmount, setLocalCurrencyAmount] = useState('');
-  const [equaPrice, setEquaPrice] = useState<number>(0.01);
-  const [localCurrency, setLocalCurrency] = useState('USD');
-  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [txSignature, setTxSignature] = useState('');
@@ -366,29 +366,6 @@ const SendModal: FC<SendModalProps> = ({
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const jsQRRef = useRef<typeof import('jsqr').default | null>(null);
-
-  // Fetch EQUA price on mount
-  useEffect(() => {
-    const fetchPrice = async () => {
-      setIsLoadingPrice(true);
-      try {
-        const currencyCode = getUserLocaleCurrency();
-        setLocalCurrency(currencyCode);
-        const exchangeRate = DEFAULT_RATES[currencyCode]?.rate || 1;
-        
-        // Get current EQUA price from global state
-        // For now, use a default price - in production, fetch from blockchain
-        const priceData = await getEquaPriceMultiFormat(DEFAULT_EQUA_PRICE_USD, currencyCode, exchangeRate);
-        setEquaPrice(priceData.localCurrency);
-      } catch (err) {
-        console.warn('Failed to fetch EQUA price:', err);
-        setEquaPrice(DEFAULT_EQUA_PRICE_USD);
-      } finally {
-        setIsLoadingPrice(false);
-      }
-    };
-    fetchPrice();
-  }, []);
 
   // Handle local currency amount change
   const handleLocalCurrencyChange = (value: string) => {
