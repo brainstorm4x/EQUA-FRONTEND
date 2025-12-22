@@ -364,8 +364,20 @@ export async function syncTransfersFromChain(
           const hasMintInstruction = instructions.some((ix: any) => {
             const parsed = ix.parsed;
             if (!parsed) return false;
+            
+            // Verify instruction is from a token program
+            const programId = ix.programId?.toBase58();
+            const isTokenProgram = programId === TOKEN_2022_ID || programId === LEGACY_TOKEN_ID;
+            if (!isTokenProgram) return false;
+            
             const type = parsed.type;
-            return type === 'mintTo' || type === 'mintToChecked';
+            const isMint = type === 'mintTo' || type === 'mintToChecked';
+            
+            if (isMint) {
+              console.log(`Found mint instruction in tx ${signature.slice(0, 8)}...: type=${type}, program=${programId?.slice(0, 8)}...`);
+            }
+            
+            return isMint;
           });
 
           // Skip transfers that are part of minting transactions
@@ -396,6 +408,7 @@ export async function syncTransfersFromChain(
           // If no signature info available (signerKeys === null), we've already filtered by blocklist - accept transfer
           
           hasValidTransfer = true;
+          console.log(`✓ Counting transfer in tx ${signature.slice(0, 8)}...: authority=${authority?.slice(0, 8)}..., mint matches`);
           break;
         }
       }
