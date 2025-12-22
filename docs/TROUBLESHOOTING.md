@@ -1283,6 +1283,40 @@ Previous implementation used localStorage (`transferTracking.ts`) for global tra
 
 **For UI display, always use `useGlobalStateStats()` for transaction counts.**
 
+### Transaction Counting: Double-Counting Prevention
+
+#### Important: `transfer_tokens` Instruction Behavior
+The EQUA program's `transfer_tokens` instruction **automatically increments** `GlobalState.total_transactions` via an internal call to `update_transaction_count()` in the backend Rust code.
+
+**DO NOT call `recordTransaction` after user-to-user transfers.**
+
+**Why?**
+- The `transfer_tokens` instruction already updates the counter on-chain
+- Calling `recordTransaction` separately would increment it a second time
+- This causes every transfer to be double-counted in the global transaction count
+
+**Correct Implementation:**
+```typescript
+// ✅ CORRECT: transfer_tokens already increments total_transactions
+const signature = await connection.sendRawTransaction(signed.serialize());
+await connection.confirmTransaction(...);
+
+// Record transfer for local analytics (optional)
+await recordTransfer(amount, signature);
+
+// ❌ INCORRECT: Do NOT call recordTransaction after transfers
+// await recordTransaction(connection, signTransaction, publicKey);
+```
+
+**When to use `recordTransaction`:**
+- Never after `transfer_tokens` (it's already counted)
+- Only for other transaction types that don't increment the counter automatically
+- As of this writing, all transaction types that need counting already increment it automatically
+
+**Reference:** 
+- Backend code: `programs/equa_token/src/lib.rs` - `transfer_tokens` instruction calls `update_transaction_count`
+- Frontend fix: Removed `recordTransaction` call from `WalletDashboard.tsx` send flow
+
 ### Troubleshooting Real-Time Data
 
 #### Issue: Stale Balance After Transfer
