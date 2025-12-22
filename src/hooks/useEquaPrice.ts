@@ -40,15 +40,9 @@ export function useEquaPrice(): UseEquaPriceResult {
   
   const [priceUSD, setPriceUSD] = useState<number>(0.01);
   const [priceLocal, setPriceLocal] = useState<number>(0.01);
-  const [localCurrency, setLocalCurrency] = useState<string>('USD');
   const [eqxValue, setEqxValue] = useState<number>(1.0);
   const [priceSource, setPriceSource] = useState<'pyth' | 'coingecko' | 'fallback'>('fallback');
   const [isLoadingPrice, setIsLoadingPrice] = useState<boolean>(false);
-
-  // Detect local currency on mount
-  useEffect(() => {
-    setLocalCurrency(getUserLocaleCurrency());
-  }, []);
 
   // Calculate and fetch price when totalTransactions changes
   useEffect(() => {
@@ -60,7 +54,7 @@ export function useEquaPrice(): UseEquaPriceResult {
         const calculatedPriceUSD = EquaPriceCalculator.calculatePrice(totalTransactions);
         setPriceUSD(calculatedPriceUSD);
         
-        // Get local currency and exchange rate
+        // Get local currency and exchange rate (call every time to detect currency changes)
         const currencyCode = getUserLocaleCurrency();
         const exchangeRate = DEFAULT_RATES[currencyCode]?.rate || 1;
         
@@ -83,7 +77,6 @@ export function useEquaPrice(): UseEquaPriceResult {
         
         // Update state with fetched data
         setPriceLocal(eqxPriceData.localCurrency);
-        setLocalCurrency(currencyCode);
         setEqxValue(eqxPriceData.eqxValue);
         setPriceSource(eqxPriceData.source);
       } catch (error) {
@@ -96,6 +89,9 @@ export function useEquaPrice(): UseEquaPriceResult {
     
     updatePrice();
   }, [totalTransactions]);
+
+  // Get localCurrency from getUserLocaleCurrency (reactive to ensure consistency)
+  const localCurrency = getUserLocaleCurrency();
 
   return {
     priceUSD,
