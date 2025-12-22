@@ -845,6 +845,16 @@ const SendModal: FC<SendModalProps> = ({
               </p>
             </div>
 
+            {/* Exchange Rate Display */}
+            <div className="mb-4 py-2 px-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+              <p className="text-purple-300 text-xs text-center">
+                Exchange Rate: 1 EQUA = {DEFAULT_RATES[localCurrency]?.symbol || '$'}{equaPrice.toFixed(2)} {localCurrency}
+                {!isLoadingPrice && (
+                  <span className="ml-2 text-green-400">● Live</span>
+                )}
+              </p>
+            </div>
+
             <div className="mb-4">
               <label className="block text-purple-200 text-sm mb-2">Amount (EQUA)</label>
               <div className="relative">
