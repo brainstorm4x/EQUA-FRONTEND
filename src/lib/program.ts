@@ -844,7 +844,6 @@ export function createTransferTokensInstruction(
   recipientTokenAccount: PublicKey,
   mint: PublicKey,
   mintAuthority: PublicKey,
-  globalState: PublicKey,
   senderAuthority: PublicKey,
   tokenProgram: PublicKey,
   amount: number | bigint
@@ -890,18 +889,17 @@ export function createTransferTokensInstruction(
   }
 
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Building transfer_tokens instruction (9 accounts):');
+    console.log('🔧 Building transfer_tokens instruction (8 accounts):');
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Amount (raw base units):', amountBN.toString());
     console.log(`  - Token Program: ${tokenProgram.toBase58()} (Token-2022 ✅)`);
     console.log('  - Sender User Account:', senderUserAccount.toBase58());
     console.log('  - Recipient User Account:', recipientUserAccount.toBase58());
-    console.log('  - Global State:', globalState.toBase58());
   }
   
-  // Build keys in exact order matching backend IDL
+  // Build keys in exact order matching backend IDL (8 accounts - NO global_state)
   // Order: sender_user_account, sender_token_account, recipient_user_account, 
-  //        recipient_token_account, mint, mint_authority, global_state, sender_authority, token_program
+  //        recipient_token_account, mint, mint_authority, sender_authority, token_program
   const keys = [
     { pubkey: senderUserAccount, isSigner: false, isWritable: true },      // 0. sender_user_account
     { pubkey: senderTokenAccount, isSigner: false, isWritable: true },     // 1. sender_token_account
@@ -909,9 +907,8 @@ export function createTransferTokensInstruction(
     { pubkey: recipientTokenAccount, isSigner: false, isWritable: true },  // 3. recipient_token_account
     { pubkey: mint, isSigner: false, isWritable: true },                   // 4. mint
     { pubkey: mintAuthority, isSigner: false, isWritable: false },         // 5. mint_authority
-    { pubkey: globalState, isSigner: false, isWritable: true },            // 6. global_state (MUST be writable per IDL)
-    { pubkey: senderAuthority, isSigner: true, isWritable: false },        // 7. sender_authority (MUST be signer)
-    { pubkey: tokenProgram, isSigner: false, isWritable: false },          // 8. token_program
+    { pubkey: senderAuthority, isSigner: true, isWritable: false },        // 6. sender_authority (MUST be signer)
+    { pubkey: tokenProgram, isSigner: false, isWritable: false },          // 7. token_program
   ];
 
   const instruction = new TransactionInstruction({
@@ -921,7 +918,7 @@ export function createTransferTokensInstruction(
   });
   
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Instruction account metas (9 accounts):');
+    console.log('🔧 Instruction account metas (8 accounts):');
     instruction.keys.forEach((meta, idx) => {
       console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
     });

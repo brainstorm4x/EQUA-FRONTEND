@@ -27,7 +27,6 @@ describe('createTransferTokensInstruction', () => {
   const recipientTokenAccount = Keypair.generate().publicKey;
   const mint = Keypair.generate().publicKey;
   const mintAuthority = Keypair.generate().publicKey;
-  const globalState = Keypair.generate().publicKey;
   const senderAuthority = Keypair.generate().publicKey;
   
   it('should create instruction with correct discriminator', () => {
@@ -38,7 +37,6 @@ describe('createTransferTokensInstruction', () => {
       recipientTokenAccount,
       mint,
       mintAuthority,
-      globalState,
       senderAuthority,
       TOKEN_PROGRAM_ID,
       1000000 // 1 EQUA in base units
@@ -61,7 +59,6 @@ describe('createTransferTokensInstruction', () => {
       recipientTokenAccount,
       mint,
       mintAuthority,
-      globalState,
       senderAuthority,
       TOKEN_PROGRAM_ID,
       amount
@@ -76,7 +73,7 @@ describe('createTransferTokensInstruction', () => {
     expect(amountBytes).toEqual(expectedBytes);
   });
 
-  it('should have 9 accounts in correct order', () => {
+  it('should have 8 accounts in correct order', () => {
     const instruction = createTransferTokensInstruction(
       senderUserAccount,
       senderTokenAccount,
@@ -84,24 +81,22 @@ describe('createTransferTokensInstruction', () => {
       recipientTokenAccount,
       mint,
       mintAuthority,
-      globalState,
       senderAuthority,
       TOKEN_PROGRAM_ID,
       1000000
     );
 
-    expect(instruction.keys).toHaveLength(9);
+    expect(instruction.keys).toHaveLength(8);
     
-    // Verify account order matches IDL
+    // Verify account order matches IDL (8 accounts - NO global_state)
     expect(instruction.keys[0].pubkey).toEqual(senderUserAccount);
     expect(instruction.keys[1].pubkey).toEqual(senderTokenAccount);
     expect(instruction.keys[2].pubkey).toEqual(recipientUserAccount);
     expect(instruction.keys[3].pubkey).toEqual(recipientTokenAccount);
     expect(instruction.keys[4].pubkey).toEqual(mint);
     expect(instruction.keys[5].pubkey).toEqual(mintAuthority);
-    expect(instruction.keys[6].pubkey).toEqual(globalState);
-    expect(instruction.keys[7].pubkey).toEqual(senderAuthority);
-    expect(instruction.keys[8].pubkey).toEqual(TOKEN_PROGRAM_ID);
+    expect(instruction.keys[6].pubkey).toEqual(senderAuthority);
+    expect(instruction.keys[7].pubkey).toEqual(TOKEN_PROGRAM_ID);
   });
 
   it('should mark correct accounts as writable', () => {
@@ -112,22 +107,21 @@ describe('createTransferTokensInstruction', () => {
       recipientTokenAccount,
       mint,
       mintAuthority,
-      globalState,
       senderAuthority,
       TOKEN_PROGRAM_ID,
       1000000
     );
 
-    // Writable: sender_user_account, sender_token_account, recipient_user_account, recipient_token_account, mint, global_state
+    // Writable: sender_user_account, sender_token_account, recipient_user_account, recipient_token_account, mint
+    // Read-only: mint_authority, sender_authority, token_program
     expect(instruction.keys[0].isWritable).toBe(true);  // sender_user_account
     expect(instruction.keys[1].isWritable).toBe(true);  // sender_token_account
     expect(instruction.keys[2].isWritable).toBe(true);  // recipient_user_account
     expect(instruction.keys[3].isWritable).toBe(true);  // recipient_token_account
     expect(instruction.keys[4].isWritable).toBe(true);  // mint
     expect(instruction.keys[5].isWritable).toBe(false); // mint_authority
-    expect(instruction.keys[6].isWritable).toBe(true);  // global_state (MUST be writable per IDL)
-    expect(instruction.keys[7].isWritable).toBe(false); // sender_authority
-    expect(instruction.keys[8].isWritable).toBe(false); // token_program
+    expect(instruction.keys[6].isWritable).toBe(false); // sender_authority
+    expect(instruction.keys[7].isWritable).toBe(false); // token_program
   });
 
   it('should mark sender_authority as signer', () => {
@@ -138,22 +132,20 @@ describe('createTransferTokensInstruction', () => {
       recipientTokenAccount,
       mint,
       mintAuthority,
-      globalState,
       senderAuthority,
       TOKEN_PROGRAM_ID,
       1000000
     );
 
-    // Only sender_authority should be signer (index 7)
+    // Only sender_authority should be signer (index 6)
     expect(instruction.keys[0].isSigner).toBe(false);
     expect(instruction.keys[1].isSigner).toBe(false);
     expect(instruction.keys[2].isSigner).toBe(false);
     expect(instruction.keys[3].isSigner).toBe(false);
     expect(instruction.keys[4].isSigner).toBe(false);
     expect(instruction.keys[5].isSigner).toBe(false);
-    expect(instruction.keys[6].isSigner).toBe(false); // global_state
-    expect(instruction.keys[7].isSigner).toBe(true);  // sender_authority
-    expect(instruction.keys[8].isSigner).toBe(false);
+    expect(instruction.keys[6].isSigner).toBe(true);  // sender_authority
+    expect(instruction.keys[7].isSigner).toBe(false);
   });
 
   it('should use correct program ID', () => {
@@ -164,7 +156,6 @@ describe('createTransferTokensInstruction', () => {
       recipientTokenAccount,
       mint,
       mintAuthority,
-      globalState,
       senderAuthority,
       TOKEN_PROGRAM_ID,
       1000000
@@ -184,7 +175,6 @@ describe('createTransferTokensInstruction', () => {
         recipientTokenAccount,
         mint,
         mintAuthority,
-        globalState,
         senderAuthority,
         standardSplToken, // Wrong token program!
         1000000
@@ -201,7 +191,6 @@ describe('createTransferTokensInstruction', () => {
         recipientTokenAccount,
         mint,
         mintAuthority,
-        globalState,
         PublicKey.default, // Invalid authority
         TOKEN_PROGRAM_ID,
         1000000
@@ -219,7 +208,6 @@ describe('createTransferTokensInstruction', () => {
       recipientTokenAccount,
       mint,
       mintAuthority,
-      globalState,
       senderAuthority,
       TOKEN_PROGRAM_ID,
       bigAmount
@@ -237,7 +225,6 @@ describe('createTransferTokensInstruction', () => {
       recipientTokenAccount,
       mint,
       mintAuthority,
-      globalState,
       senderAuthority,
       TOKEN_PROGRAM_ID,
       0
