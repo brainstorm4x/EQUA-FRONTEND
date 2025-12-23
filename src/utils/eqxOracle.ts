@@ -603,6 +603,13 @@ export interface MultiFormatEquaPrice {
 
 /**
  * Gets EQUA price in all formats (EQX, USD, local currency)
+ * 
+ * Conversion flow:
+ * 1. Start with EQUA price in USD (from EquaPriceCalculator)
+ * 2. Convert USD to EQX (divide by eqxValue from oracle)
+ * 3. Convert USD to local currency:
+ *    - If currency is in EQX basket (EUR, GBP, JPY, CNY), use oracle's live exchange rate
+ *    - Otherwise, use DEFAULT_RATES fallback
  */
 export async function getEquaPriceMultiFormat(
   equaPriceUSD: number,
@@ -611,10 +618,30 @@ export async function getEquaPriceMultiFormat(
 ): Promise<MultiFormatEquaPrice> {
   const eqxData = await getEQXPriceData();
   
+  // Determine the exchange rate to use
+  let finalExchangeRate = exchangeRate;
+  
+  // If the local currency is in the EQX basket, use the oracle's live exchange rate
+  // EQX basket currencies: USD, EUR, GBP, JPY, CNY
+  const eqxBasketCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CNY'];
+  if (eqxBasketCurrencies.includes(localCurrencyCode)) {
+    const currencyPrice = eqxData.assetPrices[localCurrencyCode];
+    if (currencyPrice) {
+      // Oracle provides currency value in USD (e.g., 1 EUR = 1.08 USD)
+      // To convert USD to that currency: divide by the currency's USD value
+      // Example: $1 USD / 1.08 (EUR/USD) = 0.926 EUR
+      // So to convert $X USD to EUR: X / currencyPrice.price
+      // But we want the rate to multiply, so we use: 1 / currencyPrice.price
+      // Actually, currencyPrice.price IS the exchange rate (how many USD per unit)
+      // So to convert FROM USD TO the currency, we need: 1 / currencyPrice.price
+      finalExchangeRate = 1 / currencyPrice.price;
+    }
+  }
+  
   return {
     eqx: equaPriceUSD / eqxData.eqxValue,
     usd: equaPriceUSD,
-    localCurrency: equaPriceUSD * exchangeRate,
+    localCurrency: equaPriceUSD * finalExchangeRate,
     localCurrencyCode,
     eqxValue: eqxData.eqxValue,
     source: eqxData.source,
