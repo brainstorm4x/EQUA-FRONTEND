@@ -43,7 +43,7 @@ describe('Referral Rewards Utilities', () => {
 
   describe('getUsersReferredBy', () => {
     it('should return array of referred user public keys', async () => {
-      const mockReferredPubkey1 = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
+      const mockReferredPubkey1 = new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C');
       const mockReferredPubkey2 = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
 
       mockConnection.getProgramAccounts.mockResolvedValue([
@@ -223,7 +223,7 @@ describe('Referral Rewards Utilities', () => {
       authorityBytes.copy(mockAccountData, 8);
 
       // Mock referred user account with minted_amount = 500_000_000 (500 EQUA with 6 decimals)
-      const mockReferredPubkey = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
+      const mockReferredPubkey = new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C');
       const referredAccountData = Buffer.alloc(136);
       
       // Set authority in referred account (correct Buffer.copy order)
@@ -278,7 +278,7 @@ describe('Referral Rewards Utilities', () => {
   describe('computeReferralRewards', () => {
     it('should compute rewards from referred users minted amounts', async () => {
       const referredPubkey1 = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
-      const referredPubkey2 = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
+      const referredPubkey2 = new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C');
 
       // Mock getProgramAccounts to return two referred users
       mockConnection.getProgramAccounts.mockResolvedValue([
@@ -347,7 +347,7 @@ describe('Referral Rewards Utilities', () => {
   describe('getReferredUsersDetails', () => {
     it('should return detailed information for each referred user', async () => {
       const referredPubkey1 = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
-      const referredPubkey2 = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
+      const referredPubkey2 = new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C');
 
       // Mock account data for each user
       const mockAccountData1 = Buffer.alloc(144);
@@ -383,7 +383,7 @@ describe('Referral Rewards Utilities', () => {
 
     it('should handle errors for individual accounts gracefully', async () => {
       const referredPubkey1 = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
-      const referredPubkey2 = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
+      const referredPubkey2 = new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C');
 
       mockConnection.getAccountInfo
         .mockResolvedValueOnce(null) // First account doesn't exist

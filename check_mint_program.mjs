@@ -1,7 +1,7 @@
 import { PublicKey, Connection } from '@solana/web3.js';
 
 // EQUA Token Program ID (Token-2022)
-const PROGRAM_ID = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
+const PROGRAM_ID = new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C');
 const MINT_SEED = 'equa-mint';
 
 async function checkMint() {
