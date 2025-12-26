@@ -21,7 +21,7 @@
 - [x] Verify transactions succeed without 0x66 or InvalidProgramId errors
 
 ## Summary
-Updated frontend to match the consolidated `initialize_user` instruction in the deployed EQUA backend program (7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP on Devnet).
+Updated frontend to match the consolidated `initialize_user` instruction in the deployed EQUA backend program (GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C on Devnet).
 
 ## Changes Made
 
@@ -205,7 +205,7 @@ npm run build
    - Guidance on how to fix
 
 ## Program Details
-- **Program ID:** `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- **Program ID:** `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 - **Network:** Solana Devnet
 - **Token Program:** Standard SPL Token (TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA)
 

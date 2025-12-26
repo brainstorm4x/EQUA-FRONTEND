@@ -182,7 +182,7 @@ formatEquaRaw(123_456, { trimTrailingZeros: true }) // "0.123456"
 
 - **Network**: Solana Devnet
 - **Token Standard**: Token-2022 (SPL Token Extensions) - *See note below*
-- **Program ID**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- **Program ID**: `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 - **InitializeUser**: 12-account instruction (includes `business_registry` PDA)
 
 > **Important:** The program client has been consolidated (December 2025) to fix `InstructionDidNotDeserialize` errors. All code now uses a single program client with the full IDL. See [docs/PROGRAM_ID_MIGRATION.md](docs/PROGRAM_ID_MIGRATION.md) for details.
@@ -199,8 +199,8 @@ The frontend supports the following environment variables for configuration:
 
 ```bash
 # Program ID Configuration (choose one)
-NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP        # Preferred
-NEXT_PUBLIC_EQUA_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP  # Legacy (still supported)
+NEXT_PUBLIC_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C        # Preferred
+NEXT_PUBLIC_EQUA_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C  # Legacy (still supported)
 
 # Network Configuration
 NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com  # Optional, defaults to devnet
@@ -269,7 +269,7 @@ Copy `.env.example` to `.env.local` and customize as needed.
 2. **Verify Environment Variables**
    - Check that `.env.local` exists and contains:
      ```bash
-     NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+     NEXT_PUBLIC_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C
      ```
    - Restart the development server after changing environment variables:
      ```bash
@@ -286,7 +286,7 @@ Copy `.env.example` to `.env.local` and customize as needed.
      ```javascript
      localStorage.getItem('equa_current_program_id')
      ```
-   - Should show: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+   - Should show: `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 
 5. **Verify RPC Connection**
    - Check that the RPC endpoint is responding:
@@ -303,7 +303,7 @@ Copy `.env.example` to `.env.local` and customize as needed.
 
 1. **Update Environment Variables**
    - Ensure your `.env.local` has the correct Program ID
-   - The current Program ID is: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+   - The current Program ID is: `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 
 2. **Clear Cached Program Data**
    - Run in browser console:

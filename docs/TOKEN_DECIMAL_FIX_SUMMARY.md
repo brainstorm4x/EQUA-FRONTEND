@@ -9,7 +9,7 @@
 The EQUA token frontend had a critical mismatch in decimal handling:
 
 - **Frontend**: Hardcoded as 9 decimals (`EQUA_DECIMALS = 9`, multiplier `1e9`)
-- **On-chain mint**: Actually uses 6 decimals (verified at program `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`)
+- **On-chain mint**: Actually uses 6 decimals (verified at program `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`)
 
 ### Impact
 
@@ -274,7 +274,7 @@ While not in scope for this fix, potential enhancements:
 
 ## References
 
-- On-chain mint program: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- On-chain mint program: `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 - Token program: Token-2022 (`TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`)
 - Solana network: Devnet
 - Issue: Users unable to send EQUA tokens due to decimal mismatch

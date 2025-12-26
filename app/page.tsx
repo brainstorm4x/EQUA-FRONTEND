@@ -149,7 +149,7 @@ export default function HomePage() {
               Read Whitepaper
             </Link>
             <a
-              href="https://explorer.solana.com/address/7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP?cluster=devnet"
+              href="https://explorer.solana.com/address/GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C?cluster=devnet"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg backdrop-blur-sm"
@@ -204,7 +204,7 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="text-purple-300 text-sm mb-2">Program ID</p>
-                <p className="text-white text-sm font-mono">7QYUb...MaFdP</p>
+                <p className="text-white text-sm font-mono">GR1Xr...wok7C</p>
               </div>
             </div>
           </div>

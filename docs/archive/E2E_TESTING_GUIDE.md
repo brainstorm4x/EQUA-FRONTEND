@@ -1,6 +1,6 @@
 # End-to-End Testing Guide for EQUA Token (Devnet)
 
-> **HISTORICAL NOTE (December 2025):** This archived document references the original program ID `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL`. The program has been redeployed to `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`. Please refer to current documentation for up-to-date information.
+> **HISTORICAL NOTE (December 2025):** This archived document references the original program ID `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL`. The program has been redeployed to `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`. Please refer to current documentation for up-to-date information.
 
 This guide provides step-by-step instructions for performing comprehensive end-to-end testing of the EQUA registration and minting flows on Solana devnet.
 

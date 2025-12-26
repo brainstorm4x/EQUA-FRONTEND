@@ -227,7 +227,7 @@ Check diagnostic logs and verify:
 - **Standard SPL Token Program ID**: `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`
 - **Associated Token Program ID**: `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL` (same for both)
 - **Expected Devnet Token-2022 ATA**: `BQ5iS1ZgytoKwp6XJvgjBrkRcrEPbupZL1TV1VYB9pGX`
-- **EQUA Program ID**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- **EQUA Program ID**: `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 
 ## Acceptance Criteria
 

@@ -36,7 +36,7 @@ describe('ReferralRewards Component', () => {
   const mockUseWallet = require('@solana/wallet-adapter-react').useWallet;
   const mockUseConnection = require('@solana/wallet-adapter-react').useConnection;
   
-  const mockPublicKey = new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP');
+  const mockPublicKey = new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C');
   const mockConnection = {
     getAccountInfo: jest.fn(),
     getProgramAccounts: jest.fn(),
@@ -107,7 +107,7 @@ describe('ReferralRewards Component', () => {
         referredUsersCount: 3,
         referredUsers: [
           new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
-          new PublicKey('7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP'),
+          new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C'),
           new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
         ],
       });

@@ -74,7 +74,7 @@ When clicking "Mint Daily EQUA" button, users received this error:
 Simulation failed.
 Message: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x65.
 Logs: [
-  "Program 7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP invoke [1]",
+  "Program GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C invoke [1]",
   "Program log: AnchorError occurred. Error Code: InstructionFallbackNotFound. Error Number: 101."
 ]
 ```

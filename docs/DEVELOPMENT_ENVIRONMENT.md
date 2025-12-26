@@ -149,7 +149,7 @@ NEXT_PUBLIC_RPC_ENDPOINT=https://your-custom-rpc.com
 NEXT_PUBLIC_NETWORK=mainnet-beta  # or devnet for staging
 
 # Program ID (if needed)
-NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+NEXT_PUBLIC_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C
 ```
 
 ## Troubleshooting

@@ -160,7 +160,7 @@ npm test:coverage     # Generate coverage report
 
 ## Configuration Notes
 - **Network**: Solana Devnet (`https://api.devnet.solana.com`)
-- **Program ID**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- **Program ID**: `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 - **Token Program**: Token-2022 (SPL Token Extensions) ONLY - Standard SPL Token is not supported
 - **Webpack**: Node.js polyfills disabled for `fs` and `pino-pretty` (see `next.config.js`)
 - **TypeScript**: Paths alias `@/*` maps to `src/*`

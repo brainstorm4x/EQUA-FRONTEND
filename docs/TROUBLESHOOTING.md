@@ -733,7 +733,7 @@ Add these to `.env.local`:
 
 ```bash
 # Program Configuration
-NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+NEXT_PUBLIC_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C
 NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com
 NEXT_PUBLIC_NETWORK=devnet
 
@@ -1074,7 +1074,7 @@ NEXT_PUBLIC_NETWORK=devnet
 NEXT_PUBLIC_SOLANA_NETWORK=devnet
 
 # Program ID (required)
-NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+NEXT_PUBLIC_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C
 
 # Token Program Selection (optional)
 NEXT_PUBLIC_TOKEN_STANDARD=standard  # for SPL Token
