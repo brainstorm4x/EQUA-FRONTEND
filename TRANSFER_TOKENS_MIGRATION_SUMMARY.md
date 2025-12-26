@@ -126,7 +126,7 @@ Uses **Standard SPL Token Program** on Solana Devnet.
 ```markdown
 Uses **Token-2022 (SPL Token Extensions)** on Solana Devnet.
 ...
-- **Program ID**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- **Program ID**: `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 - **Token Program**: Token-2022 (SPL Token Extensions) ONLY - Standard SPL Token is not supported
 ```
 
@@ -258,4 +258,4 @@ After deployment, monitor:
 ## References
 - IDL: `/public/idl/equa_token.json` - `transfer_tokens` instruction definition
 - Token-2022 Program: `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`
-- EQUA Program: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- EQUA Program: `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`

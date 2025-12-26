@@ -162,7 +162,7 @@ npm run build
 ### PDA Derivation (Unchanged)
 ```typescript
 Seeds: [b"user-meta", authority]
-Program: PROGRAM_ID (7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP)
+Program: PROGRAM_ID (GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C)
 ```
 
 ### Token Program (Unchanged)

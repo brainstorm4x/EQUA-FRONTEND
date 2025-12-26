@@ -381,7 +381,7 @@ When the referral system goes live:
    ```bash
    # Check .env.local
    NEXT_PUBLIC_NETWORK=devnet
-   NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+   NEXT_PUBLIC_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C
    ```
 
 ### Common Issues

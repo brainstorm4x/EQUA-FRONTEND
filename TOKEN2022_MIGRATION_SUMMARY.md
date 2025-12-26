@@ -8,7 +8,7 @@
 
 The frontend had dual token program support (Standard SPL + Token-2022) with an environment variable (`NEXT_PUBLIC_TOKEN_STANDARD`) allowing switching between them. However:
 
-1. The backend EQUA program at `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP` **requires Token-2022 only**
+1. The backend EQUA program at `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C` **requires Token-2022 only**
 2. Having dual support created confusion and potential for misconfiguration
 3. Some scripts still referenced the old program ID `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL`
 4. Documentation suggested users could switch to Standard SPL Token, which would break the app
@@ -30,7 +30,7 @@ The frontend had dual token program support (Standard SPL + Token-2022) with an 
 
 ### 2. Scripts Updated
 
-All scripts now use the correct program ID: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+All scripts now use the correct program ID: `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 
 #### `find_mint.py`
 - Updated `PROGRAM_ID` to new value
@@ -95,7 +95,7 @@ The following components were already correctly using `TOKEN_PROGRAM_ID` from co
 ## Verification Checklist
 
 - [x] Constants hardcoded to Token-2022
-- [x] All program ID references updated to `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- [x] All program ID references updated to `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 - [x] Scripts updated with new program ID
 - [x] Documentation updated to remove Standard SPL references
 - [x] `verifyMintOwner()` enforces Token-2022 only

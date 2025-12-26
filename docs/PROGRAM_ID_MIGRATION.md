@@ -30,7 +30,7 @@ If you have a local development environment, ensure your `.env.local` has the co
 
 ```bash
 # Current deployed program ID (Devnet)
-NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+NEXT_PUBLIC_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C
 ```
 
 The legacy environment variable `NEXT_PUBLIC_EQUA_PROGRAM_ID` is still supported but deprecated.
@@ -59,13 +59,13 @@ The system automatically detects when the Solana program ID changes and clears l
 Set the program ID in `.env.local`:
 
 ```bash
-NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+NEXT_PUBLIC_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C
 ```
 
 Or use the legacy variable (both work):
 
 ```bash
-NEXT_PUBLIC_EQUA_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+NEXT_PUBLIC_EQUA_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C
 ```
 
 ## Turso Database Setup

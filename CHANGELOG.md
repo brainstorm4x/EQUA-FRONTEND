@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `app/layout.tsx` now preloads PNG instead of SVG
   - SVG format remains available via `format="svg"` prop
 - Updated `docs/LOGO_INSTRUCTIONS.md` to reflect PNG as default format
-- **BREAKING**: Updated Solana program ID from `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL` to `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- **BREAKING**: Updated Solana program ID from `BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL` to `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
   - Updated all code references: `src/config/program.ts`, `lib/constants.ts`, `src/lib/constants.ts`
   - Updated IDL files: `public/idl/equa_token.json`, `src/idl/equa_token.json`, `src/lib/equa_token.json`, `src/lib/equa_token.ts`
   - Updated UI references: `app/page.tsx`, `app/mint/page.tsx`
@@ -59,7 +59,7 @@ If you have an existing deployment using the old program ID (`BgNRqYsP1JW8X65rKj
 
 2. **For new deployments**, use the default new program ID or set:
    ```bash
-   NEXT_PUBLIC_EQUA_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+   NEXT_PUBLIC_EQUA_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C
    ```
 
 3. **PDA Recalculation**: PDAs derived from the program ID will be different. Ensure your backend is deployed with the matching program ID.

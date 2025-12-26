@@ -9,9 +9,9 @@ This document provides a comprehensive overview of all environment variables use
 #### `NEXT_PUBLIC_PROGRAM_ID`
 - **Type**: String (Base58-encoded Solana Public Key)
 - **Required**: No (has default)
-- **Default**: `7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- **Default**: `GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 - **Description**: The Solana program ID for the EQUA token program. Override this when testing with a different program deployment or during migrations.
-- **Example**: `NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP`
+- **Example**: `NEXT_PUBLIC_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C`
 - **Used In**: `src/lib/constants.ts`, `src/config/program.ts`
 
 #### `NEXT_PUBLIC_EQUA_PROGRAM_ID` (Legacy)
@@ -145,7 +145,7 @@ cp .env.local.example .env.local
 nano .env.local
 
 # Minimal required configuration (uses defaults)
-NEXT_PUBLIC_PROGRAM_ID=7QYUbC1YUdJB2uYcmxqccrokowKroiAYGE5kqC6MaFdP
+NEXT_PUBLIC_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C
 NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com
 ```
 
