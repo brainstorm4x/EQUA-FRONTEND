@@ -39,7 +39,7 @@ When all network checks pass, a green banner appears showing:
 │                                                      │
 │   Cluster: Devnet                                   │
 │   RPC: https://api.devnet.solana.com               │
-│   Program ID: 7QYUbC...MaFdP                        │
+│   Program ID: GR1Xr...wok7C                        │
 │   Token Program: TokenzQd...xuEb                    │
 │   GlobalState: ✓ Found                              │
 │   Mint: ✓ Found                                     │
@@ -72,7 +72,7 @@ When configuration mismatches are detected, a red warning banner appears with:
 │ ┌─────────────────────────────────────────────────────┐ │
 │ │ Cluster: Localnet                                   │ │
 │ │ RPC: http://localhost:8899                          │ │
-│ │ Program ID (env): 7QYUbC...MaFdP                    │ │
+│ │ Program ID (env): GR1Xr...wok7C                    │ │
 │ │ Token Program: TokenzQd...xuEb                      │ │
 │ │ GlobalState: ✗ Missing                              │ │
 │ │ Mint: ✗ Missing                                     │ │

@@ -129,7 +129,7 @@ Banner: ⚠️ Network Configuration Issues Detected
 
 ### Scenario 2: Wrong Program ID
 **Banner Shows**:
-- Program ID (env): 7QYUbC...MaFdP
+- Program ID (env): GR1Xr...wok7C
 - Program ID (IDL): Different...Address
 - **Fix**: Update NEXT_PUBLIC_PROGRAM_ID to match IDL
 
