@@ -42,7 +42,7 @@ export default function WhitepaperPage() {
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                 EQUA: A Fair Economy Built on Transparent Rules
               </h1>
-              <p className="text-purple-300 text-lg">Last Updated: November 2025</p>
+              <p className="text-purple-300 text-lg">Last Updated: December 2025</p>
             </div>
 
             {/* Executive Summary */}
@@ -166,25 +166,50 @@ export default function WhitepaperPage() {
 
             {/* Part IV - Price Appreciation Logic */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part IV: Price Appreciation Logic—What to Expect</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part IV: Price Appreciation Logic—Compounding and Terminal Phases</h2>
               
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Understanding EQUA&apos;s Five-Phase Model</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Understanding the Compounding Phase</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA&apos;s price appreciation follows a structured, transparent mathematical model designed to reward early builders, provide steady growth during scaling, and maintain sustainable value increases indefinitely.
+                EQUA&apos;s price appreciation follows a structured, transparent mathematical model with two major periods: the <strong className="text-white">compounding phase</strong> and the <strong className="text-white">terminal phase</strong>.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                During the <strong className="text-white">compounding phase</strong> (Phases 1-4), EQUA&apos;s value grows exponentially based on transaction volume. Each epoch of transactions triggers a percentage increase that compounds on the previous value. This rewards early builders and provides steady growth during scaling.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                The compounding phase is <em>designed</em> to end. Infinite exponential growth would be unsustainable and eventually destructive. Instead, EQUA transitions to linear growth at a predictable point.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Terminal Phase: When Compounding Ends</h3>
+              <p className="text-purple-200 leading-relaxed">
+                When EQUA reaches <strong className="text-white">$200,000 in EQX terms</strong> (displayed as approximate USD), the system enters the <strong className="text-white">terminal phase</strong> (Phase 5). At this point:
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
+                <li>Compounding stops to prevent runaway appreciation</li>
+                <li>Growth becomes linear: $100 per epoch (1,000 transactions)</li>
+                <li>A monthly cap of $25,000 ensures stability</li>
+                <li>The system maintains sustainable, predictable growth indefinitely</li>
+              </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">This is the terminal price—the point where exponential growth ends and linear, capped growth begins.</strong>
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Five-Phase Model in Detail</h3>
+              <p className="text-purple-200 leading-relaxed">
+                Below is the complete journey from initial growth to perpetual sustainability:
               </p>
 
               {/* Phase 1 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-green-400 mb-3">Phase 1: Initial Growth ($0.01 to $1)</h4>
+                <h4 className="text-lg font-bold text-green-400 mb-3">Phase 1: Initial Growth (0.01 to 1 EQX, ~$0.01 to ~$1 USD)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~4,605 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.1% per epoch (1 transaction)</p>
-                    <p><strong className="text-white">Starting Price:</strong> $0.01</p>
+                    <p><strong className="text-white">Starting Price:</strong> 0.01 EQX (~$0.01 USD)</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> $1</p>
-                    <p><strong className="text-white">Formula:</strong> Price = $0.01 × (1.001)^epoch</p>
+                    <p><strong className="text-white">End Price:</strong> 1 EQX (~$1 USD)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 0.01 × (1.001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
                 </div>
@@ -195,16 +220,16 @@ export default function WhitepaperPage() {
 
               {/* Phase 2 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-teal-400 mb-3">Phase 2: Early Scaling ($1 to $10)</h4>
+                <h4 className="text-lg font-bold text-teal-400 mb-3">Phase 2: Early Scaling (1 to 10 EQX, ~$1 to ~$10 USD)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~23,030 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.1% per epoch (10 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> $1</p>
+                    <p><strong className="text-white">Starting Price:</strong> 1 EQX (~$1 USD)</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> $10</p>
-                    <p><strong className="text-white">Formula:</strong> Price = $1 × (1.001)^epoch</p>
+                    <p><strong className="text-white">End Price:</strong> 10 EQX (~$10 USD)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 1 × (1.001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
                 </div>
@@ -215,16 +240,16 @@ export default function WhitepaperPage() {
 
               {/* Phase 3 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-blue-400 mb-3">Phase 3: Network Growth ($10 to $100)</h4>
+                <h4 className="text-lg font-bold text-blue-400 mb-3">Phase 3: Network Growth (10 to 100 EQX, ~$10 to ~$100 USD)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~230,300 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.1% per epoch (100 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> $10</p>
+                    <p><strong className="text-white">Starting Price:</strong> 10 EQX (~$10 USD)</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> $100</p>
-                    <p><strong className="text-white">Formula:</strong> Price = $10 × (1.001)^epoch</p>
+                    <p><strong className="text-white">End Price:</strong> 100 EQX (~$100 USD)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 10 × (1.001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
                 </div>
@@ -235,16 +260,16 @@ export default function WhitepaperPage() {
 
               {/* Phase 4 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-indigo-400 mb-3">Phase 4: Mature Scaling ($100 to $200,000)</h4>
+                <h4 className="text-lg font-bold text-indigo-400 mb-3">Phase 4: Mature Scaling (100 to 200,000 EQX, ~$100 to ~$200k USD)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~76,012,000 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> $100</p>
+                    <p><strong className="text-white">Starting Price:</strong> 100 EQX (~$100 USD)</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> $200,000</p>
-                    <p><strong className="text-white">Formula:</strong> Price = $100 × (1.0001)^epoch</p>
+                    <p><strong className="text-white">End Price:</strong> 200,000 EQX (~$200k USD)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 100 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
                 </div>
@@ -255,21 +280,21 @@ export default function WhitepaperPage() {
 
               {/* Phase 5 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-purple-400 mb-3">Phase 5: Perpetual Sustainable Growth ($200,000+)</h4>
+                <h4 className="text-lg font-bold text-purple-400 mb-3">Phase 5: Perpetual Sustainable Growth (200,000+ EQX, ~$200k+ USD)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Start:</strong> After price reaches $200,000</p>
-                    <p><strong className="text-white">Mechanism:</strong> $100 per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Monthly Cap:</strong> $25,000 maximum increase</p>
+                    <p><strong className="text-white">Start:</strong> After price reaches 200,000 EQX</p>
+                    <p><strong className="text-white">Mechanism:</strong> 100 EQX per epoch (1,000 transactions)</p>
+                    <p><strong className="text-white">Monthly Cap:</strong> 25,000 EQX maximum increase</p>
                   </div>
                   <div>
                     <p><strong className="text-white">End Price:</strong> Forever growing</p>
-                    <p><strong className="text-white">Formula:</strong> Price = $200,000 + ($100 × epochs)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 200,000 + (100 × epochs)</p>
                     <p><strong className="text-white">Growth Type:</strong> Linear</p>
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear $100/epoch (0.05% of $200,000) provides steady appreciation. The $25,000/month cap ensures stability while maintaining good returns.
+                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear 100 EQX/epoch (0.05% of 200,000 EQX) provides steady appreciation. The 25,000 EQX/month cap ensures stability while maintaining good returns.
                 </p>
               </div>
 
@@ -281,7 +306,7 @@ export default function WhitepaperPage() {
                       <th className="text-left p-3 text-white">Phase</th>
                       <th className="text-left p-3 text-white">Tx/Epoch</th>
                       <th className="text-left p-3 text-white">Growth</th>
-                      <th className="text-left p-3 text-white">Price Range</th>
+                      <th className="text-left p-3 text-white">Price Range (EQX)</th>
                       <th className="text-left p-3 text-white">Type</th>
                     </tr>
                   </thead>
@@ -290,69 +315,76 @@ export default function WhitepaperPage() {
                       <td className="p-3">1</td>
                       <td className="p-3">1</td>
                       <td className="p-3">0.1%</td>
-                      <td className="p-3">$0.01 → $1</td>
+                      <td className="p-3">0.01 → 1</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">2</td>
                       <td className="p-3">10</td>
                       <td className="p-3">0.1%</td>
-                      <td className="p-3">$1 → $10</td>
+                      <td className="p-3">1 → 10</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">3</td>
                       <td className="p-3">100</td>
                       <td className="p-3">0.1%</td>
-                      <td className="p-3">$10 → $100</td>
+                      <td className="p-3">10 → 100</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">4</td>
                       <td className="p-3">1,000</td>
                       <td className="p-3">0.01%</td>
-                      <td className="p-3">$100 → $200k</td>
+                      <td className="p-3">100 → 200k</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr>
                       <td className="p-3">5</td>
                       <td className="p-3">1,000</td>
-                      <td className="p-3">$100</td>
-                      <td className="p-3">$200k → ∞</td>
+                      <td className="p-3">100 EQX</td>
+                      <td className="p-3">200k → ∞</td>
                       <td className="p-3">Linear</td>
                     </tr>
                   </tbody>
                 </table>
+                <p className="text-purple-200 text-xs mt-2 italic">Note: USD values shown in interface are approximate equivalents for convenience only. Actual pricing is in EQX.</p>
               </div>
             </section>
 
-            {/* Part V - Basket for EQUA */}
+            {/* Part V - EQX Pricing Model */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V: Basket for EQUA—Protection Beyond the Chain</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V: EQX—The True Pricing Foundation</h2>
               
               <p className="text-purple-200 leading-relaxed">
-                EQUA&apos;s reference value is anchored, not to a single currency like the US dollar, but to a <strong className="text-white">basket of major currencies, gold, and essential commodities</strong>—so people are not forced to trust the fate of any one government or market.
+                EQUA&apos;s value is not denominated in US dollars. Instead, it is measured in <strong className="text-white">EQX (EQUA Index)</strong>—a diversified basket of major currencies, gold, and essential commodities. USD is shown only as a <strong className="text-white">display convenience</strong>, not as the underlying pricing anchor.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                This fundamental design choice means EQUA holders are not forced to trust the fate of any one government, central bank, or market. Your value is spread across the real world economy.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Problem This Solves</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why EQX Matters</h3>
               <p className="text-purple-200 leading-relaxed">
                 People don&apos;t live in abstract charts; they live in rent, groceries, school fees, and medicines. When a single currency weakens, it quietly steals from all of those things at once. If EQUA&apos;s value were tied only to USD, anyone saving in EQUA would still be exposed to the long, slow erosion of that one currency&apos;s purchasing power.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">A basket changes that</strong>: it spreads risk across multiple real-world anchors so that your effort today still means something tomorrow, even if one nation&apos;s money stumbles.
+                <strong className="text-white">EQX changes that</strong>: it spreads risk across multiple real-world anchors so that your effort today still means something tomorrow, even if one nation&apos;s money stumbles.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What the Basket Is</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What EQX Is</h3>
               <p className="text-purple-200 leading-relaxed">
-                In simple terms, the &quot;Basket for EQUA&quot; is like a weighted reference mix of:
+                EQX (EQUA Index) is a weighted reference basket composed of:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li><strong className="text-white">Widely used global currencies</strong> (USD, EUR, CNY, JPY, GBP)</li>
-                <li><strong className="text-white">A slice of gold</strong>, which has historically been used as a long-term store of value across civilizations</li>
-                <li><strong className="text-white">A slice of essential commodities</strong> (oil, copper, wheat) that track the real cost of living</li>
+                <li><strong className="text-white">Gold</strong>, which has historically served as a long-term store of value across civilizations</li>
+                <li><strong className="text-white">Essential commodities</strong> (oil, copper, wheat) that track the real cost of living</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                EQUA does not require users to hold these assets directly. Instead, the system uses this mixed basket as a <strong className="text-white">reference lens</strong>: when it calculates EQUA&apos;s fair value, it looks at how this basket is moving, rather than blindly following any one currency&apos;s decline.
+                EQUA does not require users to hold these assets directly. Instead, the system uses EQX as a <strong className="text-white">pricing lens</strong>: when the protocol calculates EQUA&apos;s fair value, it references this basket rather than any single currency.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">USD values displayed in the interface are for convenience only.</strong> They help you understand how much buying power you have in common terms, but they are <em>not</em> the actual pricing mechanism. The underlying value is always denominated in EQX.
               </p>
 
               {/* EQX Basket Composition */}
@@ -387,60 +419,209 @@ export default function WhitepaperPage() {
                 </div>
               </div>
 
-              <h3 className="text-xl font-semibold text-white mt-8 mb-3">How This Protects EQUA&apos;s Value</h3>
+              <h3 className="text-xl font-semibold text-white mt-8 mb-3">Stability, Inflation Resistance, and Non-Speculative Intent</h3>
               
-              <h4 className="text-lg font-semibold text-white mt-4 mb-2">If the Dollar Slides, the Basket Holds the Line</h4>
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">Stability Across Economic Shocks</h4>
               <p className="text-purple-200 leading-relaxed">
-                When USD loses value, the basket does not fall as fast because other components—gold, other currencies, and commodities—may stay stable or even rise. That means EQUA&apos;s reference value can stay closer to what real people actually need to buy in their lives, instead of following the dollar down.
+                When USD loses value, EQX does not fall as fast because other components—gold, other currencies, and commodities—may stay stable or even rise. That means EQUA&apos;s reference value stays closer to what real people actually need to buy in their lives, instead of following the dollar down.
               </p>
 
-              <h4 className="text-lg font-semibold text-white mt-4 mb-2">If One Economy Shakes, People&apos;s Lives Don&apos;t Have To</h4>
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">Inflation Resistance Built In</h4>
               <p className="text-purple-200 leading-relaxed">
-                In many countries, people are hit twice: their local currency weakens, and their savings in a &quot;strong&quot; foreign currency can also be eroded by inflation in that foreign country. By tying EQUA&apos;s reference to a blend of global value signals instead of a single flag, the system reduces the chance that one political decision or one central bank&apos;s policy quietly eats away years of someone&apos;s work.
+                In many countries, people are hit twice: their local currency weakens, and their savings in a &quot;strong&quot; foreign currency can also be eroded by inflation in that foreign country. By anchoring EQUA&apos;s value to EQX—a blend of global value signals—the system reduces the chance that one political decision or one central bank&apos;s policy quietly eats away years of someone&apos;s work.
               </p>
 
-              <h4 className="text-lg font-semibold text-white mt-4 mb-2">Closer to Real Purchasing Power</h4>
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">Designed Against Speculation</h4>
               <p className="text-purple-200 leading-relaxed">
-                Because the basket includes both money (currencies) and things people ultimately care about (gold and key commodities), EQUA can stay more aligned with the cost of real life—food, energy, safety—rather than just financial market noise. Over time, this means a person holding EQUA is aiming to preserve their ability to live, not just to watch a chart.
+                Because EQX includes both money (currencies) and things people ultimately care about (gold and key commodities), EQUA stays more aligned with the cost of real life—food, energy, safety—rather than just financial market noise. <strong className="text-white">EQUA is not designed for speculative trading.</strong> It is designed for people who want their daily participation to protect and grow their purchasing power.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">How It Works with EQUA&apos;s Appreciation Model</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">How EQX Works with EQUA&apos;s Transaction-Based Appreciation</h3>
               <p className="text-purple-200 leading-relaxed">
-                The basket does not replace EQUA&apos;s transaction-based appreciation; <strong className="text-white">it guides it</strong>.
+                EQX does not replace EQUA&apos;s transaction-based appreciation; <strong className="text-white">it anchors it</strong>.
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li>The price growth rules (driven by number of transactions and epochs) still determine how EQUA appreciates as the network is used.</li>
-                <li>The basket acts like an underlying &quot;reality check&quot;: if a single currency in the basket is inflating away, the other components help keep EQUA&apos;s reference tied to a more honest picture of global value.</li>
+                <li>EQX acts as an underlying &quot;reality check&quot;: if a single currency in the basket is inflating away, the other components help keep EQUA&apos;s reference tied to a more honest picture of global value.</li>
+                <li>You see USD values for convenience, but the actual appreciation happens in EQX terms.</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
                 <strong className="text-white">For users, this means:</strong>
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
-                <li>The more EQUA is used, the more it appreciates.</li>
-                <li>The more the world changes, the more the basket helps EQUA stay connected to what actually matters—what your money can buy.</li>
+                <li>The more EQUA is used, the more it appreciates in EQX terms.</li>
+                <li>The more the world changes, the more EQX helps EQUA stay connected to what actually matters—what your money can buy.</li>
+                <li>USD is just one component of many, and you are never at the mercy of USD alone.</li>
               </ul>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">What This Means for Ordinary People</h3>
               <div className="space-y-4 mt-4">
                 <div className="bg-white/5 rounded-xl p-4 border border-purple-500/20">
                   <p className="text-purple-200">
-                    <strong className="text-white">For a shopkeeper in a small town:</strong> &quot;If my local currency or the dollar goes crazy, EQUA is not chained to that alone.&quot;
+                    <strong className="text-white">For a shopkeeper in a small town:</strong> &quot;If my local currency or the dollar goes crazy, EQUA is not chained to that alone. My value is spread across the global economy.&quot;
                   </p>
                 </div>
                 <div className="bg-white/5 rounded-xl p-4 border border-purple-500/20">
                   <p className="text-purple-200">
-                    <strong className="text-white">For a family saving for their children:</strong> &quot;I am not betting everything on one country&apos;s promise. My effort is tied to a mix of real-world anchors.&quot;
+                    <strong className="text-white">For a family saving for their children:</strong> &quot;I am not betting everything on one country&apos;s promise. My effort is anchored to a mix of real-world value.&quot;
                   </p>
                 </div>
                 <div className="bg-white/5 rounded-xl p-4 border border-purple-500/20">
                   <p className="text-purple-200">
-                    <strong className="text-white">For someone who has seen bank failures, devaluations, or sudden capital controls:</strong> &quot;At least one part of my life is built on rules and a basket of real value, not on panic decisions made overnight.&quot;
+                    <strong className="text-white">For someone who has seen bank failures, devaluations, or sudden capital controls:</strong> &quot;At least one part of my life is built on transparent rules and a basket of real value, not on panic decisions made overnight.&quot;
                   </p>
                 </div>
               </div>
 
               <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
-                EQUA was always designed to reward real participation and protect believers from speculation. The Basket for EQUA extends that same protection to the world beyond crypto: it recognizes that people don&apos;t just need a fair system inside the chain—they need protection from the unfairness outside it too.
+                EQUA was always designed to reward real participation and protect believers from speculation. EQX extends that same protection to the world beyond crypto: it recognizes that people don&apos;t just need a fair system inside the chain—they need protection from the unfairness outside it too.
+              </p>
+            </section>
+
+            {/* Part V.5 - Social Purpose Accounts */}
+            <section className="mb-12">
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V.5: Social Purpose Accounts—Generosity Through Restraint</h2>
+              
+              <p className="text-purple-200 leading-relaxed">
+                EQUA is designed to create value for everyone—not just token holders. Once the terminal phase is reached and price growth stabilizes, the protocol activates <strong className="text-white">five social purpose accounts</strong> that distribute EQUA monthly to support education, healthcare, research, grants, and operations.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">Critical timing:</strong> These distributions activate <em>only after</em> the terminal phase begins (when EQUA reaches $200,000 in EQX). This ensures early holders and builders are not diluted during the compounding growth phase.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Delayed Activation?</h3>
+              <p className="text-purple-200 leading-relaxed">
+                Many projects promise generosity from day one, then fail to deliver because they dilute their own value before it has time to grow. EQUA takes the opposite approach: <strong className="text-white">patience first, generosity second</strong>.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                By waiting until the terminal phase, EQUA ensures:
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
+                <li>The token has reached substantial value before any social distributions begin</li>
+                <li>Early believers who took the risk are rewarded without dilution</li>
+                <li>Social distributions come from a position of strength, not desperation</li>
+                <li>Each EQUA distributed has real purchasing power to make a difference</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold text-white mt-8 mb-3">The Five Social Purpose Accounts</h3>
+              
+              {/* Education Fund */}
+              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-blue-500/30">
+                <h4 className="text-lg font-bold text-blue-400 mb-3">1. Education Fund</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
+                  <div>
+                    <p><strong className="text-white">Purpose:</strong> Support scholarships, learning materials, and educational infrastructure</p>
+                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 10,000 EQUA</p>
+                  </div>
+                  <div>
+                    <p><strong className="text-white">Why Constrained?</strong></p>
+                    <p className="text-sm mt-1">A steady, predictable stream allows schools and students to plan. Flooding the system with tokens would create dependency and chaos, not opportunity.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Healthcare Fund */}
+              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-green-500/30">
+                <h4 className="text-lg font-bold text-green-400 mb-3">2. Healthcare Fund</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
+                  <div>
+                    <p><strong className="text-white">Purpose:</strong> Fund medical care, medicines, and health clinics in underserved communities</p>
+                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 10,000 EQUA</p>
+                  </div>
+                  <div>
+                    <p><strong className="text-white">Why Constrained?</strong></p>
+                    <p className="text-sm mt-1">Healthcare needs discipline and long-term commitment. A measured approach ensures funds reach those who need them most, not just those who ask loudest.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Research & Development Fund */}
+              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/30">
+                <h4 className="text-lg font-bold text-purple-400 mb-3">3. Research & Development Fund</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
+                  <div>
+                    <p><strong className="text-white">Purpose:</strong> Support open research, protocol improvements, and technological innovation</p>
+                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 5,000 EQUA</p>
+                  </div>
+                  <div>
+                    <p><strong className="text-white">Why Constrained?</strong></p>
+                    <p className="text-sm mt-1">Good research takes time. Smaller allocations filter for serious projects and prevent waste on trendy experiments that won&apos;t last.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* General Grants Fund */}
+              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-yellow-500/30">
+                <h4 className="text-lg font-bold text-yellow-400 mb-3">4. General Grants Fund</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
+                  <div>
+                    <p><strong className="text-white">Purpose:</strong> Support community projects, local businesses, and public goods initiatives</p>
+                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 5,000 EQUA</p>
+                  </div>
+                  <div>
+                    <p><strong className="text-white">Why Constrained?</strong></p>
+                    <p className="text-sm mt-1">Scarcity drives quality. Limited grants mean applicants must demonstrate real value, not just good intentions.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Operations Fund */}
+              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-teal-500/30">
+                <h4 className="text-lg font-bold text-teal-400 mb-3">5. Operations Fund</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
+                  <div>
+                    <p><strong className="text-white">Purpose:</strong> Maintain infrastructure, pay for audits, and ensure protocol sustainability</p>
+                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 5,000 EQUA</p>
+                  </div>
+                  <div>
+                    <p><strong className="text-white">Why Constrained?</strong></p>
+                    <p className="text-sm mt-1">Lean operations stay focused. Excess funding breeds bloat and inefficiency. A tight budget forces discipline and clear priorities.</p>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
+                <strong className="text-white">Total Monthly Distribution: 35,000 EQUA</strong> across all five accounts. By terminal phase, each EQUA has substantial value, making even these constrained amounts meaningful for real-world impact.
+              </p>
+            </section>
+
+            {/* Part V.6 - Monthly Distribution Safety */}
+            <section className="mb-12">
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V.6: Monthly Distribution Safety—Predictability Over Speed</h2>
+              
+              <p className="text-purple-200 leading-relaxed">
+                Social purpose distributions occur <strong className="text-white">exactly once per calendar month</strong>. Not daily. Not per transaction. Not based on volume. Once per month, on a predictable schedule.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Monthly, Not More Frequent?</h3>
+              
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">1. Predictability for Recipients</h4>
+              <p className="text-purple-200 leading-relaxed">
+                A school planning a scholarship program or a clinic ordering medicines needs to know <em>when</em> funds arrive. Monthly cadence allows organizations to plan, budget, and deliver real outcomes.
+              </p>
+
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">2. Auditability for All</h4>
+              <p className="text-purple-200 leading-relaxed">
+                Monthly distributions are easy to track, verify, and audit. Anyone can check that funds went to the right places. High-frequency distributions create noise that hides manipulation.
+              </p>
+
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">3. Abuse Resistance</h4>
+              <p className="text-purple-200 leading-relaxed">
+                Volume-based or high-frequency distributions create incentives to game the system—fake transactions, wash trading, and extraction schemes. Monthly caps eliminate these attack vectors.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What We Explicitly Reject</h3>
+              <div className="bg-red-500/10 rounded-xl p-6 mt-4 border border-red-500/30">
+                <ul className="list-disc list-inside text-purple-200 space-y-2">
+                  <li><strong className="text-white">High-frequency grants</strong>: Create complexity and manipulation opportunities</li>
+                  <li><strong className="text-white">Volume-based distributions</strong>: Reward noise and spam, not genuine need</li>
+                  <li><strong className="text-white">Uncapped generosity</strong>: Dilutes value and undermines sustainability</li>
+                  <li><strong className="text-white">Speculative extraction</strong>: EQUA funds are for use, not for trading schemes</li>
+                </ul>
+              </div>
+
+              <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
+                Restraint is not cruelty. It is the foundation of fairness. By limiting distributions to monthly cadence and fixed amounts, EQUA ensures that generosity is sustainable, auditable, and immune to exploitation.
               </p>
             </section>
 
@@ -460,16 +641,76 @@ export default function WhitepaperPage() {
               </ul>
             </section>
 
-            {/* Part VII */}
+            {/* Part VII - Philosophy & Values */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VII: The Deeper Vision—A Fair Economy</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VII: Philosophy & Values—Restraint Over Excess</h2>
               
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Economic Empowerment Through Participation</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why EQUA Prioritizes Restraint</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA&apos;s true mission isn&apos;t to make certain people rich quickly. It&apos;s to <strong className="text-white">align individual prosperity with network health</strong>. When you hold EQUA, you want the same thing as everyone else: for the network to grow, for transactions to increase, for adoption to expand.
+                The world is full of promises of abundance: unlimited growth, endless rewards, instant riches. EQUA rejects this illusion.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">Restraint is not limitation—it is discipline.</strong> By imposing clear boundaries on minting, distributions, and growth, EQUA creates a system that can last for generations, not just cycles of hype and collapse.
+              </p>
+              
+              <h4 className="text-lg font-semibold text-white mt-6 mb-2">Restraint in Minting</h4>
+              <p className="text-purple-200 leading-relaxed">
+                Every new EQUA token must be earned through participation, not printed by a team. Algorithmic scarcity ensures that as the network grows, each token becomes more valuable—not diluted.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Equal Access, Equal Opportunity, Equal Economy</h3>
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">Restraint in Social Distributions</h4>
+              <p className="text-purple-200 leading-relaxed">
+                EQUA waits until the terminal phase to activate social purpose accounts. This patience ensures that when generosity begins, it comes from a position of strength and each EQUA distributed has real purchasing power to change lives.
+              </p>
+
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">Restraint in Growth</h4>
+              <p className="text-purple-200 leading-relaxed">
+                Phase 5 caps price growth at $25,000 per month. This prevents runaway speculation and keeps EQUA grounded in sustainable, predictable appreciation—not casino-like volatility.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-8 mb-3">Delayed Generosity Leads to Broader, Fairer Impact</h3>
+              <p className="text-purple-200 leading-relaxed">
+                Many projects promise to change the world from day one. They distribute tokens freely, create dependencies, and collapse when the well runs dry.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                EQUA takes the opposite path: <strong className="text-white">build value first, distribute generosity second.</strong>
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
+                <li><strong className="text-white">Early holders are rewarded</strong> for taking the risk during the compounding phase</li>
+                <li><strong className="text-white">Social purpose accounts activate</strong> only when each EQUA has substantial value</li>
+                <li><strong className="text-white">Monthly distributions are constrained</strong> to prevent dependency and abuse</li>
+                <li><strong className="text-white">The system remains sustainable</strong> for decades, not just years</li>
+              </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                By delaying generosity until the system is strong, EQUA ensures that when help arrives, it is <em>meaningful</em>. A scholarship funded by 100 EQUA at $200,000 value is worth $20 million in purchasing power—life-changing for a student, sustainable for the network.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-8 mb-3">EQUA Is Not Designed for Speculation or Extraction</h3>
+              <p className="text-purple-200 leading-relaxed">
+                <strong className="text-white">Let this be clear:</strong> EQUA is not a get-rich-quick scheme. It is not designed for day traders, pump-and-dump schemes, or speculative extraction.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                EQUA is designed for:
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
+                <li><strong className="text-white">People who use it</strong> to buy and sell goods and services</li>
+                <li><strong className="text-white">People who believe in it</strong> and hold through growth phases</li>
+                <li><strong className="text-white">People who build with it</strong> and contribute to the ecosystem</li>
+                <li><strong className="text-white">Communities who benefit from it</strong> through education, healthcare, and grants</li>
+              </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                If you are looking for quick profits or trading volatility, EQUA is not for you. If you are looking for dignity, fairness, and long-term thinking, you are in the right place.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-8 mb-3">Economic Empowerment Through Participation</h3>
+              <p className="text-purple-200 leading-relaxed">
+                EQUA&apos;s true mission is to <strong className="text-white">align individual prosperity with network health</strong>. When you hold EQUA, you want the same thing as everyone else: for the network to grow, for transactions to increase, for adoption to expand.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                This is not a zero-sum game where one person&apos;s gain is another&apos;s loss. This is a system where <strong className="text-white">everyone wins when the network thrives</strong>.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-8 mb-3">Equal Access, Equal Opportunity, Equal Economy</h3>
               <p className="text-purple-200 leading-relaxed">
                 EQUA&apos;s narrative emerges from a simple observation: <strong className="text-white">most people never get early access to systems that create wealth.</strong> By the time an opportunity becomes widely known, most of the compounding benefit has already happened.
               </p>
@@ -481,6 +722,9 @@ export default function WhitepaperPage() {
                 <li><strong className="text-white">Transparent Rules</strong>: Every mechanism is auditable; there are no secret advantages</li>
                 <li><strong className="text-white">Fair Participation</strong>: Your reward for believing early is meaningful, but newer participants aren&apos;t left to fight over scraps</li>
               </ul>
+              <p className="text-purple-200 leading-relaxed mt-4 border-l-4 border-purple-500 pl-4 italic">
+                EQUA is built on the belief that restraint, patience, and fairness create systems that last. Excess, hype, and speculation create cycles of boom and bust. We choose the long road because it leads somewhere real.
+              </p>
             </section>
 
             {/* Part VIII - Technical Summary */}
@@ -550,7 +794,7 @@ export default function WhitepaperPage() {
             <div className="text-center pt-8 border-t border-purple-500/30">
               <p className="text-2xl font-bold text-white mb-2">EQUA</p>
               <p className="text-purple-300">Equal Access. Equal Opportunity. Equal Economy.</p>
-              <p className="text-purple-400 text-sm mt-4">Last Updated: November 2025</p>
+              <p className="text-purple-400 text-sm mt-4">Last Updated: December 2025</p>
             </div>
           </article>
 
