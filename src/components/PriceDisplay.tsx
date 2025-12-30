@@ -16,7 +16,7 @@ interface PriceDisplayProps {
 interface EqxPriceData {
   eqxPrice: number;
   eqxValue: number;
-  priceSource: 'pyth' | 'coingecko' | 'fallback';
+  priceSource: 'onchain' | 'hermes' | 'fallback';
 }
 
 const DEFAULT_EQX_DATA: EqxPriceData = {
@@ -137,7 +137,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
             {getPhaseLabel(currentPhase)}
             <span className="ml-2 text-purple-400">
-              ({eqxData.priceSource === 'pyth' ? '🟢 Live' : eqxData.priceSource === 'coingecko' ? '🟡 API' : '⚪ Fallback'})
+              ({eqxData.priceSource === 'onchain' ? '🟢 On-Chain' : eqxData.priceSource === 'hermes' ? '🟡 Hermes' : '⚪ Fallback'})
             </span>
           </p>
         </div>

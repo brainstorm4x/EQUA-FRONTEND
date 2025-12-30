@@ -1,81 +1,83 @@
 /**
  * EQX Oracle - EQUA Index (EQX) Price Feed Implementation
  * 
- * The EQX (EQUA Index) is a weighted basket of currencies, gold, and commodities
- * designed to hedge against USD value erosion. This utility fetches real-time prices
- * from Pyth Network on Solana with fallback to CoinGecko API.
+ * The EQX (EQUA Index) is a weighted basket of currencies, gold, and oil
+ * designed to hedge against USD value erosion. This utility fetches prices
+ * from on-chain oracle first, with Hermes API fallback.
  * 
- * Basket Composition:
- * - Currencies (50%): USD 20%, EUR 15%, CNY 8%, JPY 4%, GBP 3%
- * - Gold (30%): XAU 30%
- * - Commodities (20%): OIL 7%, COPPER 7%, WHEAT 6%
+ * Basket Composition (7 components):
+ * - USDUSD: 23% (always 1.0)
+ * - USDEUR: 17% (1 / EURUSD)
+ * - USDCNY: 9% (USDCNH direct)
+ * - USDJPY: 5% (USDJPY direct)
+ * - USDGBP: 3% (1 / GBPUSD)
+ * - XAUUSD: 35% (gold)
+ * - OIL: 8% (USOILSPOT)
  * 
  * Features:
- * - Pyth Network integration for real-time oracle prices
+ * - On-chain EQX oracle as primary source
+ * - Hermes API fallback when oracle is stale (>8 hours) or missing
  * - 5-minute TTL cache for performance
- * - CoinGecko fallback for resilience
- * - EQX to USD and local currency conversion
+ * - Strict failure mode: throws if both sources fail
  */
 
 import axios from 'axios';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { AnchorProvider, Program } from '@coral-xyz/anchor';
+import { PROGRAM_ID, RPC_ENDPOINT } from '@/lib/constants';
+import equaIdl from '../../public/idl/equa_token.json';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-// Check if Pyth Network is enabled (default: true)
-// Set NEXT_PUBLIC_ENABLE_PYTH=false in .env.local to disable Pyth price feeds
-const isPythEnabled = (): boolean => {
-  if (typeof window === 'undefined') {
-    // Server-side: check process.env
-    return process.env.NEXT_PUBLIC_ENABLE_PYTH !== 'false';
-  }
-  // Client-side: Next.js inlines NEXT_PUBLIC_* vars at build time
-  return process.env.NEXT_PUBLIC_ENABLE_PYTH !== 'false';
-};
+// EQX Oracle PDA seed (must match backend exactly)
+const EQX_ORACLE_SEED = 'eqx-oracle';
 
-// Track if we've already warned about Pyth errors (warn only once)
-let pythErrorWarned = false;
+// Staleness threshold: 8 hours in milliseconds
+const STALENESS_THRESHOLD_MS = 8 * 60 * 60 * 1000; // 8 hours
+
+// On-chain oracle price is stored as u64 with 1e8 fixed-point precision
+const ONCHAIN_PRICE_DECIMALS = 100_000_000; // 1e8
+
+// Track if we've already warned about errors (warn only once per session)
+let onchainErrorWarned = false;
+let hermesErrorWarned = false;
 
 // Maximum reasonable price for sanity checks (prevents parsing errors)
 // Prevents accepting corrupted data or overflow values
 const MAX_REASONABLE_PRICE = 1_000_000; // $1M per unit - beyond any realistic commodity/currency price
 
 // ============================================================================
-// Pyth Feed IDs (Hermes hex IDs from official documentation)
+// Hermes Feed IDs (without 0x prefix as required by Hermes API)
 // ============================================================================
 // These are the correct Hermes API feed IDs for mainnet/devnet
 // Source: https://pyth.network/developers/price-feed-ids
-export const PYTH_FEED_IDS = {
-  XAU_USD: '0x765de816845861e75a25fca122bb6898a63d49e6fa51a6f8b4303c61cb1fc1b9',
-  WTI_USD: '0x925c4ef7ee2b7b4c19a23b04d80187b3e687b3e6e65a97cf93bf3cce8db3b8a2', // USOILSPOT (WTI/USD)
-  COPPER_USD: '0x1ff1261f8c1aef0e8736e26a28e1330a645e3e21203d1e609f87df918d6af510',
-  WHEAT_USD: '0xb1830a04e1e59bf3cbd0f93a2e6b321acd5e7d89892c0becc49b265eada2c694',
-  EUR_USD: '0x2d0366e8361c110a1fcf6b3023a1d4e17f63b3a2e10b8ca8bb144dbe7b8a7de0',
-  CNY_USD: '0x60964c6f8ec3a8283bbc2fa9a5a321d996bb099c7ccafca443c1a89fa919e05d',
-  JPY_USD: '0xac5c83fbd5b1b125d7d4aa5e7ddf14e354ae3836e47ac5b2e87fea9cb7c9b7af',
-  GBP_USD: '0xcf094b0624b532422629f3cffe918d512a529bbc1794cb15d3a0128c541f71b8',
-  BTC_USD: '0xc9d8b075a5c69303365ae23d7190c565b5ead26888fe7722529c1ce66b91bb32',
+export const HERMES_FEED_IDS = {
+  EURUSD: '765d2ba906dbc32ca17cc11f5310a89e9ee1f6420508c63861f2f8ba4ee34bb2',
+  USDCNH: 'ef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52',
+  USDJPY: '4a134870158ad1ea98bc4e4eb8e4ca824a32e69d4f3da380377c09936ba23954',
+  GBPUSD: 'a995d00bb36a63cef7fd2c287dc105fc8f3d93779f062f09551b0af3e81ec30b',
+  XAUUSD: '84c2dde9633d93d1bcad84e7dc41c9d56578b7ec52fabedc1f335d673df0a7c1',
+  USOILSPOT: '925ca92ff005ae943c158e3563f59698ce7e75c5a8c8dd43303a0a154887b3e6',
 } as const;
 
 // ============================================================================
-// EQX Basket Weights (Hardcoded Constants)
+// EQX Basket Weights (7-Component Basket)
 // ============================================================================
 export const EQX_BASKET_WEIGHTS = {
-  // Currencies (50% total)
-  USD: 0.20,  // 20%
-  EUR: 0.15,  // 15%
-  CNY: 0.08,  // 8%
-  JPY: 0.04,  // 4%
-  GBP: 0.03,  // 3%
+  // Currency basket (57% total)
+  USDUSD: 0.23,  // 23% - Base USD
+  USDEUR: 0.17,  // 17% - Euro (inverted from EURUSD)
+  USDCNY: 0.09,  // 9% - Chinese Yuan
+  USDJPY: 0.05,  // 5% - Japanese Yen
+  USDGBP: 0.03,  // 3% - British Pound (inverted from GBPUSD)
   
-  // Gold (30% total)
-  XAU: 0.30,  // 30%
+  // Gold (35%)
+  XAUUSD: 0.35,  // 35% - Gold
   
-  // Commodities (20% total)
-  OIL: 0.07,   // 7% (WTI crude)
-  COPPER: 0.07, // 7%
-  WHEAT: 0.06,  // 6%
+  // Oil (8%)
+  OIL: 0.08,     // 8% - WTI Crude Oil
 } as const;
 
 // Verify weights sum to 1
@@ -91,18 +93,18 @@ export interface AssetPrice {
   symbol: string;
   price: number;  // Price in USD
   timestamp: number;
-  source: 'pyth' | 'coingecko' | 'fallback';
+  source: 'onchain' | 'hermes' | 'fallback';
 }
 
 export interface EQXPriceData {
   eqxValue: number;  // 1 EQX = this many USD
   assetPrices: Record<string, AssetPrice>;
   lastUpdated: number;
-  source: 'pyth' | 'coingecko' | 'fallback';
+  source: 'onchain' | 'hermes' | 'fallback';
   breakdown: {
     currencyContribution: number;
     goldContribution: number;
-    commodityContribution: number;
+    oilContribution: number;
   };
 }
 
@@ -154,52 +156,122 @@ export function getCacheTTL(): number {
 }
 
 // ============================================================================
-// Pyth Network Integration
+// On-Chain EQX Oracle Integration (Using Anchor/IDL)
 // ============================================================================
 
-// Pyth Hermes API endpoint (stable version)
-// Documentation: https://hermes.pyth.network/docs/
-// Using POST to /api/latest_price_feeds as the GET endpoint returns 404
-const PYTH_HERMES_API = 'https://hermes.pyth.network/api/latest_price_feeds';
+/**
+ * Derives the EQX Oracle PDA
+ * Seeds: ["eqx-oracle"]
+ */
+function getEqxOraclePDA(): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from(EQX_ORACLE_SEED) as Buffer],
+    PROGRAM_ID
+  );
+  return pda;
+}
 
 /**
- * Fetches prices from Pyth Network using the Hermes API
- * Documentation: https://hermes.pyth.network/docs/
+ * Reads the EQX Oracle account from on-chain using Anchor/IDL
+ * Returns the EQX value in USD and last updated timestamp
  */
-async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
-  // Check if Pyth is enabled
-  if (!isPythEnabled()) {
-    if (!pythErrorWarned) {
-      console.log('[EQX Oracle] Pyth Network is disabled via NEXT_PUBLIC_ENABLE_PYTH=false');
-      pythErrorWarned = true;
+async function fetchOnChainEqxOracle(): Promise<{
+  eqxValue: number;
+  lastUpdated: number;
+} | null> {
+  try {
+    const connection = new Connection(RPC_ENDPOINT, 'confirmed');
+    const oraclePDA = getEqxOraclePDA();
+    
+    // Create a minimal provider for Anchor (no wallet needed for read-only)
+    const provider = new AnchorProvider(
+      connection,
+      // @ts-ignore - We don't need a wallet for read-only operations
+      { publicKey: PublicKey.default },
+      { commitment: 'confirmed' }
+    );
+    
+    // Create program instance with IDL
+    const program = new Program(equaIdl as any, provider);
+    
+    // Fetch account using Anchor
+    const oracleAccount = await program.account.eqxOracle.fetch(oraclePDA);
+    
+    // Extract price and lastUpdated from account
+    // price is BN (u64), last_updated is BN (i64)
+    const priceBN = oracleAccount.price;
+    const lastUpdatedBN = oracleAccount.lastUpdated;
+    
+    // Convert BN to number
+    const price = priceBN.toNumber();
+    const lastUpdated = lastUpdatedBN.toNumber();
+    
+    // Convert price from fixed-point (1e8) to USD
+    const eqxValue = price / ONCHAIN_PRICE_DECIMALS;
+    
+    // Validate price
+    if (isNaN(eqxValue) || eqxValue <= 0 || eqxValue > MAX_REASONABLE_PRICE) {
+      console.warn(`[EQX Oracle] Invalid on-chain price: ${eqxValue}`);
+      return null;
+    }
+    
+    // Validate timestamp
+    if (isNaN(lastUpdated) || lastUpdated <= 0) {
+      console.warn(`[EQX Oracle] Invalid on-chain timestamp: ${lastUpdated}`);
+      return null;
+    }
+    
+    console.log(`[EQX Oracle] On-chain oracle read: ${eqxValue} USD, updated at ${new Date(lastUpdated * 1000).toISOString()}`);
+    
+    return {
+      eqxValue,
+      lastUpdated, // Unix timestamp in seconds
+    };
+  } catch (error: any) {
+    if (!onchainErrorWarned) {
+      console.warn('[EQX Oracle] Error reading on-chain oracle:', error.message);
+      onchainErrorWarned = true;
     }
     return null;
   }
+}
 
+/**
+ * Checks if oracle data is stale (>8 hours old)
+ */
+function isOracleStale(lastUpdated: number): boolean {
+  const now = Date.now();
+  const lastUpdatedMs = lastUpdated * 1000; // Convert seconds to ms
+  const age = now - lastUpdatedMs;
+  return age > STALENESS_THRESHOLD_MS;
+}
+
+// ============================================================================
+// Hermes API Fallback
+// ============================================================================
+
+// Hermes API endpoint
+const HERMES_API = 'https://hermes.pyth.network/api/latest_price_feeds';
+
+/**
+ * Fetches prices from Hermes API and computes 7-component EQX basket
+ */
+async function fetchHermesPrices(): Promise<Record<string, AssetPrice> | null> {
   try {
-    // Hermes API requires hex feed IDs without the 0x prefix
-    // All PYTH_FEED_IDS are guaranteed to start with '0x' (verified by tests)
+    // Fetch 6 feeds from Hermes (excludes USDUSD which is always 1.0)
     const feedIds = [
-      PYTH_FEED_IDS.XAU_USD,
-      PYTH_FEED_IDS.WTI_USD,
-      PYTH_FEED_IDS.COPPER_USD,
-      PYTH_FEED_IDS.WHEAT_USD,
-      PYTH_FEED_IDS.EUR_USD,
-      PYTH_FEED_IDS.CNY_USD,
-      PYTH_FEED_IDS.JPY_USD,
-      PYTH_FEED_IDS.GBP_USD,
-    ].map(id => id.slice(2)); // Strip 0x prefix
+      HERMES_FEED_IDS.EURUSD,
+      HERMES_FEED_IDS.USDCNH,
+      HERMES_FEED_IDS.USDJPY,
+      HERMES_FEED_IDS.GBPUSD,
+      HERMES_FEED_IDS.XAUUSD,
+      HERMES_FEED_IDS.USOILSPOT,
+    ];
 
-    // Log network configuration for debugging
-    // Note: Hermes API works with mainnet feed IDs regardless of NEXT_PUBLIC_PYTH_ENV
-    // The env variable is primarily for documentation/configuration purposes
-    const pythEnv = process.env.NEXT_PUBLIC_PYTH_ENV || 'mainnet-beta';
-    console.log(`[EQX Oracle] Configured Pyth environment: ${pythEnv} (using mainnet feed IDs)`);
-    console.log('[EQX Oracle] Fetching Pyth prices via POST to:', PYTH_HERMES_API);
+    console.log('[EQX Oracle] Fetching Hermes prices via POST to:', HERMES_API);
     
-    // Use POST to Hermes API (stable endpoint)
     const response = await axios.post(
-      PYTH_HERMES_API,
+      HERMES_API,
       {
         ids: feedIds,
         verbose: false,
@@ -211,218 +283,170 @@ async function fetchPythPrices(): Promise<Record<string, AssetPrice> | null> {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        validateStatus: (status) => status < 500, // Don't throw on 4xx errors
+        validateStatus: (status: number) => status < 500, // Don't throw on 4xx errors
       }
     );
 
     // Handle rate limiting (429) or client errors (4xx)
     if (response.status === 429) {
-      if (!pythErrorWarned) {
-        console.warn('[EQX Oracle] Pyth API rate limit exceeded. Using fallback prices.');
-        pythErrorWarned = true;
+      if (!hermesErrorWarned) {
+        console.warn('[EQX Oracle] Hermes API rate limit exceeded.');
+        hermesErrorWarned = true;
       }
       return null;
     }
     
     if (response.status === 404) {
-      if (!pythErrorWarned) {
-        console.warn('[EQX Oracle] Pyth API returned 404. Feed IDs may be incorrect or unavailable. Using fallback.');
-        pythErrorWarned = true;
+      if (!hermesErrorWarned) {
+        console.warn('[EQX Oracle] Hermes API returned 404. Feed IDs may be incorrect.');
+        hermesErrorWarned = true;
       }
       return null;
     }
     
     if (response.status >= 400) {
-      if (!pythErrorWarned) {
-        console.warn(`[EQX Oracle] Pyth API error ${response.status}. Using fallback prices.`);
-        pythErrorWarned = true;
+      if (!hermesErrorWarned) {
+        console.warn(`[EQX Oracle] Hermes API error ${response.status}.`);
+        hermesErrorWarned = true;
       }
       return null;
     }
 
     // Hermes POST API returns an array of price feeds directly
-    // Response shape: [{ id: "hex...", price: { price: "...", conf: "...", expo: -8, ... }, ema_price: {...} }, ...]
     if (!response.data || !Array.isArray(response.data)) {
-      if (!pythErrorWarned) {
-        console.warn('[EQX Oracle] Invalid Pyth response format (expected array):', response.data);
-        pythErrorWarned = true;
+      if (!hermesErrorWarned) {
+        console.warn('[EQX Oracle] Invalid Hermes response format (expected array):', response.data);
+        hermesErrorWarned = true;
       }
       return null;
     }
 
-    const prices: Record<string, AssetPrice> = {};
+    const prices: Record<string, number> = {};
     const now = Date.now();
 
-    // Map feed IDs (without 0x prefix) to symbols
+    // Map feed IDs to raw prices
     const feedIdToSymbol: Record<string, string> = {
-      [PYTH_FEED_IDS.XAU_USD.slice(2)]: 'XAU',
-      [PYTH_FEED_IDS.WTI_USD.slice(2)]: 'OIL',
-      [PYTH_FEED_IDS.COPPER_USD.slice(2)]: 'COPPER',
-      [PYTH_FEED_IDS.WHEAT_USD.slice(2)]: 'WHEAT',
-      [PYTH_FEED_IDS.EUR_USD.slice(2)]: 'EUR',
-      [PYTH_FEED_IDS.CNY_USD.slice(2)]: 'CNY',
-      [PYTH_FEED_IDS.JPY_USD.slice(2)]: 'JPY',
-      [PYTH_FEED_IDS.GBP_USD.slice(2)]: 'GBP',
+      [HERMES_FEED_IDS.EURUSD]: 'EURUSD',
+      [HERMES_FEED_IDS.USDCNH]: 'USDCNH',
+      [HERMES_FEED_IDS.USDJPY]: 'USDJPY',
+      [HERMES_FEED_IDS.GBPUSD]: 'GBPUSD',
+      [HERMES_FEED_IDS.XAUUSD]: 'XAUUSD',
+      [HERMES_FEED_IDS.USOILSPOT]: 'USOILSPOT',
     };
 
     for (const feed of response.data) {
-      // Feed ID comes without 0x prefix in response
       const feedId = feed.id;
       const symbol = feedIdToSymbol[feedId];
       
       if (symbol && feed.price) {
-        // Pyth Hermes API: prices need to be scaled by the exponent
-        // feed.price.price is the raw price value (string)
-        // feed.price.expo is the exponent (usually negative, e.g., -8 for USD prices)
-        // Example: raw price "123456" with expo -2 becomes 1234.56
+        // Hermes API: prices need to be scaled by the exponent
         const price = parseFloat(feed.price.price) * Math.pow(10, feed.price.expo);
         
         // Validate price is reasonable (sanity check)
         if (isNaN(price) || price <= 0 || price > MAX_REASONABLE_PRICE) {
-          console.warn(`[EQX Oracle] Invalid price for ${symbol}: ${price} (exceeds max ${MAX_REASONABLE_PRICE})`);
+          console.warn(`[EQX Oracle] Invalid Hermes price for ${symbol}: ${price}`);
           continue;
         }
         
-        prices[symbol] = {
-          symbol,
-          price,
-          timestamp: now,
-          source: 'pyth',
-        };
+        prices[symbol] = price;
       }
     }
 
-    // Add USD (always 1.0)
-    prices['USD'] = {
-      symbol: 'USD',
-      price: 1.0,
-      timestamp: now,
-      source: 'pyth',
-    };
-
     // Check if we got all required prices
-    const requiredSymbols = ['XAU', 'OIL', 'COPPER', 'WHEAT', 'EUR', 'CNY', 'JPY', 'GBP', 'USD'];
+    const requiredSymbols = ['EURUSD', 'USDCNH', 'USDJPY', 'GBPUSD', 'XAUUSD', 'USOILSPOT'];
     const hasAllPrices = requiredSymbols.every(s => prices[s] !== undefined);
 
     if (!hasAllPrices) {
       const missing = requiredSymbols.filter(s => !prices[s]);
-      if (!pythErrorWarned) {
-        console.warn('[EQX Oracle] Pyth did not return all required prices. Missing:', missing);
-        pythErrorWarned = true;
+      if (!hermesErrorWarned) {
+        console.warn('[EQX Oracle] Hermes did not return all required prices. Missing:', missing);
+        hermesErrorWarned = true;
       }
       return null;
     }
 
-    console.log('[EQX Oracle] Successfully fetched prices from Pyth');
-    return prices;
+    // Compute 7-component basket values (with inversions where needed)
+    const assetPrices: Record<string, AssetPrice> = {};
+    
+    // 1. USDUSD = 1.0
+    assetPrices['USDUSD'] = {
+      symbol: 'USDUSD',
+      price: 1.0,
+      timestamp: now,
+      source: 'hermes',
+    };
+    
+    // 2. USDEUR = 1 / EURUSD
+    assetPrices['USDEUR'] = {
+      symbol: 'USDEUR',
+      price: 1.0 / prices.EURUSD,
+      timestamp: now,
+      source: 'hermes',
+    };
+    
+    // 3. USDCNY = USDCNH (direct)
+    assetPrices['USDCNY'] = {
+      symbol: 'USDCNY',
+      price: prices.USDCNH,
+      timestamp: now,
+      source: 'hermes',
+    };
+    
+    // 4. USDJPY = USDJPY (direct)
+    assetPrices['USDJPY'] = {
+      symbol: 'USDJPY',
+      price: prices.USDJPY,
+      timestamp: now,
+      source: 'hermes',
+    };
+    
+    // 5. USDGBP = 1 / GBPUSD
+    assetPrices['USDGBP'] = {
+      symbol: 'USDGBP',
+      price: 1.0 / prices.GBPUSD,
+      timestamp: now,
+      source: 'hermes',
+    };
+    
+    // 6. XAUUSD (direct)
+    assetPrices['XAUUSD'] = {
+      symbol: 'XAUUSD',
+      price: prices.XAUUSD,
+      timestamp: now,
+      source: 'hermes',
+    };
+    
+    // 7. OIL = USOILSPOT (direct)
+    assetPrices['OIL'] = {
+      symbol: 'OIL',
+      price: prices.USOILSPOT,
+      timestamp: now,
+      source: 'hermes',
+    };
+
+    // Final validation: ensure all computed prices are finite and > 0
+    const allValid = Object.values(assetPrices).every(
+      ap => isFinite(ap.price) && ap.price > 0
+    );
+    
+    if (!allValid) {
+      console.warn('[EQX Oracle] Some Hermes-computed prices are invalid');
+      return null;
+    }
+
+    console.log('[EQX Oracle] Successfully fetched and computed prices from Hermes');
+    return assetPrices;
   } catch (error: any) {
-    // Classify error types for better debugging
     const errorType = error.code === 'ECONNABORTED' ? 'timeout' : 
                      error.response?.status ? `HTTP ${error.response.status}` :
                      'network';
     
-    if (!pythErrorWarned) {
-      console.warn(`[EQX Oracle] Error fetching Pyth prices (${errorType}):`, error.message);
-      pythErrorWarned = true;
+    if (!hermesErrorWarned) {
+      console.warn(`[EQX Oracle] Error fetching Hermes prices (${errorType}):`, error.message);
+      hermesErrorWarned = true;
     }
     return null;
   }
-}
-
-// ============================================================================
-// CoinGecko Fallback
-// ============================================================================
-
-// CoinGecko API (free tier)
-const COINGECKO_API = 'https://api.coingecko.com/api/v3';
-
-// CoinGecko IDs for assets
-const COINGECKO_IDS = {
-  XAU: 'tether-gold', // PAX Gold as proxy for gold
-  OIL: null, // CoinGecko doesn't have WTI crude
-  COPPER: null, // CoinGecko doesn't have copper
-  WHEAT: null, // CoinGecko doesn't have wheat
-};
-
-/**
- * Fallback prices for commodities
- * Last updated: November 2025
- * These are approximate prices used when live data is unavailable.
- * The EQX index is normalized relative to these values, so updates here
- * will affect the baseline EQX value.
- */
-const FALLBACK_COMMODITY_PRICES = {
-  XAU: 2650.00,   // Gold per oz (approx market price Nov 2025)
-  OIL: 75.00,     // WTI crude per barrel (approx market price Nov 2025)
-  COPPER: 4.20,   // Copper per pound (approx market price Nov 2025)
-  WHEAT: 5.50,    // Wheat per bushel (approx market price Nov 2025)
-} as const;
-
-/**
- * Fallback exchange rates vs USD
- * Last updated: November 2025
- * These are approximate rates used when live data is unavailable.
- */
-const FALLBACK_EXCHANGE_RATES = {
-  EUR: 1.08,    // EUR/USD (Nov 2025)
-  GBP: 1.27,    // GBP/USD (Nov 2025)
-  JPY: 0.0067,  // JPY/USD (1/149.5) (Nov 2025)
-  CNY: 0.138,   // CNY/USD (1/7.24) (Nov 2025)
-  USD: 1.0,
-} as const;
-
-/**
- * Fetches prices from CoinGecko API as fallback
- */
-async function fetchCoinGeckoPrices(): Promise<Record<string, AssetPrice> | null> {
-  try {
-    // Fetch exchange rates
-    const exchangeResponse = await axios.get(
-      `${COINGECKO_API}/simple/price?ids=usd,euro,pound-sterling,chinese-yuan,japanese-yen&vs_currencies=usd`,
-      { timeout: 10000 }
-    );
-
-    const now = Date.now();
-    const prices: Record<string, AssetPrice> = {};
-
-    // Use fallback for commodities and exchange rates
-    // CoinGecko's free tier doesn't have commodities
-    
-    prices['USD'] = { symbol: 'USD', price: 1.0, timestamp: now, source: 'coingecko' };
-    prices['EUR'] = { symbol: 'EUR', price: FALLBACK_EXCHANGE_RATES.EUR, timestamp: now, source: 'fallback' };
-    prices['GBP'] = { symbol: 'GBP', price: FALLBACK_EXCHANGE_RATES.GBP, timestamp: now, source: 'fallback' };
-    prices['JPY'] = { symbol: 'JPY', price: FALLBACK_EXCHANGE_RATES.JPY, timestamp: now, source: 'fallback' };
-    prices['CNY'] = { symbol: 'CNY', price: FALLBACK_EXCHANGE_RATES.CNY, timestamp: now, source: 'fallback' };
-    
-    // Commodity fallbacks
-    prices['XAU'] = { symbol: 'XAU', price: FALLBACK_COMMODITY_PRICES.XAU, timestamp: now, source: 'fallback' };
-    prices['OIL'] = { symbol: 'OIL', price: FALLBACK_COMMODITY_PRICES.OIL, timestamp: now, source: 'fallback' };
-    prices['COPPER'] = { symbol: 'COPPER', price: FALLBACK_COMMODITY_PRICES.COPPER, timestamp: now, source: 'fallback' };
-    prices['WHEAT'] = { symbol: 'WHEAT', price: FALLBACK_COMMODITY_PRICES.WHEAT, timestamp: now, source: 'fallback' };
-
-    return prices;
-  } catch (error) {
-    console.error('Error fetching CoinGecko prices:', error);
-    return null;
-  }
-}
-
-/**
- * Gets fallback prices when all APIs fail
- */
-function getFallbackPrices(): Record<string, AssetPrice> {
-  const now = Date.now();
-  return {
-    USD: { symbol: 'USD', price: 1.0, timestamp: now, source: 'fallback' },
-    EUR: { symbol: 'EUR', price: FALLBACK_EXCHANGE_RATES.EUR, timestamp: now, source: 'fallback' },
-    GBP: { symbol: 'GBP', price: FALLBACK_EXCHANGE_RATES.GBP, timestamp: now, source: 'fallback' },
-    JPY: { symbol: 'JPY', price: FALLBACK_EXCHANGE_RATES.JPY, timestamp: now, source: 'fallback' },
-    CNY: { symbol: 'CNY', price: FALLBACK_EXCHANGE_RATES.CNY, timestamp: now, source: 'fallback' },
-    XAU: { symbol: 'XAU', price: FALLBACK_COMMODITY_PRICES.XAU, timestamp: now, source: 'fallback' },
-    OIL: { symbol: 'OIL', price: FALLBACK_COMMODITY_PRICES.OIL, timestamp: now, source: 'fallback' },
-    COPPER: { symbol: 'COPPER', price: FALLBACK_COMMODITY_PRICES.COPPER, timestamp: now, source: 'fallback' },
-    WHEAT: { symbol: 'WHEAT', price: FALLBACK_COMMODITY_PRICES.WHEAT, timestamp: now, source: 'fallback' },
-  };
 }
 
 // ============================================================================
@@ -449,57 +473,70 @@ function getEQXBaseDivisor(): number {
 }
 
 /**
+ * Fallback exchange rates vs USD (used for basket normalization)
+ * Last updated: December 2025
+ */
+const FALLBACK_EXCHANGE_RATES = {
+  EURUSD: 1.08,    // EUR/USD
+  GBPUSD: 1.27,    // GBP/USD
+  USDJPY: 149.5,   // USD/JPY
+  USDCNH: 7.24,    // USD/CNH (CNY offshore)
+  USDUSD: 1.0,
+} as const;
+
+/**
+ * Fallback commodity prices
+ * Last updated: December 2025
+ */
+const FALLBACK_COMMODITY_PRICES = {
+  XAUUSD: 2650.00,   // Gold per oz
+  USOILSPOT: 75.00,  // WTI crude per barrel
+} as const;
+
+/**
  * Calculates initial basket value for normalization
+ * Uses fallback prices to establish baseline
  */
 function calculateInitialBasketValue(): number {
-  // Using fallback prices to establish baseline
-  // The formula normalizes so that initial EQX ≈ 1.0 USD
-  
-  // Currency contribution (prices in USD per unit)
+  // Currency contribution (7-component basket)
   const currencyValue = 
-    EQX_BASKET_WEIGHTS.USD * 1.0 +        // USD/USD = 1
-    EQX_BASKET_WEIGHTS.EUR * FALLBACK_EXCHANGE_RATES.EUR +
-    EQX_BASKET_WEIGHTS.CNY * FALLBACK_EXCHANGE_RATES.CNY +
-    EQX_BASKET_WEIGHTS.JPY * FALLBACK_EXCHANGE_RATES.JPY +
-    EQX_BASKET_WEIGHTS.GBP * FALLBACK_EXCHANGE_RATES.GBP;
+    EQX_BASKET_WEIGHTS.USDUSD * 1.0 +  // USD/USD = 1
+    EQX_BASKET_WEIGHTS.USDEUR * (1.0 / FALLBACK_EXCHANGE_RATES.EURUSD) +
+    EQX_BASKET_WEIGHTS.USDCNY * FALLBACK_EXCHANGE_RATES.USDCNH +
+    EQX_BASKET_WEIGHTS.USDJPY * FALLBACK_EXCHANGE_RATES.USDJPY +
+    EQX_BASKET_WEIGHTS.USDGBP * (1.0 / FALLBACK_EXCHANGE_RATES.GBPUSD);
   
   // Gold contribution (normalized per $1000 of gold)
-  const goldValue = EQX_BASKET_WEIGHTS.XAU * (FALLBACK_COMMODITY_PRICES.XAU / 1000);
+  const goldValue = EQX_BASKET_WEIGHTS.XAUUSD * (FALLBACK_COMMODITY_PRICES.XAUUSD / 1000);
   
-  // Commodity contribution (normalized)
-  const commodityValue = 
-    EQX_BASKET_WEIGHTS.OIL * (FALLBACK_COMMODITY_PRICES.OIL / 100) +
-    EQX_BASKET_WEIGHTS.COPPER * FALLBACK_COMMODITY_PRICES.COPPER +
-    EQX_BASKET_WEIGHTS.WHEAT * FALLBACK_COMMODITY_PRICES.WHEAT;
+  // Oil contribution (normalized per $100 of oil)
+  const oilValue = EQX_BASKET_WEIGHTS.OIL * (FALLBACK_COMMODITY_PRICES.USOILSPOT / 100);
   
-  return currencyValue + goldValue + commodityValue;
+  return currencyValue + goldValue + oilValue;
 }
 
 /**
- * Calculates the EQX basket value from asset prices
+ * Calculates EQX value from asset prices
  */
 function calculateEQXValue(prices: Record<string, AssetPrice>): {
   eqxValue: number;
-  breakdown: { currencyContribution: number; goldContribution: number; commodityContribution: number };
+  breakdown: { currencyContribution: number; goldContribution: number; oilContribution: number };
 } {
   // Currency contribution (value relative to USD)
   const currencyContribution = 
-    EQX_BASKET_WEIGHTS.USD * prices.USD.price +
-    EQX_BASKET_WEIGHTS.EUR * prices.EUR.price +
-    EQX_BASKET_WEIGHTS.CNY * prices.CNY.price +
-    EQX_BASKET_WEIGHTS.JPY * prices.JPY.price +
-    EQX_BASKET_WEIGHTS.GBP * prices.GBP.price;
+    EQX_BASKET_WEIGHTS.USDUSD * prices.USDUSD.price +
+    EQX_BASKET_WEIGHTS.USDEUR * prices.USDEUR.price +
+    EQX_BASKET_WEIGHTS.USDCNY * prices.USDCNY.price +
+    EQX_BASKET_WEIGHTS.USDJPY * prices.USDJPY.price +
+    EQX_BASKET_WEIGHTS.USDGBP * prices.USDGBP.price;
   
   // Gold contribution (normalized per $1000 of gold)
-  const goldContribution = EQX_BASKET_WEIGHTS.XAU * (prices.XAU.price / 1000);
+  const goldContribution = EQX_BASKET_WEIGHTS.XAUUSD * (prices.XAUUSD.price / 1000);
   
-  // Commodity contribution (normalized)
-  const commodityContribution = 
-    EQX_BASKET_WEIGHTS.OIL * (prices.OIL.price / 100) +
-    EQX_BASKET_WEIGHTS.COPPER * prices.COPPER.price +
-    EQX_BASKET_WEIGHTS.WHEAT * prices.WHEAT.price;
+  // Oil contribution (normalized per $100 of oil)
+  const oilContribution = EQX_BASKET_WEIGHTS.OIL * (prices.OIL.price / 100);
   
-  const totalValue = currencyContribution + goldContribution + commodityContribution;
+  const totalValue = currencyContribution + goldContribution + oilContribution;
   
   // Normalize to get EQX value (1 EQX = this many USD)
   // EQX value increases when basket value increases relative to base
@@ -510,18 +547,20 @@ function calculateEQXValue(prices: Record<string, AssetPrice>): {
     breakdown: {
       currencyContribution: currencyContribution / totalValue,
       goldContribution: goldContribution / totalValue,
-      commodityContribution: commodityContribution / totalValue,
+      oilContribution: oilContribution / totalValue,
     },
   };
 }
 
 // ============================================================================
-// Main API Functions
+// Main EQX Price Fetching
 // ============================================================================
 
 /**
  * Fetches the current EQX price data
- * Uses Pyth Network first, falls back to CoinGecko, then hardcoded values
+ * Primary: On-chain oracle (if fresh < 8 hours)
+ * Fallback: Hermes API
+ * Error: Throws if both fail
  */
 export async function getEQXPriceData(): Promise<EQXPriceData> {
   // Check cache first
@@ -530,94 +569,109 @@ export async function getEQXPriceData(): Promise<EQXPriceData> {
     return cachedData;
   }
 
-  let prices: Record<string, AssetPrice> | null = null;
-  let source: 'pyth' | 'coingecko' | 'fallback' = 'fallback';
-
-  // Try Pyth Network first
-  prices = await fetchPythPrices();
-  if (prices) {
-    source = 'pyth';
-  } else {
-    // Fall back to CoinGecko
-    prices = await fetchCoinGeckoPrices();
-    if (prices) {
-      source = 'coingecko';
-    } else {
-      // Use hardcoded fallback
-      prices = getFallbackPrices();
-      source = 'fallback';
+  // Try on-chain oracle first
+  try {
+    const oracleData = await fetchOnChainEqxOracle();
+    
+    if (oracleData && !isOracleStale(oracleData.lastUpdated)) {
+      // On-chain oracle is fresh - use it
+      console.log('[EQX Oracle] Using on-chain oracle (fresh)');
+      
+      // Return as-is with source 'onchain'
+      const priceData: EQXPriceData = {
+        eqxValue: oracleData.eqxValue,
+        assetPrices: {}, // On-chain oracle provides final EQX value only
+        lastUpdated: oracleData.lastUpdated * 1000, // Convert to ms
+        source: 'onchain',
+        breakdown: {
+          currencyContribution: 0.57, // Approximate based on weights
+          goldContribution: 0.35,
+          oilContribution: 0.08,
+        },
+      };
+      
+      // Cache the result
+      setCachedData(priceData);
+      return priceData;
+    } else if (oracleData) {
+      console.log(`[EQX Oracle] On-chain oracle is stale (>8 hours old), falling back to Hermes`);
     }
+  } catch (error: any) {
+    console.warn('[EQX Oracle] On-chain oracle read failed, falling back to Hermes:', error.message);
   }
-
-  const { eqxValue, breakdown } = calculateEQXValue(prices);
   
-  const priceData: EQXPriceData = {
-    eqxValue,
-    assetPrices: prices,
-    lastUpdated: Date.now(),
-    source,
-    breakdown,
-  };
+  // Fall back to Hermes
+  const assetPrices = await fetchHermesPrices();
+  
+  if (assetPrices) {
+    console.log('[EQX Oracle] Using Hermes fallback');
+    const { eqxValue, breakdown } = calculateEQXValue(assetPrices);
+  
+    const priceData: EQXPriceData = {
+      eqxValue,
+      assetPrices,
+      lastUpdated: Date.now(),
+      source: 'hermes',
+      breakdown,
+    };
+    
+    // Cache the result
+    setCachedData(priceData);
+    return priceData;
+  }
+  
+  // Both sources failed - THROW ERROR (strict failure mode)
+  throw new Error('EQX price fetch failed: both on-chain oracle and Hermes API unavailable');
+}
 
-  // Cache the result
-  setCachedData(priceData);
+// ============================================================================
+// Currency Conversion Utilities
+// ============================================================================
 
-  return priceData;
+/**
+ * Converts USD price to EQX amount
+ */
+export async function convertUSDToEQX(usdAmount: number): Promise<number> {
+  const priceData = await getEQXPriceData();
+  return usdAmount / priceData.eqxValue;
 }
 
 /**
- * Converts an EQUA price (in USD) to EQX
- * @param equaPriceUSD - The EQUA price in USD
- * @returns The EQUA price in EQX
+ * Converts EQX amount to USD price
  */
-export async function convertUSDToEQX(equaPriceUSD: number): Promise<number> {
-  const eqxData = await getEQXPriceData();
-  // EQX value represents how many USD 1 EQX is worth
-  // So to convert USD to EQX: USD / eqxValue
-  return equaPriceUSD / eqxData.eqxValue;
+export async function convertEQXToUSD(eqxAmount: number): Promise<number> {
+  const priceData = await getEQXPriceData();
+  return eqxAmount * priceData.eqxValue;
 }
 
-/**
- * Converts an EQUA price in EQX to USD
- * @param equaPriceEQX - The EQUA price in EQX
- * @returns The EQUA price in USD
- */
-export async function convertEQXToUSD(equaPriceEQX: number): Promise<number> {
-  const eqxData = await getEQXPriceData();
-  return equaPriceEQX * eqxData.eqxValue;
-}
-
-/**
- * Gets the current EQUA price in multiple formats
- * @param equaPriceUSD - The EQUA price calculated from the appreciation formula (in USD)
- * @returns Object with EQX, USD, and local currency values
- */
 export interface MultiFormatEquaPrice {
-  eqx: number;           // Price in EQX
-  usd: number;           // Price in USD
+  usd: number;               // Price in USD
+  eqx: number;               // Price in EQX
   localCurrency: number; // Price in user's local currency
   localCurrencyCode: string;
   eqxValue: number;      // Current EQX index value (1 EQX = this many USD)
-  source: 'pyth' | 'coingecko' | 'fallback';
+  source: 'onchain' | 'hermes' | 'fallback';
 }
 
 /**
- * Gets EQUA price in all formats (EQX, USD, local currency)
+ * Gets EQUA price in multiple formats (USD, EQX, local currency)
  */
 export async function getEquaPriceMultiFormat(
-  equaPriceUSD: number,
-  localCurrencyCode: string,
-  exchangeRate: number
+  usdPrice: number,
+  localCurrencyCode: string = 'USD',
+  localCurrencyExchangeRate: number = 1.0
 ): Promise<MultiFormatEquaPrice> {
-  const eqxData = await getEQXPriceData();
+  const priceData = await getEQXPriceData();
+  const eqxPrice = usdPrice / priceData.eqxValue;
+  const localCurrencyPrice = usdPrice * localCurrencyExchangeRate;
   
   return {
-    eqx: equaPriceUSD / eqxData.eqxValue,
-    usd: equaPriceUSD,
-    localCurrency: equaPriceUSD * exchangeRate,
+    usd: usdPrice,
+    eqx: eqxPrice,
+    localCurrency: localCurrencyPrice,
     localCurrencyCode,
-    eqxValue: eqxData.eqxValue,
-    source: eqxData.source,
+    eqxValue: priceData.eqxValue,
+    source: priceData.source,
   };
 }
 
@@ -625,25 +679,16 @@ export async function getEquaPriceMultiFormat(
  * Formats EQX price for display
  */
 export function formatEQXPrice(eqxPrice: number): string {
-  if (eqxPrice < 0.0001) {
-    return `${eqxPrice.toExponential(2)} EQX`;
-  }
-  if (eqxPrice < 1) {
-    return `${eqxPrice.toFixed(6)} EQX`;
-  }
-  if (eqxPrice < 1000) {
-    return `${eqxPrice.toFixed(4)} EQX`;
-  }
-  return `${eqxPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })} EQX`;
+  return eqxPrice.toFixed(6);
 }
 
 /**
- * Gets the breakdown of basket contributions
+ * Gets detailed basket breakdown for UI display
  */
 export async function getBasketBreakdown(): Promise<{
   currencies: { symbol: string; weight: number; contribution: number }[];
   gold: { symbol: string; weight: number; contribution: number }[];
-  commodities: { symbol: string; weight: number; contribution: number }[];
+  oil: { symbol: string; weight: number; contribution: number }[];
   totalValue: number;
 }> {
   const eqxData = await getEQXPriceData();
@@ -651,19 +696,17 @@ export async function getBasketBreakdown(): Promise<{
   // Use breakdown from actual EQX calculation for consistency
   return {
     currencies: [
-      { symbol: 'USD', weight: EQX_BASKET_WEIGHTS.USD * 100, contribution: EQX_BASKET_WEIGHTS.USD },
-      { symbol: 'EUR', weight: EQX_BASKET_WEIGHTS.EUR * 100, contribution: EQX_BASKET_WEIGHTS.EUR },
-      { symbol: 'CNY', weight: EQX_BASKET_WEIGHTS.CNY * 100, contribution: EQX_BASKET_WEIGHTS.CNY },
-      { symbol: 'JPY', weight: EQX_BASKET_WEIGHTS.JPY * 100, contribution: EQX_BASKET_WEIGHTS.JPY },
-      { symbol: 'GBP', weight: EQX_BASKET_WEIGHTS.GBP * 100, contribution: EQX_BASKET_WEIGHTS.GBP },
+      { symbol: 'USDUSD', weight: EQX_BASKET_WEIGHTS.USDUSD * 100, contribution: EQX_BASKET_WEIGHTS.USDUSD },
+      { symbol: 'USDEUR', weight: EQX_BASKET_WEIGHTS.USDEUR * 100, contribution: EQX_BASKET_WEIGHTS.USDEUR },
+      { symbol: 'USDCNY', weight: EQX_BASKET_WEIGHTS.USDCNY * 100, contribution: EQX_BASKET_WEIGHTS.USDCNY },
+      { symbol: 'USDJPY', weight: EQX_BASKET_WEIGHTS.USDJPY * 100, contribution: EQX_BASKET_WEIGHTS.USDJPY },
+      { symbol: 'USDGBP', weight: EQX_BASKET_WEIGHTS.USDGBP * 100, contribution: EQX_BASKET_WEIGHTS.USDGBP },
     ],
     gold: [
-      { symbol: 'XAU', weight: EQX_BASKET_WEIGHTS.XAU * 100, contribution: EQX_BASKET_WEIGHTS.XAU },
+      { symbol: 'XAUUSD', weight: EQX_BASKET_WEIGHTS.XAUUSD * 100, contribution: EQX_BASKET_WEIGHTS.XAUUSD },
     ],
-    commodities: [
+    oil: [
       { symbol: 'OIL', weight: EQX_BASKET_WEIGHTS.OIL * 100, contribution: EQX_BASKET_WEIGHTS.OIL },
-      { symbol: 'COPPER', weight: EQX_BASKET_WEIGHTS.COPPER * 100, contribution: EQX_BASKET_WEIGHTS.COPPER },
-      { symbol: 'WHEAT', weight: EQX_BASKET_WEIGHTS.WHEAT * 100, contribution: EQX_BASKET_WEIGHTS.WHEAT },
     ],
     totalValue: eqxData.eqxValue,
   };
@@ -673,11 +716,12 @@ export async function getBasketBreakdown(): Promise<{
 // Export for testing
 // ============================================================================
 export const _testing = {
-  fetchPythPrices,
-  fetchCoinGeckoPrices,
-  getFallbackPrices,
+  fetchOnChainEqxOracle,
+  fetchHermesPrices,
   calculateEQXValue,
   getCachedData,
   setCachedData,
   getEQXBaseDivisor,
+  isOracleStale,
+  getEqxOraclePDA,
 };
