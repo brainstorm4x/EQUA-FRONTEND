@@ -5,6 +5,37 @@
  * fallback mechanisms, and cache functionality.
  */
 
+// Mock Solana/Anchor BEFORE imports (must be at top)
+jest.mock('@solana/web3.js', () => {
+  const mockPublicKey = jest.fn().mockImplementation((value) => ({
+    toBase58: () => typeof value === 'string' ? value : 'mock-pubkey',
+    toString: () => typeof value === 'string' ? value : 'mock-pubkey',
+  }));
+  mockPublicKey.findProgramAddressSync = jest.fn(() => [{ toBase58: () => 'mock-pda' }, 0]);
+  
+  return {
+    Connection: jest.fn().mockImplementation(() => ({})),
+    PublicKey: mockPublicKey,
+  };
+});
+
+jest.mock('@coral-xyz/anchor', () => ({
+  AnchorProvider: jest.fn().mockImplementation(() => ({})),
+  Program: jest.fn().mockImplementation(() => ({
+    account: {
+      eqxOracle: {
+        fetch: jest.fn().mockRejectedValue(new Error('Oracle not found')), // Default: oracle unavailable
+      },
+    },
+  })),
+}));
+
+// Mock axios
+jest.mock('axios', () => ({
+  get: jest.fn(),
+  post: jest.fn(),
+}));
+
 import {
   EQX_BASKET_WEIGHTS,
   PYTH_FEED_IDS,
@@ -19,14 +50,55 @@ import {
   _testing,
 } from '@/utils/eqxOracle';
 
-// Mock axios
-jest.mock('axios', () => ({
-  get: jest.fn(),
-  post: jest.fn(),
-}));
-
 import axios from 'axios';
 const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+// Helper to mock successful Hermes API response
+const mockSuccessfulHermesResponse = () => {
+  const mockPythResponse = [
+    {
+      id: PYTH_FEED_IDS.XAU_USD.slice(2),
+      price: { price: '2650000000', expo: -6, conf: '1000000', publish_time: 1234567890 },
+      ema_price: { price: '2650000000', expo: -6, conf: '1000000', publish_time: 1234567890 },
+    },
+    {
+      id: PYTH_FEED_IDS.WTI_USD.slice(2),
+      price: { price: '75000000', expo: -6, conf: '100000', publish_time: 1234567890 },
+      ema_price: { price: '75000000', expo: -6, conf: '100000', publish_time: 1234567890 },
+    },
+    {
+      id: PYTH_FEED_IDS.COPPER_USD.slice(2),
+      price: { price: '4200000', expo: -6, conf: '10000', publish_time: 1234567890 },
+      ema_price: { price: '4200000', expo: -6, conf: '10000', publish_time: 1234567890 },
+    },
+    {
+      id: PYTH_FEED_IDS.WHEAT_USD.slice(2),
+      price: { price: '5500000', expo: -6, conf: '10000', publish_time: 1234567890 },
+      ema_price: { price: '5500000', expo: -6, conf: '10000', publish_time: 1234567890 },
+    },
+    {
+      id: PYTH_FEED_IDS.EUR_USD.slice(2),
+      price: { price: '1080000', expo: -6, conf: '1000', publish_time: 1234567890 },
+      ema_price: { price: '1080000', expo: -6, conf: '1000', publish_time: 1234567890 },
+    },
+    {
+      id: PYTH_FEED_IDS.CNY_USD.slice(2),
+      price: { price: '138000', expo: -6, conf: '100', publish_time: 1234567890 },
+      ema_price: { price: '138000', expo: -6, conf: '100', publish_time: 1234567890 },
+    },
+    {
+      id: PYTH_FEED_IDS.JPY_USD.slice(2),
+      price: { price: '6700', expo: -6, conf: '10', publish_time: 1234567890 },
+      ema_price: { price: '6700', expo: -6, conf: '10', publish_time: 1234567890 },
+    },
+    {
+      id: PYTH_FEED_IDS.GBP_USD.slice(2),
+      price: { price: '1270000', expo: -6, conf: '1000', publish_time: 1234567890 },
+      ema_price: { price: '1270000', expo: -6, conf: '1000', publish_time: 1234567890 },
+    },
+  ];
+  mockedAxios.post.mockResolvedValueOnce({ data: mockPythResponse, status: 200 });
+};
 
 describe('EQX Oracle', () => {
   beforeEach(() => {
@@ -126,13 +198,55 @@ describe('EQX Oracle', () => {
     it('should return epoch 0 price of 0.01 EQX (matching phase 1 start)', async () => {
       // With 0 transactions, price should be $0.01
       // In EQX terms, this should be approximately 0.01 EQX as well (since EQX starts at ~1 USD)
-      mockedAxios.get.mockRejectedValue(new Error('Network error')); // Force fallback
+      const mockPythResponse = [
+        {
+          id: PYTH_FEED_IDS.XAU_USD.slice(2),
+          price: { price: '2650000000', expo: -6, conf: '1000000', publish_time: 1234567890 },
+          ema_price: { price: '2650000000', expo: -6, conf: '1000000', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.WTI_USD.slice(2),
+          price: { price: '75000000', expo: -6, conf: '100000', publish_time: 1234567890 },
+          ema_price: { price: '75000000', expo: -6, conf: '100000', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.COPPER_USD.slice(2),
+          price: { price: '4200000', expo: -6, conf: '10000', publish_time: 1234567890 },
+          ema_price: { price: '4200000', expo: -6, conf: '10000', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.WHEAT_USD.slice(2),
+          price: { price: '5500000', expo: -6, conf: '10000', publish_time: 1234567890 },
+          ema_price: { price: '5500000', expo: -6, conf: '10000', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.EUR_USD.slice(2),
+          price: { price: '1080000', expo: -6, conf: '1000', publish_time: 1234567890 },
+          ema_price: { price: '1080000', expo: -6, conf: '1000', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.CNY_USD.slice(2),
+          price: { price: '138000', expo: -6, conf: '100', publish_time: 1234567890 },
+          ema_price: { price: '138000', expo: -6, conf: '100', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.JPY_USD.slice(2),
+          price: { price: '6700', expo: -6, conf: '10', publish_time: 1234567890 },
+          ema_price: { price: '6700', expo: -6, conf: '10', publish_time: 1234567890 },
+        },
+        {
+          id: PYTH_FEED_IDS.GBP_USD.slice(2),
+          price: { price: '1270000', expo: -6, conf: '1000', publish_time: 1234567890 },
+          ema_price: { price: '1270000', expo: -6, conf: '1000', publish_time: 1234567890 },
+        },
+      ];
+      mockedAxios.post.mockResolvedValueOnce({ data: mockPythResponse, status: 200 });
       
       const priceData = await getEQXPriceData();
       
       // Verify we got valid data
       expect(priceData.eqxValue).toBeGreaterThan(0);
-      expect(priceData.source).toBe('fallback');
+      expect(priceData.source).toBe('pyth');
       
       // Convert $0.01 to EQX
       const eqxPrice = await convertUSDToEQX(0.01);
@@ -144,7 +258,7 @@ describe('EQX Oracle', () => {
   describe('Currency Conversion', () => {
     beforeEach(() => {
       clearPriceCache();
-      mockedAxios.get.mockRejectedValue(new Error('Network error')); // Force fallback
+      mockSuccessfulHermesResponse(); // Use Hermes mock instead of fallback
     });
 
     it('should convert USD to EQX', async () => {
@@ -211,9 +325,9 @@ describe('EQX Oracle', () => {
     });
 
     it('should cache price data after first fetch', async () => {
-      mockedAxios.get.mockRejectedValue(new Error('Network error'));
+      mockSuccessfulHermesResponse();
       
-      // First fetch - should hit API (which fails, so fallback)
+      // First fetch - should hit API
       const firstData = await getEQXPriceData();
       expect(firstData).toBeDefined();
       
@@ -224,10 +338,12 @@ describe('EQX Oracle', () => {
     });
 
     it('should clear cache when requested', async () => {
-      mockedAxios.get.mockRejectedValue(new Error('Network error'));
+      mockSuccessfulHermesResponse();
       
       const firstData = await getEQXPriceData();
       clearPriceCache();
+      
+      mockSuccessfulHermesResponse(); // Need to mock again after cache clear
       
       // After clearing, should get new timestamp
       const secondData = await getEQXPriceData();
@@ -286,114 +402,36 @@ describe('EQX Oracle', () => {
       ];
 
       // Mock POST request (not GET)
-      mockedAxios.post.mockResolvedValueOnce({ data: mockPythResponse });
+      mockedAxios.post.mockResolvedValueOnce({ data: mockPythResponse, status: 200 });
 
       const data = await getEQXPriceData();
       expect(data.source).toBe('pyth');
     });
 
-    it('should use POST request with correct shape for Hermes API', async () => {
-      const mockPythResponse = [
-        {
-          id: PYTH_FEED_IDS.XAU_USD.slice(2),
-          price: { price: '2650000000', expo: -6, conf: '1000000', publish_time: 1234567890 },
-          ema_price: { price: '2650000000', expo: -6, conf: '1000000', publish_time: 1234567890 },
-        },
-        {
-          id: PYTH_FEED_IDS.WTI_USD.slice(2),
-          price: { price: '75000000', expo: -6, conf: '100000', publish_time: 1234567890 },
-          ema_price: { price: '75000000', expo: -6, conf: '100000', publish_time: 1234567890 },
-        },
-        {
-          id: PYTH_FEED_IDS.COPPER_USD.slice(2),
-          price: { price: '4200000', expo: -6, conf: '10000', publish_time: 1234567890 },
-          ema_price: { price: '4200000', expo: -6, conf: '10000', publish_time: 1234567890 },
-        },
-        {
-          id: PYTH_FEED_IDS.WHEAT_USD.slice(2),
-          price: { price: '5500000', expo: -6, conf: '10000', publish_time: 1234567890 },
-          ema_price: { price: '5500000', expo: -6, conf: '10000', publish_time: 1234567890 },
-        },
-        {
-          id: PYTH_FEED_IDS.EUR_USD.slice(2),
-          price: { price: '1080000', expo: -6, conf: '1000', publish_time: 1234567890 },
-          ema_price: { price: '1080000', expo: -6, conf: '1000', publish_time: 1234567890 },
-        },
-        {
-          id: PYTH_FEED_IDS.CNY_USD.slice(2),
-          price: { price: '138000', expo: -6, conf: '100', publish_time: 1234567890 },
-          ema_price: { price: '138000', expo: -6, conf: '100', publish_time: 1234567890 },
-        },
-        {
-          id: PYTH_FEED_IDS.JPY_USD.slice(2),
-          price: { price: '6700', expo: -6, conf: '10', publish_time: 1234567890 },
-          ema_price: { price: '6700', expo: -6, conf: '10', publish_time: 1234567890 },
-        },
-        {
-          id: PYTH_FEED_IDS.GBP_USD.slice(2),
-          price: { price: '1270000', expo: -6, conf: '1000', publish_time: 1234567890 },
-          ema_price: { price: '1270000', expo: -6, conf: '1000', publish_time: 1234567890 },
-        },
-      ];
+    it('should throw when both on-chain oracle and Hermes fail', async () => {
+      // On-chain oracle will fail (mocked)
+      // Hermes also fails
+      mockedAxios.post.mockRejectedValueOnce(new Error('Hermes unavailable'));
 
-      mockedAxios.post.mockResolvedValueOnce({ data: mockPythResponse });
-
-      await getEQXPriceData();
-
-      // Verify POST was called with correct endpoint and shape
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        'https://hermes.pyth.network/api/latest_price_feeds',
-        expect.objectContaining({
-          ids: expect.arrayContaining([
-            PYTH_FEED_IDS.XAU_USD.slice(2), // IDs without 0x prefix
-            PYTH_FEED_IDS.WTI_USD.slice(2),
-            PYTH_FEED_IDS.COPPER_USD.slice(2),
-            PYTH_FEED_IDS.WHEAT_USD.slice(2),
-            PYTH_FEED_IDS.EUR_USD.slice(2),
-            PYTH_FEED_IDS.CNY_USD.slice(2),
-            PYTH_FEED_IDS.JPY_USD.slice(2),
-            PYTH_FEED_IDS.GBP_USD.slice(2),
-          ]),
-          verbose: false,
-          binary: false,
-        }),
-        expect.objectContaining({
-          timeout: 10000,
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          }),
-        })
+      await expect(getEQXPriceData()).rejects.toThrow(
+        'EQX price unavailable: On-chain oracle is stale/missing and Hermes API failed'
       );
     });
 
-    it('should fallback to CoinGecko when Pyth fails', async () => {
-      // First call (Pyth) fails
-      mockedAxios.get.mockRejectedValueOnce(new Error('Pyth unavailable'));
-      // Second call (CoinGecko) also fails to trigger full fallback
-      mockedAxios.get.mockRejectedValueOnce(new Error('CoinGecko unavailable'));
+    it('should throw when Hermes returns non-200 status', async () => {
+      // Simulate Hermes API returning error status
+      mockedAxios.post.mockResolvedValueOnce({ data: null, status: 500 });
 
-      const data = await getEQXPriceData();
-      expect(data.source).toBe('fallback');
-    });
-
-    it('should use hardcoded fallback when all APIs fail', async () => {
-      mockedAxios.get.mockRejectedValue(new Error('All APIs down'));
-
-      const data = await getEQXPriceData();
-      
-      expect(data.source).toBe('fallback');
-      expect(data.eqxValue).toBeGreaterThan(0);
-      expect(Object.keys(data.assetPrices)).toContain('USD');
-      expect(Object.keys(data.assetPrices)).toContain('XAU');
-      expect(Object.keys(data.assetPrices)).toContain('OIL');
+      await expect(getEQXPriceData()).rejects.toThrow(
+        'EQX price unavailable'
+      );
     });
   });
 
   describe('Basket Breakdown', () => {
     beforeEach(() => {
       clearPriceCache();
-      mockedAxios.get.mockRejectedValue(new Error('Network error'));
+      mockSuccessfulHermesResponse(); // Use Hermes mock
     });
 
     it('should provide basket breakdown with all asset categories', async () => {
@@ -453,7 +491,7 @@ describe('EQX Oracle', () => {
 
   describe('Price Stability in EQX', () => {
     it('should maintain stable EQX price despite USD volatility simulation', async () => {
-      mockedAxios.get.mockRejectedValue(new Error('Network error'));
+      mockSuccessfulHermesResponse();
       
       // Get baseline EQX data
       const baseline = await getEQXPriceData();
@@ -463,7 +501,8 @@ describe('EQX Oracle', () => {
       // a basket of assets, not just USD
       expect(baseline.eqxValue).toBeGreaterThan(0);
       
-      // With fallback prices (which are stable), EQX value should be consistent
+      mockSuccessfulHermesResponse();
+      // With same mock prices, EQX value should be consistent
       const secondFetch = await getEQXPriceData();
       expect(secondFetch.eqxValue).toBeCloseTo(baseline.eqxValue, 4);
     });

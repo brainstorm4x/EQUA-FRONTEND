@@ -3,7 +3,7 @@
  * 
  * The EQX (EQUA Index) is a weighted basket of currencies, gold, and commodities
  * designed to hedge against USD value erosion. This utility fetches real-time prices
- * from Pyth Network on Solana with fallback to CoinGecko API.
+ * from on-chain EQX oracle first, with Hermes (Pyth Network) fallback.
  * 
  * Basket Composition:
  * - Currencies (50%): USD 20%, EUR 15%, CNY 8%, JPY 4%, GBP 3%
@@ -11,13 +11,26 @@
  * - Commodities (20%): OIL 7%, COPPER 7%, WHEAT 6%
  * 
  * Features:
- * - Pyth Network integration for real-time oracle prices
+ * - On-chain EQX oracle (primary source)
+ * - Hermes (Pyth Network) fallback for component prices
  * - 5-minute TTL cache for performance
- * - CoinGecko fallback for resilience
+ * - Staleness validation (8-hour max age)
  * - EQX to USD and local currency conversion
+ * - STRICT failure mode: throws when both oracle and Hermes fail
  */
 
 import axios from 'axios';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { AnchorProvider, Program } from '@coral-xyz/anchor';
+import equaTokenIdl from '../../public/idl/equa_token.json';
+
+// RPC Endpoint (sourced from NEXT_PUBLIC_RPC_ENDPOINT)
+const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT || process.env.NEXT_PUBLIC_SOLANA_RPC_HOST || 'https://api.devnet.solana.com';
+
+// Program ID
+const PROGRAM_ID = new PublicKey(
+  process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID || 'GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C'
+);
 
 // ============================================================================
 // Configuration
@@ -151,6 +164,81 @@ export function clearPriceCache(): void {
  */
 export function getCacheTTL(): number {
   return CACHE_TTL_MS;
+}
+
+// ============================================================================
+// On-Chain EQX Oracle Integration
+// ============================================================================
+
+// EQX Oracle PDA seed (must match Rust backend)
+const EQX_ORACLE_SEED = 'eqx-oracle';
+
+// Staleness threshold: 8 hours in seconds
+const MAX_ORACLE_AGE_SECONDS = 8 * 60 * 60;
+
+/**
+ * On-chain EQX Oracle data structure
+ */
+export interface OnChainEqxOracle {
+  price: number; // u64 in 1e8 precision
+  lastUpdated: number; // i64 timestamp
+  lastUpdatedSlot: number; // u64
+  componentPricesHash: Uint8Array; // [u8; 32]
+  weightsHash: Uint8Array; // [u8; 32]
+  authority: PublicKey;
+  version: number; // u32
+}
+
+/**
+ * Fetches EQX price from on-chain oracle (IDL-grounded)
+ * Returns null if oracle is missing, stale, or unreadable
+ */
+async function fetchOnChainEqxOracle(): Promise<number | null> {
+  try {
+    // Create connection using RPC_ENDPOINT from constants
+    const connection = new Connection(RPC_ENDPOINT, 'confirmed');
+    
+    // Derive EQX Oracle PDA using seed "eqx-oracle"
+    const [oraclePda] = PublicKey.findProgramAddressSync(
+      [Buffer.from(EQX_ORACLE_SEED)],
+      PROGRAM_ID
+    );
+    
+    // Create a minimal provider (no wallet needed for reading)
+    const provider = new AnchorProvider(
+      connection,
+      {} as any, // Wallet not needed for read operations
+      { commitment: 'confirmed' }
+    );
+    
+    // Load program with IDL
+    const program = new Program(equaTokenIdl as any, provider);
+    
+    // Fetch oracle account using Anchor's type-safe method
+    const oracleAccount = await program.account.eqxOracle.fetch(oraclePda);
+    
+    // Extract price and lastUpdated (Anchor deserializes automatically)
+    const price = (oracleAccount.price as any).toNumber(); // u64 as BN
+    const lastUpdated = (oracleAccount.lastUpdated as any).toNumber(); // i64 as BN
+    
+    // Check staleness (8-hour threshold)
+    const now = Math.floor(Date.now() / 1000); // Current time in seconds
+    const age = now - lastUpdated;
+    
+    if (age > MAX_ORACLE_AGE_SECONDS) {
+      console.warn(`[EQX Oracle] On-chain oracle is stale (${age}s old, max ${MAX_ORACLE_AGE_SECONDS}s)`);
+      return null;
+    }
+    
+    // Compute eqxValue = price / 1e8
+    const eqxValue = price / 1e8;
+    
+    console.log(`[EQX Oracle] On-chain oracle: ${eqxValue} (age: ${age}s)`);
+    return eqxValue;
+  } catch (error: any) {
+    console.warn('[EQX Oracle] Failed to fetch on-chain oracle:', error.message);
+    return null;
+  }
 }
 
 // ============================================================================
@@ -521,7 +609,15 @@ function calculateEQXValue(prices: Record<string, AssetPrice>): {
 
 /**
  * Fetches the current EQX price data
- * Uses Pyth Network first, falls back to CoinGecko, then hardcoded values
+ * 
+ * Data Source Priority:
+ * 1. On-chain EQX oracle (if available and not stale)
+ * 2. Hermes API for component prices → compute EQX
+ * 
+ * STRICT FAILURE MODE:
+ * - If on-chain oracle is unavailable/stale AND Hermes fails, this function THROWS
+ * - Callers must handle errors and show fallback UI values
+ * - No internal fallback to hardcoded prices
  */
 export async function getEQXPriceData(): Promise<EQXPriceData> {
   // Check cache first
@@ -530,39 +626,53 @@ export async function getEQXPriceData(): Promise<EQXPriceData> {
     return cachedData;
   }
 
-  let prices: Record<string, AssetPrice> | null = null;
-  let source: 'pyth' | 'coingecko' | 'fallback' = 'fallback';
+  // Try on-chain oracle first
+  const onChainEqxValue = await fetchOnChainEqxOracle();
+  if (onChainEqxValue !== null) {
+    // On-chain oracle is available and fresh
+    // Use fallback prices for breakdown (oracle only stores final EQX value)
+    const fallbackPrices = getFallbackPrices();
+    const { breakdown } = calculateEQXValue(fallbackPrices);
+    
+    const priceData: EQXPriceData = {
+      eqxValue: onChainEqxValue,
+      assetPrices: fallbackPrices,
+      lastUpdated: Date.now(),
+      source: 'pyth', // Mark as 'pyth' since oracle is updated from Pyth data
+      breakdown,
+    };
 
-  // Try Pyth Network first
-  prices = await fetchPythPrices();
-  if (prices) {
-    source = 'pyth';
-  } else {
-    // Fall back to CoinGecko
-    prices = await fetchCoinGeckoPrices();
-    if (prices) {
-      source = 'coingecko';
-    } else {
-      // Use hardcoded fallback
-      prices = getFallbackPrices();
-      source = 'fallback';
-    }
+    // Cache the result
+    setCachedData(priceData);
+    return priceData;
   }
 
-  const { eqxValue, breakdown } = calculateEQXValue(prices);
-  
-  const priceData: EQXPriceData = {
-    eqxValue,
-    assetPrices: prices,
-    lastUpdated: Date.now(),
-    source,
-    breakdown,
-  };
+  // On-chain oracle unavailable or stale - try Hermes fallback
+  let prices: Record<string, AssetPrice> | null = null;
 
-  // Cache the result
-  setCachedData(priceData);
+  // Try Pyth Network (Hermes API)
+  prices = await fetchPythPrices();
+  if (prices) {
+    const { eqxValue, breakdown } = calculateEQXValue(prices);
+    
+    const priceData: EQXPriceData = {
+      eqxValue,
+      assetPrices: prices,
+      lastUpdated: Date.now(),
+      source: 'pyth',
+      breakdown,
+    };
 
-  return priceData;
+    // Cache the result
+    setCachedData(priceData);
+    return priceData;
+  }
+
+  // Both on-chain oracle and Hermes failed - THROW ERROR
+  throw new Error(
+    'EQX price unavailable: On-chain oracle is stale/missing and Hermes API failed. ' +
+    'Cannot compute EQX price without live data.'
+  );
 }
 
 /**
@@ -680,4 +790,5 @@ export const _testing = {
   getCachedData,
   setCachedData,
   getEQXBaseDivisor,
+  fetchOnChainEqxOracle,
 };
