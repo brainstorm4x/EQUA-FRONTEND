@@ -1,13 +1,13 @@
 /**
  * Tests for EQX Oracle - EQUA Index Price Feed
  * 
- * Tests Pyth connection, price calculations, currency conversions,
- * fallback mechanisms, and cache functionality.
+ * Tests on-chain oracle, Hermes fallback, price calculations, currency conversions,
+ * and cache functionality.
  */
 
 import {
   EQX_BASKET_WEIGHTS,
-  PYTH_FEED_IDS,
+  HERMES_FEED_IDS,
   getEQXPriceData,
   convertUSDToEQX,
   convertEQXToUSD,
@@ -19,14 +19,44 @@ import {
   _testing,
 } from '@/utils/eqxOracle';
 
-// Mock axios
+// Mock axios for Hermes API calls
 jest.mock('axios', () => ({
-  get: jest.fn(),
   post: jest.fn(),
 }));
 
+// Mock Solana web3.js Connection
+jest.mock('@solana/web3.js', () => {
+  const actual = jest.requireActual('@solana/web3.js');
+  return {
+    ...actual,
+    Connection: jest.fn().mockImplementation(() => ({
+      getAccountInfo: jest.fn(),
+    })),
+  };
+});
+
+// Mock Anchor
+jest.mock('@coral-xyz/anchor', () => {
+  const actual = jest.requireActual('@coral-xyz/anchor');
+  return {
+    ...actual,
+    AnchorProvider: jest.fn(),
+    Program: jest.fn().mockImplementation(() => ({
+      account: {
+        eqxOracle: {
+          fetch: jest.fn(),
+        },
+      },
+    })),
+  };
+});
+
 import axios from 'axios';
+import { Connection } from '@solana/web3.js';
+import { Program } from '@coral-xyz/anchor';
 const mockedAxios = axios as jest.Mocked<typeof axios>;
+const MockedConnection = Connection as jest.MockedClass<typeof Connection>;
+const MockedProgram = Program as jest.MockedClass<typeof Program>;
 
 describe('EQX Oracle', () => {
   beforeEach(() => {
@@ -34,45 +64,47 @@ describe('EQX Oracle', () => {
     jest.clearAllMocks();
   });
 
-  describe('Basket Weights', () => {
+  describe('Basket Weights (7-Component)', () => {
     it('should have basket weights that sum to 1 (100%)', () => {
       const totalWeight = Object.values(EQX_BASKET_WEIGHTS).reduce((sum, w) => sum + w, 0);
       expect(totalWeight).toBeCloseTo(1.0, 4);
     });
 
-    it('should have currencies at 50%', () => {
+    it('should have currencies at 57%', () => {
       const currencyWeight = 
-        EQX_BASKET_WEIGHTS.USD +
-        EQX_BASKET_WEIGHTS.EUR +
-        EQX_BASKET_WEIGHTS.CNY +
-        EQX_BASKET_WEIGHTS.JPY +
-        EQX_BASKET_WEIGHTS.GBP;
-      expect(currencyWeight).toBeCloseTo(0.50, 4);
+        EQX_BASKET_WEIGHTS.USDUSD +
+        EQX_BASKET_WEIGHTS.USDEUR +
+        EQX_BASKET_WEIGHTS.USDCNY +
+        EQX_BASKET_WEIGHTS.USDJPY +
+        EQX_BASKET_WEIGHTS.USDGBP;
+      expect(currencyWeight).toBeCloseTo(0.57, 4);
     });
 
-    it('should have gold at 30%', () => {
-      expect(EQX_BASKET_WEIGHTS.XAU).toBe(0.30);
+    it('should have gold at 35%', () => {
+      expect(EQX_BASKET_WEIGHTS.XAUUSD).toBe(0.35);
     });
 
-    it('should have commodities at 20%', () => {
-      const commodityWeight = 
-        EQX_BASKET_WEIGHTS.OIL +
-        EQX_BASKET_WEIGHTS.COPPER +
-        EQX_BASKET_WEIGHTS.WHEAT;
-      expect(commodityWeight).toBeCloseTo(0.20, 4);
+    it('should have oil at 8%', () => {
+      expect(EQX_BASKET_WEIGHTS.OIL).toBe(0.08);
     });
 
     it('should have correct individual weights', () => {
-      expect(EQX_BASKET_WEIGHTS.USD).toBe(0.20);
-      expect(EQX_BASKET_WEIGHTS.EUR).toBe(0.15);
-      expect(EQX_BASKET_WEIGHTS.CNY).toBe(0.08);
-      expect(EQX_BASKET_WEIGHTS.JPY).toBe(0.04);
-      expect(EQX_BASKET_WEIGHTS.GBP).toBe(0.03);
-      expect(EQX_BASKET_WEIGHTS.OIL).toBe(0.07);
-      expect(EQX_BASKET_WEIGHTS.COPPER).toBe(0.07);
-      expect(EQX_BASKET_WEIGHTS.WHEAT).toBe(0.06);
+      expect(EQX_BASKET_WEIGHTS.USDUSD).toBe(0.23);
+      expect(EQX_BASKET_WEIGHTS.USDEUR).toBe(0.17);
+      expect(EQX_BASKET_WEIGHTS.USDCNY).toBe(0.09);
+      expect(EQX_BASKET_WEIGHTS.USDJPY).toBe(0.05);
+      expect(EQX_BASKET_WEIGHTS.USDGBP).toBe(0.03);
+      expect(EQX_BASKET_WEIGHTS.XAUUSD).toBe(0.35);
+      expect(EQX_BASKET_WEIGHTS.OIL).toBe(0.08);
+    });
+
+    it('should not have COPPER or WHEAT', () => {
+      expect((EQX_BASKET_WEIGHTS as any).COPPER).toBeUndefined();
+      expect((EQX_BASKET_WEIGHTS as any).WHEAT).toBeUndefined();
     });
   });
+
+  describe('Hermes Feed IDs', () => {
 
   describe('Pyth Feed IDs', () => {
     it('should have all required feed IDs', () => {
@@ -377,16 +409,22 @@ describe('EQX Oracle', () => {
       expect(data.source).toBe('fallback');
     });
 
-    it('should use hardcoded fallback when all APIs fail', async () => {
-      mockedAxios.get.mockRejectedValue(new Error('All APIs down'));
+    it('should throw error when both on-chain and Hermes fail (strict failure mode)', async () => {
+      // Mock on-chain oracle failure
+      const mockProgram = MockedProgram.mock.instances[0];
+      if (mockProgram) {
+        (mockProgram.account.eqxOracle.fetch as jest.Mock).mockRejectedValue(
+          new Error('Oracle account not found')
+        );
+      }
 
-      const data = await getEQXPriceData();
-      
-      expect(data.source).toBe('fallback');
-      expect(data.eqxValue).toBeGreaterThan(0);
-      expect(Object.keys(data.assetPrices)).toContain('USD');
-      expect(Object.keys(data.assetPrices)).toContain('XAU');
-      expect(Object.keys(data.assetPrices)).toContain('OIL');
+      // Mock Hermes failure
+      mockedAxios.post.mockRejectedValue(new Error('All APIs down'));
+
+      // Should throw error in strict failure mode
+      await expect(getEQXPriceData()).rejects.toThrow(
+        'EQX price fetch failed: both on-chain oracle and Hermes API unavailable'
+      );
     });
   });
 
