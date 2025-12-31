@@ -362,10 +362,10 @@ export default function MintPage() {
   // Check registration status on mount and when wallet changes
   useEffect(() => {
     async function checkRegistrationForMintPage() {
-      // No wallet connected → CAN'T register or mint → redirect to home (OK)
+      // ✅ If no wallet, just return early - let the UI show the connect screen
       if (!publicKey) {
-        console.log('💡 No wallet connected, redirecting to home');
-        router.push('/');
+        console.log('💡 No wallet connected, showing wallet connect screen');
+        setIsCheckingRegistration(false); // Stop the loading state
         return;
       }
       
