@@ -931,6 +931,68 @@ export function createTransferTokensInstruction(
 }
 
 /**
+ * Creates an unlock_tokens instruction
+ * Unlocks tokens after 4-year cliff vesting period (Tiers 1-3 only)
+ * 
+ * @param authority - User's wallet public key
+ * @param mint - EQUA mint PDA
+ * @returns TransactionInstruction ready to be added to a transaction
+ */
+export function createUnlockTokensInstruction(
+  authority: PublicKey,
+  mint: PublicKey,
+): TransactionInstruction {
+  // Import the helper functions
+  const { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } = require('@/utils/pda-helpers');
+  
+  // Derive PDAs
+  const [lockedTokenAccount] = getLockedTokenAccountPda(authority, PROGRAM_ID);
+  const lockedTokenPda = getLockedTokenPda(authority, PROGRAM_ID);
+  const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mint, TOKEN_PROGRAM_ID);
+  
+  // Get user's regular token account (ATA)
+  const { getAssociatedTokenAddressSync } = require('@solana/spl-token');
+  const userTokenAccount = getAssociatedTokenAddressSync(
+    mint,
+    authority,
+    false,
+    TOKEN_PROGRAM_ID
+  );
+  
+  // Instruction discriminator from IDL: [233, 35, 95, 159, 37, 185, 47, 88]
+  const discriminator = Buffer.from([233, 35, 95, 159, 37, 185, 47, 88]);
+  const data = discriminator; // No additional args
+  
+  // Build keys in exact order matching backend IDL (7 accounts)
+  // Order: locked_token_account, locked_token_ata, locked_token_pda,
+  //        user_token_account, mint, authority, token_program
+  const keys = [
+    { pubkey: lockedTokenAccount, isSigner: false, isWritable: true },   // 0. locked_token_account
+    { pubkey: lockedTokenAta, isSigner: false, isWritable: true },       // 1. locked_token_ata
+    { pubkey: lockedTokenPda, isSigner: false, isWritable: false },      // 2. locked_token_pda
+    { pubkey: userTokenAccount, isSigner: false, isWritable: true },     // 3. user_token_account
+    { pubkey: mint, isSigner: false, isWritable: true },                 // 4. mint
+    { pubkey: authority, isSigner: true, isWritable: false },            // 5. authority (MUST be signer)
+    { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },    // 6. token_program
+  ];
+
+  const instruction = new TransactionInstruction({
+    keys,
+    programId: PROGRAM_ID,
+    data,
+  });
+  
+  if (DEBUG_INSTRUCTIONS) {
+    console.log('🔧 Unlock Tokens Instruction account metas (7 accounts):');
+    instruction.keys.forEach((meta, idx) => {
+      console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
+    });
+  }
+
+  return instruction;
+}
+
+/**
  * Clear all cached RPC responses
  * Call this after mutations (registration, minting, transfers)
  */
