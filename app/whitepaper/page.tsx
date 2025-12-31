@@ -166,26 +166,26 @@ export default function WhitepaperPage() {
 
             {/* Part IV - Price Appreciation Logic */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part IV: Price Appreciation Logic—Compounding and Terminal Phases</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part IV: Price Appreciation Logic—9-Tier Compounding System</h2>
               
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Understanding the Compounding Phase</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA&apos;s price appreciation follows a structured, transparent mathematical model with two major periods: the <strong className="text-white">compounding phase</strong> and the <strong className="text-white">terminal phase</strong>.
+                EQUA&apos;s price appreciation follows a structured, transparent mathematical model with two major periods: the <strong className="text-white">compounding phase</strong> and the <strong className="text-white">linear phase</strong>.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                During the <strong className="text-white">compounding phase</strong> (Phases 1-4), EQUA&apos;s value grows exponentially based on transaction volume. Each epoch of transactions triggers a percentage increase that compounds on the previous value. This rewards early builders and provides steady growth during scaling.
+                During the <strong className="text-white">compounding phase</strong> (Tiers 1-8), EQUA&apos;s value grows exponentially based on transaction volume with a <strong className="text-white">constant 0.01% growth rate</strong>. Each epoch of transactions triggers this percentage increase that compounds on the previous value. This rewards early builders and provides steady, predictable growth during scaling.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 The compounding phase is <em>designed</em> to end. Infinite exponential growth would be unsustainable and eventually destructive. Instead, EQUA transitions to linear growth at a predictable point.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Terminal Phase: When Compounding Ends</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Linear Phase: When Compounding Ends</h3>
               <p className="text-purple-200 leading-relaxed">
-                When EQUA reaches <strong className="text-white">$200,000 in EQX terms</strong> (displayed as approximate USD), the system enters the <strong className="text-white">terminal phase</strong> (Phase 5). At this point:
+                When EQUA reaches <strong className="text-white">$500,000 in EQX terms</strong> (displayed as approximate USD), the system enters the <strong className="text-white">linear phase</strong> (Tier 9). At this point:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li>Compounding stops to prevent runaway appreciation</li>
-                <li>Growth becomes linear: $100 per epoch (1,000 transactions)</li>
+                <li>Growth becomes linear: $250 per epoch (1,000 transactions)</li>
                 <li>A monthly cap of $25,000 ensures stability</li>
                 <li>The system maintains sustainable, predictable growth indefinitely</li>
               </ul>
@@ -193,108 +193,188 @@ export default function WhitepaperPage() {
                 <strong className="text-white">This is the terminal price—the point where exponential growth ends and linear, capped growth begins.</strong>
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Five-Phase Model in Detail</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The 9-Tier Model in Detail</h3>
               <p className="text-purple-200 leading-relaxed">
-                Below is the complete journey from initial growth to perpetual sustainability:
+                Below is the complete journey from initial growth to perpetual sustainability. <strong className="text-white">All tiers use a constant 0.01% growth rate</strong>, providing predictable and transparent appreciation:
               </p>
 
-              {/* Phase 1 */}
+              {/* Tier 1 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-green-400 mb-3">Phase 1: Initial Growth (0.01 to 1 EQX, ~$0.01 to ~$1 USD)</h4>
+                <h4 className="text-lg font-bold text-green-400 mb-3">Tier 1: Foundation (0.01 to 0.1 EQX, ~$0.01 to ~$0.1 USD)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~4,605 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.1% per epoch (1 transaction)</p>
+                    <p><strong className="text-white">Duration:</strong> ~23,027 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1 transaction)</p>
                     <p><strong className="text-white">Starting Price:</strong> 0.01 EQX (~$0.01 USD)</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> 1 EQX (~$1 USD)</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 0.01 × (1.001)^epoch</p>
+                    <p><strong className="text-white">End Price:</strong> 0.1 EQX (~$0.1 USD)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 0.01 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Every single transaction counts. Rapid appreciation rewards the earliest believers and network builders.
+                  <strong className="text-white">Why This Mechanism?</strong> Every single transaction counts. Precise appreciation rewards the earliest believers and network builders.
                 </p>
               </div>
 
-              {/* Phase 2 */}
+              {/* Tier 2 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-teal-400 mb-3">Phase 2: Early Scaling (1 to 10 EQX, ~$1 to ~$10 USD)</h4>
+                <h4 className="text-lg font-bold text-teal-400 mb-3">Tier 2: Early Growth (0.1 to 1 EQX, ~$0.1 to ~$1 USD)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~23,030 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.1% per epoch (10 transactions)</p>
+                    <p><strong className="text-white">Duration:</strong> ~23,027 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1 transaction)</p>
+                    <p><strong className="text-white">Starting Price:</strong> 0.1 EQX (~$0.1 USD)</p>
+                  </div>
+                  <div>
+                    <p><strong className="text-white">End Price:</strong> 1 EQX (~$1 USD)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 0.1 × (1.0001)^epoch</p>
+                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
+                  </div>
+                </div>
+                <p className="text-purple-200 mt-4 text-sm">
+                  <strong className="text-white">Why This Mechanism?</strong> Constant growth rate maintains transparency and fairness as the network gains traction.
+                </p>
+              </div>
+
+              {/* Tier 3 */}
+              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
+                <h4 className="text-lg font-bold text-blue-400 mb-3">Tier 3: Network Scaling (1 to 10 EQX, ~$1 to ~$10 USD)</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
+                  <div>
+                    <p><strong className="text-white">Duration:</strong> ~230,270 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (10 transactions)</p>
                     <p><strong className="text-white">Starting Price:</strong> 1 EQX (~$1 USD)</p>
                   </div>
                   <div>
                     <p><strong className="text-white">End Price:</strong> 10 EQX (~$10 USD)</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 1 × (1.001)^epoch</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 1 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Growth rate stays strong as the network gains momentum. Larger epochs reflect growing transaction volume.
+                  <strong className="text-white">Why This Mechanism?</strong> Larger epochs reflect growing transaction volume. Constant growth rate ensures predictability.
                 </p>
               </div>
 
-              {/* Phase 3 */}
+              {/* Tier 4 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-blue-400 mb-3">Phase 3: Network Growth (10 to 100 EQX, ~$10 to ~$100 USD)</h4>
+                <h4 className="text-lg font-bold text-indigo-400 mb-3">Tier 4: Market Expansion (10 to 100 EQX, ~$10 to ~$100 USD)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~230,300 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.1% per epoch (100 transactions)</p>
+                    <p><strong className="text-white">Duration:</strong> ~230,270 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (10 transactions)</p>
                     <p><strong className="text-white">Starting Price:</strong> 10 EQX (~$10 USD)</p>
                   </div>
                   <div>
                     <p><strong className="text-white">End Price:</strong> 100 EQX (~$100 USD)</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 10 × (1.001)^epoch</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 10 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Network is becoming established. Compounding continues to reward all holders.
+                  <strong className="text-white">Why This Mechanism?</strong> Network is becoming established. Compounding continues to reward all holders equally.
                 </p>
               </div>
 
-              {/* Phase 4 */}
+              {/* Tier 5 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-indigo-400 mb-3">Phase 4: Mature Scaling (100 to 200,000 EQX, ~$100 to ~$200k USD)</h4>
+                <h4 className="text-lg font-bold text-violet-400 mb-3">Tier 5: Early Maturity (100 to 1,000 EQX, ~$100 to ~$1k USD)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~76,012,000 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
+                    <p><strong className="text-white">Duration:</strong> ~2,302,700 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (100 transactions)</p>
                     <p><strong className="text-white">Starting Price:</strong> 100 EQX (~$100 USD)</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> 200,000 EQX (~$200k USD)</p>
+                    <p><strong className="text-white">End Price:</strong> 1,000 EQX (~$1,000 USD)</p>
                     <p><strong className="text-white">Formula:</strong> Price = 100 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Slower growth rate prevents runaway appreciation while maintaining sustainable compounding.
+                  <strong className="text-white">Why This Mechanism?</strong> Even larger epochs reflect substantial transaction volume. Constant 0.01% rate ensures fairness.
                 </p>
               </div>
 
-              {/* Phase 5 */}
+              {/* Tier 6 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-purple-400 mb-3">Phase 5: Perpetual Sustainable Growth (200,000+ EQX, ~$200k+ USD)</h4>
+                <h4 className="text-lg font-bold text-pink-400 mb-3">Tier 6: Strong Adoption (1k to 10k EQX, ~$1k to ~$10k USD)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Start:</strong> After price reaches 200,000 EQX</p>
-                    <p><strong className="text-white">Mechanism:</strong> 100 EQX per epoch (1,000 transactions)</p>
+                    <p><strong className="text-white">Duration:</strong> ~2,302,700 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (100 transactions)</p>
+                    <p><strong className="text-white">Starting Price:</strong> 1,000 EQX (~$1,000 USD)</p>
+                  </div>
+                  <div>
+                    <p><strong className="text-white">End Price:</strong> 10,000 EQX (~$10,000 USD)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 1,000 × (1.0001)^epoch</p>
+                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
+                  </div>
+                </div>
+                <p className="text-purple-200 mt-4 text-sm">
+                  <strong className="text-white">Why This Mechanism?</strong> Sustained compounding rewards long-term holders. Constant rate maintains transparency.
+                </p>
+              </div>
+
+              {/* Tier 7 */}
+              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
+                <h4 className="text-lg font-bold text-orange-400 mb-3">Tier 7: Mass Market (10k to 100k EQX, ~$10k to ~$100k USD)</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
+                  <div>
+                    <p><strong className="text-white">Duration:</strong> ~23,027,002 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
+                    <p><strong className="text-white">Starting Price:</strong> 10,000 EQX (~$10,000 USD)</p>
+                  </div>
+                  <div>
+                    <p><strong className="text-white">End Price:</strong> 100,000 EQX (~$100,000 USD)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 10,000 × (1.0001)^epoch</p>
+                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
+                  </div>
+                </div>
+                <p className="text-purple-200 mt-4 text-sm">
+                  <strong className="text-white">Why This Mechanism?</strong> Large epoch sizes reflect massive transaction volume. Constant 0.01% ensures predictability at scale.
+                </p>
+              </div>
+
+              {/* Tier 8 */}
+              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
+                <h4 className="text-lg font-bold text-red-400 mb-3">Tier 8: Final Compounding (100k to 500k EQX, ~$100k to ~$500k USD)</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
+                  <div>
+                    <p><strong className="text-white">Duration:</strong> ~16,095,184 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
+                    <p><strong className="text-white">Starting Price:</strong> 100,000 EQX (~$100,000 USD)</p>
+                  </div>
+                  <div>
+                    <p><strong className="text-white">End Price:</strong> 500,000 EQX (~$500,000 USD)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 100,000 × (1.0001)^epoch</p>
+                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
+                  </div>
+                </div>
+                <p className="text-purple-200 mt-4 text-sm">
+                  <strong className="text-white">Why This Mechanism?</strong> Final compounding tier before transition. Reaches $500,000 sustainably.
+                </p>
+              </div>
+
+              {/* Tier 9 */}
+              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
+                <h4 className="text-lg font-bold text-purple-400 mb-3">Tier 9: Perpetual Sustainable Growth (500k+ EQX, ~$500k+ USD)</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
+                  <div>
+                    <p><strong className="text-white">Start:</strong> After price reaches 500,000 EQX</p>
+                    <p><strong className="text-white">Mechanism:</strong> 250 EQX per epoch (1,000 transactions)</p>
                     <p><strong className="text-white">Monthly Cap:</strong> 25,000 EQX maximum increase</p>
                   </div>
                   <div>
                     <p><strong className="text-white">End Price:</strong> Forever growing</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 200,000 + (100 × epochs)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 500,000 + (250 × epochs)</p>
                     <p><strong className="text-white">Growth Type:</strong> Linear</p>
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear 100 EQX/epoch (0.05% of 200,000 EQX) provides steady appreciation. The 25,000 EQX/month cap ensures stability while maintaining good returns.
+                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear 250 EQX/epoch (0.05% of 500,000 EQX) provides steady appreciation. The 25,000 EQX/month cap ensures stability while maintaining good returns.
                 </p>
               </div>
 
@@ -303,7 +383,7 @@ export default function WhitepaperPage() {
                 <table className="w-full text-purple-200 border-collapse text-sm">
                   <thead>
                     <tr className="border-b border-purple-500/30">
-                      <th className="text-left p-3 text-white">Phase</th>
+                      <th className="text-left p-3 text-white">Tier</th>
                       <th className="text-left p-3 text-white">Tx/Epoch</th>
                       <th className="text-left p-3 text-white">Growth</th>
                       <th className="text-left p-3 text-white">Price Range (EQX)</th>
@@ -314,41 +394,69 @@ export default function WhitepaperPage() {
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">1</td>
                       <td className="p-3">1</td>
-                      <td className="p-3">0.1%</td>
-                      <td className="p-3">0.01 → 1</td>
+                      <td className="p-3">0.01%</td>
+                      <td className="p-3">0.01 → 0.1</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">2</td>
-                      <td className="p-3">10</td>
-                      <td className="p-3">0.1%</td>
-                      <td className="p-3">1 → 10</td>
+                      <td className="p-3">1</td>
+                      <td className="p-3">0.01%</td>
+                      <td className="p-3">0.1 → 1</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">3</td>
-                      <td className="p-3">100</td>
-                      <td className="p-3">0.1%</td>
-                      <td className="p-3">10 → 100</td>
+                      <td className="p-3">10</td>
+                      <td className="p-3">0.01%</td>
+                      <td className="p-3">1 → 10</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">4</td>
+                      <td className="p-3">10</td>
+                      <td className="p-3">0.01%</td>
+                      <td className="p-3">10 → 100</td>
+                      <td className="p-3">Compound</td>
+                    </tr>
+                    <tr className="border-b border-purple-500/20">
+                      <td className="p-3">5</td>
+                      <td className="p-3">100</td>
+                      <td className="p-3">0.01%</td>
+                      <td className="p-3">100 → 1k</td>
+                      <td className="p-3">Compound</td>
+                    </tr>
+                    <tr className="border-b border-purple-500/20">
+                      <td className="p-3">6</td>
+                      <td className="p-3">100</td>
+                      <td className="p-3">0.01%</td>
+                      <td className="p-3">1k → 10k</td>
+                      <td className="p-3">Compound</td>
+                    </tr>
+                    <tr className="border-b border-purple-500/20">
+                      <td className="p-3">7</td>
                       <td className="p-3">1,000</td>
                       <td className="p-3">0.01%</td>
-                      <td className="p-3">100 → 200k</td>
+                      <td className="p-3">10k → 100k</td>
+                      <td className="p-3">Compound</td>
+                    </tr>
+                    <tr className="border-b border-purple-500/20">
+                      <td className="p-3">8</td>
+                      <td className="p-3">1,000</td>
+                      <td className="p-3">0.01%</td>
+                      <td className="p-3">100k → 500k</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr>
-                      <td className="p-3">5</td>
+                      <td className="p-3">9</td>
                       <td className="p-3">1,000</td>
-                      <td className="p-3">100 EQX</td>
-                      <td className="p-3">200k → ∞</td>
+                      <td className="p-3">250 EQX</td>
+                      <td className="p-3">500k → ∞</td>
                       <td className="p-3">Linear</td>
                     </tr>
                   </tbody>
                 </table>
-                <p className="text-purple-200 text-xs mt-2 italic">Note: USD values shown in interface are approximate equivalents for convenience only. Actual pricing is in EQX.</p>
+                <p className="text-purple-200 text-xs mt-2 italic">Note: USD values shown in interface are approximate equivalents for convenience only. Actual pricing is in EQX. All compounding tiers use a constant 0.01% growth rate.</p>
               </div>
             </section>
 
@@ -486,7 +594,7 @@ export default function WhitepaperPage() {
                 EQUA is designed to create value for everyone—not just token holders. Once the terminal phase is reached and price growth stabilizes, the protocol activates <strong className="text-white">five social purpose accounts</strong> that distribute EQUA monthly to support education, healthcare, research, grants, and operations.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Critical timing:</strong> These distributions activate <em>only after</em> the terminal phase begins (when EQUA reaches $200,000 in EQX). This ensures early holders and builders are not diluted during the compounding growth phase.
+                <strong className="text-white">Critical timing:</strong> These distributions activate <em>only after</em> the terminal phase begins (when EQUA reaches $500,000 in EQX). This ensures early holders and builders are not diluted during the compounding growth phase.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Delayed Activation?</h3>
@@ -665,7 +773,7 @@ export default function WhitepaperPage() {
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">Restraint in Growth</h4>
               <p className="text-purple-200 leading-relaxed">
-                Phase 5 caps price growth at $25,000 per month. This prevents runaway speculation and keeps EQUA grounded in sustainable, predictable appreciation—not casino-like volatility.
+                Tier 9 caps price growth at $25,000 per month. This prevents runaway speculation and keeps EQUA grounded in sustainable, predictable appreciation—not casino-like volatility.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-8 mb-3">Delayed Generosity Leads to Broader, Fairer Impact</h3>
@@ -682,7 +790,7 @@ export default function WhitepaperPage() {
                 <li><strong className="text-white">The system remains sustainable</strong> for decades, not just years</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                By delaying generosity until the system is strong, EQUA ensures that when help arrives, it is <em>meaningful</em>. A scholarship funded by 100 EQUA at $200,000 value is worth $20 million in purchasing power—life-changing for a student, sustainable for the network.
+                By delaying generosity until the system is strong, EQUA ensures that when help arrives, it is <em>meaningful</em>. A scholarship funded by 100 EQUA at $500,000 value is worth $50 million in purchasing power—life-changing for a student, sustainable for the network.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-8 mb-3">EQUA Is Not Designed for Speculation or Extraction</h3>
