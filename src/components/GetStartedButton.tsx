@@ -2,7 +2,7 @@
 
 import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { isUserRegistered, getUserAccountPDA } from '@/lib/program';
 
 interface GetStartedButtonProps {
@@ -32,6 +32,7 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
 }) => {
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
+  const router = useRouter();
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
@@ -139,13 +140,19 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
     return 'Get Started →';
   };
 
+  // Handle button click - use explicit navigation to prevent page refresh
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    router.push('/mint');
+  };
+
   return (
-    <Link
-      href="/mint"
+    <button
+      onClick={handleClick}
       className={`bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg ${className}`}
       data-testid={testId}
     >
       {getButtonText()}
-    </Link>
+    </button>
   );
 };
