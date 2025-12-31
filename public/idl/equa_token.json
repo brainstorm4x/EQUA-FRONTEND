@@ -1648,10 +1648,141 @@
         },
         {
           "name": "authority",
+          "writable": true,
           "signer": true
         },
         {
+          "name": "locked_token_account",
+          "docs": [
+            "Locked token account PDA (only for tiers 1-3)"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "locked_token_ata",
+          "docs": [
+            "Associated token account for locked tokens"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "locked_token_pda"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "locked_token_pda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
           "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -1934,6 +2065,128 @@
       ]
     },
     {
+      "name": "unlock_tokens",
+      "docs": [
+        "Unlock tokens after 4-year cliff vesting period",
+        "",
+        "Can only be called after unlock_timestamp has passed",
+        "Transfers all locked tokens from locked ATA to user's ATA",
+        "One-time operation per user"
+      ],
+      "discriminator": [
+        233,
+        35,
+        95,
+        159,
+        37,
+        185,
+        47,
+        88
+      ],
+      "accounts": [
+        {
+          "name": "locked_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "locked_token_ata",
+          "writable": true
+        },
+        {
+          "name": "locked_token_pda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_token_account",
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  113,
+                  117,
+                  97,
+                  45,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "locked_token_account"
+          ]
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "update_eqx_price",
       "docs": [
         "Update the EQX Oracle price (admin only)",
@@ -2047,6 +2300,19 @@
         123,
         133,
         98
+      ]
+    },
+    {
+      "name": "LockedTokenAccount",
+      "discriminator": [
+        3,
+        186,
+        246,
+        106,
+        222,
+        187,
+        14,
+        143
       ]
     },
     {
@@ -2289,6 +2555,21 @@
       "code": 6039,
       "name": "BonusMintOverflow",
       "msg": "Bonus mint overflow. The bonus mint counter has reached its maximum value."
+    },
+    {
+      "code": 6040,
+      "name": "LockPeriodNotExpired",
+      "msg": "Lock period has not expired yet. Tokens can only be unlocked after the 4-year cliff vesting period."
+    },
+    {
+      "code": 6041,
+      "name": "AlreadyUnlocked",
+      "msg": "Tokens have already been unlocked. This operation can only be performed once."
+    },
+    {
+      "code": 6042,
+      "name": "TimestampOverflow",
+      "msg": "Timestamp overflow. The calculated unlock timestamp exceeds the maximum representable value."
     }
   ],
   "types": [
@@ -2421,6 +2702,38 @@
           {
             "name": "min_slot_gap_for_referrals",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LockedTokenAccount",
+      "docs": [
+        "Locked token account storing locked tokens per user",
+        "PDA Seeds: [b\"locked-tokens\", authority.key()]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "locked_amount",
+            "type": "u64"
+          },
+          {
+            "name": "lock_start_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "unlock_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "is_unlocked",
+            "type": "bool"
           }
         ]
       }

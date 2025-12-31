@@ -1654,10 +1654,141 @@ export type EquaToken = {
         },
         {
           "name": "authority",
+          "writable": true,
           "signer": true
         },
         {
+          "name": "lockedTokenAccount",
+          "docs": [
+            "Locked token account PDA (only for tiers 1-3)"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lockedTokenAta",
+          "docs": [
+            "Associated token account for locked tokens"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "lockedTokenPda"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "lockedTokenPda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
           "name": "tokenProgram"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -1940,6 +2071,128 @@ export type EquaToken = {
       ]
     },
     {
+      "name": "unlockTokens",
+      "docs": [
+        "Unlock tokens after 4-year cliff vesting period",
+        "",
+        "Can only be called after unlock_timestamp has passed",
+        "Transfers all locked tokens from locked ATA to user's ATA",
+        "One-time operation per user"
+      ],
+      "discriminator": [
+        233,
+        35,
+        95,
+        159,
+        37,
+        185,
+        47,
+        88
+      ],
+      "accounts": [
+        {
+          "name": "lockedTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lockedTokenAta",
+          "writable": true
+        },
+        {
+          "name": "lockedTokenPda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  113,
+                  117,
+                  97,
+                  45,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "lockedTokenAccount"
+          ]
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "updateEqxPrice",
       "docs": [
         "Update the EQX Oracle price (admin only)",
@@ -2053,6 +2306,19 @@ export type EquaToken = {
         123,
         133,
         98
+      ]
+    },
+    {
+      "name": "lockedTokenAccount",
+      "discriminator": [
+        3,
+        186,
+        246,
+        106,
+        222,
+        187,
+        14,
+        143
       ]
     },
     {
@@ -2295,6 +2561,21 @@ export type EquaToken = {
       "code": 6039,
       "name": "bonusMintOverflow",
       "msg": "Bonus mint overflow. The bonus mint counter has reached its maximum value."
+    },
+    {
+      "code": 6040,
+      "name": "lockPeriodNotExpired",
+      "msg": "Lock period has not expired yet. Tokens can only be unlocked after the 4-year cliff vesting period."
+    },
+    {
+      "code": 6041,
+      "name": "alreadyUnlocked",
+      "msg": "Tokens have already been unlocked. This operation can only be performed once."
+    },
+    {
+      "code": 6042,
+      "name": "timestampOverflow",
+      "msg": "Timestamp overflow. The calculated unlock timestamp exceeds the maximum representable value."
     }
   ],
   "types": [
@@ -2427,6 +2708,38 @@ export type EquaToken = {
           {
             "name": "minSlotGapForReferrals",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "lockedTokenAccount",
+      "docs": [
+        "Locked token account storing locked tokens per user",
+        "PDA Seeds: [b\"locked-tokens\", authority.key()]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "lockedAmount",
+            "type": "u64"
+          },
+          {
+            "name": "lockStartTimestamp",
+            "type": "i64"
+          },
+          {
+            "name": "unlockTimestamp",
+            "type": "i64"
+          },
+          {
+            "name": "isUnlocked",
+            "type": "bool"
           }
         ]
       }
