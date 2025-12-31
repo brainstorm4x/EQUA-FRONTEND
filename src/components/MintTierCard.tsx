@@ -2,7 +2,7 @@
 
 import { FC, useEffect, useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { 
   getUserMintTier, 
@@ -125,7 +125,6 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
       const tx = await connection.getLatestBlockhash();
       const instruction = createUnlockTokensInstruction(wallet.publicKey, mintPda);
       
-      const { Transaction } = await import('@solana/web3.js');
       const transaction = new Transaction({
         ...tx,
         feePayer: wallet.publicKey,

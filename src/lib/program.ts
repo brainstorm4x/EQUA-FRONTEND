@@ -1,5 +1,6 @@
 import { Connection, PublicKey, Keypair, TransactionInstruction, SystemProgram } from "@solana/web3.js";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import {
   PROGRAM_ID,
   TOKEN_PROGRAM_ID,
@@ -13,6 +14,7 @@ import {
   TOKEN_2022_PROGRAM_ADDRESS,
   STANDARD_TOKEN_PROGRAM_ADDRESS,
 } from "./constants";
+import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 
 // Debug flag for instruction building logs
 const DEBUG_INSTRUCTIONS = process.env.NODE_ENV === 'development';
@@ -942,21 +944,18 @@ export function createUnlockTokensInstruction(
   authority: PublicKey,
   mint: PublicKey,
 ): TransactionInstruction {
-  // Import the helper functions
-  const { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } = require('@/utils/pda-helpers');
-  
   // Derive PDAs
   const [lockedTokenAccount] = getLockedTokenAccountPda(authority, PROGRAM_ID);
   const lockedTokenPda = getLockedTokenPda(authority, PROGRAM_ID);
   const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mint, TOKEN_PROGRAM_ID);
   
   // Get user's regular token account (ATA)
-  const { getAssociatedTokenAddressSync } = require('@solana/spl-token');
   const userTokenAccount = getAssociatedTokenAddressSync(
     mint,
     authority,
     false,
-    TOKEN_PROGRAM_ID
+    TOKEN_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID
   );
   
   // Instruction discriminator from IDL: [233, 35, 95, 159, 37, 185, 47, 88]

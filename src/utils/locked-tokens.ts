@@ -2,6 +2,9 @@ import { BN } from '@coral-xyz/anchor';
 
 /**
  * Lock period duration (4 years in seconds)
+ * Note: This uses a simplified 365-day year calculation (not accounting for leap years)
+ * to match the backend implementation. This may result in slight timing inaccuracies
+ * (~1 day over 4 years), but ensures frontend/backend consistency.
  */
 export const LOCK_PERIOD_SECONDS = 4 * 365 * 24 * 60 * 60; // 126,144,000 seconds
 
