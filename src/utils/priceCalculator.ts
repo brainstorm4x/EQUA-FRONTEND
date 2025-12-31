@@ -1,42 +1,30 @@
 /**
  * EQUA Token Price Appreciation Calculator
  * 
- * New Multi-Phase Price Model:
+ * 9-Tier Price Model with Constant 0.01% Growth:
  * 
- * Phase 1: Price $0.01 to $1
- * - 1 epoch = 1 transaction
- * - Growth: 0.1% per epoch, compounded
- * - Formula: Price = $0.01 × (1.001)^epoch
+ * Tier 1: $0.01 to $0.1 (23,027 txns, 1 tx/epoch, 0.01% growth)
+ * Tier 2: $0.1 to $1 (23,027 txns, 1 tx/epoch, 0.01% growth)
+ * Tier 3: $1 to $10 (230,270 txns, 10 tx/epoch, 0.01% growth)
+ * Tier 4: $10 to $100 (230,270 txns, 10 tx/epoch, 0.01% growth)
+ * Tier 5: $100 to $1,000 (2,302,700 txns, 100 tx/epoch, 0.01% growth)
+ * Tier 6: $1,000 to $10,000 (2,302,700 txns, 100 tx/epoch, 0.01% growth)
+ * Tier 7: $10,000 to $100,000 (23,027,002 txns, 1000 tx/epoch, 0.01% growth)
+ * Tier 8: $100,000 to $500,000 (16,095,184 txns, 1000 tx/epoch, 0.01% growth)
+ * Tier 9: $500,000+ (Linear: $250 per epoch, 1000 tx/epoch, monthly cap $25,000)
  * 
- * Phase 2: Price $1 to $10
- * - 1 epoch = 10 transactions
- * - Growth: 0.1% per epoch, compounded
- * - Formula: Price = $1 × (1.001)^epoch
- * 
- * Phase 3: Price $10 to $100
- * - 1 epoch = 100 transactions
- * - Growth: 0.1% per epoch, compounded
- * - Formula: Price = $10 × (1.001)^epoch
- * 
- * Phase 4: Price $100 to $200,000
- * - 1 epoch = 1,000 transactions
- * - Growth: 0.01% per epoch, compounded
- * - Formula: Price = $100 × (1.0001)^epoch
- * 
- * Phase 5 (Perpetual): Price > $200,000
- * - 1 epoch = 1,000 transactions
- * - Growth: $100 per epoch (0.05% of $200,000), linear, not compounded
- * - Formula: Price = $200,000 + ($100 × epochs_after_transition)
- * - Cap: Maximum $25,000 price increase per month
+ * Formula for Tiers 1-8 (Compounding): Price = StartPrice × (1.0001)^epoch
+ * Formula for Tier 9 (Linear): Price = $500,000 + ($250 × epochs)
  */
 
-export type PricePhase = 'phase1' | 'phase2' | 'phase3' | 'phase4' | 'phase5';
+export type PriceTier = 'tier1' | 'tier2' | 'tier3' | 'tier4' | 'tier5' | 'tier6' | 'tier7' | 'tier8' | 'tier9';
 
 export interface PriceInfo {
   currentPrice: number;
   currentEpoch: number;
   totalTransactions: number;
-  phase: PricePhase;
+  tier: PriceTier;
+  tierNumber: number;
   nextEpochPrice: number;
   transactionsToNextEpoch: number;
   compoundingComplete: boolean;
@@ -47,64 +35,109 @@ export class EquaPriceCalculator {
   // Initial Price
   private static readonly INITIAL_PRICE = 0.01;
   
-  // Growth rates
-  private static readonly EARLY_GROWTH_RATE = 0.001; // 0.1%
-  private static readonly LATE_GROWTH_RATE = 0.0001; // 0.01%
+  // Growth rate - constant 0.01% across all tiers
+  private static readonly GROWTH_RATE = 0.0001; // 0.01% = 1.0001
   
-  // Phase thresholds (prices)
-  private static readonly PHASE1_PRICE_THRESHOLD = 1; // $1
-  private static readonly PHASE2_PRICE_THRESHOLD = 10; // $10
-  private static readonly PHASE3_PRICE_THRESHOLD = 100; // $100
-  private static readonly PHASE4_PRICE_THRESHOLD = 200_000; // $200,000
+  // Tier price thresholds
+  private static readonly TIER_1_END = 0.1;      // $0.1
+  private static readonly TIER_2_END = 1;        // $1
+  private static readonly TIER_3_END = 10;       // $10
+  private static readonly TIER_4_END = 100;      // $100
+  private static readonly TIER_5_END = 1000;     // $1,000
+  private static readonly TIER_6_END = 10000;    // $10,000
+  private static readonly TIER_7_END = 100000;   // $100,000
+  private static readonly TIER_8_END = 500000;   // $500,000
   
-  // Transactions per epoch for each phase
-  private static readonly PHASE1_TX_PER_EPOCH = 1;
-  private static readonly PHASE2_TX_PER_EPOCH = 10;
-  private static readonly PHASE3_TX_PER_EPOCH = 100;
-  private static readonly PHASE4_TX_PER_EPOCH = 1000;
-  private static readonly PHASE5_TX_PER_EPOCH = 1000;
+  // Epoch sizes
+  private static readonly TIER_1_2_EPOCH_SIZE = 1;     // 1 transaction per epoch
+  private static readonly TIER_3_4_EPOCH_SIZE = 10;    // 10 transactions per epoch
+  private static readonly TIER_5_6_EPOCH_SIZE = 100;   // 100 transactions per epoch
+  private static readonly TIER_7_8_9_EPOCH_SIZE = 1000; // 1000 transactions per epoch
   
-  // Phase 5 Constants (Perpetual)
-  private static readonly PHASE5_INCREMENT = 100; // $100 per epoch (0.05% of $200,000)
-  private static readonly PHASE5_MONTHLY_CAP = 25_000; // $25,000 max per month
+  // Tier 9 linear growth
+  private static readonly TIER_9_LINEAR_INCREMENT = 250; // $250 per epoch
+  private static readonly TIER_9_MONTHLY_CAP = 25_000;   // $25,000 max per month
 
-  // Calculate epochs needed to reach price thresholds dynamically
-  // Phase 1: $0.01 to $1 = growth of 100x = ln(100) / ln(1.001) ≈ 4605 epochs
-  private static readonly PHASE1_END_EPOCH = Math.ceil(Math.log(100) / Math.log(1.001)); // ~4605
-  private static readonly PHASE1_END_TRANSACTIONS = EquaPriceCalculator.PHASE1_END_EPOCH * EquaPriceCalculator.PHASE1_TX_PER_EPOCH;
+  // Calculate epochs needed for each tier (using ln(endPrice/startPrice) / ln(1.0001))
+  // Tier 1: $0.01 to $0.1 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_1_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
+  private static readonly TIER_1_END_TRANSACTIONS = EquaPriceCalculator.TIER_1_EPOCHS * EquaPriceCalculator.TIER_1_2_EPOCH_SIZE;
   
-  // Phase 2: $1 to $10 = growth of 10x = ln(10) / ln(1.001) ≈ 2303 epochs
-  private static readonly PHASE2_EPOCHS_DURATION = Math.ceil(Math.log(10) / Math.log(1.001)); // ~2303
-  private static readonly PHASE2_END_TRANSACTIONS = EquaPriceCalculator.PHASE1_END_TRANSACTIONS + 
-    (EquaPriceCalculator.PHASE2_EPOCHS_DURATION * EquaPriceCalculator.PHASE2_TX_PER_EPOCH);
+  // Tier 2: $0.1 to $1 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_2_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
+  private static readonly TIER_2_END_TRANSACTIONS = EquaPriceCalculator.TIER_1_END_TRANSACTIONS + 
+    (EquaPriceCalculator.TIER_2_EPOCHS * EquaPriceCalculator.TIER_1_2_EPOCH_SIZE);
   
-  // Phase 3: $10 to $100 = growth of 10x = ln(10) / ln(1.001) ≈ 2303 epochs
-  private static readonly PHASE3_EPOCHS_DURATION = Math.ceil(Math.log(10) / Math.log(1.001)); // ~2303
-  private static readonly PHASE3_END_TRANSACTIONS = EquaPriceCalculator.PHASE2_END_TRANSACTIONS + 
-    (EquaPriceCalculator.PHASE3_EPOCHS_DURATION * EquaPriceCalculator.PHASE3_TX_PER_EPOCH);
+  // Tier 3: $1 to $10 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_3_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
+  private static readonly TIER_3_END_TRANSACTIONS = EquaPriceCalculator.TIER_2_END_TRANSACTIONS + 
+    (EquaPriceCalculator.TIER_3_EPOCHS * EquaPriceCalculator.TIER_3_4_EPOCH_SIZE);
   
-  // Phase 4: $100 to $200,000 = growth of 2000x = ln(2000) / ln(1.0001) ≈ 76012 epochs
-  private static readonly PHASE4_EPOCHS_DURATION = Math.ceil(Math.log(2000) / Math.log(1.0001)); // ~76012
-  private static readonly PHASE4_END_TRANSACTIONS = EquaPriceCalculator.PHASE3_END_TRANSACTIONS + 
-    (EquaPriceCalculator.PHASE4_EPOCHS_DURATION * EquaPriceCalculator.PHASE4_TX_PER_EPOCH);
+  // Tier 4: $10 to $100 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_4_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
+  private static readonly TIER_4_END_TRANSACTIONS = EquaPriceCalculator.TIER_3_END_TRANSACTIONS + 
+    (EquaPriceCalculator.TIER_4_EPOCHS * EquaPriceCalculator.TIER_3_4_EPOCH_SIZE);
+  
+  // Tier 5: $100 to $1,000 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_5_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
+  private static readonly TIER_5_END_TRANSACTIONS = EquaPriceCalculator.TIER_4_END_TRANSACTIONS + 
+    (EquaPriceCalculator.TIER_5_EPOCHS * EquaPriceCalculator.TIER_5_6_EPOCH_SIZE);
+  
+  // Tier 6: $1,000 to $10,000 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_6_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
+  private static readonly TIER_6_END_TRANSACTIONS = EquaPriceCalculator.TIER_5_END_TRANSACTIONS + 
+    (EquaPriceCalculator.TIER_6_EPOCHS * EquaPriceCalculator.TIER_5_6_EPOCH_SIZE);
+  
+  // Tier 7: $10,000 to $100,000 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_7_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
+  private static readonly TIER_7_END_TRANSACTIONS = EquaPriceCalculator.TIER_6_END_TRANSACTIONS + 
+    (EquaPriceCalculator.TIER_7_EPOCHS * EquaPriceCalculator.TIER_7_8_9_EPOCH_SIZE);
+  
+  // Tier 8: $100,000 to $500,000 = 5x = ln(5) / ln(1.0001) ≈ 16095 epochs
+  private static readonly TIER_8_EPOCHS = Math.ceil(Math.log(5) / Math.log(1.0001)); // ~16095
+  private static readonly TIER_8_END_TRANSACTIONS = EquaPriceCalculator.TIER_7_END_TRANSACTIONS + 
+    (EquaPriceCalculator.TIER_8_EPOCHS * EquaPriceCalculator.TIER_7_8_9_EPOCH_SIZE);
 
   /**
-   * Determine the current price phase based on total transactions
+   * Determine the current price tier based on total transactions
    */
-  static getPhase(totalTransactions: number): PricePhase {
-    if (totalTransactions < this.PHASE1_END_TRANSACTIONS) {
-      return 'phase1';
+  static getTier(totalTransactions: number): PriceTier {
+    if (totalTransactions < this.TIER_1_END_TRANSACTIONS) {
+      return 'tier1';
     }
-    if (totalTransactions < this.PHASE2_END_TRANSACTIONS) {
-      return 'phase2';
+    if (totalTransactions < this.TIER_2_END_TRANSACTIONS) {
+      return 'tier2';
     }
-    if (totalTransactions < this.PHASE3_END_TRANSACTIONS) {
-      return 'phase3';
+    if (totalTransactions < this.TIER_3_END_TRANSACTIONS) {
+      return 'tier3';
     }
-    if (totalTransactions < this.PHASE4_END_TRANSACTIONS) {
-      return 'phase4';
+    if (totalTransactions < this.TIER_4_END_TRANSACTIONS) {
+      return 'tier4';
     }
-    return 'phase5';
+    if (totalTransactions < this.TIER_5_END_TRANSACTIONS) {
+      return 'tier5';
+    }
+    if (totalTransactions < this.TIER_6_END_TRANSACTIONS) {
+      return 'tier6';
+    }
+    if (totalTransactions < this.TIER_7_END_TRANSACTIONS) {
+      return 'tier7';
+    }
+    if (totalTransactions < this.TIER_8_END_TRANSACTIONS) {
+      return 'tier8';
+    }
+    return 'tier9';
+  }
+
+  /**
+   * Get tier number (1-9) from tier string
+   */
+  static getTierNumber(tier: PriceTier): number {
+    const tierMap: Record<PriceTier, number> = {
+      tier1: 1, tier2: 2, tier3: 3, tier4: 4, tier5: 5,
+      tier6: 6, tier7: 7, tier8: 8, tier9: 9
+    };
+    return tierMap[tier];
   }
 
   /**
@@ -120,132 +153,210 @@ export class EquaPriceCalculator {
       return this.INITIAL_PRICE;
     }
 
-    const phase = this.getPhase(totalTransactions);
+    const tier = this.getTier(totalTransactions);
 
-    switch (phase) {
-      case 'phase1':
-        return this.calculatePhase1Price(totalTransactions);
-      case 'phase2':
-        return this.calculatePhase2Price(totalTransactions);
-      case 'phase3':
-        return this.calculatePhase3Price(totalTransactions);
-      case 'phase4':
-        return this.calculatePhase4Price(totalTransactions);
-      case 'phase5':
-        return this.calculatePhase5Price(totalTransactions);
+    switch (tier) {
+      case 'tier1':
+        return this.calculateTier1Price(totalTransactions);
+      case 'tier2':
+        return this.calculateTier2Price(totalTransactions);
+      case 'tier3':
+        return this.calculateTier3Price(totalTransactions);
+      case 'tier4':
+        return this.calculateTier4Price(totalTransactions);
+      case 'tier5':
+        return this.calculateTier5Price(totalTransactions);
+      case 'tier6':
+        return this.calculateTier6Price(totalTransactions);
+      case 'tier7':
+        return this.calculateTier7Price(totalTransactions);
+      case 'tier8':
+        return this.calculateTier8Price(totalTransactions);
+      case 'tier9':
+        return this.calculateTier9Price(totalTransactions);
     }
   }
 
   /**
-   * Phase 1: $0.01 to $1
-   * 1 tx = 1 epoch, 0.1% growth
+   * Tier 1: $0.01 to $0.1
+   * 1 tx = 1 epoch, 0.01% growth
    */
-  private static calculatePhase1Price(totalTransactions: number): number {
-    const epoch = Math.floor(totalTransactions / this.PHASE1_TX_PER_EPOCH);
+  private static calculateTier1Price(totalTransactions: number): number {
+    const epoch = Math.floor(totalTransactions / this.TIER_1_2_EPOCH_SIZE);
     if (epoch === 0) return this.INITIAL_PRICE;
     
-    return this.INITIAL_PRICE * Math.pow(1 + this.EARLY_GROWTH_RATE, epoch);
+    return this.INITIAL_PRICE * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
   /**
-   * Phase 2: $1 to $10
-   * 10 tx = 1 epoch, 0.1% growth
+   * Tier 2: $0.1 to $1
+   * 1 tx = 1 epoch, 0.01% growth
    */
-  private static calculatePhase2Price(totalTransactions: number): number {
-    const transactionsInPhase2 = totalTransactions - this.PHASE1_END_TRANSACTIONS;
-    const epoch = Math.floor(transactionsInPhase2 / this.PHASE2_TX_PER_EPOCH);
+  private static calculateTier2Price(totalTransactions: number): number {
+    const transactionsInTier2 = totalTransactions - this.TIER_1_END_TRANSACTIONS;
+    const epoch = Math.floor(transactionsInTier2 / this.TIER_1_2_EPOCH_SIZE);
     
-    return this.PHASE1_PRICE_THRESHOLD * Math.pow(1 + this.EARLY_GROWTH_RATE, epoch);
+    return this.TIER_1_END * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
   /**
-   * Phase 3: $10 to $100
-   * 100 tx = 1 epoch, 0.1% growth
+   * Tier 3: $1 to $10
+   * 10 tx = 1 epoch, 0.01% growth
    */
-  private static calculatePhase3Price(totalTransactions: number): number {
-    const transactionsInPhase3 = totalTransactions - this.PHASE2_END_TRANSACTIONS;
-    const epoch = Math.floor(transactionsInPhase3 / this.PHASE3_TX_PER_EPOCH);
+  private static calculateTier3Price(totalTransactions: number): number {
+    const transactionsInTier3 = totalTransactions - this.TIER_2_END_TRANSACTIONS;
+    const epoch = Math.floor(transactionsInTier3 / this.TIER_3_4_EPOCH_SIZE);
     
-    return this.PHASE2_PRICE_THRESHOLD * Math.pow(1 + this.EARLY_GROWTH_RATE, epoch);
+    return this.TIER_2_END * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
   /**
-   * Phase 4: $100 to $200,000
+   * Tier 4: $10 to $100
+   * 10 tx = 1 epoch, 0.01% growth
+   */
+  private static calculateTier4Price(totalTransactions: number): number {
+    const transactionsInTier4 = totalTransactions - this.TIER_3_END_TRANSACTIONS;
+    const epoch = Math.floor(transactionsInTier4 / this.TIER_3_4_EPOCH_SIZE);
+    
+    return this.TIER_3_END * Math.pow(1 + this.GROWTH_RATE, epoch);
+  }
+
+  /**
+   * Tier 5: $100 to $1,000
+   * 100 tx = 1 epoch, 0.01% growth
+   */
+  private static calculateTier5Price(totalTransactions: number): number {
+    const transactionsInTier5 = totalTransactions - this.TIER_4_END_TRANSACTIONS;
+    const epoch = Math.floor(transactionsInTier5 / this.TIER_5_6_EPOCH_SIZE);
+    
+    return this.TIER_4_END * Math.pow(1 + this.GROWTH_RATE, epoch);
+  }
+
+  /**
+   * Tier 6: $1,000 to $10,000
+   * 100 tx = 1 epoch, 0.01% growth
+   */
+  private static calculateTier6Price(totalTransactions: number): number {
+    const transactionsInTier6 = totalTransactions - this.TIER_5_END_TRANSACTIONS;
+    const epoch = Math.floor(transactionsInTier6 / this.TIER_5_6_EPOCH_SIZE);
+    
+    return this.TIER_5_END * Math.pow(1 + this.GROWTH_RATE, epoch);
+  }
+
+  /**
+   * Tier 7: $10,000 to $100,000
    * 1000 tx = 1 epoch, 0.01% growth
    */
-  private static calculatePhase4Price(totalTransactions: number): number {
-    const transactionsInPhase4 = totalTransactions - this.PHASE3_END_TRANSACTIONS;
-    const epoch = Math.floor(transactionsInPhase4 / this.PHASE4_TX_PER_EPOCH);
+  private static calculateTier7Price(totalTransactions: number): number {
+    const transactionsInTier7 = totalTransactions - this.TIER_6_END_TRANSACTIONS;
+    const epoch = Math.floor(transactionsInTier7 / this.TIER_7_8_9_EPOCH_SIZE);
     
-    return this.PHASE3_PRICE_THRESHOLD * Math.pow(1 + this.LATE_GROWTH_RATE, epoch);
+    return this.TIER_6_END * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
   /**
-   * Phase 5: $200,000+
-   * 1000 tx = 1 epoch, $100 linear increase
-   * 0.05% of $200,000 = $100 per epoch
+   * Tier 8: $100,000 to $500,000
+   * 1000 tx = 1 epoch, 0.01% growth
+   */
+  private static calculateTier8Price(totalTransactions: number): number {
+    const transactionsInTier8 = totalTransactions - this.TIER_7_END_TRANSACTIONS;
+    const epoch = Math.floor(transactionsInTier8 / this.TIER_7_8_9_EPOCH_SIZE);
+    
+    return this.TIER_7_END * Math.pow(1 + this.GROWTH_RATE, epoch);
+  }
+
+  /**
+   * Tier 9: $500,000+
+   * 1000 tx = 1 epoch, $250 linear increase
+   * 0.05% of $500,000 = $250 per epoch
    * Cap: $25,000 max per month
    */
-  private static calculatePhase5Price(totalTransactions: number): number {
-    const transactionsInPhase5 = totalTransactions - this.PHASE4_END_TRANSACTIONS;
-    const epochsInPhase5 = Math.floor(transactionsInPhase5 / this.PHASE5_TX_PER_EPOCH);
+  private static calculateTier9Price(totalTransactions: number): number {
+    const transactionsInTier9 = totalTransactions - this.TIER_8_END_TRANSACTIONS;
+    const epochsInTier9 = Math.floor(transactionsInTier9 / this.TIER_7_8_9_EPOCH_SIZE);
     
     // Calculate potential price increase
-    const potentialIncrease = epochsInPhase5 * this.PHASE5_INCREMENT;
+    const potentialIncrease = epochsInTier9 * this.TIER_9_LINEAR_INCREMENT;
     
     // Note: The monthly cap is enforced at the on-chain level
     // Here we show the theoretical price for display purposes
     
-    return this.PHASE4_PRICE_THRESHOLD + potentialIncrease;
+    return this.TIER_8_END + potentialIncrease;
   }
 
   /**
    * Get the current epoch number based on total transactions
    */
   static getCurrentEpoch(totalTransactions: number): number {
-    const phase = this.getPhase(totalTransactions);
+    const tier = this.getTier(totalTransactions);
 
-    switch (phase) {
-      case 'phase1':
-        return Math.floor(totalTransactions / this.PHASE1_TX_PER_EPOCH);
-      case 'phase2': {
-        const transactionsInPhase2 = totalTransactions - this.PHASE1_END_TRANSACTIONS;
-        return this.PHASE1_END_EPOCH + Math.floor(transactionsInPhase2 / this.PHASE2_TX_PER_EPOCH);
+    switch (tier) {
+      case 'tier1':
+        return Math.floor(totalTransactions / this.TIER_1_2_EPOCH_SIZE);
+      case 'tier2': {
+        const transactionsInTier2 = totalTransactions - this.TIER_1_END_TRANSACTIONS;
+        return this.TIER_1_EPOCHS + Math.floor(transactionsInTier2 / this.TIER_1_2_EPOCH_SIZE);
       }
-      case 'phase3': {
-        const transactionsInPhase3 = totalTransactions - this.PHASE2_END_TRANSACTIONS;
-        return this.PHASE1_END_EPOCH + this.PHASE2_EPOCHS_DURATION + 
-               Math.floor(transactionsInPhase3 / this.PHASE3_TX_PER_EPOCH);
+      case 'tier3': {
+        const transactionsInTier3 = totalTransactions - this.TIER_2_END_TRANSACTIONS;
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + 
+               Math.floor(transactionsInTier3 / this.TIER_3_4_EPOCH_SIZE);
       }
-      case 'phase4': {
-        const transactionsInPhase4 = totalTransactions - this.PHASE3_END_TRANSACTIONS;
-        return this.PHASE1_END_EPOCH + this.PHASE2_EPOCHS_DURATION + this.PHASE3_EPOCHS_DURATION +
-               Math.floor(transactionsInPhase4 / this.PHASE4_TX_PER_EPOCH);
+      case 'tier4': {
+        const transactionsInTier4 = totalTransactions - this.TIER_3_END_TRANSACTIONS;
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS +
+               Math.floor(transactionsInTier4 / this.TIER_3_4_EPOCH_SIZE);
       }
-      case 'phase5': {
-        const transactionsInPhase5 = totalTransactions - this.PHASE4_END_TRANSACTIONS;
-        return this.PHASE1_END_EPOCH + this.PHASE2_EPOCHS_DURATION + this.PHASE3_EPOCHS_DURATION + 
-               this.PHASE4_EPOCHS_DURATION + Math.floor(transactionsInPhase5 / this.PHASE5_TX_PER_EPOCH);
+      case 'tier5': {
+        const transactionsInTier5 = totalTransactions - this.TIER_4_END_TRANSACTIONS;
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS +
+               Math.floor(transactionsInTier5 / this.TIER_5_6_EPOCH_SIZE);
+      }
+      case 'tier6': {
+        const transactionsInTier6 = totalTransactions - this.TIER_5_END_TRANSACTIONS;
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + 
+               this.TIER_5_EPOCHS + Math.floor(transactionsInTier6 / this.TIER_5_6_EPOCH_SIZE);
+      }
+      case 'tier7': {
+        const transactionsInTier7 = totalTransactions - this.TIER_6_END_TRANSACTIONS;
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + 
+               this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + Math.floor(transactionsInTier7 / this.TIER_7_8_9_EPOCH_SIZE);
+      }
+      case 'tier8': {
+        const transactionsInTier8 = totalTransactions - this.TIER_7_END_TRANSACTIONS;
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + 
+               this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + this.TIER_7_EPOCHS + 
+               Math.floor(transactionsInTier8 / this.TIER_7_8_9_EPOCH_SIZE);
+      }
+      case 'tier9': {
+        const transactionsInTier9 = totalTransactions - this.TIER_8_END_TRANSACTIONS;
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + 
+               this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + this.TIER_7_EPOCHS + this.TIER_8_EPOCHS + 
+               Math.floor(transactionsInTier9 / this.TIER_7_8_9_EPOCH_SIZE);
       }
     }
   }
 
   /**
-   * Get transactions per epoch for the current phase
+   * Get transactions per epoch for the current tier
    */
   static getTransactionsPerEpoch(totalTransactions: number): number {
-    const phase = this.getPhase(totalTransactions);
+    const tier = this.getTier(totalTransactions);
     
-    switch (phase) {
-      case 'phase1':
-        return this.PHASE1_TX_PER_EPOCH;
-      case 'phase2':
-        return this.PHASE2_TX_PER_EPOCH;
-      case 'phase3':
-        return this.PHASE3_TX_PER_EPOCH;
-      case 'phase4':
-      case 'phase5':
-        return this.PHASE4_TX_PER_EPOCH;
+    switch (tier) {
+      case 'tier1':
+      case 'tier2':
+        return this.TIER_1_2_EPOCH_SIZE;
+      case 'tier3':
+      case 'tier4':
+        return this.TIER_3_4_EPOCH_SIZE;
+      case 'tier5':
+      case 'tier6':
+        return this.TIER_5_6_EPOCH_SIZE;
+      case 'tier7':
+      case 'tier8':
+      case 'tier9':
+        return this.TIER_7_8_9_EPOCH_SIZE;
     }
   }
 
@@ -257,7 +368,8 @@ export class EquaPriceCalculator {
     currentEpoch?: number,
     compoundingComplete?: boolean
   ): PriceInfo {
-    const phase = this.getPhase(totalTransactions);
+    const tier = this.getTier(totalTransactions);
+    const tierNumber = this.getTierNumber(tier);
     const transactionsPerEpoch = this.getTransactionsPerEpoch(totalTransactions);
     const calculatedEpoch = this.getCurrentEpoch(totalTransactions);
     const currentPrice = this.calculatePrice(totalTransactions);
@@ -268,28 +380,49 @@ export class EquaPriceCalculator {
 
     // Calculate transactions remaining to next epoch
     let transactionsToNextEpoch: number;
-    switch (phase) {
-      case 'phase1':
-        transactionsToNextEpoch = this.PHASE1_TX_PER_EPOCH - (totalTransactions % this.PHASE1_TX_PER_EPOCH);
-        break;
-      case 'phase2': {
-        const txInPhase2 = totalTransactions - this.PHASE1_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.PHASE2_TX_PER_EPOCH - (txInPhase2 % this.PHASE2_TX_PER_EPOCH);
+    switch (tier) {
+      case 'tier1': {
+        transactionsToNextEpoch = this.TIER_1_2_EPOCH_SIZE - (totalTransactions % this.TIER_1_2_EPOCH_SIZE);
         break;
       }
-      case 'phase3': {
-        const txInPhase3 = totalTransactions - this.PHASE2_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.PHASE3_TX_PER_EPOCH - (txInPhase3 % this.PHASE3_TX_PER_EPOCH);
+      case 'tier2': {
+        const txInTier2 = totalTransactions - this.TIER_1_END_TRANSACTIONS;
+        transactionsToNextEpoch = this.TIER_1_2_EPOCH_SIZE - (txInTier2 % this.TIER_1_2_EPOCH_SIZE);
         break;
       }
-      case 'phase4': {
-        const txInPhase4 = totalTransactions - this.PHASE3_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.PHASE4_TX_PER_EPOCH - (txInPhase4 % this.PHASE4_TX_PER_EPOCH);
+      case 'tier3': {
+        const txInTier3 = totalTransactions - this.TIER_2_END_TRANSACTIONS;
+        transactionsToNextEpoch = this.TIER_3_4_EPOCH_SIZE - (txInTier3 % this.TIER_3_4_EPOCH_SIZE);
         break;
       }
-      case 'phase5': {
-        const txInPhase5 = totalTransactions - this.PHASE4_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.PHASE5_TX_PER_EPOCH - (txInPhase5 % this.PHASE5_TX_PER_EPOCH);
+      case 'tier4': {
+        const txInTier4 = totalTransactions - this.TIER_3_END_TRANSACTIONS;
+        transactionsToNextEpoch = this.TIER_3_4_EPOCH_SIZE - (txInTier4 % this.TIER_3_4_EPOCH_SIZE);
+        break;
+      }
+      case 'tier5': {
+        const txInTier5 = totalTransactions - this.TIER_4_END_TRANSACTIONS;
+        transactionsToNextEpoch = this.TIER_5_6_EPOCH_SIZE - (txInTier5 % this.TIER_5_6_EPOCH_SIZE);
+        break;
+      }
+      case 'tier6': {
+        const txInTier6 = totalTransactions - this.TIER_5_END_TRANSACTIONS;
+        transactionsToNextEpoch = this.TIER_5_6_EPOCH_SIZE - (txInTier6 % this.TIER_5_6_EPOCH_SIZE);
+        break;
+      }
+      case 'tier7': {
+        const txInTier7 = totalTransactions - this.TIER_6_END_TRANSACTIONS;
+        transactionsToNextEpoch = this.TIER_7_8_9_EPOCH_SIZE - (txInTier7 % this.TIER_7_8_9_EPOCH_SIZE);
+        break;
+      }
+      case 'tier8': {
+        const txInTier8 = totalTransactions - this.TIER_7_END_TRANSACTIONS;
+        transactionsToNextEpoch = this.TIER_7_8_9_EPOCH_SIZE - (txInTier8 % this.TIER_7_8_9_EPOCH_SIZE);
+        break;
+      }
+      case 'tier9': {
+        const txInTier9 = totalTransactions - this.TIER_8_END_TRANSACTIONS;
+        transactionsToNextEpoch = this.TIER_7_8_9_EPOCH_SIZE - (txInTier9 % this.TIER_7_8_9_EPOCH_SIZE);
         break;
       }
     }
@@ -298,10 +431,11 @@ export class EquaPriceCalculator {
       currentPrice,
       currentEpoch: calculatedEpoch,
       totalTransactions,
-      phase,
+      tier,
+      tierNumber,
       nextEpochPrice,
       transactionsToNextEpoch,
-      compoundingComplete: phase === 'phase5',
+      compoundingComplete: tier === 'tier9',
       transactionsPerEpoch,
     };
   }
@@ -310,32 +444,56 @@ export class EquaPriceCalculator {
    * Calculate price at a specific epoch (for projections)
    */
   static getPriceAtEpoch(epoch: number): number {
-    // Phase 1: epochs 0 to PHASE1_END_EPOCH
-    if (epoch <= this.PHASE1_END_EPOCH) {
-      return this.INITIAL_PRICE * Math.pow(1 + this.EARLY_GROWTH_RATE, epoch);
+    // Tier 1: epochs 0 to TIER_1_EPOCHS
+    if (epoch <= this.TIER_1_EPOCHS) {
+      return this.INITIAL_PRICE * Math.pow(1 + this.GROWTH_RATE, epoch);
     }
     
-    // Phase 2: epochs PHASE1_END_EPOCH to (PHASE1_END_EPOCH + PHASE2_EPOCHS_DURATION)
-    const phase2Epoch = epoch - this.PHASE1_END_EPOCH;
-    if (phase2Epoch <= this.PHASE2_EPOCHS_DURATION) {
-      return this.PHASE1_PRICE_THRESHOLD * Math.pow(1 + this.EARLY_GROWTH_RATE, phase2Epoch);
+    // Tier 2: epochs TIER_1_EPOCHS to (TIER_1_EPOCHS + TIER_2_EPOCHS)
+    const tier2Epoch = epoch - this.TIER_1_EPOCHS;
+    if (tier2Epoch <= this.TIER_2_EPOCHS) {
+      return this.TIER_1_END * Math.pow(1 + this.GROWTH_RATE, tier2Epoch);
     }
     
-    // Phase 3: epochs to (PHASE1 + PHASE2 + PHASE3)
-    const phase3Epoch = phase2Epoch - this.PHASE2_EPOCHS_DURATION;
-    if (phase3Epoch <= this.PHASE3_EPOCHS_DURATION) {
-      return this.PHASE2_PRICE_THRESHOLD * Math.pow(1 + this.EARLY_GROWTH_RATE, phase3Epoch);
+    // Tier 3
+    const tier3Epoch = tier2Epoch - this.TIER_2_EPOCHS;
+    if (tier3Epoch <= this.TIER_3_EPOCHS) {
+      return this.TIER_2_END * Math.pow(1 + this.GROWTH_RATE, tier3Epoch);
     }
     
-    // Phase 4: epochs to (PHASE1 + PHASE2 + PHASE3 + PHASE4)
-    const phase4Epoch = phase3Epoch - this.PHASE3_EPOCHS_DURATION;
-    if (phase4Epoch <= this.PHASE4_EPOCHS_DURATION) {
-      return this.PHASE3_PRICE_THRESHOLD * Math.pow(1 + this.LATE_GROWTH_RATE, phase4Epoch);
+    // Tier 4
+    const tier4Epoch = tier3Epoch - this.TIER_3_EPOCHS;
+    if (tier4Epoch <= this.TIER_4_EPOCHS) {
+      return this.TIER_3_END * Math.pow(1 + this.GROWTH_RATE, tier4Epoch);
     }
     
-    // Phase 5: Linear growth
-    const phase5Epoch = phase4Epoch - this.PHASE4_EPOCHS_DURATION;
-    return this.PHASE4_PRICE_THRESHOLD + (this.PHASE5_INCREMENT * phase5Epoch);
+    // Tier 5
+    const tier5Epoch = tier4Epoch - this.TIER_4_EPOCHS;
+    if (tier5Epoch <= this.TIER_5_EPOCHS) {
+      return this.TIER_4_END * Math.pow(1 + this.GROWTH_RATE, tier5Epoch);
+    }
+    
+    // Tier 6
+    const tier6Epoch = tier5Epoch - this.TIER_5_EPOCHS;
+    if (tier6Epoch <= this.TIER_6_EPOCHS) {
+      return this.TIER_5_END * Math.pow(1 + this.GROWTH_RATE, tier6Epoch);
+    }
+    
+    // Tier 7
+    const tier7Epoch = tier6Epoch - this.TIER_6_EPOCHS;
+    if (tier7Epoch <= this.TIER_7_EPOCHS) {
+      return this.TIER_6_END * Math.pow(1 + this.GROWTH_RATE, tier7Epoch);
+    }
+    
+    // Tier 8
+    const tier8Epoch = tier7Epoch - this.TIER_7_EPOCHS;
+    if (tier8Epoch <= this.TIER_8_EPOCHS) {
+      return this.TIER_7_END * Math.pow(1 + this.GROWTH_RATE, tier8Epoch);
+    }
+    
+    // Tier 9: Linear growth
+    const tier9Epoch = tier8Epoch - this.TIER_8_EPOCHS;
+    return this.TIER_8_END + (this.TIER_9_LINEAR_INCREMENT * tier9Epoch);
   }
 
   /**
@@ -358,7 +516,7 @@ export class EquaPriceCalculator {
   }
 
   /**
-   * Get milestone information based on the five-phase model
+   * Get milestone information based on the nine-tier model
    */
   static getMilestones(): Array<{
     epoch: number;
@@ -369,37 +527,57 @@ export class EquaPriceCalculator {
       { epoch: 0, price: 0.01, description: 'Launch' },
       { epoch: 100, price: this.getPriceAtEpoch(100), description: '100 transactions' },
       { epoch: 1000, price: this.getPriceAtEpoch(1000), description: '1,000 transactions' },
-      { epoch: this.PHASE1_END_EPOCH, price: 1, description: 'Phase 1 Complete - $1' },
-      { epoch: this.PHASE1_END_EPOCH + this.PHASE2_EPOCHS_DURATION, price: 10, description: 'Phase 2 Complete - $10' },
-      { epoch: this.PHASE1_END_EPOCH + this.PHASE2_EPOCHS_DURATION + this.PHASE3_EPOCHS_DURATION, price: 100, description: 'Phase 3 Complete - $100' },
-      { epoch: this.PHASE1_END_EPOCH + this.PHASE2_EPOCHS_DURATION + this.PHASE3_EPOCHS_DURATION + this.PHASE4_EPOCHS_DURATION, price: 200000, description: 'Phase 4 Complete - $200,000 (Compounding Stops)' },
+      { epoch: this.TIER_1_EPOCHS, price: 0.1, description: 'Tier 1 Complete - $0.1' },
+      { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS, price: 1, description: 'Tier 2 Complete - $1' },
+      { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS, price: 10, description: 'Tier 3 Complete - $10' },
+      { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS, price: 100, description: 'Tier 4 Complete - $100' },
+      { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + this.TIER_5_EPOCHS, price: 1000, description: 'Tier 5 Complete - $1,000' },
+      { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + this.TIER_5_EPOCHS + this.TIER_6_EPOCHS, price: 10000, description: 'Tier 6 Complete - $10,000' },
+      { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + this.TIER_7_EPOCHS, price: 100000, description: 'Tier 7 Complete - $100,000' },
+      { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + this.TIER_7_EPOCHS + this.TIER_8_EPOCHS, price: 500000, description: 'Tier 8 Complete - $500,000 (Compounding Stops)' },
     ];
   }
 
   /**
-   * Get phase thresholds for display
+   * Get tier thresholds for display
    */
-  static getPhaseThresholds(): {
-    phase1EndTransactions: number;
-    phase1EndPrice: number;
-    phase2EndTransactions: number;
-    phase2EndPrice: number;
-    phase3EndTransactions: number;
-    phase3EndPrice: number;
-    phase4EndTransactions: number;
-    phase4EndPrice: number;
-    phase5MonthlyCap: number;
+  static getTierThresholds(): {
+    tier1EndTransactions: number;
+    tier1EndPrice: number;
+    tier2EndTransactions: number;
+    tier2EndPrice: number;
+    tier3EndTransactions: number;
+    tier3EndPrice: number;
+    tier4EndTransactions: number;
+    tier4EndPrice: number;
+    tier5EndTransactions: number;
+    tier5EndPrice: number;
+    tier6EndTransactions: number;
+    tier6EndPrice: number;
+    tier7EndTransactions: number;
+    tier7EndPrice: number;
+    tier8EndTransactions: number;
+    tier8EndPrice: number;
+    tier9MonthlyCap: number;
   } {
     return {
-      phase1EndTransactions: this.PHASE1_END_TRANSACTIONS,
-      phase1EndPrice: this.PHASE1_PRICE_THRESHOLD,
-      phase2EndTransactions: this.PHASE2_END_TRANSACTIONS,
-      phase2EndPrice: this.PHASE2_PRICE_THRESHOLD,
-      phase3EndTransactions: this.PHASE3_END_TRANSACTIONS,
-      phase3EndPrice: this.PHASE3_PRICE_THRESHOLD,
-      phase4EndTransactions: this.PHASE4_END_TRANSACTIONS,
-      phase4EndPrice: this.PHASE4_PRICE_THRESHOLD,
-      phase5MonthlyCap: this.PHASE5_MONTHLY_CAP,
+      tier1EndTransactions: this.TIER_1_END_TRANSACTIONS,
+      tier1EndPrice: this.TIER_1_END,
+      tier2EndTransactions: this.TIER_2_END_TRANSACTIONS,
+      tier2EndPrice: this.TIER_2_END,
+      tier3EndTransactions: this.TIER_3_END_TRANSACTIONS,
+      tier3EndPrice: this.TIER_3_END,
+      tier4EndTransactions: this.TIER_4_END_TRANSACTIONS,
+      tier4EndPrice: this.TIER_4_END,
+      tier5EndTransactions: this.TIER_5_END_TRANSACTIONS,
+      tier5EndPrice: this.TIER_5_END,
+      tier6EndTransactions: this.TIER_6_END_TRANSACTIONS,
+      tier6EndPrice: this.TIER_6_END,
+      tier7EndTransactions: this.TIER_7_END_TRANSACTIONS,
+      tier7EndPrice: this.TIER_7_END,
+      tier8EndTransactions: this.TIER_8_END_TRANSACTIONS,
+      tier8EndPrice: this.TIER_8_END,
+      tier9MonthlyCap: this.TIER_9_MONTHLY_CAP,
     };
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useEffect, useState } from 'react';
-import { EquaPriceCalculator, PricePhase, formatEquaPrice } from '@/utils/priceCalculator';
+import { EquaPriceCalculator, PriceTier, formatEquaPrice } from '@/utils/priceCalculator';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat, formatEQXPrice, MultiFormatEquaPrice } from '@/utils/eqxOracle';
@@ -32,7 +32,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
   const [localCurrency, setLocalCurrency] = useState<string>('USD');
   const [eqxData, setEqxData] = useState<EqxPriceData>(DEFAULT_EQX_DATA);
   const [currentPrice, setCurrentPrice] = useState<number>(0.01);
-  const [currentPhase, setCurrentPhase] = useState<PricePhase>('phase1');
+  const [currentTier, setCurrentTier] = useState<PriceTier>('tier1');
   const [mintingRate, setMintingRate] = useState<string>('100,000');
 
   // Detect local currency on mount
@@ -40,14 +40,14 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
     setLocalCurrency(getUserLocaleCurrency());
   }, []);
 
-  // Calculate price, phase, and minting rate based on authoritative totalTransactions
+  // Calculate price, tier, and minting rate based on authoritative totalTransactions
   useEffect(() => {
     // Calculate price based on total_transactions from GlobalState (authoritative)
     const price = EquaPriceCalculator.calculatePrice(totalTransactions);
-    const phase = EquaPriceCalculator.getPhase(totalTransactions);
+    const tier = EquaPriceCalculator.getTier(totalTransactions);
     
     setCurrentPrice(price);
-    setCurrentPhase(phase);
+    setCurrentTier(tier);
     
     // Calculate minting rate based on total users
     const nextUserNumber = totalUsers + 1;
@@ -89,18 +89,28 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
     fetchEqxPrice();
   }, [totalTransactions, totalUsers]);
 
-  const getPhaseLabel = (phase: PricePhase): string => {
-    switch (phase) {
-      case 'phase1':
-        return 'Phase 1 ($0.01-$1)';
-      case 'phase2':
-        return 'Phase 2 ($1-$10)';
-      case 'phase3':
-        return 'Phase 3 ($10-$100)';
-      case 'phase4':
-        return 'Phase 4 ($100-$200k)';
-      case 'phase5':
-        return 'Phase 5 (Perpetual)';
+  const getTierLabel = (tier: PriceTier): string => {
+    switch (tier) {
+      case 'tier1':
+        return 'Tier 1 ($0.01-$0.1)';
+      case 'tier2':
+        return 'Tier 2 ($0.1-$1)';
+      case 'tier3':
+        return 'Tier 3 ($1-$10)';
+      case 'tier4':
+        return 'Tier 4 ($10-$100)';
+      case 'tier5':
+        return 'Tier 5 ($100-$1k)';
+      case 'tier6':
+        return 'Tier 6 ($1k-$10k)';
+      case 'tier7':
+        return 'Tier 7 ($10k-$100k)';
+      case 'tier8':
+        return 'Tier 8 ($100k-$500k)';
+      case 'tier9':
+        return 'Tier 9 (Perpetual)';
+      default:
+        return 'Unknown';
     }
   };
 
@@ -135,7 +145,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
             </p>
           )}
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
-            {getPhaseLabel(currentPhase)}
+            {getTierLabel(currentTier)}
             <span className="ml-2 text-purple-400">
               ({eqxData.priceSource === 'pyth' ? '🟢 Live' : eqxData.priceSource === 'coingecko' ? '🟡 API' : '⚪ Fallback'})
             </span>
