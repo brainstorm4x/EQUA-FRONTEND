@@ -60,9 +60,11 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
         // Parse the account data manually
         // Structure: authority (32), lockedAmount (8), lockStartTimestamp (8), unlockTimestamp (8), isUnlocked (1)
         // Plus 8-byte discriminator at the beginning
+        // Total expected size: 8 + 32 + 8 + 8 + 8 + 1 = 65 bytes
+        const EXPECTED_ACCOUNT_SIZE = 65;
         const data = accountInfo.data;
         
-        if (data.length < 65) {
+        if (data.length < EXPECTED_ACCOUNT_SIZE) {
           console.error('Invalid locked token account data length');
           setLockedTokenData(null);
           return;

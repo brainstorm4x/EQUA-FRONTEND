@@ -1,12 +1,24 @@
 import { BN } from '@coral-xyz/anchor';
 
 /**
+ * Time conversion constants
+ * Note: Uses simplified calculations (365-day year, 30-day month) for consistency
+ */
+const SECONDS_PER_MINUTE = 60;
+const SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE;
+const SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
+const DAYS_PER_MONTH = 30; // Simplified for consistent formatting
+const DAYS_PER_YEAR = 365; // Simplified (no leap year) to match backend
+const SECONDS_PER_MONTH = DAYS_PER_MONTH * SECONDS_PER_DAY;
+const SECONDS_PER_YEAR = DAYS_PER_YEAR * SECONDS_PER_DAY;
+
+/**
  * Lock period duration (4 years in seconds)
  * Note: This uses a simplified 365-day year calculation (not accounting for leap years)
  * to match the backend implementation. This may result in slight timing inaccuracies
  * (~1 day over 4 years), but ensures frontend/backend consistency.
  */
-export const LOCK_PERIOD_SECONDS = 4 * 365 * 24 * 60 * 60; // 126,144,000 seconds
+export const LOCK_PERIOD_SECONDS = 4 * SECONDS_PER_YEAR; // 126,144,000 seconds
 
 /**
  * Check if locked tokens are ready to unlock
@@ -40,9 +52,9 @@ export function getSecondsUntilUnlock(unlockTimestamp: BN): number {
 export function formatTimeRemaining(seconds: number): string {
   if (seconds <= 0) return "Unlocked";
   
-  const years = Math.floor(seconds / (365 * 24 * 60 * 60));
-  const months = Math.floor((seconds % (365 * 24 * 60 * 60)) / (30 * 24 * 60 * 60));
-  const days = Math.floor((seconds % (30 * 24 * 60 * 60)) / (24 * 60 * 60));
+  const years = Math.floor(seconds / SECONDS_PER_YEAR);
+  const months = Math.floor((seconds % SECONDS_PER_YEAR) / SECONDS_PER_MONTH);
+  const days = Math.floor((seconds % SECONDS_PER_MONTH) / SECONDS_PER_DAY);
   
   const parts: string[] = [];
   if (years > 0) parts.push(`${years} year${years > 1 ? 's' : ''}`);
