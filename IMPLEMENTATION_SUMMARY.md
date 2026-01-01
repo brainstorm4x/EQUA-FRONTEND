@@ -286,3 +286,43 @@ NEXT_PUBLIC_NETWORK=devnet
 **Files Modified:** 2
 **Tests Added:** 24 (all passing)
 **Build Time Impact:** Minimal (~1.2 KB increase)
+
+---
+
+## Minting Tier Alignment (Post-PR #70)
+
+### Backend Changes (EQUA Repository - brainstorm4x/EQUA PR #70)
+- ✅ **Tier 10 removed** - Tier 9 now unlimited (users #10,000,001+)
+- ✅ **Min(user_tier_rate, prevailing_rate) logic** - All users mint at lower of their tier or prevailing rate
+- ✅ **Amount-based locking** - Locking % determined by minting amount, not user index
+- ✅ **`global_state.user_count` parameter** correctly passed to tier calculations
+
+### Frontend Alignment (This PR)
+- ✅ Removed Tier 10 from `ELEVATED_MINT_TIERS` in `src/utils/registration.ts`
+- ✅ Removed Tier 10 from `MINT_SLOTS` in `src/utils/minting.ts`
+- ✅ Updated Tier 9 to have unlimited upper bound (`maxUser: Infinity`)
+- ✅ Updated Tier 9 rate from 0.0005 to 0.001 EQUA per attempt
+- ✅ Updated error messages in `src/lib/equa_token.ts` to remove Tier 10 references
+- ✅ Updated error messages in `public/idl/equa_token.json` to remove Tier 10 references
+- ✅ Updated test expectations to validate Tier 9 unlimited behavior
+
+### Tier Table (Corrected - Aligned with Backend)
+
+| Tier | User # | EQUA/Attempt | Elevated Attempts | Locked % (Amount-Based) |
+|------|--------|--------------|-------------------|-------------------------|
+| 1 | 1 | 100,000 | 100 | 99.9% (if minting 100k EQUA) |
+| 2 | 2-10 | 10,000 | 100 | 99% (if minting 10k EQUA) |
+| 3 | 11-100 | 1,000 | 100 | 90% (if minting 1k EQUA) |
+| 4 | 101-1,000 | 100 | 0 | 0% |
+| 5 | 1,001-10,000 | 10 | 0 | 0% |
+| 6 | 10,001-100,000 | 1 | 0 | 0% |
+| 7 | 100,001-1,000,000 | 0.1 | 0 | 0% |
+| 8 | 1,000,001-10,000,000 | 0.01 | 0 | 0% |
+| 9 | 10,000,001+ | 0.001 | 0 | 0% |
+
+### Important Notes
+
+- **Frontend tier constants are for display purposes only** - actual minting logic is enforced by backend Solana program
+- **Prevailing rate logic is backend-only** - frontend does not implement min(user_tier, prevailing_rate) calculation
+- **Amount-based locking** - Lock percentage is determined by the amount being minted, not the user's tier/index
+- Frontend MUST keep tier definitions aligned with backend for UI consistency and user expectations
