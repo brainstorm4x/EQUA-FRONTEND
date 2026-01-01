@@ -87,21 +87,13 @@ describe('Registration Utilities', () => {
       }
     });
 
-    it('should return correct tier for Users #10000001-100000000 (0.001 EQUA per attempt)', () => {
-      for (const userNum of [10000001, 50000000, 100000000]) {
+    it('should return Tier 9 for Users #10000001+ with unlimited upper bound', () => {
+      for (const userNum of [10000001, 50000000, 100000000, 999999999]) {
         const tier = getUserMintTier(userNum);
         expect(tier).not.toBeNull();
         expect(tier?.equaPerAttempt).toBe(0.001);
         expect(tier?.elevatedAttempts).toBe(0);
-      }
-    });
-
-    it('should return correct tier for Users #100000001+ (0.0005 EQUA per attempt)', () => {
-      for (const userNum of [100000001, 500000000, 999999999]) {
-        const tier = getUserMintTier(userNum);
-        expect(tier).not.toBeNull();
-        expect(tier?.equaPerAttempt).toBe(0.0005);
-        expect(tier?.elevatedAttempts).toBe(0);
+        expect(tier?.maxUser).toBe(Infinity);
       }
     });
 
@@ -212,7 +204,7 @@ describe('Registration Utilities', () => {
 
   describe('ELEVATED_MINT_TIERS configuration', () => {
     it('should have correct number of tiers', () => {
-      expect(ELEVATED_MINT_TIERS.length).toBe(10);
+      expect(ELEVATED_MINT_TIERS.length).toBe(9);
     });
 
     it('should have non-overlapping ranges', () => {
