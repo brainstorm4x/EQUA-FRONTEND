@@ -239,6 +239,30 @@ export type EquaToken = {
           }
         },
         {
+          "name": "globalState",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "userTokenAccount",
           "writable": true
         },
@@ -1589,6 +1613,30 @@ export type EquaToken = {
               {
                 "kind": "account",
                 "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "globalState",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
               }
             ]
           }
