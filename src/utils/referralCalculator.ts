@@ -1,19 +1,27 @@
 /**
  * EQUA Token Referral Reward Calculator
  * 
- * Calculates referral rewards as a percentage of minted tokens:
- * - Individual referrals: 1% of referred user's minted tokens (one-time on each mint)
- * - Business referrals: 2% of referred user's minted tokens (one-time on each mint)
+ * Calculates referral rewards as integer credits awarded on registration:
+ * - Individual referrals: 1 credit per successful registration
+ * - Business referrals: 2 credits per successful registration
  * 
- * Note: These are recurring rewards - the referrer gets a percentage each time
- * their referee mints tokens.
+ * Credits are redeemable for bonus minting attempts (5 credits = 1 bonus mint).
+ * Credits are stored as integers in the backend UserAccount.referral_rewards field.
+ * 
+ * Backend source: programs/equa_token/src/lib.rs (lines 765-790)
  */
 
 import { formatEquaRaw } from './tokenFormat';
 import { AccountType } from './registration';
 
-// Referral reward percentages
+// Referral credit awards (integer-based, NOT percentages)
+export const INDIVIDUAL_CREDIT_AWARD = 1;  // 1 credit per individual referral
+export const BUSINESS_CREDIT_AWARD = 2;    // 2 credits per business referral
+export const CREDITS_FOR_BONUS_MINT = 5;   // 5 credits = 1 bonus mint attempt
+
+// @deprecated Use INDIVIDUAL_CREDIT_AWARD instead. Will be removed in next major version.
 export const INDIVIDUAL_REFERRAL_PERCENT = 1;  // 1% for referring individuals
+// @deprecated Use BUSINESS_CREDIT_AWARD instead. Will be removed in next major version.
 export const BUSINESS_REFERRAL_PERCENT = 2;    // 2% for referring businesses
 
 // EQUA token decimals (6 decimals)
@@ -31,7 +39,24 @@ export interface ReferralRewardInfo {
 }
 
 /**
+ * Information about a credit-based referral reward calculation
+ */
+export interface CreditBasedRewardInfo {
+  /** The type of account being referred */
+  accountType: AccountType;
+  /** Integer credits awarded for this referral (1 or 2) */
+  creditsAwarded: number;
+  /** Total accumulated credits from backend */
+  totalCredits: number;
+  /** Credits required for bonus mint (always 5) */
+  creditsForBonusMint: number;
+  /** Whether user can claim a bonus mint */
+  canClaimBonus: boolean;
+}
+
+/**
  * Information about a percentage-based referral reward calculation
+ * @deprecated Use CreditBasedRewardInfo instead. Will be removed in next major version.
  */
 export interface PercentageBasedRewardInfo {
   /** The amount of EQUA being minted by the referee (in base units / Gajbhiyes) */
@@ -50,9 +75,50 @@ export interface PercentageBasedRewardInfo {
 
 export class ReferralRewardCalculator {
   /**
+   * Get credit award amount based on account type
+   * Matches backend logic: 1 credit for individual, 2 for business
+   */
+  static getCreditAward(accountType: AccountType): number {
+    return accountType === 'business' ? BUSINESS_CREDIT_AWARD : INDIVIDUAL_CREDIT_AWARD;
+  }
+
+  /**
+   * Calculate credit-based reward info
+   * @param accountType - Type of referral (individual or business)
+   * @param currentTotalCredits - Current accumulated credits from backend
+   * @returns Credit-based reward information
+   */
+  static calculateCreditReward(
+    accountType: AccountType,
+    currentTotalCredits: number
+  ): CreditBasedRewardInfo {
+    const creditsAwarded = this.getCreditAward(accountType);
+    const totalCredits = currentTotalCredits;
+    const creditsForBonusMint = CREDITS_FOR_BONUS_MINT;
+    const canClaimBonus = totalCredits >= creditsForBonusMint;
+
+    return {
+      accountType,
+      creditsAwarded,
+      totalCredits,
+      creditsForBonusMint,
+      canClaimBonus,
+    };
+  }
+
+  /**
+   * Format credit count for display
+   */
+  static formatCredits(credits: number): string {
+    return `${credits} Credit${credits !== 1 ? 's' : ''}`;
+  }
+
+  /**
    * Get the referral percentage based on account type
+   * @deprecated Use getCreditAward instead. Will be removed in next major version.
    */
   static getReferralPercent(accountType: AccountType): number {
+    console.warn('getReferralPercent is deprecated, use getCreditAward instead');
     return accountType === 'business' ? BUSINESS_REFERRAL_PERCENT : INDIVIDUAL_REFERRAL_PERCENT;
   }
 
@@ -60,6 +126,7 @@ export class ReferralRewardCalculator {
    * Calculate referral reward as a percentage of minted amount
    * This is the primary reward calculation method for the new percentage-based system
    * 
+   * @deprecated Use calculateCreditReward instead. Will be removed in next major version.
    * @param mintAmount - The amount of EQUA being minted by the referee (in base units)
    * @param accountType - The type of account being referred ('individual' or 'business')
    * @returns PercentageBasedRewardInfo with calculated reward
@@ -68,6 +135,7 @@ export class ReferralRewardCalculator {
     mintAmount: number,
     accountType: AccountType
   ): PercentageBasedRewardInfo {
+    console.warn('calculatePercentageReward is deprecated, use calculateCreditReward instead');
     const referralPercent = this.getReferralPercent(accountType);
     // Use integer arithmetic to avoid floating-point precision issues
     // Calculate: (mintAmount * referralPercent) / 100
@@ -220,7 +288,11 @@ export function calculateReferralReward(userIndex: number, accountType: AccountT
   return ReferralRewardCalculator.calculateReward(userIndex, accountType);
 }
 
+/**
+ * @deprecated Use calculateCreditReward instead. Will be removed in next major version.
+ */
 export function calculatePercentageReferralReward(mintAmount: number, accountType: AccountType): PercentageBasedRewardInfo {
+  console.warn('calculatePercentageReferralReward is deprecated, use calculateCreditReward instead');
   return ReferralRewardCalculator.calculatePercentageReward(mintAmount, accountType);
 }
 
@@ -228,6 +300,23 @@ export function formatReferralReward(rewardAmountRaw: bigint): string {
   return ReferralRewardCalculator.formatReward(rewardAmountRaw);
 }
 
+/**
+ * @deprecated Use getCreditAward instead. Will be removed in next major version.
+ */
 export function getReferralPercent(accountType: AccountType): number {
+  console.warn('getReferralPercent is deprecated, use getCreditAward instead');
   return ReferralRewardCalculator.getReferralPercent(accountType);
+}
+
+// New credit-based functions
+export function calculateCreditReward(accountType: AccountType, currentTotalCredits: number): CreditBasedRewardInfo {
+  return ReferralRewardCalculator.calculateCreditReward(accountType, currentTotalCredits);
+}
+
+export function getCreditAward(accountType: AccountType): number {
+  return ReferralRewardCalculator.getCreditAward(accountType);
+}
+
+export function formatCredits(credits: number): string {
+  return ReferralRewardCalculator.formatCredits(credits);
 }

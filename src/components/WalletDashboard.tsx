@@ -77,7 +77,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const [copied, setCopied] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
   const [referralCount, setReferralCount] = useState<number>(0);
-  const [referralRewards, setReferralRewards] = useState<number>(0);
+  const [referralCredits, setReferralCredits] = useState<number | null>(null);
   
   // ✅ Registration check state
   const [isRegistered, setIsRegistered] = useState(false);
@@ -130,7 +130,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     if (!publicKey || !connected) {
       setMintDecimals(6);
       setReferralCount(0);
-      setReferralRewards(0);
+      setReferralCredits(null);
       return;
     }
 
@@ -140,20 +140,20 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         const decimals = await getEquaMintDecimals(connection);
         setMintDecimals(decimals);
         
-        // Get COMPUTED referral data from on-chain (not the stored legacy field)
+        // Get referral credits from on-chain (integer count, not EQUA amounts)
         if (userAccountPDA) {
           // Import the referral stats function
           const { getReferralStats } = await import('@/utils/referralRewards');
           const stats = await getReferralStats(connection, userAccountPDA);
           
           if (stats) {
-            // Use computed rewards (mint-based, not legacy signup bonuses)
-            setReferralRewards(stats.referralRewards.toNumber());
-            // Use on-chain referred user count (not localStorage heuristics)
-            setReferralCount(stats.referredUsersCount);
+            // Use integer credits from backend
+            setReferralCredits(stats.credits);
+            // Use on-chain referred user count
+            setReferralCount(stats.referredCount);
             if (process.env.NODE_ENV === 'development') {
-              console.log('✓ Computed referral rewards:', stats.referralRewards.toString());
-              console.log('✓ On-chain referral count:', stats.referredUsersCount);
+              console.log('✓ Referral credits:', stats.credits);
+              console.log('✓ On-chain referral count:', stats.referredCount);
             }
           }
         }
@@ -254,16 +254,22 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           </div>
         </div>
         <p className="text-purple-200 text-sm mb-4">
-          Share your referral to earn rewards: 1% for individuals, 2% for businesses!
+          Earn referral credits: 1 credit per individual referral, 2 credits per business referral. 
+          Redeem 5 credits for bonus minting attempts!
         </p>
         
-        {/* Referral Rewards Display (computed from minted amounts) */}
-        {referralRewards > 0 && (
+        {/* Referral Credits Display */}
+        {referralCredits !== null && referralCredits > 0 && (
           <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-3 mb-4">
-            <p className="text-green-300 text-xs mb-1">Referral Rewards (Mint-Based)</p>
+            <p className="text-green-300 text-xs mb-1">Referral Credits</p>
             <p className="text-white text-lg font-bold">
-              {formatEquaBalance(referralRewards)} EQUA
+              {referralCredits} Credit{referralCredits !== 1 ? 's' : ''}
             </p>
+            {referralCredits >= 5 && (
+              <p className="text-yellow-300 text-xs mt-1">
+                ✨ Ready to claim bonus mint!
+              </p>
+            )}
           </div>
         )}
         
@@ -1131,7 +1137,7 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
 
         <div className="text-center">
           <p className="text-purple-200 text-sm mb-6">
-            Share your referral link and earn rewards: 1% for individuals, 2% for businesses!
+            Share your referral link and earn credits: 1 credit per individual referral, 2 credits per business referral!
           </p>
 
           {/* Referral Link Preview */}

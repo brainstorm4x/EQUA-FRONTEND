@@ -1,12 +1,14 @@
 /**
  * Referral Rewards Utilities
  * 
- * Functions for querying and managing referral rewards on-chain.
+ * Functions for querying and managing referral credits on-chain.
  * 
- * IMPORTANT: Frontend now displays COMPUTED rewards based on actual minted amounts
- * of referred users (1% individual / 2% business), NOT the stored `referral_rewards`
- * field which contains legacy signup bonuses. This ensures displayed rewards reflect
- * only mint-based percentages and adjust dynamically with changing mint amounts.
+ * IMPORTANT: Frontend reads INTEGER CREDIT COUNT from backend's `referral_rewards` field.
+ * - Individual referrals: 1 credit per registration
+ * - Business referrals: 2 credits per registration
+ * - Credits are redeemable for bonus minting attempts (5 credits = 1 bonus mint)
+ * 
+ * Backend source: programs/equa_token/src/lib.rs (lines 765-790)
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';
@@ -14,8 +16,12 @@ import { BN } from '@coral-xyz/anchor';
 import { parseUserAccountData, UserAccountData } from './onchainRegistration';
 import { PROGRAM_ID } from '@/lib/constants';
 import { 
+  INDIVIDUAL_CREDIT_AWARD,
+  BUSINESS_CREDIT_AWARD,
+  CREDITS_FOR_BONUS_MINT,
+  // Legacy percentage constants (deprecated)
   INDIVIDUAL_REFERRAL_PERCENT, 
-  BUSINESS_REFERRAL_PERCENT // Reserved for future use when backend adds referral_type field
+  BUSINESS_REFERRAL_PERCENT
 } from './referralCalculator';
 
 /**
@@ -79,14 +85,51 @@ export async function getReferralRewardsBalance(
 }
 
 /**
+ * Get referral credits from backend UserAccount
+ * 
+ * Reads the authoritative `referral_rewards` field which contains
+ * integer credit count (NOT EQUA token amounts).
+ * 
+ * @param connection - Solana connection
+ * @param userAccountPubkey - User account PDA public key (NOT authority pubkey)
+ * @returns Credit count as number, or null on error
+ */
+export async function getReferralCredits(
+  connection: Connection,
+  userAccountPubkey: PublicKey
+): Promise<number | null> {
+  try {
+    const accountInfo = await connection.getAccountInfo(userAccountPubkey);
+    if (!accountInfo) {
+      console.warn('User account not found');
+      return null;
+    }
+
+    const userData = parseUserAccountData(accountInfo.data);
+    if (!userData) {
+      console.warn('Failed to parse user account data');
+      return null;
+    }
+
+    // Read integer credit count from backend
+    const credits = userData.referralRewards.toNumber();
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✓ Referral credits: ${credits}`);
+    }
+
+    return credits;
+  } catch (error) {
+    console.error('Error fetching referral credits:', error);
+    return null;
+  }
+}
+
+/**
  * Compute referral rewards from on-chain truth (minted amounts of referred users)
  * 
- * This function calculates rewards as a percentage of actual minted tokens by referred users,
- * ignoring the stored `referral_rewards` field which contains legacy signup bonuses.
- * 
- * Percentages:
- * - Individual referrals: 1% of minted amount
- * - Business referrals: 2% of minted amount (when backend adds referral_type field)
+ * @deprecated This function incorrectly calculates percentages. Use getReferralCredits() instead.
+ * Will be removed in next major version.
  * 
  * @param connection Solana connection
  * @param referrerAuthorityPubkey The referrer's wallet authority public key
@@ -96,6 +139,7 @@ export async function computeReferralRewards(
   connection: Connection,
   referrerAuthorityPubkey: PublicKey
 ): Promise<BN | null> {
+  console.warn('computeReferralRewards is deprecated, use getReferralCredits instead');
   try {
     // Get all users referred by this authority
     const referredUserPubkeys = await getUsersReferredBy(connection, referrerAuthorityPubkey);
@@ -122,8 +166,7 @@ export async function computeReferralRewards(
         // Get minted amount (in base units - 6 decimals)
         const mintedAmount = userData.mintedAmount;
 
-        // TODO: When backend adds referral_type field, check it here to use 1% or 2%
-        // For now, use INDIVIDUAL_REFERRAL_PERCENT (1%) for all referrals
+        // Use INDIVIDUAL_REFERRAL_PERCENT (1%) for all referrals
         const rewardPercent = INDIVIDUAL_REFERRAL_PERCENT;
 
         // Calculate reward: (minted_amount * percent) / 100
@@ -152,47 +195,47 @@ export async function computeReferralRewards(
 }
 
 /**
- * Get complete referral statistics for a user (with COMPUTED rewards)
+ * Get complete referral statistics for a user
  * 
- * Returns computed mint-based rewards (not the stored legacy value) and actual
- * on-chain referred user count.
+ * Returns integer credit count from backend and actual on-chain referred user count.
  * 
- * @param connection Solana connection
- * @param userAccountPubkey The user account public key
- * @returns Referral statistics with computed rewards and on-chain user count
+ * @param connection - Solana connection
+ * @param userAccountPubkey - The user account public key (PDA)
+ * @returns Referral statistics with integer credits
  */
 export async function getReferralStats(
   connection: Connection,
   userAccountPubkey: PublicKey
 ): Promise<{
-  referralRewards: BN;
-  referredUsersCount: number;
-  referredUsers: PublicKey[];
+  credits: number;           // Integer credit count from backend
+  referredCount: number;     // Actual referred user count
+  canClaimBonus: boolean;    // true if credits >= 5
+  referredUsers: PublicKey[]; // List of referred user PDAs
 } | null> {
   try {
+    // Get credits from backend UserAccount
+    const credits = await getReferralCredits(connection, userAccountPubkey);
+    if (credits === null) return null;
+
+    // Get user account data to extract authority
     const accountInfo = await connection.getAccountInfo(userAccountPubkey);
-    if (!accountInfo) {
-      return null;
-    }
+    if (!accountInfo) return null;
 
     const userData = parseUserAccountData(accountInfo.data);
-    if (!userData) {
-      return null;
-    }
+    if (!userData) return null;
 
-    // Get all users this account has referred (on-chain source of truth)
+    // Get referred user count
     const referredUsers = await getUsersReferredBy(connection, userData.authority);
-
-    // Compute rewards from actual minted amounts (not the stored field)
-    const computedRewards = await computeReferralRewards(connection, userData.authority);
+    const referredCount = referredUsers.length;
 
     return {
-      referralRewards: computedRewards || new BN(0),  // Use computed rewards
-      referredUsersCount: referredUsers.length,       // Use on-chain count
+      credits,
+      referredCount,
+      canClaimBonus: credits >= CREDITS_FOR_BONUS_MINT,
       referredUsers,
     };
   } catch (error) {
-    console.error('Error fetching referral stats:', error);
+    console.error('Error getting referral stats:', error);
     return null;
   }
 }
