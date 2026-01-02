@@ -1280,7 +1280,7 @@ export default function MintPage() {
       }
       
       // Derive all required PDAs for the 13-account mint_tokens instruction
-      const [globalStatePDA] = getGlobalStatePDA();
+      // Note: globalStatePDA, mintPDA, and mintAuthority are already available from useProgram hook
       const [lockedTokenAccountPDA] = getLockedTokenAccountPDA(publicKey);
       const lockedTokenPdaPDA = getLockedTokenPdaPDA(publicKey);
       
