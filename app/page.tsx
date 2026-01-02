@@ -166,11 +166,19 @@ export default function HomePage() {
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-6 mt-16">
+            {/* Referral Credit System (Integer-Based)
+                - Individual referrals: 1 credit per successful registration
+                - Business referrals: 2 credits per successful registration
+                - Credits are redeemable for bonus minting attempts
+                - Backend source: brainstorm4x/EQUA repo - programs/equa_token/src/lib.rs (lines 765-790)
+                - Note: Frontend currently implements percentage-based calculation (src/utils/referralRewards.ts)
+            */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
               <div className="text-4xl mb-4">🎁</div>
               <h3 className="text-xl font-bold text-white mb-2">Referral Rewards</h3>
               <p className="text-purple-200">
-                Refer others and earn 1% for individuals, 2% for businesses (recurring on each mint)
+                Earn referral credits: 1 credit per individual referral, 2 credits per business referral. 
+                Redeem credits for bonus minting attempts.
               </p>
             </div>
 
@@ -182,11 +190,18 @@ export default function HomePage() {
               </p>
             </div>
 
+            {/* 9-Tier Price Appreciation Model
+                - Tiers 1-8: Constant 0.01% compound growth per epoch
+                - Tier 9 ($500k+): Linear growth at $250 per epoch (1000 txns)
+                - Implementation: src/utils/priceCalculator.ts
+                - Tests: __tests__/pricing/priceCalculator.test.ts
+            */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
               <div className="text-4xl mb-4">📈</div>
               <h3 className="text-xl font-bold text-white mb-2">Price Appreciation</h3>
               <p className="text-purple-200">
-                Five-phase pricing: 0.1% growth from $0.01 to $100, then 0.01% to $200k, then $100/epoch forever
+                9-tier compounding system: Tiers 1-8 grow at constant 0.01% per epoch. 
+                Tier 9 ($500k+) grows linearly at $250 per epoch (1000 transactions).
               </p>
             </div>
           </div>
