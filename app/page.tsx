@@ -170,7 +170,8 @@ export default function HomePage() {
                 - Individual referrals: 1 credit per successful registration
                 - Business referrals: 2 credits per successful registration
                 - Credits are redeemable for bonus minting attempts
-                - Backend source: programs/equa_token/src/lib.rs (lines 765-790)
+                - Backend source: brainstorm4x/EQUA repo - programs/equa_token/src/lib.rs (lines 765-790)
+                - Note: Frontend currently implements percentage-based calculation (src/utils/referralRewards.ts)
             */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
               <div className="text-4xl mb-4">🎁</div>
@@ -193,7 +194,7 @@ export default function HomePage() {
                 - Tiers 1-8: Constant 0.01% compound growth per epoch
                 - Tier 9 ($500k+): Linear growth at $250 per epoch (1000 txns)
                 - Implementation: src/utils/priceCalculator.ts
-                - Backend validation: tests/price-appreciation.ts
+                - Tests: __tests__/pricing/priceCalculator.test.ts
             */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
               <div className="text-4xl mb-4">📈</div>
