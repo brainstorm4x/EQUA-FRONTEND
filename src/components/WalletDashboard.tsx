@@ -379,7 +379,7 @@ const SendModal: FC<SendModalProps> = ({
         
         // Get current EQUA price from global state
         // For now, use a default price - in production, fetch from blockchain
-        const priceData = await getEquaPriceMultiFormat(DEFAULT_EQUA_PRICE_USD, currencyCode, exchangeRate);
+        const priceData = await getEquaPriceMultiFormat(DEFAULT_EQUA_PRICE_USD, currencyCode, exchangeRate, connection);
         setEquaPrice(priceData.localCurrency);
       } catch (err) {
         console.warn('Failed to fetch EQUA price:', err);
@@ -389,7 +389,7 @@ const SendModal: FC<SendModalProps> = ({
       }
     };
     fetchPrice();
-  }, []);
+  }, [connection]);
 
   // Handle local currency amount change
   const handleLocalCurrencyChange = (value: string) => {

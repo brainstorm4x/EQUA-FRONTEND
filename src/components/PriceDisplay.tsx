@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, useEffect, useState } from 'react';
+import { useConnection } from '@solana/wallet-adapter-react';
 import { EquaPriceCalculator, PriceTier, formatEquaPrice } from '@/utils/priceCalculator';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
@@ -16,18 +17,19 @@ interface PriceDisplayProps {
 interface EqxPriceData {
   eqxPrice: number;
   eqxValue: number;
-  priceSource: 'pyth' | 'coingecko' | 'fallback';
+  priceSource: 'on-chain-oracle';
 }
 
 const DEFAULT_EQX_DATA: EqxPriceData = {
   eqxPrice: 0.01,
   eqxValue: 1.0,
-  priceSource: 'fallback',
+  priceSource: 'on-chain-oracle',
 };
 
 export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats = false }) => {
   // Use authoritative global state hook for real-time stats
   const { totalUsers, totalTransactions, isLoading: isStatsLoading } = useGlobalStateStats();
+  const { connection } = useConnection();
   
   const [localCurrency, setLocalCurrency] = useState<string>('USD');
   const [eqxData, setEqxData] = useState<EqxPriceData>(DEFAULT_EQX_DATA);
@@ -66,7 +68,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
       const exchangeRate = DEFAULT_RATES[currencyCode]?.rate || 1;
       let eqxPriceData: MultiFormatEquaPrice;
       try {
-        eqxPriceData = await getEquaPriceMultiFormat(price, currencyCode, exchangeRate);
+        eqxPriceData = await getEquaPriceMultiFormat(price, currencyCode, exchangeRate, connection);
       } catch (eqxError) {
         console.warn('Error fetching EQX price, using defaults:', eqxError);
         eqxPriceData = {
@@ -75,7 +77,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           localCurrency: price * exchangeRate,
           localCurrencyCode: currencyCode,
           eqxValue: 1.0,
-          source: 'fallback',
+          source: 'on-chain-oracle',
         };
       }
       
@@ -87,7 +89,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
     };
     
     fetchEqxPrice();
-  }, [totalTransactions, totalUsers]);
+  }, [totalTransactions, totalUsers, connection]);
 
   const getTierLabel = (tier: PriceTier): string => {
     switch (tier) {
@@ -147,7 +149,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
             {getTierLabel(currentTier)}
             <span className="ml-2 text-purple-400">
-              ({eqxData.priceSource === 'pyth' ? '🟢 Live' : eqxData.priceSource === 'coingecko' ? '🟡 API' : '⚪ Fallback'})
+              ({eqxData.priceSource === 'on-chain-oracle' ? '🟢 On-Chain' : '⚪ Fallback'})
             </span>
           </p>
         </div>
