@@ -112,6 +112,8 @@ export async function getReferralCredits(
     }
 
     // Read integer credit count from backend
+    // Note: Credits are stored as u64, which is within JavaScript's safe integer range
+    // for reasonable credit values (MAX_SAFE_INTEGER = 9,007,199,254,740,991)
     const credits = userData.referralRewards.toNumber();
 
     if (process.env.NODE_ENV === 'development') {
@@ -139,7 +141,9 @@ export async function computeReferralRewards(
   connection: Connection,
   referrerAuthorityPubkey: PublicKey
 ): Promise<BN | null> {
-  console.warn('computeReferralRewards is deprecated, use getReferralCredits instead');
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('computeReferralRewards is deprecated, use getReferralCredits instead');
+  }
   try {
     // Get all users referred by this authority
     const referredUserPubkeys = await getUsersReferredBy(connection, referrerAuthorityPubkey);

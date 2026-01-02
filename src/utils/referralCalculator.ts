@@ -118,7 +118,9 @@ export class ReferralRewardCalculator {
    * @deprecated Use getCreditAward instead. Will be removed in next major version.
    */
   static getReferralPercent(accountType: AccountType): number {
-    console.warn('getReferralPercent is deprecated, use getCreditAward instead');
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('getReferralPercent is deprecated, use getCreditAward instead');
+    }
     return accountType === 'business' ? BUSINESS_REFERRAL_PERCENT : INDIVIDUAL_REFERRAL_PERCENT;
   }
 
@@ -135,7 +137,9 @@ export class ReferralRewardCalculator {
     mintAmount: number,
     accountType: AccountType
   ): PercentageBasedRewardInfo {
-    console.warn('calculatePercentageReward is deprecated, use calculateCreditReward instead');
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('calculatePercentageReward is deprecated, use calculateCreditReward instead');
+    }
     const referralPercent = this.getReferralPercent(accountType);
     // Use integer arithmetic to avoid floating-point precision issues
     // Calculate: (mintAmount * referralPercent) / 100
@@ -292,7 +296,9 @@ export function calculateReferralReward(userIndex: number, accountType: AccountT
  * @deprecated Use calculateCreditReward instead. Will be removed in next major version.
  */
 export function calculatePercentageReferralReward(mintAmount: number, accountType: AccountType): PercentageBasedRewardInfo {
-  console.warn('calculatePercentageReferralReward is deprecated, use calculateCreditReward instead');
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('calculatePercentageReferralReward is deprecated, use calculateCreditReward instead');
+  }
   return ReferralRewardCalculator.calculatePercentageReward(mintAmount, accountType);
 }
 
@@ -304,7 +310,9 @@ export function formatReferralReward(rewardAmountRaw: bigint): string {
  * @deprecated Use getCreditAward instead. Will be removed in next major version.
  */
 export function getReferralPercent(accountType: AccountType): number {
-  console.warn('getReferralPercent is deprecated, use getCreditAward instead');
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('getReferralPercent is deprecated, use getCreditAward instead');
+  }
   return ReferralRewardCalculator.getReferralPercent(accountType);
 }
 

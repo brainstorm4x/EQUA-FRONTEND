@@ -132,7 +132,9 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
           <div className="text-purple-300 text-sm mb-1">Accumulated Credits</div>
           <div className="text-3xl font-bold text-white flex items-baseline gap-2">
             {credits !== null ? credits : 0}
-            <span className="text-lg text-purple-300">Credit{credits !== 1 ? 's' : ''}</span>
+            <span className="text-lg text-purple-300">
+              {(credits !== null ? credits : 0) !== 1 ? 'Credits' : 'Credit'}
+            </span>
           </div>
           {credits !== null && credits >= 5 && (
             <div className="text-yellow-300 text-sm mt-2">
