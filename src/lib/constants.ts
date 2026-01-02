@@ -128,6 +128,7 @@ export const MINT_AUTHORITY_SEED = 'mint-authority';
 export const USER_ACCOUNT_SEED = 'user-account';
 export const USER_META_SEED = 'user-meta';
 export const BUSINESS_REGISTRY_SEED = 'business-registry';
+export const LOCKED_TOKENS_SEED = 'locked-tokens';
 
 // Token Program Addresses (for validation)
 export const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';

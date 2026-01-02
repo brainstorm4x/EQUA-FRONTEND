@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useProgram } from '@/hooks/useProgram';
 import { Logo } from '@/components/Logo';
-import { PublicKey, Transaction, Connection } from '@solana/web3.js';
+import { PublicKey, Transaction, Connection, SystemProgram } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
@@ -25,6 +25,11 @@ import {
   getUserMetadataPDA,
   getUserAccountPDA,
   getBusinessRegistryPDA,
+  getGlobalStatePDA,
+  getLockedTokenAccountPDA,
+  getLockedTokenPdaPDA,
+  getMintPDA,
+  getMintAuthorityPDA,
   isUserRegistered,
   verifyMintOwner,
 } from '@/lib/program';
@@ -1274,28 +1279,54 @@ export default function MintPage() {
         }
       }
       
-      // Build the mint_tokens instruction (8-account version for deployed program)
+      // Derive all required PDAs for the 13-account mint_tokens instruction
+      const [globalStatePDA] = getGlobalStatePDA();
+      const [lockedTokenAccountPDA] = getLockedTokenAccountPDA(publicKey);
+      const lockedTokenPdaPDA = getLockedTokenPdaPDA(publicKey);
+      
+      // Derive locked token ATA (owned by locked_token_pda, not the user wallet)
+      const lockedTokenAta = getAssociatedTokenAddressSync(
+        mintPDA,
+        lockedTokenPdaPDA,  // Authority is the locked token PDA itself
+        true,                // allowOwnerOffCurve = true for PDA
+        TOKEN_PROGRAM_ID,    // Token-2022
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+      
+      // Build the mint_tokens instruction (13-account version matching backend)
       const mintInstruction = createMintTokensInstruction(
         userAccountPDA,
         userMetadataPDA,
+        globalStatePDA,              // NEW: global_state
         userTokenAccount,
         mintPDA,
         mintAuthority,
         referrerAccountPDA,
         publicKey,
+        lockedTokenAccountPDA,       // NEW: locked_token_account
+        lockedTokenAta,              // NEW: locked_token_ata
+        lockedTokenPdaPDA,           // NEW: locked_token_pda
         TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID, // NEW: associated_token_program
+        SystemProgram.programId,     // NEW: system_program
         mintAmount
       );
       
-      console.log('📝 Mint instruction accounts (8 accounts):');
+      console.log('📝 Mint instruction accounts (13 accounts):');
       console.log('  0. user_account:', userAccountPDA.toBase58());
       console.log('  1. user_metadata:', userMetadataPDA.toBase58());
-      console.log('  2. user_token_account:', userTokenAccount.toBase58());
-      console.log('  3. mint:', mintPDA.toBase58());
-      console.log('  4. mint_authority:', mintAuthority.toBase58());
-      console.log('  5. referrer_account:', referrerAccountPDA.toBase58());
-      console.log('  6. authority:', publicKey.toBase58());
-      console.log('  7. token_program:', TOKEN_PROGRAM_ID.toBase58());
+      console.log('  2. global_state:', globalStatePDA.toBase58());
+      console.log('  3. user_token_account:', userTokenAccount.toBase58());
+      console.log('  4. mint:', mintPDA.toBase58());
+      console.log('  5. mint_authority:', mintAuthority.toBase58());
+      console.log('  6. referrer_account:', referrerAccountPDA.toBase58());
+      console.log('  7. authority:', publicKey.toBase58());
+      console.log('  8. locked_token_account:', lockedTokenAccountPDA.toBase58());
+      console.log('  9. locked_token_ata:', lockedTokenAta.toBase58());
+      console.log('  10. locked_token_pda:', lockedTokenPdaPDA.toBase58());
+      console.log('  11. token_program:', TOKEN_PROGRAM_ID.toBase58());
+      console.log('  12. associated_token_program:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
+      console.log('  13. system_program:', SystemProgram.programId.toBase58());
       
       // Create and send transaction using wallet adapter's sendTransaction
       // This ensures proper signature handling and prevents AccountNotSigner errors

@@ -94,6 +94,28 @@ export function getReferrerAccountPDA(referrerPubkey: PublicKey): [PublicKey, nu
   return getCachedPDA(cacheKey, [Buffer.from(USER_ACCOUNT_SEED), referrerPubkey.toBuffer()]);
 }
 
+/**
+ * Get locked token account PDA for a user
+ * Seeds: [b"locked-tokens", authority.key()]
+ * This account stores the metadata about locked tokens (amount, unlock time, etc.)
+ * @param authority - The wallet public key
+ * @returns PDA and bump seed
+ */
+export function getLockedTokenAccountPDA(authority: PublicKey): [PublicKey, number] {
+  return getLockedTokenAccountPda(authority, PROGRAM_ID);
+}
+
+/**
+ * Get locked token PDA (used as ATA authority)
+ * Seeds: [b"locked-tokens", authority.key()] - same as getLockedTokenAccountPDA
+ * This PDA is the authority for the locked token ATA
+ * @param authority - The wallet public key
+ * @returns PDA address
+ */
+export function getLockedTokenPdaPDA(authority: PublicKey): PublicKey {
+  return getLockedTokenPda(authority, PROGRAM_ID);
+}
+
 // ============================================================================
 // PERFORMANCE OPTIMIZATION: Cached Program Instance
 // Avoid re-fetching IDL on every call
@@ -702,18 +724,24 @@ export function createMintEquaTokensInstruction(
   return instruction;
 }
 
-// ✅ Create mint_tokens instruction (8-account version aligned with backend IDL)
+// ✅ Create mint_tokens instruction (13-account version aligned with backend IDL)
 // This is the correct instruction for daily EQUA minting on the deployed program
-// Account order: user_account, user_metadata, user_token_account, mint, mint_authority, referrer_account, authority, token_program
+// Account order matches backend MintTokens struct with locked token accounts
 export function createMintTokensInstruction(
   userAccount: PublicKey,
   userMetadata: PublicKey,
+  globalState: PublicKey,
   userTokenAccount: PublicKey,
   mint: PublicKey,
   mintAuthority: PublicKey,
   referrerAccount: PublicKey,
   authority: PublicKey,
+  lockedTokenAccount: PublicKey,
+  lockedTokenAta: PublicKey,
+  lockedTokenPda: PublicKey,
   tokenProgram: PublicKey,
+  associatedTokenProgram: PublicKey,
+  systemProgram: PublicKey,
   amount: number
 ): TransactionInstruction {
   // Discriminator from backend IDL for mint_tokens instruction
@@ -751,7 +779,7 @@ export function createMintTokensInstruction(
   // Log referrer account handling
   const isReferrerProvided = !referrerAccount.equals(PublicKey.default);
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Building mint_tokens instruction (8 accounts):');
+    console.log('🔧 Building mint_tokens instruction (13 accounts):');
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Amount (raw base units):', amount);
     console.log('  - Amount BN:', amountBN.toString());
@@ -759,18 +787,25 @@ export function createMintTokensInstruction(
     console.log('  - Referrer:', isReferrerProvided ? referrerAccount.toBase58() : `Self-referral (${referrerAccount.toBase58()})`);
   }
   
-  // Build keys in exact order matching backend IDL
+  // Build keys in exact order matching backend IDL (13 accounts total)
   // Note: referrer_account MUST ALWAYS be writable per IDL, even when user self-refers
   // This allows the backend to update referral rewards when a referred user mints
+  // Note: authority is now writable as it is the payer for locked token account initialization
   const keys = [
-    { pubkey: userAccount, isSigner: false, isWritable: true },      // 0. user_account
-    { pubkey: userMetadata, isSigner: false, isWritable: true },     // 1. user_metadata
-    { pubkey: userTokenAccount, isSigner: false, isWritable: true }, // 2. user_token_account
-    { pubkey: mint, isSigner: false, isWritable: true },             // 3. mint
-    { pubkey: mintAuthority, isSigner: false, isWritable: false },   // 4. mint_authority
-    { pubkey: referrerAccount, isSigner: false, isWritable: true },  // 5. referrer_account (ALWAYS writable per IDL)
-    { pubkey: authority, isSigner: true, isWritable: false },        // 6. authority (MUST be signer)
-    { pubkey: tokenProgram, isSigner: false, isWritable: false },    // 7. token_program
+    { pubkey: userAccount, isSigner: false, isWritable: true },           // 0. user_account
+    { pubkey: userMetadata, isSigner: false, isWritable: true },          // 1. user_metadata
+    { pubkey: globalState, isSigner: false, isWritable: false },          // 2. global_state (NEW)
+    { pubkey: userTokenAccount, isSigner: false, isWritable: true },      // 3. user_token_account
+    { pubkey: mint, isSigner: false, isWritable: true },                  // 4. mint
+    { pubkey: mintAuthority, isSigner: false, isWritable: false },        // 5. mint_authority
+    { pubkey: referrerAccount, isSigner: false, isWritable: true },       // 6. referrer_account (ALWAYS writable per IDL)
+    { pubkey: authority, isSigner: true, isWritable: true },              // 7. authority (CHANGED to writable - payer for init_if_needed)
+    { pubkey: lockedTokenAccount, isSigner: false, isWritable: true },    // 8. locked_token_account (NEW)
+    { pubkey: lockedTokenAta, isSigner: false, isWritable: true },        // 9. locked_token_ata (NEW)
+    { pubkey: lockedTokenPda, isSigner: false, isWritable: false },       // 10. locked_token_pda (NEW)
+    { pubkey: tokenProgram, isSigner: false, isWritable: false },         // 11. token_program
+    { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },// 12. associated_token_program (NEW)
+    { pubkey: systemProgram, isSigner: false, isWritable: false },        // 13. system_program (NEW)
   ];
 
   const instruction = new TransactionInstruction({
@@ -780,7 +815,7 @@ export function createMintTokensInstruction(
   });
   
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Instruction account metas (8 accounts):');
+    console.log('🔧 Instruction account metas (13 accounts):');
     instruction.keys.forEach((meta, idx) => {
       console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
     });
