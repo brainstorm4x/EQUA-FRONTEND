@@ -1,30 +1,163 @@
 /**
- * Transfer Tracking Utility
+ * Transfer Tracking Utilities
  * 
- * ⚠️ DEPRECATED FOR UI DISPLAY - DO NOT USE IN PRODUCTION UI COMPONENTS
+ * ARCHITECTURAL DECISION: Registered-Users-Only Policy
+ * 
+ * Transaction counts are read directly from on-chain GlobalState.total_transactions
+ * instead of parsing raw SPL token transfers. This approach:
+ * 
+ * BENEFITS:
+ * - ✅ Sybil-resistant: Backend enforces registered users only (0.1 SOL registration fee)
+ * - ✅ Single source of truth: Always matches backend's authoritative counter
+ * - ✅ Performance: 1 RPC call instead of parsing 100s of transactions
+ * - ✅ Simplicity: No complex filtering logic required
+ * - ✅ Accuracy: Cannot drift from backend state
+ * 
+ * WHAT IS COUNTED:
+ * - Peer-to-peer transfers between registered users (via transfer_tokens instruction)
+ * 
+ * WHAT IS EXCLUDED (by backend PDA validation):
+ * - Transfers from/to unregistered users (instruction fails if UserAccount PDA missing)
+ * - Mint operations (separate mint_tokens instruction)
+ * - Registration transfers (initialize_user instruction)
+ * - Reward claims (claim_referral_rewards instruction)
+ * 
+ * BACKEND ALIGNMENT:
+ * - Backend source: programs/equa_token/src/lib.rs (transfer_tokens instruction)
+ * - GlobalState structure: programs/equa_token/src/state.rs
+ * - Only transfer_tokens instruction increments GlobalState.total_transactions
+ * 
+ * SYBIL ATTACK PREVENTION:
+ * - Registration requires 0.1 SOL fee (costly to create spam accounts)
+ * - After first 100 users, referral required (additional barrier)
+ * - Both sender and recipient MUST be registered (enforced by Anchor PDA validation)
+ * 
+ * ⚠️ DEPRECATED FOR UI DISPLAY - USE getGlobalTransactionCount() INSTEAD
  * 
  * This module provides localStorage-based transfer tracking for TESTING and LOCAL DEVELOPMENT only.
  * It is NOT the source of truth for production UI display.
  * 
- * FOR UI DISPLAY: Use `useGlobalStateStats()` hook which reads from on-chain GlobalState account.
+ * FOR UI DISPLAY: Use `useGlobalStateStats()` hook or `getGlobalTransactionCount()` function.
  * The blockchain is the single source of truth for all transaction counts and statistics.
  * 
- * This module is kept only for:
- * - Local testing and development convenience
- * - Optional analytics logging (non-authoritative)
- * 
- * DO NOT import `getTotalTransfers`, `recordTransfer`, or other functions from this module
- * in UI components. All transfer counts displayed to users MUST come from on-chain data
- * via the `useGlobalStateStats()` hook.
- * 
  * Legacy functionality (deprecated):
- * - Tracks EQUA token transfers for UI display purposes using localStorage only.
- * - All tracking is done locally without external database dependencies.
- * - Supports both outbound (sends) and inbound (receives) tracking via chain signatures.
+ * - Tracks EQUA token transfers using localStorage only (local testing only)
+ * - Optional analytics logging (non-authoritative)
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';
 import { PROGRAM_ID, getMintAuthorityPDA, getGlobalStatePDA } from '@/lib/program';
+import * as anchor from '@coral-xyz/anchor';
+
+// ============================================================================
+// AUTHORITATIVE TRANSACTION COUNTING (On-Chain GlobalState)
+// ============================================================================
+
+/**
+ * GlobalState account memory layout (based on actual backend IDL):
+ * 
+ * Offset 0-7:   Discriminator (8 bytes) - Anchor account discriminator
+ * Offset 8-11:  user_count (u32, 4 bytes) - Total registered users
+ * Offset 12-19: total_transactions (u64, 8 bytes) - ✅ AUTHORITATIVE TRANSACTION COUNT
+ * Offset 20-27: current_epoch (u64, 8 bytes) - Current compounding epoch
+ * Offset 28:    compounding_complete (bool, 1 byte)
+ * Offset 29-36: last_epoch_update_time (i64, 8 bytes)
+ * Offset 37-68: token_mint (Pubkey, 32 bytes)
+ * Offset 69-76: min_sol_balance (u64, 8 bytes)
+ * Offset 77-84: min_slot_gap_for_referrals (u64, 8 bytes)
+ * 
+ * Total: 85 bytes
+ * 
+ * Backend source: public/idl/equa_token.json (GlobalState type definition)
+ */
+const GLOBAL_STATE_TOTAL_TRANSACTIONS_OFFSET = 12;
+const GLOBAL_STATE_TOTAL_TRANSACTIONS_SIZE = 8;
+
+/**
+ * Get total transaction count from on-chain GlobalState
+ * 
+ * This is the AUTHORITATIVE source for transaction counts.
+ * Only registered-to-registered transfers increment this counter.
+ * 
+ * Backend enforces registered-users-only via PDA validation in transfer_tokens instruction.
+ * This makes the system Sybil-resistant (registration requires 0.1 SOL + referral).
+ * 
+ * @param connection - Solana RPC connection
+ * @returns Total number of registered user transfers, or 0 if account not found
+ * 
+ * @example
+ * ```typescript
+ * const connection = new Connection('https://api.devnet.solana.com');
+ * const count = await getGlobalTransactionCount(connection);
+ * console.log(`Total transactions: ${count}`);
+ * ```
+ * 
+ * Backend source: programs/equa_token/src/lib.rs (transfer_tokens instruction)
+ * GlobalState structure: public/idl/equa_token.json (GlobalState type)
+ */
+export async function getGlobalTransactionCount(
+  connection: Connection
+): Promise<number> {
+  try {
+    // Derive GlobalState PDA
+    const [globalStatePDA] = getGlobalStatePDA();
+    
+    const accountInfo = await connection.getAccountInfo(globalStatePDA);
+    
+    if (!accountInfo || accountInfo.data.length < (GLOBAL_STATE_TOTAL_TRANSACTIONS_OFFSET + GLOBAL_STATE_TOTAL_TRANSACTIONS_SIZE)) {
+      console.warn('GlobalState account not found or invalid');
+      return 0;
+    }
+    
+    // Read total_transactions from offset 12-19 (u64, little-endian)
+    const totalTransactionsBN = new anchor.BN(
+      accountInfo.data.slice(
+        GLOBAL_STATE_TOTAL_TRANSACTIONS_OFFSET,
+        GLOBAL_STATE_TOTAL_TRANSACTIONS_OFFSET + GLOBAL_STATE_TOTAL_TRANSACTIONS_SIZE
+      ),
+      'le'
+    );
+    
+    // Check if value exceeds JavaScript's safe integer range
+    if (totalTransactionsBN.gt(new anchor.BN(Number.MAX_SAFE_INTEGER))) {
+      console.warn('⚠️ Total transactions exceeds MAX_SAFE_INTEGER, using safe value');
+      return Number.MAX_SAFE_INTEGER;
+    }
+    
+    const totalTransactions = totalTransactionsBN.toNumber();
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✓ On-chain transaction count: ${totalTransactions}`);
+    }
+    
+    return totalTransactions;
+  } catch (error) {
+    console.error('Error fetching global transaction count:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get GlobalState PDA public key
+ * 
+ * This is a convenience export for deriving the GlobalState account address.
+ * The GlobalState account stores authoritative transaction counts and user statistics.
+ * 
+ * @returns [publicKey, bump] tuple
+ * 
+ * @example
+ * ```typescript
+ * const [globalStatePDA, bump] = getGlobalStatePDAPublicKey();
+ * console.log('GlobalState address:', globalStatePDA.toBase58());
+ * ```
+ */
+export function getGlobalStatePDAPublicKey(): [PublicKey, number] {
+  return getGlobalStatePDA();
+}
+
+// ============================================================================
+// DEPRECATED: localStorage-based Transfer Tracking (Local Testing Only)
+// ============================================================================
 
 const STORAGE_KEY = 'equa_transfer_stats';
 const PROCESSED_SIGNATURES_KEY = 'equa_processed_signatures';
@@ -119,6 +252,9 @@ export function saveTransferStats(stats: TransferStats): void {
 /**
  * Records a new transfer to localStorage
  * 
+ * @deprecated Use getGlobalTransactionCount() for authoritative transaction counts.
+ * This function is for local testing only and does NOT reflect on-chain state.
+ * 
  * @param amount - Transfer amount (for logging only)
  * @param transactionSignature - Optional transaction signature (for logging only)
  */
@@ -126,6 +262,10 @@ export async function recordTransfer(
   amount: number,
   transactionSignature?: string
 ): Promise<void> {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('⚠️ recordTransfer() is deprecated for UI display - use getGlobalTransactionCount() instead');
+  }
+  
   // Update localStorage for UI feedback
   const stats = getTransferStats();
   stats.totalTransfers += 1;
@@ -147,9 +287,17 @@ export async function recordTransfer(
 }
 
 /**
- * Gets total transfer count
+ * Gets total transfer count from localStorage
+ * 
+ * @deprecated Use getGlobalTransactionCount() for authoritative transaction counts.
+ * This function returns localStorage data which is NOT the source of truth.
+ * 
+ * @returns Transfer count from localStorage (local testing only)
  */
 export function getTotalTransfers(): number {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('⚠️ getTotalTransfers() is deprecated for UI display - use getGlobalTransactionCount() instead');
+  }
   return getTransferStats().totalTransfers;
 }
 
@@ -216,6 +364,18 @@ function saveProcessedSignatures(signatures: Set<string>): void {
  * Fetches transfer count from chain by scanning token account signatures
  * Updates localStorage with new transfers found
  * 
+ * @deprecated Use getGlobalTransactionCount() instead
+ * 
+ * This function parses raw SPL transfers which:
+ * - May include unregistered users (Sybil vulnerability)
+ * - Diverges from backend's authoritative GlobalState counter
+ * - Requires complex filtering logic and multiple RPC calls
+ * 
+ * The authoritative source is GlobalState.total_transactions which only counts
+ * registered-to-registered transfers (enforced by backend PDA validation).
+ * 
+ * Will be removed in next major version.
+ * 
  * Only counts actual user-to-user transfers (transfer/transferChecked instructions)
  * Excludes:
  * - Mint operations (mintTo/mintToChecked) and other non-transfer activity
@@ -223,12 +383,16 @@ function saveProcessedSignatures(signatures: Set<string>): void {
  * 
  * @param connection - Solana RPC connection
  * @param tokenAccountAddress - Token account address (ATA)
- * @returns Updated transfer count
+ * @returns Updated transfer count (localStorage-based, NOT authoritative)
  */
 export async function syncTransfersFromChain(
   connection: Connection,
   tokenAccountAddress: PublicKey
 ): Promise<number> {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('⚠️ syncTransfersFromChain() is deprecated - use getGlobalTransactionCount() for authoritative counts');
+  }
+  
   try {
     const processedSignatures = getProcessedSignatures();
     const stats = getTransferStats();
