@@ -4,7 +4,8 @@
  */
 
 import { PublicKey } from '@solana/web3.js';
-import { createMintEquaInstruction, createMintTokensInstruction, TOKEN_PROGRAM_ID } from '@/lib/program';
+import { createMintEquaInstruction, createMintTokensInstruction, TOKEN_PROGRAM_ID, PROGRAM_ID } from '@/lib/program';
+import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 
 describe('createMintEquaInstruction', () => {
   // Mock public keys for testing (valid base58-encoded addresses)
@@ -106,10 +107,14 @@ describe('createMintTokensInstruction', () => {
   // Mock public keys for testing (valid base58-encoded addresses)
   const userAccount = new PublicKey('C3r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
   const userMetadata = new PublicKey('D4r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
-  const userTokenAccount = new PublicKey('E5r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
-  const mint = new PublicKey('F6r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const globalState = new PublicKey('E5r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const userTokenAccount = new PublicKey('F6r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const mint = new PublicKey('G7r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
   const mintAuthority = new PublicKey('H8r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
-  const authority = new PublicKey('G7r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const authority = new PublicKey('A9r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const lockedTokenAccount = new PublicKey('4awfvNMTVwDq5czmfh5h6Ps9cam7Pa8UfuDircmoRPt9');
+  const lockedTokenAta = new PublicKey('FKwqPEXfav7cvC5qe1jLQqQYWmAfpkrcegczYmnGWPTj');
+  const lockedTokenPda = new PublicKey('CTa1SBopWCdhHmgDSKgm4PnVxsZEgfvTnmcaSGtrx6Jz');
 
   it('should create instruction with correct discriminator for mint_tokens', () => {
     const amount = 10_000_000_000; // 10,000 EQUA in base units (6 decimals)
@@ -118,11 +123,15 @@ describe('createMintTokensInstruction', () => {
     const instruction = createMintTokensInstruction(
       userAccount,
       userMetadata,
+      globalState,
       userTokenAccount,
       mint,
       mintAuthority,
       referrerAccount,
       authority,
+      lockedTokenAccount,
+      lockedTokenAta,
+      lockedTokenPda,
       TOKEN_PROGRAM_ID,
       amount
     );
@@ -141,11 +150,15 @@ describe('createMintTokensInstruction', () => {
     const instruction = createMintTokensInstruction(
       userAccount,
       userMetadata,
+      globalState,
       userTokenAccount,
       mint,
       mintAuthority,
       referrerAccount,
       authority,
+      lockedTokenAccount,
+      lockedTokenAta,
+      lockedTokenPda,
       TOKEN_PROGRAM_ID,
       amount
     );
@@ -163,24 +176,28 @@ describe('createMintTokensInstruction', () => {
     expect(decodedAmount).toBe(amount);
   });
 
-  it('should have correct 8 account metas in order per backend IDL', () => {
+  it('should have correct 14 account metas in order per backend IDL', () => {
     const amount = 1_000_000; // 1 EQUA
     const referrerAccount = PublicKey.default; // No referrer
     
     const instruction = createMintTokensInstruction(
       userAccount,
       userMetadata,
+      globalState,
       userTokenAccount,
       mint,
       mintAuthority,
       referrerAccount,
       authority,
+      lockedTokenAccount,
+      lockedTokenAta,
+      lockedTokenPda,
       TOKEN_PROGRAM_ID,
       amount
     );
 
-    // Verify account order and flags match backend IDL for mint_tokens (8 accounts)
-    expect(instruction.keys).toHaveLength(8);
+    // Verify account order and flags match backend IDL for mint_tokens (14 accounts)
+    expect(instruction.keys).toHaveLength(14);
     
     // 0. user_account - writable, not signer
     expect(instruction.keys[0].pubkey).toEqual(userAccount);
@@ -192,35 +209,55 @@ describe('createMintTokensInstruction', () => {
     expect(instruction.keys[1].isWritable).toBe(true);
     expect(instruction.keys[1].isSigner).toBe(false);
     
-    // 2. user_token_account - writable, not signer
-    expect(instruction.keys[2].pubkey).toEqual(userTokenAccount);
-    expect(instruction.keys[2].isWritable).toBe(true);
+    // 2. global_state - read-only, not signer
+    expect(instruction.keys[2].pubkey).toEqual(globalState);
+    expect(instruction.keys[2].isWritable).toBe(false);
     expect(instruction.keys[2].isSigner).toBe(false);
     
-    // 3. mint - writable, not signer
-    expect(instruction.keys[3].pubkey).toEqual(mint);
+    // 3. user_token_account - writable, not signer
+    expect(instruction.keys[3].pubkey).toEqual(userTokenAccount);
     expect(instruction.keys[3].isWritable).toBe(true);
     expect(instruction.keys[3].isSigner).toBe(false);
     
-    // 4. mint_authority - not writable, not signer
-    expect(instruction.keys[4].pubkey).toEqual(mintAuthority);
-    expect(instruction.keys[4].isWritable).toBe(false);
+    // 4. mint - writable, not signer
+    expect(instruction.keys[4].pubkey).toEqual(mint);
+    expect(instruction.keys[4].isWritable).toBe(true);
     expect(instruction.keys[4].isSigner).toBe(false);
     
-    // 5. referrer_account - not writable (PublicKey.default), not signer
-    expect(instruction.keys[5].pubkey).toEqual(referrerAccount);
-    expect(instruction.keys[5].isWritable).toBe(false); // read-only when PublicKey.default
+    // 5. mint_authority - not writable, not signer
+    expect(instruction.keys[5].pubkey).toEqual(mintAuthority);
+    expect(instruction.keys[5].isWritable).toBe(false);
     expect(instruction.keys[5].isSigner).toBe(false);
     
-    // 6. authority - not writable, signer
-    expect(instruction.keys[6].pubkey).toEqual(authority);
-    expect(instruction.keys[6].isWritable).toBe(false);
-    expect(instruction.keys[6].isSigner).toBe(true);
+    // 6. referrer_account - writable (ALWAYS per IDL), not signer
+    expect(instruction.keys[6].pubkey).toEqual(referrerAccount);
+    expect(instruction.keys[6].isWritable).toBe(true); // ALWAYS writable per IDL
+    expect(instruction.keys[6].isSigner).toBe(false);
     
-    // 7. token_program - not writable, not signer
-    expect(instruction.keys[7].pubkey).toEqual(TOKEN_PROGRAM_ID);
-    expect(instruction.keys[7].isWritable).toBe(false);
-    expect(instruction.keys[7].isSigner).toBe(false);
+    // 7. authority - writable (for rent), signer
+    expect(instruction.keys[7].pubkey).toEqual(authority);
+    expect(instruction.keys[7].isWritable).toBe(true);
+    expect(instruction.keys[7].isSigner).toBe(true);
+    
+    // 8. locked_token_account - writable, not signer
+    expect(instruction.keys[8].pubkey).toEqual(lockedTokenAccount);
+    expect(instruction.keys[8].isWritable).toBe(true);
+    expect(instruction.keys[8].isSigner).toBe(false);
+    
+    // 9. locked_token_ata - writable, not signer
+    expect(instruction.keys[9].pubkey).toEqual(lockedTokenAta);
+    expect(instruction.keys[9].isWritable).toBe(true);
+    expect(instruction.keys[9].isSigner).toBe(false);
+    
+    // 10. locked_token_pda - not writable, not signer
+    expect(instruction.keys[10].pubkey).toEqual(lockedTokenPda);
+    expect(instruction.keys[10].isWritable).toBe(false);
+    expect(instruction.keys[10].isSigner).toBe(false);
+    
+    // 11. token_program - not writable, not signer
+    expect(instruction.keys[11].pubkey).toEqual(TOKEN_PROGRAM_ID);
+    expect(instruction.keys[11].isWritable).toBe(false);
+    expect(instruction.keys[11].isSigner).toBe(false);
   });
 
   it('should handle different amount values correctly', () => {
@@ -236,11 +273,15 @@ describe('createMintTokensInstruction', () => {
       const instruction = createMintTokensInstruction(
         userAccount,
         userMetadata,
+        globalState,
         userTokenAccount,
         mint,
         mintAuthority,
         referrerAccount,
         authority,
+        lockedTokenAccount,
+        lockedTokenAta,
+        lockedTokenPda,
         TOKEN_PROGRAM_ID,
         amount
       );
