@@ -702,17 +702,23 @@ export function createMintEquaTokensInstruction(
   return instruction;
 }
 
-// ✅ Create mint_tokens instruction (8-account version aligned with backend IDL)
+// ✅ Create mint_tokens instruction (14-account version aligned with backend IDL)
 // This is the correct instruction for daily EQUA minting on the deployed program
-// Account order: user_account, user_metadata, user_token_account, mint, mint_authority, referrer_account, authority, token_program
+// Account order: user_account, user_metadata, global_state, user_token_account, mint, mint_authority, 
+// referrer_account, authority, locked_token_account, locked_token_ata, locked_token_pda, 
+// token_program, associated_token_program, system_program
 export function createMintTokensInstruction(
   userAccount: PublicKey,
   userMetadata: PublicKey,
+  globalState: PublicKey,
   userTokenAccount: PublicKey,
   mint: PublicKey,
   mintAuthority: PublicKey,
   referrerAccount: PublicKey,
   authority: PublicKey,
+  lockedTokenAccount: PublicKey,
+  lockedTokenAta: PublicKey,
+  lockedTokenPda: PublicKey,
   tokenProgram: PublicKey,
   amount: number
 ): TransactionInstruction {
@@ -751,12 +757,26 @@ export function createMintTokensInstruction(
   // Log referrer account handling
   const isReferrerProvided = !referrerAccount.equals(PublicKey.default);
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Building mint_tokens instruction (8 accounts):');
+    console.log('🔧 Building mint_tokens instruction (14 accounts):');
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Amount (raw base units):', amount);
     console.log('  - Amount BN:', amountBN.toString());
     console.log(`  - Token Program: ${tokenProgram.toBase58()} (Token-2022 ✅)`);
     console.log('  - Referrer:', isReferrerProvided ? referrerAccount.toBase58() : `Self-referral (${referrerAccount.toBase58()})`);
+    console.log('  - User Account:', userAccount.toBase58());
+    console.log('  - User Metadata:', userMetadata.toBase58());
+    console.log('  - Global State:', globalState.toBase58());
+    console.log('  - User Token Account:', userTokenAccount.toBase58());
+    console.log('  - Mint:', mint.toBase58());
+    console.log('  - Mint Authority:', mintAuthority.toBase58());
+    console.log('  - Referrer Account:', referrerAccount.toBase58());
+    console.log('  - Authority:', authority.toBase58());
+    console.log('  - Locked Token Account:', lockedTokenAccount.toBase58());
+    console.log('  - Locked Token ATA:', lockedTokenAta.toBase58());
+    console.log('  - Locked Token PDA:', lockedTokenPda.toBase58());
+    console.log('  - Token Program:', tokenProgram.toBase58());
+    console.log('  - Associated Token Program:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
+    console.log('  - System Program:', SystemProgram.programId.toBase58());
   }
   
   // Build keys in exact order matching backend IDL
@@ -765,12 +785,18 @@ export function createMintTokensInstruction(
   const keys = [
     { pubkey: userAccount, isSigner: false, isWritable: true },      // 0. user_account
     { pubkey: userMetadata, isSigner: false, isWritable: true },     // 1. user_metadata
-    { pubkey: userTokenAccount, isSigner: false, isWritable: true }, // 2. user_token_account
-    { pubkey: mint, isSigner: false, isWritable: true },             // 3. mint
-    { pubkey: mintAuthority, isSigner: false, isWritable: false },   // 4. mint_authority
-    { pubkey: referrerAccount, isSigner: false, isWritable: true },  // 5. referrer_account (ALWAYS writable per IDL)
-    { pubkey: authority, isSigner: true, isWritable: false },        // 6. authority (MUST be signer)
-    { pubkey: tokenProgram, isSigner: false, isWritable: false },    // 7. token_program
+    { pubkey: globalState, isSigner: false, isWritable: false },     // 2. global_state (read-only)
+    { pubkey: userTokenAccount, isSigner: false, isWritable: true }, // 3. user_token_account
+    { pubkey: mint, isSigner: false, isWritable: true },             // 4. mint
+    { pubkey: mintAuthority, isSigner: false, isWritable: false },   // 5. mint_authority
+    { pubkey: referrerAccount, isSigner: false, isWritable: true },  // 6. referrer_account (ALWAYS writable per IDL)
+    { pubkey: authority, isSigner: true, isWritable: true },         // 7. authority (MUST be signer, writable for rent)
+    { pubkey: lockedTokenAccount, isSigner: false, isWritable: true }, // 8. locked_token_account
+    { pubkey: lockedTokenAta, isSigner: false, isWritable: true },   // 9. locked_token_ata
+    { pubkey: lockedTokenPda, isSigner: false, isWritable: false },  // 10. locked_token_pda
+    { pubkey: tokenProgram, isSigner: false, isWritable: false },    // 11. token_program
+    { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }, // 12. associated_token_program
+    { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },     // 13. system_program
   ];
 
   const instruction = new TransactionInstruction({
@@ -780,7 +806,7 @@ export function createMintTokensInstruction(
   });
   
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Instruction account metas (8 accounts):');
+    console.log('🔧 Instruction account metas (14 accounts):');
     instruction.keys.forEach((meta, idx) => {
       console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
     });
