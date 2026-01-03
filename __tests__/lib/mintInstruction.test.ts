@@ -111,10 +111,10 @@ describe('createMintTokensInstruction', () => {
   const userTokenAccount = new PublicKey('F6r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
   const mint = new PublicKey('G7r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
   const mintAuthority = new PublicKey('H8r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
-  const authority = new PublicKey('I9r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
-  const lockedTokenAccount = new PublicKey('J1r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
-  const lockedTokenAta = new PublicKey('K2r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
-  const lockedTokenPda = new PublicKey('L3r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const authority = new PublicKey('A9r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const lockedTokenAccount = new PublicKey('4awfvNMTVwDq5czmfh5h6Ps9cam7Pa8UfuDircmoRPt9');
+  const lockedTokenAta = new PublicKey('FKwqPEXfav7cvC5qe1jLQqQYWmAfpkrcegczYmnGWPTj');
+  const lockedTokenPda = new PublicKey('CTa1SBopWCdhHmgDSKgm4PnVxsZEgfvTnmcaSGtrx6Jz');
 
   it('should create instruction with correct discriminator for mint_tokens', () => {
     const amount = 10_000_000_000; // 10,000 EQUA in base units (6 decimals)
