@@ -1,24 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 
 /**
- * Derives the User Account PDA for a given authority
- * Seeds: [b"user-account", authority.key()]
- * 
- * @param authority - The user's wallet public key
- * @param programId - The EQUA token program ID
- * @returns [PDA address, bump seed]
- */
-export function getUserAccountPda(
-  authority: PublicKey,
-  programId: PublicKey
-): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from("user-account"), authority.toBuffer()],
-    programId
-  );
-}
-
-/**
  * Derives the Locked Token Account PDA for a given authority
  * Seeds: [b"locked-tokens", authority.key()]
  * 

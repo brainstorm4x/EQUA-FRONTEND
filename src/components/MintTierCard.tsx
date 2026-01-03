@@ -15,6 +15,55 @@ import { getLockedTokenAccountPda } from '@/utils/pda-helpers';
 import { rawToDecimal } from '@/utils/tokenFormat';
 import { createUnlockTokensInstruction, getMintPDA, getUserAccountPDA, PROGRAM_ID } from '@/lib/program';
 
+// UserAccount PDA structure constants (after 8-byte discriminator)
+const USER_ACCOUNT_AUTHORITY_SIZE = 32;       // authority: Pubkey
+const USER_ACCOUNT_REFERRAL_SIZE = 32;        // referral: Pubkey
+const USER_ACCOUNT_TOKEN_ACCOUNT_SIZE = 32;   // token_account: Pubkey
+const USER_ACCOUNT_MINTED_AMOUNT_SIZE = 8;    // minted_amount: u64
+const USER_ACCOUNT_MINT_START_SIZE = 8;       // mint_start: i64
+const USER_ACCOUNT_REFERRAL_REWARDS_SIZE = 8; // referral_rewards: u64
+const USER_ACCOUNT_LAST_MINT_TIME_SIZE = 8;   // last_mint_time: i64
+
+const ANCHOR_DISCRIMINATOR_SIZE = 8;
+
+// Calculate offset for last_mint_time field
+const LAST_MINT_TIME_OFFSET = ANCHOR_DISCRIMINATOR_SIZE + 
+  USER_ACCOUNT_AUTHORITY_SIZE + 
+  USER_ACCOUNT_REFERRAL_SIZE + 
+  USER_ACCOUNT_TOKEN_ACCOUNT_SIZE + 
+  USER_ACCOUNT_MINTED_AMOUNT_SIZE + 
+  USER_ACCOUNT_MINT_START_SIZE + 
+  USER_ACCOUNT_REFERRAL_REWARDS_SIZE;
+
+// Minimum size for valid UserAccount
+const MIN_USER_ACCOUNT_SIZE = LAST_MINT_TIME_OFFSET + USER_ACCOUNT_LAST_MINT_TIME_SIZE;
+
+/**
+ * Format a timestamp as a short date (e.g., "Jan 2, 2026")
+ */
+const formatShortDate = (timestamp: number): string => {
+  if (timestamp <= 0) return 'Not started';
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+/**
+ * Format a timestamp with time (e.g., "Jan 2, 2026, 12:36 PM")
+ */
+const formatDateWithTime = (timestamp: number): string => {
+  if (timestamp <= 0) return 'Never';
+  return new Date(timestamp * 1000).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 interface MintTierCardProps {
   userNumber: number;
   totalMints: number;
@@ -112,16 +161,14 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
         const [userAccountPda] = getUserAccountPDA(wallet.publicKey!);
         const accountInfo = await connection.getAccountInfo(userAccountPda);
         
-        if (!accountInfo || accountInfo.data.length < 136) {
+        if (!accountInfo || accountInfo.data.length < MIN_USER_ACCOUNT_SIZE) {
           // Account doesn't exist or is too small
           return;
         }
         
-        // Parse last_mint_time (offset 128: 8-byte discriminator + 120 bytes)
-        // UserAccount structure: authority(32) + referral(32) + token_account(32) + minted_amount(8) + mint_start(8) + referral_rewards(8) + last_mint_time(8)
-        const LAST_MINT_TIME_OFFSET = 128;
+        // Parse last_mint_time from UserAccount PDA
         const lastMint = new BN(
-          accountInfo.data.slice(LAST_MINT_TIME_OFFSET, LAST_MINT_TIME_OFFSET + 8),
+          accountInfo.data.slice(LAST_MINT_TIME_OFFSET, LAST_MINT_TIME_OFFSET + USER_ACCOUNT_LAST_MINT_TIME_SIZE),
           'le'
         ).toNumber();
         
@@ -249,13 +296,7 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
             <div>
               <p className="text-orange-300 text-sm">First Mint Date</p>
               <p className="text-white text-sm font-medium">
-                {lockedTokenData.lockStartTimestamp.toNumber() > 0
-                  ? new Date(lockedTokenData.lockStartTimestamp.toNumber() * 1000).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })
-                  : 'Not started'}
+                {formatShortDate(lockedTokenData.lockStartTimestamp.toNumber())}
               </p>
             </div>
           </div>
@@ -264,15 +305,7 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
             <div>
               <p className="text-orange-300 text-sm">Last Claimed</p>
               <p className="text-white text-sm font-medium">
-                {lastMintTime > 0
-                  ? new Date(lastMintTime * 1000).toLocaleString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })
-                  : 'Never'}
+                {formatDateWithTime(lastMintTime)}
               </p>
             </div>
             <div>
