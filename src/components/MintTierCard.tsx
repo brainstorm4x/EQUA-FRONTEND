@@ -13,7 +13,7 @@ import {
 import { hasTokenLocking, canUnlock, formatTimeRemaining, formatUnlockDate, getSecondsUntilUnlock } from '@/utils/locked-tokens';
 import { getLockedTokenAccountPda } from '@/utils/pda-helpers';
 import { rawToDecimal } from '@/utils/tokenFormat';
-import { createUnlockTokensInstruction, getMintPDA, PROGRAM_ID } from '@/lib/program';
+import { createUnlockTokensInstruction, getMintPDA, getUserAccountPDA, PROGRAM_ID } from '@/lib/program';
 
 interface MintTierCardProps {
   userNumber: number;
@@ -37,6 +37,7 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
   const hasLocking = hasTokenLocking(userNumber);
   
   const [lockedTokenData, setLockedTokenData] = useState<LockedTokenData | null>(null);
+  const [lastMintTime, setLastMintTime] = useState<number>(0);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -100,6 +101,37 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
     };
     
     fetchLockedTokens();
+  }, [hasLocking, wallet.publicKey, connection]);
+  
+  // Fetch UserAccount data for last mint time
+  useEffect(() => {
+    if (!hasLocking || !wallet.publicKey || !connection) return;
+    
+    const fetchUserAccount = async () => {
+      try {
+        const [userAccountPda] = getUserAccountPDA(wallet.publicKey!);
+        const accountInfo = await connection.getAccountInfo(userAccountPda);
+        
+        if (!accountInfo || accountInfo.data.length < 136) {
+          // Account doesn't exist or is too small
+          return;
+        }
+        
+        // Parse last_mint_time (offset 128: 8-byte discriminator + 120 bytes)
+        // UserAccount structure: authority(32) + referral(32) + token_account(32) + minted_amount(8) + mint_start(8) + referral_rewards(8) + last_mint_time(8)
+        const LAST_MINT_TIME_OFFSET = 128;
+        const lastMint = new BN(
+          accountInfo.data.slice(LAST_MINT_TIME_OFFSET, LAST_MINT_TIME_OFFSET + 8),
+          'le'
+        ).toNumber();
+        
+        setLastMintTime(lastMint);
+      } catch (error) {
+        console.log('Failed to fetch user account:', error);
+      }
+    };
+    
+    fetchUserAccount();
   }, [hasLocking, wallet.publicKey, connection]);
   
   // Update countdown timer every second
@@ -212,6 +244,35 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
               <p className="text-orange-300 text-sm">Locked Amount</p>
               <p className="text-white text-xl font-bold">
                 {lockedBalance.toLocaleString()} EQUA
+              </p>
+            </div>
+            <div>
+              <p className="text-orange-300 text-sm">First Mint Date</p>
+              <p className="text-white text-sm font-medium">
+                {lockedTokenData.lockStartTimestamp.toNumber() > 0
+                  ? new Date(lockedTokenData.lockStartTimestamp.toNumber() * 1000).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })
+                  : 'Not started'}
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <p className="text-orange-300 text-sm">Last Claimed</p>
+              <p className="text-white text-sm font-medium">
+                {lastMintTime > 0
+                  ? new Date(lastMintTime * 1000).toLocaleString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })
+                  : 'Never'}
               </p>
             </div>
             <div>

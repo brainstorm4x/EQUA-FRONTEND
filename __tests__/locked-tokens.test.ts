@@ -90,6 +90,29 @@ describe('locked-tokens utilities', () => {
       const result = formatTimeRemaining(oneHour);
       expect(result).toContain('0 days');
     });
+
+    it('should never show 12 months (edge case near 4 years)', () => {
+      // Test value that would show 12 months without the fix
+      // 126,143,999 seconds = 3 years + 31,535,999 remaining
+      // 31,535,999 / 2,592,000 = 12.16 months
+      const nearFourYears = 126_143_999;
+      const result = formatTimeRemaining(nearFourYears);
+      
+      // Should never show 12 months - should roll to 4 years instead
+      expect(result).not.toContain('12 months');
+      
+      // Should show 4 years since months >= 12
+      expect(result).toContain('4 years');
+      expect(result).toContain('4 days');
+    });
+
+    it('should handle exactly 4 years', () => {
+      const fourYears = 4 * 365 * 24 * 60 * 60; // 126,144,000 seconds
+      const result = formatTimeRemaining(fourYears);
+      expect(result).toContain('4 years');
+      // Should show 0 months and 0 days (which means no months/days in output)
+      expect(result).not.toContain('months');
+    });
   });
 
   describe('formatUnlockDate', () => {
@@ -105,7 +128,12 @@ describe('locked-tokens utilities', () => {
       const timestamp = new BN(fourYearsFromNow);
       const result = formatUnlockDate(timestamp);
       expect(result.length).toBeGreaterThan(0);
-      expect(result).toContain('202'); // Year should be in 2020s
+      // Year should be in 2020s or 2030s depending on current date
+      const yearMatch = result.match(/\d{4}/);
+      expect(yearMatch).toBeTruthy();
+      const year = parseInt(yearMatch![0]);
+      expect(year).toBeGreaterThan(2025);
+      expect(year).toBeLessThan(2035);
     });
   });
 
