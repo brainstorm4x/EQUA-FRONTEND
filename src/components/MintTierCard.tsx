@@ -13,7 +13,56 @@ import {
 import { hasTokenLocking, canUnlock, formatTimeRemaining, formatUnlockDate, getSecondsUntilUnlock } from '@/utils/locked-tokens';
 import { getLockedTokenAccountPda } from '@/utils/pda-helpers';
 import { rawToDecimal } from '@/utils/tokenFormat';
-import { createUnlockTokensInstruction, getMintPDA, PROGRAM_ID } from '@/lib/program';
+import { createUnlockTokensInstruction, getMintPDA, getUserAccountPDA, PROGRAM_ID } from '@/lib/program';
+
+// UserAccount PDA structure constants (after 8-byte discriminator)
+const USER_ACCOUNT_AUTHORITY_SIZE = 32;       // authority: Pubkey
+const USER_ACCOUNT_REFERRAL_SIZE = 32;        // referral: Pubkey
+const USER_ACCOUNT_TOKEN_ACCOUNT_SIZE = 32;   // token_account: Pubkey
+const USER_ACCOUNT_MINTED_AMOUNT_SIZE = 8;    // minted_amount: u64
+const USER_ACCOUNT_MINT_START_SIZE = 8;       // mint_start: i64
+const USER_ACCOUNT_REFERRAL_REWARDS_SIZE = 8; // referral_rewards: u64
+const USER_ACCOUNT_LAST_MINT_TIME_SIZE = 8;   // last_mint_time: i64
+
+const ANCHOR_DISCRIMINATOR_SIZE = 8;
+
+// Calculate offset for last_mint_time field
+const LAST_MINT_TIME_OFFSET = ANCHOR_DISCRIMINATOR_SIZE + 
+  USER_ACCOUNT_AUTHORITY_SIZE + 
+  USER_ACCOUNT_REFERRAL_SIZE + 
+  USER_ACCOUNT_TOKEN_ACCOUNT_SIZE + 
+  USER_ACCOUNT_MINTED_AMOUNT_SIZE + 
+  USER_ACCOUNT_MINT_START_SIZE + 
+  USER_ACCOUNT_REFERRAL_REWARDS_SIZE;
+
+// Minimum size for valid UserAccount
+const MIN_USER_ACCOUNT_SIZE = LAST_MINT_TIME_OFFSET + USER_ACCOUNT_LAST_MINT_TIME_SIZE;
+
+/**
+ * Format a timestamp as a short date (e.g., "Jan 2, 2026")
+ */
+const formatShortDate = (timestamp: number): string => {
+  if (timestamp <= 0) return 'Not started';
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+/**
+ * Format a timestamp with time (e.g., "Jan 2, 2026, 12:36 PM")
+ */
+const formatDateWithTime = (timestamp: number): string => {
+  if (timestamp <= 0) return 'Never';
+  return new Date(timestamp * 1000).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
 
 interface MintTierCardProps {
   userNumber: number;
@@ -37,6 +86,7 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
   const hasLocking = hasTokenLocking(userNumber);
   
   const [lockedTokenData, setLockedTokenData] = useState<LockedTokenData | null>(null);
+  const [lastMintTime, setLastMintTime] = useState<number>(0);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -100,6 +150,35 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
     };
     
     fetchLockedTokens();
+  }, [hasLocking, wallet.publicKey, connection]);
+  
+  // Fetch UserAccount data for last mint time
+  useEffect(() => {
+    if (!hasLocking || !wallet.publicKey || !connection) return;
+    
+    const fetchUserAccount = async () => {
+      try {
+        const [userAccountPda] = getUserAccountPDA(wallet.publicKey!);
+        const accountInfo = await connection.getAccountInfo(userAccountPda);
+        
+        if (!accountInfo || accountInfo.data.length < MIN_USER_ACCOUNT_SIZE) {
+          // Account doesn't exist or is too small
+          return;
+        }
+        
+        // Parse last_mint_time from UserAccount PDA
+        const lastMint = new BN(
+          accountInfo.data.slice(LAST_MINT_TIME_OFFSET, LAST_MINT_TIME_OFFSET + USER_ACCOUNT_LAST_MINT_TIME_SIZE),
+          'le'
+        ).toNumber();
+        
+        setLastMintTime(lastMint);
+      } catch (error) {
+        console.log('Failed to fetch user account:', error);
+      }
+    };
+    
+    fetchUserAccount();
   }, [hasLocking, wallet.publicKey, connection]);
   
   // Update countdown timer every second
@@ -212,6 +291,21 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
               <p className="text-orange-300 text-sm">Locked Amount</p>
               <p className="text-white text-xl font-bold">
                 {lockedBalance.toLocaleString()} EQUA
+              </p>
+            </div>
+            <div>
+              <p className="text-orange-300 text-sm">First Mint Date</p>
+              <p className="text-white text-sm font-medium">
+                {formatShortDate(lockedTokenData.lockStartTimestamp.toNumber())}
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <p className="text-orange-300 text-sm">Last Claimed</p>
+              <p className="text-white text-sm font-medium">
+                {formatDateWithTime(lastMintTime)}
               </p>
             </div>
             <div>

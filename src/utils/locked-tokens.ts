@@ -52,9 +52,18 @@ export function getSecondsUntilUnlock(unlockTimestamp: BN): number {
 export function formatTimeRemaining(seconds: number): string {
   if (seconds <= 0) return "Unlocked";
   
-  const years = Math.floor(seconds / SECONDS_PER_YEAR);
-  const months = Math.floor((seconds % SECONDS_PER_YEAR) / SECONDS_PER_MONTH);
-  const days = Math.floor((seconds % SECONDS_PER_MONTH) / SECONDS_PER_DAY);
+  let years = Math.floor(seconds / SECONDS_PER_YEAR);
+  const remainingAfterYears = seconds % SECONDS_PER_YEAR;
+  let months = Math.floor(remainingAfterYears / SECONDS_PER_MONTH);
+  const remainingAfterMonths = remainingAfterYears % SECONDS_PER_MONTH;
+  const days = Math.floor(remainingAfterMonths / SECONDS_PER_DAY);
+  
+  // Edge case: if months == 12, roll over to next year
+  // This can happen due to 365-day year vs 30-day month mismatch
+  if (months >= 12) {
+    years += 1;
+    months = 0;
+  }
   
   const parts: string[] = [];
   if (years > 0) parts.push(`${years} year${years > 1 ? 's' : ''}`);
