@@ -2,6 +2,18 @@ import { BN } from '@coral-xyz/anchor';
 import { intervalToDuration } from 'date-fns';
 
 /**
+ * Time conversion constants
+ * Note: Uses simplified calculations (365-day year, 30-day month) for consistency
+ */
+const SECONDS_PER_MINUTE = 60;
+const SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE;
+const SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
+const DAYS_PER_MONTH = 30; // Simplified for consistent formatting
+const DAYS_PER_YEAR = 365; // Simplified (no leap year) to match backend
+const SECONDS_PER_MONTH = DAYS_PER_MONTH * SECONDS_PER_DAY;
+const SECONDS_PER_YEAR = DAYS_PER_YEAR * SECONDS_PER_DAY;
+
+/**
  * Lock period duration (4 years in seconds)
  * Note: This uses a simplified 365-day year calculation (not accounting for leap years)
  * to match the backend implementation. This may result in slight timing inaccuracies
@@ -15,9 +27,20 @@ export const LOCK_PERIOD_SECONDS = 4 * 365 * 24 * 60 * 60; // 126,144,000 second
  * @param unlockTimestamp - Unix timestamp when tokens unlock (from LockedTokenAccount)
  * @returns true if current time >= unlock timestamp
  */
-export function canUnlock(unlockTimestamp: BN): boolean {
+export function canUnlock(unlockTimestamp:  BN): boolean {
   const currentTimestamp = Math.floor(Date.now() / 1000);
-  return currentTimestamp >= unlockTimestamp.toNumber();
+  return currentTimestamp >= unlockTimestamp. toNumber();
+}
+
+/**
+ * Check if locked tokens are ready to unlock
+ * 
+ * @param unlockTimestamp - Unix timestamp when tokens unlock (from LockedTokenAccount)
+ * @returns true if current time >= unlock timestamp
+ */
+export function canUnlock(unlockTimestamp:  BN): boolean {
+  const currentTimestamp = Math.floor(Date.now() / 1000);
+  return currentTimestamp >= unlockTimestamp. toNumber();
 }
 
 /**
@@ -35,18 +58,23 @@ export function getSecondsUntilUnlock(unlockTimestamp: BN): number {
 /**
  * Format remaining time as human-readable string using date-fns
  * 
- * Uses date-fns intervalToDuration for accurate calculation that:
+ * Uses date-fns intervalToDuration for accurate calendar-aware calculation that: 
  * - Handles variable month lengths (28-31 days)
- * - Accounts for leap years (e.g., 2028)
+ * - Accounts for leap years (e.g., Feb 29, 2028)
  * - Provides precise year/month/day breakdown
+ * - Eliminates the "12 months" bug from manual calculation
  * 
  * @param seconds - Seconds remaining until unlock
  * @returns Formatted string (e.g., "3 years, 11 months, 29 days")
+ * 
+ * Backend reference: brainstorm4x/EQUA - programs/equa_token/src/lib.rs (mint_tokens)
+ * Frontend issue: https://github.com/brainstorm4x/EQUA-FRONTEND/issues/XXX
  */
 export function formatTimeRemaining(seconds: number): string {
   if (seconds <= 0) return "Unlocked";
   
   // Create a duration interval from now to unlock time
+  // date-fns will calculate the calendar-accurate difference
   const now = new Date();
   const futureDate = new Date(now.getTime() + seconds * 1000);
   
@@ -63,10 +91,10 @@ export function formatTimeRemaining(seconds: number): string {
   }
   
   if (duration.months && duration.months > 0) {
-    parts.push(`${duration.months} month${duration.months > 1 ? 's' : ''}`);
+    parts.push(`${duration.months} month${duration. months > 1 ? 's' : ''}`);
   }
   
-  if (duration.days && duration.days > 0) {
+  if (duration. days && duration.days > 0) {
     parts.push(`${duration.days} day${duration.days > 1 ? 's' : ''}`);
   }
   
@@ -86,7 +114,7 @@ export function formatTimeRemaining(seconds: number): string {
  * @returns Formatted date (e.g., "December 31, 2029")
  */
 export function formatUnlockDate(unlockTimestamp: BN): string {
-  const date = new Date(unlockTimestamp.toNumber() * 1000);
+  const date = new Date(unlockTimestamp. toNumber() * 1000);
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -128,7 +156,7 @@ export function calculateLockSplit(userIndex: number, totalAmount: BN): { unlock
   }
   
   // Tiers 4-9: No locking
-  return { unlocked: totalAmount, locked: new BN(0) };
+  return { unlocked:  totalAmount, locked: new BN(0) };
 }
 
 /**
