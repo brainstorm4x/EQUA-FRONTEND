@@ -1,4 +1,5 @@
 import { BN } from '@coral-xyz/anchor';
+import { intervalToDuration } from 'date-fns';
 
 /**
  * Time conversion constants
@@ -18,7 +19,7 @@ const SECONDS_PER_YEAR = DAYS_PER_YEAR * SECONDS_PER_DAY;
  * to match the backend implementation. This may result in slight timing inaccuracies
  * (~1 day over 4 years), but ensures frontend/backend consistency.
  */
-export const LOCK_PERIOD_SECONDS = 4 * SECONDS_PER_YEAR; // 126,144,000 seconds
+export const LOCK_PERIOD_SECONDS = 4 * 365 * 24 * 60 * 60; // 126,144,000 seconds
 
 /**
  * Check if locked tokens are ready to unlock
@@ -26,9 +27,20 @@ export const LOCK_PERIOD_SECONDS = 4 * SECONDS_PER_YEAR; // 126,144,000 seconds
  * @param unlockTimestamp - Unix timestamp when tokens unlock (from LockedTokenAccount)
  * @returns true if current time >= unlock timestamp
  */
-export function canUnlock(unlockTimestamp: BN): boolean {
+export function canUnlock(unlockTimestamp:  BN): boolean {
   const currentTimestamp = Math.floor(Date.now() / 1000);
-  return currentTimestamp >= unlockTimestamp.toNumber();
+  return currentTimestamp >= unlockTimestamp. toNumber();
+}
+
+/**
+ * Check if locked tokens are ready to unlock
+ * 
+ * @param unlockTimestamp - Unix timestamp when tokens unlock (from LockedTokenAccount)
+ * @returns true if current time >= unlock timestamp
+ */
+export function canUnlock(unlockTimestamp:  BN): boolean {
+  const currentTimestamp = Math.floor(Date.now() / 1000);
+  return currentTimestamp >= unlockTimestamp. toNumber();
 }
 
 /**
@@ -44,31 +56,53 @@ export function getSecondsUntilUnlock(unlockTimestamp: BN): number {
 }
 
 /**
- * Format remaining time as human-readable string
+ * Format remaining time as human-readable string using date-fns
+ * 
+ * Uses date-fns intervalToDuration for accurate calendar-aware calculation that: 
+ * - Handles variable month lengths (28-31 days)
+ * - Accounts for leap years (e.g., Feb 29, 2028)
+ * - Provides precise year/month/day breakdown
+ * - Eliminates the "12 months" bug from manual calculation
  * 
  * @param seconds - Seconds remaining until unlock
- * @returns Formatted string (e.g., "2 years, 3 months, 15 days")
+ * @returns Formatted string (e.g., "3 years, 11 months, 29 days")
+ * 
+ * Backend reference: brainstorm4x/EQUA - programs/equa_token/src/lib.rs (mint_tokens)
+ * Frontend issue: https://github.com/brainstorm4x/EQUA-FRONTEND/issues/XXX
  */
 export function formatTimeRemaining(seconds: number): string {
   if (seconds <= 0) return "Unlocked";
   
-  let years = Math.floor(seconds / SECONDS_PER_YEAR);
-  const remainingAfterYears = seconds % SECONDS_PER_YEAR;
-  let months = Math.floor(remainingAfterYears / SECONDS_PER_MONTH);
-  const remainingAfterMonths = remainingAfterYears % SECONDS_PER_MONTH;
-  const days = Math.floor(remainingAfterMonths / SECONDS_PER_DAY);
+  // Create a duration interval from now to unlock time
+  // date-fns will calculate the calendar-accurate difference
+  const now = new Date();
+  const futureDate = new Date(now.getTime() + seconds * 1000);
   
-  // Edge case: if months == 12, roll over to next year
-  // This can happen due to 365-day year vs 30-day month mismatch
-  if (months >= 12) {
-    years += 1;
-    months = 0;
+  const duration = intervalToDuration({
+    start: now,
+    end: futureDate
+  });
+  
+  // Build custom format string (years, months, days only)
+  const parts: string[] = [];
+  
+  if (duration.years && duration.years > 0) {
+    parts.push(`${duration.years} year${duration.years > 1 ? 's' : ''}`);
   }
   
-  const parts: string[] = [];
-  if (years > 0) parts.push(`${years} year${years > 1 ? 's' : ''}`);
-  if (months > 0) parts.push(`${months} month${months > 1 ? 's' : ''}`);
-  if (days > 0 || parts.length === 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+  if (duration.months && duration.months > 0) {
+    parts.push(`${duration.months} month${duration. months > 1 ? 's' : ''}`);
+  }
+  
+  if (duration. days && duration.days > 0) {
+    parts.push(`${duration.days} day${duration.days > 1 ? 's' : ''}`);
+  }
+  
+  // Edge case: if we have positive seconds but no days/months/years
+  // (e.g., only hours remaining), show "0 days"
+  if (parts.length === 0 && seconds > 0) {
+    parts.push('0 days');
+  }
   
   return parts.join(', ');
 }
@@ -80,7 +114,7 @@ export function formatTimeRemaining(seconds: number): string {
  * @returns Formatted date (e.g., "December 31, 2029")
  */
 export function formatUnlockDate(unlockTimestamp: BN): string {
-  const date = new Date(unlockTimestamp.toNumber() * 1000);
+  const date = new Date(unlockTimestamp. toNumber() * 1000);
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -122,7 +156,7 @@ export function calculateLockSplit(userIndex: number, totalAmount: BN): { unlock
   }
   
   // Tiers 4-9: No locking
-  return { unlocked: totalAmount, locked: new BN(0) };
+  return { unlocked:  totalAmount, locked: new BN(0) };
 }
 
 /**
