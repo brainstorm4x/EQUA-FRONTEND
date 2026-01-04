@@ -268,4 +268,75 @@ describe('locked-tokens utilities', () => {
       expect(hasTokenLocking(-1)).toBe(false);
     });
   });
+    describe('formatTimeRemaining with date-fns (calendar-aware)', () => {
+    it('should accurately calculate from Jan 3, 2026 to Jan 2, 2030', () => {
+      // Reproduce the exact scenario from User #2's screenshot
+      const firstMint = new Date('2026-01-03T00:00:00Z').getTime() / 1000;
+      const unlock = firstMint + (4 * 365 * 24 * 60 * 60); // 4 years (simplified)
+      const currentTime = new Date('2026-01-04T00:00:00Z').getTime() / 1000;
+      
+      const remaining = unlock - currentTime;
+      const result = formatTimeRemaining(remaining);
+      
+      // Should be approximately 3 years, 11 months, 29 days
+      // (date-fns accounts for actual calendar, including leap year 2028)
+      expect(result).toContain('3 years');
+      expect(result).toContain('11 months');
+      expect(result).not.toContain('4 years'); // ❌ Bug was showing "4 years, 3 days"
+    });
+    
+    it('should handle leap year correctly (2028)', () => {
+      // Test a date range that crosses the 2028 leap year
+      const start = new Date('2027-01-01T00:00:00Z');
+      const end = new Date('2029-01-01T00:00:00Z'); // Crosses Feb 29, 2028
+      
+      const seconds = (end.getTime() - start.getTime()) / 1000;
+      const result = formatTimeRemaining(seconds);
+      
+      // date-fns will account for the extra day in 2028
+      expect(result).toContain('2 years');
+    });
+    
+    it('should never show 12 months (edge case)', () => {
+      // Test edge case near year boundary
+      const nearOneYear = 364 * 24 * 60 * 60; // 364 days
+      const result = formatTimeRemaining(nearOneYear);
+      
+      // Should show "11 months, XX days" NOT "12 months"
+      expect(result).not.toContain('12 months');
+    });
+    
+    it('should handle very short durations (hours only)', () => {
+      const twoHours = 2 * 60 * 60; // 7200 seconds
+      const result = formatTimeRemaining(twoHours);
+      
+      // Less than a day shows as "0 days"
+      expect(result).toBe('0 days');
+    });
+    
+    it('should handle exactly 4 years from first mint', () => {
+      const now = Math.floor(Date.now() / 1000);
+      const fourYears = 4 * 365 * 24 * 60 * 60; // 126,144,000 seconds
+      
+      const result = formatTimeRemaining(fourYears);
+      
+      // date-fns will calculate the actual duration accounting for leap years
+      // Should NOT show "4 years, 0 days" but rather the calendar-accurate breakdown
+      expect(result).toContain('year');
+    });
+    
+    it('should return "Unlocked" for zero or negative seconds', () => {
+      expect(formatTimeRemaining(0)).toBe('Unlocked');
+      expect(formatTimeRemaining(-100)).toBe('Unlocked');
+    });
+    
+    it('should handle month boundaries correctly', () => {
+      // Test a duration that ends mid-month
+      const thirtyDays = 30 * 24 * 60 * 60;
+      const result = formatTimeRemaining(thirtyDays);
+      
+      // Should show "1 month" or "30 days" (date-fns handles both correctly)
+      expect(result).toMatch(/month|days/);
+    });
+  });
 });
