@@ -1,16 +1,5 @@
 import { BN } from '@coral-xyz/anchor';
-
-/**
- * Time conversion constants
- * Note: Uses simplified calculations (365-day year, 30-day month) for consistency
- */
-const SECONDS_PER_MINUTE = 60;
-const SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE;
-const SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
-const DAYS_PER_MONTH = 30; // Simplified for consistent formatting
-const DAYS_PER_YEAR = 365; // Simplified (no leap year) to match backend
-const SECONDS_PER_MONTH = DAYS_PER_MONTH * SECONDS_PER_DAY;
-const SECONDS_PER_YEAR = DAYS_PER_YEAR * SECONDS_PER_DAY;
+import { intervalToDuration } from 'date-fns';
 
 /**
  * Lock period duration (4 years in seconds)
@@ -18,7 +7,7 @@ const SECONDS_PER_YEAR = DAYS_PER_YEAR * SECONDS_PER_DAY;
  * to match the backend implementation. This may result in slight timing inaccuracies
  * (~1 day over 4 years), but ensures frontend/backend consistency.
  */
-export const LOCK_PERIOD_SECONDS = 4 * SECONDS_PER_YEAR; // 126,144,000 seconds
+export const LOCK_PERIOD_SECONDS = 4 * 365 * 24 * 60 * 60; // 126,144,000 seconds
 
 /**
  * Check if locked tokens are ready to unlock
@@ -44,31 +33,48 @@ export function getSecondsUntilUnlock(unlockTimestamp: BN): number {
 }
 
 /**
- * Format remaining time as human-readable string
+ * Format remaining time as human-readable string using date-fns
+ * 
+ * Uses date-fns intervalToDuration for accurate calculation that:
+ * - Handles variable month lengths (28-31 days)
+ * - Accounts for leap years (e.g., 2028)
+ * - Provides precise year/month/day breakdown
  * 
  * @param seconds - Seconds remaining until unlock
- * @returns Formatted string (e.g., "2 years, 3 months, 15 days")
+ * @returns Formatted string (e.g., "3 years, 11 months, 29 days")
  */
 export function formatTimeRemaining(seconds: number): string {
   if (seconds <= 0) return "Unlocked";
   
-  let years = Math.floor(seconds / SECONDS_PER_YEAR);
-  const remainingAfterYears = seconds % SECONDS_PER_YEAR;
-  let months = Math.floor(remainingAfterYears / SECONDS_PER_MONTH);
-  const remainingAfterMonths = remainingAfterYears % SECONDS_PER_MONTH;
-  const days = Math.floor(remainingAfterMonths / SECONDS_PER_DAY);
+  // Create a duration interval from now to unlock time
+  const now = new Date();
+  const futureDate = new Date(now.getTime() + seconds * 1000);
   
-  // Edge case: if months == 12, roll over to next year
-  // This can happen due to 365-day year vs 30-day month mismatch
-  if (months >= 12) {
-    years += 1;
-    months = 0;
+  const duration = intervalToDuration({
+    start: now,
+    end: futureDate
+  });
+  
+  // Build custom format string (years, months, days only)
+  const parts: string[] = [];
+  
+  if (duration.years && duration.years > 0) {
+    parts.push(`${duration.years} year${duration.years > 1 ? 's' : ''}`);
   }
   
-  const parts: string[] = [];
-  if (years > 0) parts.push(`${years} year${years > 1 ? 's' : ''}`);
-  if (months > 0) parts.push(`${months} month${months > 1 ? 's' : ''}`);
-  if (days > 0 || parts.length === 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+  if (duration.months && duration.months > 0) {
+    parts.push(`${duration.months} month${duration.months > 1 ? 's' : ''}`);
+  }
+  
+  if (duration.days && duration.days > 0) {
+    parts.push(`${duration.days} day${duration.days > 1 ? 's' : ''}`);
+  }
+  
+  // Edge case: if we have positive seconds but no days/months/years
+  // (e.g., only hours remaining), show "0 days"
+  if (parts.length === 0 && seconds > 0) {
+    parts.push('0 days');
+  }
   
   return parts.join(', ');
 }

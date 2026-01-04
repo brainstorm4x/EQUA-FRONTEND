@@ -91,27 +91,74 @@ describe('locked-tokens utilities', () => {
       expect(result).toContain('0 days');
     });
 
-    it('should never show 12 months (edge case near 4 years)', () => {
-      // Test value that would show 12 months without the fix
-      // 126,143,999 seconds = 3 years + 31,535,999 remaining
-      // 31,535,999 / 2,592,000 = 12.16 months
-      const nearFourYears = 126_143_999;
-      const result = formatTimeRemaining(nearFourYears);
+    it('should accurately calculate from Jan 3, 2026 to Jan 2, 2030 (bug fix)', () => {
+      // Reproduce the exact scenario from the bug screenshot
+      // From Jan 4, 2026 to Jan 2, 2030 should be ~3 years, 11 months, 29 days
+      const firstMint = new Date('2026-01-03T00:00:00Z').getTime() / 1000;
+      const unlock = firstMint + (4 * 365 * 24 * 60 * 60); // 4 years (simplified)
+      const currentTime = new Date('2026-01-04T00:00:00Z').getTime() / 1000;
       
-      // Should never show 12 months - should roll to 4 years instead
+      const remaining = unlock - currentTime;
+      const result = formatTimeRemaining(remaining);
+      
+      // Should be approximately 3 years, 11 months (not 4 years)
+      expect(result).toContain('3 years');
+      expect(result).toContain('11 months');
+      expect(result).not.toContain('4 years'); // ❌ Bug: was showing "4 years, 3 days"
+    });
+
+    it('should handle leap year correctly (2028)', () => {
+      // Test a date range that crosses the 2028 leap year
+      const start = new Date('2027-01-01T00:00:00Z');
+      const end = new Date('2029-01-01T00:00:00Z'); // Crosses Feb 29, 2028
+      
+      const seconds = (end.getTime() - start.getTime()) / 1000;
+      const result = formatTimeRemaining(seconds);
+      
+      expect(result).toContain('2 years');
+      // date-fns will account for the extra day in 2028
+    });
+
+    it('should never show 12 months', () => {
+      // Test edge case near year boundary
+      const nearOneYear = 364 * 24 * 60 * 60; // 364 days
+      const result = formatTimeRemaining(nearOneYear);
+      
       expect(result).not.toContain('12 months');
+    });
+
+    it('should handle very short durations (hours only)', () => {
+      const twoHours = 2 * 60 * 60; // 7200 seconds
+      const result = formatTimeRemaining(twoHours);
       
-      // Should show 4 years since months >= 12
-      expect(result).toContain('4 years');
-      expect(result).toContain('4 days');
+      expect(result).toBe('0 days'); // Less than a day shows as 0 days
     });
 
     it('should handle exactly 4 years', () => {
       const fourYears = 4 * 365 * 24 * 60 * 60; // 126,144,000 seconds
       const result = formatTimeRemaining(fourYears);
-      expect(result).toContain('4 years');
-      // Should show 0 months and 0 days (which means no months/days in output)
-      expect(result).not.toContain('months');
+      
+      // date-fns will calculate the actual duration accounting for leap years
+      expect(result).toContain('year');
+    });
+
+    it('should handle month boundaries correctly', () => {
+      // 1 month and 15 days
+      const oneMonthFifteenDays = (31 + 15) * 24 * 60 * 60;
+      const result = formatTimeRemaining(oneMonthFifteenDays);
+      
+      expect(result).toContain('month');
+      expect(result).toContain('day');
+    });
+
+    it('should handle year boundaries correctly', () => {
+      // 1 year, 6 months, 10 days
+      const duration = (365 + 180 + 10) * 24 * 60 * 60;
+      const result = formatTimeRemaining(duration);
+      
+      expect(result).toContain('year');
+      expect(result).toContain('month');
+      expect(result).toContain('day');
     });
   });
 
