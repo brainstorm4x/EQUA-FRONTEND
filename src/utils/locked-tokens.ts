@@ -33,17 +33,6 @@ export function canUnlock(unlockTimestamp:  BN): boolean {
 }
 
 /**
- * Check if locked tokens are ready to unlock
- * 
- * @param unlockTimestamp - Unix timestamp when tokens unlock (from LockedTokenAccount)
- * @returns true if current time >= unlock timestamp
- */
-export function canUnlock(unlockTimestamp:  BN): boolean {
-  const currentTimestamp = Math.floor(Date.now() / 1000);
-  return currentTimestamp >= unlockTimestamp. toNumber();
-}
-
-/**
  * Get remaining time until unlock (in seconds)
  * 
  * @param unlockTimestamp - Unix timestamp when tokens unlock
