@@ -93,7 +93,10 @@ describe('locked-tokens utilities', () => {
 
     it('should accurately calculate from Jan 3, 2026 to Jan 2, 2030 (bug fix)', () => {
       // Reproduce the exact scenario from the bug screenshot
-      // From Jan 4, 2026 to Jan 2, 2030 should be ~3 years, 11 months, 29 days
+      // First mint: Jan 3, 2026
+      // Current time: Jan 4, 2026 (one day after first mint)
+      // Unlock: Jan 2, 2030 (4 years from first mint)
+      // Expected: ~3 years, 11 months, 29 days from current time to unlock
       const firstMint = new Date('2026-01-03T00:00:00Z').getTime() / 1000;
       const unlock = firstMint + (4 * 365 * 24 * 60 * 60); // 4 years (simplified)
       const currentTime = new Date('2026-01-04T00:00:00Z').getTime() / 1000;
