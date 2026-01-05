@@ -385,8 +385,8 @@ const SendModal: FC<SendModalProps> = ({
     const fetchPrice = async () => {
       setIsLoadingPrice(true);
       try {
-        const currencyCode = getUserLocaleCurrency();
-        setLocalCurrency(currencyCode);
+        // Use the already-initialized localCurrency state
+        const currencyCode = localCurrency;
         const exchangeRate = DEFAULT_RATES[currencyCode]?.rate || 1;
         
         // Get current EQUA price from global state
@@ -401,7 +401,7 @@ const SendModal: FC<SendModalProps> = ({
       }
     };
     fetchPrice();
-  }, [connection]);
+  }, [connection, localCurrency]);
 
   // Handle local currency amount change
   const handleLocalCurrencyChange = (value: string) => {
