@@ -48,6 +48,51 @@ describe('WalletDashboard - Receive Modal', () => {
   });
 });
 
+describe('WalletDashboard - Send Modal Currency Initialization', () => {
+  it('should use lazy initialization for local currency state to prevent USD flash', () => {
+    // This test verifies that the SendModal component uses lazy initialization
+    // for the localCurrency state instead of hardcoding 'USD'
+    // This prevents a visual flash when the modal opens for non-USD users
+    
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Verify that localCurrency uses a function initializer
+    // The pattern should be: useState(() => { ... })
+    // NOT: useState('USD')
+    expect(sourceCode).toMatch(/const \[localCurrency,\s*setLocalCurrency\]\s*=\s*useState\(\s*\(\)\s*=>\s*\{/);
+    
+    // Verify it includes SSR safety check
+    expect(sourceCode).toMatch(/typeof window !== ['"]undefined['"]/);
+    
+    // Verify it calls getUserLocaleCurrency() in the initializer
+    expect(sourceCode).toMatch(/getUserLocaleCurrency\(\)/);
+  });
+
+  it('should include SSR fallback to USD when window is undefined', () => {
+    // This verifies the SSR safety check returns 'USD' as fallback
+    
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // The lazy initializer should have a fallback return statement
+    // Pattern: return 'USD'; // SSR fallback
+    const lazyInitMatch = sourceCode.match(/useState\(\s*\(\)\s*=>\s*\{[\s\S]*?\}\s*\)/);
+    expect(lazyInitMatch).toBeTruthy();
+    
+    if (lazyInitMatch) {
+      const initializerCode = lazyInitMatch[0];
+      // Should have both getUserLocaleCurrency and USD fallback
+      expect(initializerCode).toContain('getUserLocaleCurrency()');
+      expect(initializerCode).toContain("'USD'");
+    }
+  });
+});
+
 describe('WalletDashboard - Transfer Count', () => {
   it('should NOT import recordTransfer from transferTracking', () => {
     // This verifies that WalletDashboard does not import recordTransfer

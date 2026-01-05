@@ -360,7 +360,13 @@ const SendModal: FC<SendModalProps> = ({
   const [amount, setAmount] = useState('');
   const [localCurrencyAmount, setLocalCurrencyAmount] = useState('');
   const [equaPrice, setEquaPrice] = useState<number>(0.01);
-  const [localCurrency, setLocalCurrency] = useState('USD');
+  const [localCurrency, setLocalCurrency] = useState(() => {
+    // Detect currency on initialization (runs once, synchronously on first render)
+    if (typeof window !== 'undefined') {
+      return getUserLocaleCurrency();
+    }
+    return 'USD'; // SSR fallback
+  });
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
