@@ -360,7 +360,13 @@ const SendModal: FC<SendModalProps> = ({
   const [amount, setAmount] = useState('');
   const [localCurrencyAmount, setLocalCurrencyAmount] = useState('');
   const [equaPrice, setEquaPrice] = useState<number>(0.01);
-  const [localCurrency, setLocalCurrency] = useState('USD');
+  const [localCurrency, setLocalCurrency] = useState(() => {
+    // Detect currency on initialization (runs once, synchronously on first render)
+    if (typeof window !== 'undefined') {
+      return getUserLocaleCurrency();
+    }
+    return 'USD'; // SSR fallback
+  });
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -379,8 +385,8 @@ const SendModal: FC<SendModalProps> = ({
     const fetchPrice = async () => {
       setIsLoadingPrice(true);
       try {
-        const currencyCode = getUserLocaleCurrency();
-        setLocalCurrency(currencyCode);
+        // Use the already-initialized localCurrency state
+        const currencyCode = localCurrency;
         const exchangeRate = DEFAULT_RATES[currencyCode]?.rate || 1;
         
         // Get current EQUA price from global state
@@ -395,7 +401,7 @@ const SendModal: FC<SendModalProps> = ({
       }
     };
     fetchPrice();
-  }, [connection]);
+  }, [connection, localCurrency]);
 
   // Handle local currency amount change
   const handleLocalCurrencyChange = (value: string) => {
