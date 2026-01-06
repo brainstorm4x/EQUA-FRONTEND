@@ -4,9 +4,10 @@ import { FC, useEffect, useState } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { EquaPriceCalculator, PriceTier, formatEquaPrice } from '@/utils/priceCalculator';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
-import { getUserLocaleCurrency, formatLocalCurrency } from '@/utils/localeCurrency';
+import { getUserLocaleCurrency, formatLocalCurrency, formatLocalCurrencyDynamic } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat, formatEQXPrice, MultiFormatEquaPrice } from '@/utils/eqxOracle';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
+
 
 interface PriceDisplayProps {
   className?: string;
@@ -159,7 +160,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           {localCurrency !== 'USD' && (
             <div className="mt-1">
               <p className="text-green-300 text-sm" data-testid="local-currency-price">
-                ≈ {formatLocalCurrency(currentPrice, localCurrency)}
+                ≈ {formatLocalCurrencyDynamic(currentPrice, localCurrency, eqxData.fxRate || 1)}
               </p>
               
               {/* Staleness warning */}
@@ -181,8 +182,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
               )}
             </div>
           )}
-          <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
-            {getTierLabel(currentTier)}
+          <p className="text-purple-300 text-xs mt-1" data-testid="price-source">
             <span className="ml-2 text-purple-400">
               ({eqxData.priceSource === 'on-chain-oracle' ? '🟢 On-Chain' : '⚪ Fallback'})
             </span>
@@ -193,6 +193,8 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           <p className="text-purple-200 text-sm mb-2">Minting Rate</p>
           <p className="text-white text-3xl font-bold" data-testid="mint-rate">{mintingRate}</p>
           <p className="text-purple-300 text-xs mt-1">EQUA/day</p>
+          <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
+            {getTierLabel(currentTier)}</p>
         </div>
 
         {showStats && (
