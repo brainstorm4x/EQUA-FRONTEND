@@ -241,13 +241,34 @@ export function getUserLocaleCurrency(): string {
 /**
  * Formats a price in local currency
  * 
+ * ⚠️ NOTE: This uses static DEFAULT_RATES (updated quarterly).
+ * For real-time rates, consider using formatLocalCurrencyDynamic() with getFxRate().
+ * 
  * @param usdPrice - The price in USD
  * @param currencyCode - The target currency code
  * @returns Formatted price string in the target currency
  */
 export function formatLocalCurrency(usdPrice: number, currencyCode: string): string {
   const currencyInfo = DEFAULT_RATES[currencyCode] || DEFAULT_RATES.USD;
-  const localPrice = usdPrice * currencyInfo.rate;
+  return formatLocalCurrencyDynamic(usdPrice, currencyCode, currencyInfo.rate);
+}
+
+/**
+ * Format price using dynamic exchange rate
+ * 
+ * ✅ NEW: Preferred method when real-time FX rates are available
+ * 
+ * @param usdPrice - Price in USD
+ * @param currencyCode - Target currency code
+ * @param dynamicRate - Real-time exchange rate (USD → currency)
+ * @returns Formatted price string
+ */
+export function formatLocalCurrencyDynamic(
+  usdPrice: number,
+  currencyCode: string,
+  dynamicRate: number
+): string {
+  const localPrice = usdPrice * dynamicRate;
   
   try {
     return new Intl.NumberFormat(undefined, {
@@ -257,6 +278,10 @@ export function formatLocalCurrency(usdPrice: number, currencyCode: string): str
       maximumFractionDigits: localPrice < 1 ? 4 : 2,
     }).format(localPrice);
   } catch {
-    return `${currencyInfo.symbol}${localPrice.toFixed(localPrice < 1 ? 4 : 2)}`;
+    // Fallback: use symbol from DEFAULT_RATES if available, otherwise use currency code
+    const currencyInfo = DEFAULT_RATES[currencyCode];
+    const symbol = currencyInfo ? currencyInfo.symbol : DEFAULT_RATES.USD.symbol;
+    const formatted = localPrice.toFixed(localPrice < 1 ? 4 : 2);
+    return `${symbol}${formatted}`;
   }
 }
