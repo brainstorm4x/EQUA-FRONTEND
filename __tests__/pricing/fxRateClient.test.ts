@@ -44,15 +44,17 @@ describe('FX Rate Client - Cache TTL', () => {
 
   describe('Cache TTL is 6 hours', () => {
     it('should cache data for 6 hours', async () => {
-      // Mock successful fetch
+      // Mock successful fetch with ExchangeRate-API format
+      const mockApiResponse = {
+        base: 'USD',
+        date: '2026-01-06',
+        time_last_updated: Math.floor(Date.now() / 1000), // Unix seconds
+        rates: { EUR: 0.92, INR: 90.2979 },
+      };
+
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          rates: { EUR: 0.92, INR: 90.2979 },
-          timestamp: Date.now(),
-          date: '2026-01-06',
-          source: 'exchangerate-api',
-        }),
+        json: async () => mockApiResponse,
       });
 
       // First call - should fetch from API
@@ -72,17 +74,17 @@ describe('FX Rate Client - Cache TTL', () => {
     });
 
     it('should expire cache after 6 hours', async () => {
-      const mockData = {
-        rates: { EUR: 0.92, INR: 90.2979 },
-        timestamp: Date.now(),
+      const mockApiResponse = {
+        base: 'USD',
         date: '2026-01-06',
-        source: 'exchangerate-api' as const,
+        time_last_updated: Math.floor(Date.now() / 1000), // Unix seconds
+        rates: { EUR: 0.92, INR: 90.2979 },
       };
 
       // Mock initial fetch
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockData,
+        json: async () => mockApiResponse,
       });
 
       // First call
@@ -99,13 +101,16 @@ describe('FX Rate Client - Cache TTL', () => {
       expect(isCacheValid()).toBe(false);
       
       // Mock second fetch with updated data
+      const updatedApiResponse = {
+        base: 'USD',
+        date: '2026-01-06',
+        time_last_updated: Math.floor(Date.now() / 1000),
+        rates: { EUR: 0.93, INR: 91.5 },
+      };
+
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          ...mockData,
-          rates: { EUR: 0.93, INR: 91.5 },
-          timestamp: Date.now(),
-        }),
+        json: async () => updatedApiResponse,
       });
       
       // Second call - should fetch fresh data
@@ -119,17 +124,17 @@ describe('FX Rate Client - Cache TTL', () => {
     });
 
     it('should not expire cache before 6 hours', async () => {
-      const mockData = {
-        rates: { EUR: 0.92, INR: 90.2979 },
-        timestamp: Date.now(),
+      const mockApiResponse = {
+        base: 'USD',
         date: '2026-01-06',
-        source: 'exchangerate-api' as const,
+        time_last_updated: Math.floor(Date.now() / 1000), // Unix seconds
+        rates: { EUR: 0.92, INR: 90.2979 },
       };
 
       // Mock initial fetch
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockData,
+        json: async () => mockApiResponse,
       });
 
       // First call
@@ -160,16 +165,16 @@ describe('FX Rate Client - Cache TTL', () => {
     it('should not mark data as stale if less than 24 hours old', async () => {
       const TWENTY_THREE_HOURS_MS = 23 * 60 * 60 * 1000;
       
-      const mockData = {
-        rates: { EUR: 0.92, INR: 90.2979 },
-        timestamp: Date.now() - TWENTY_THREE_HOURS_MS,
+      const mockApiResponse = {
+        base: 'USD',
         date: '2026-01-05',
-        source: 'exchangerate-api' as const,
+        time_last_updated: Math.floor((Date.now() - TWENTY_THREE_HOURS_MS) / 1000),
+        rates: { EUR: 0.92, INR: 90.2979 },
       };
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockData,
+        json: async () => mockApiResponse,
       });
 
       const result = await getFxRate('EUR');
@@ -181,16 +186,16 @@ describe('FX Rate Client - Cache TTL', () => {
     it('should mark data as stale if 24+ hours old', async () => {
       const TWENTY_FIVE_HOURS_MS = 25 * 60 * 60 * 1000;
       
-      const mockData = {
-        rates: { EUR: 0.92, INR: 83.5 },
-        timestamp: Date.now() - TWENTY_FIVE_HOURS_MS,
+      const mockApiResponse = {
+        base: 'USD',
         date: '2026-01-05',
-        source: 'exchangerate-api' as const,
+        time_last_updated: Math.floor((Date.now() - TWENTY_FIVE_HOURS_MS) / 1000),
+        rates: { EUR: 0.92, INR: 83.5 },
       };
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockData,
+        json: async () => mockApiResponse,
       });
 
       const result = await getFxRate('EUR');
@@ -203,14 +208,16 @@ describe('FX Rate Client - Cache TTL', () => {
   describe('Cache utility functions', () => {
     it('should clear cache', async () => {
       // Setup cache
+      const mockApiResponse = {
+        base: 'USD',
+        date: '2026-01-06',
+        time_last_updated: Math.floor(Date.now() / 1000),
+        rates: { EUR: 0.92 },
+      };
+
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          rates: { EUR: 0.92 },
-          timestamp: Date.now(),
-          date: '2026-01-06',
-          source: 'exchangerate-api',
-        }),
+        json: async () => mockApiResponse,
       });
 
       await getFxRate('EUR');
@@ -225,14 +232,16 @@ describe('FX Rate Client - Cache TTL', () => {
 
     it('should get cache age in hours', async () => {
       // Setup cache
+      const mockApiResponse = {
+        base: 'USD',
+        date: '2026-01-06',
+        time_last_updated: Math.floor(Date.now() / 1000),
+        rates: { EUR: 0.92 },
+      };
+
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          rates: { EUR: 0.92 },
-          timestamp: Date.now(),
-          date: '2026-01-06',
-          source: 'exchangerate-api',
-        }),
+        json: async () => mockApiResponse,
       });
 
       await getFxRate('EUR');
