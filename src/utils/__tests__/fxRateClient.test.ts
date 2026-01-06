@@ -234,7 +234,8 @@ describe('FX Rate Client', () => {
       expect(result.rates.USD).toBe(1);
       expect(result.rates.EUR).toBeDefined();
       expect(result.rates.INR).toBeDefined();
-      expect(result.date).toBe('2026-01-06'); // Uses current date from Date.now() mock
+      // Date is generated from Date.now() which is mocked to 1736160000000 (2026-01-06)
+      expect(result.date).toBe('2026-01-06');
     });
     
     it('should handle malformed JSON gracefully', async () => {
