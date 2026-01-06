@@ -18,6 +18,22 @@ import {
 // Mock Data
 // ============================================================================
 
+/**
+ * Helper to create mock ExchangeRate-API response
+ */
+const createMockApiResponse = (timestamp: number = Date.now()) => ({
+  base: 'USD',
+  date: new Date(timestamp).toISOString().split('T')[0],
+  time_last_updated: Math.floor(timestamp / 1000),
+  rates: {
+    USD: 1,
+    EUR: 0.92,
+    INR: 83.51,
+    JPY: 149.5,
+    CNY: 7.25,
+  },
+});
+
 const MOCK_FX_DATA: FxRateData = {
   rates: {
     USD: 1,
@@ -111,17 +127,18 @@ describe('FX Rate Client', () => {
   // ==========================================================================
   
   describe('fetchFxRates()', () => {
-    it('should fetch from GitHub Raw API (primary URL)', async () => {
+    it('should fetch from ExchangeRate-API (primary URL)', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => MOCK_FX_DATA,
+        json: async () => createMockApiResponse(1736104801000),
       } as Response);
       
       const result = await fetchFxRates();
       
-      expect(result).toEqual(MOCK_FX_DATA);
+      expect(result.rates).toEqual(MOCK_FX_DATA.rates);
+      expect(result.source).toBe('exchangerate-api');
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://raw.githubusercontent.com/brainstorm4x/EQUA/main/data/fx-rates/current.json',
+        expect.stringContaining('exchangerate-api.com'),
         expect.objectContaining({
           method: 'GET',
           cache: 'no-store',
@@ -132,21 +149,22 @@ describe('FX Rate Client', () => {
     it('should cache successful response in localStorage', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => MOCK_FX_DATA,
+        json: async () => createMockApiResponse(1736104801000),
       } as Response);
       
       await fetchFxRates();
       
       const cached = JSON.parse(mockLocalStorage['equa_fx_rates_cache']);
-      expect(cached.data).toEqual(MOCK_FX_DATA);
+      expect(cached.data.rates).toEqual(MOCK_FX_DATA.rates);
+      expect(cached.data.source).toBe('exchangerate-api');
       expect(cached.cachedAt).toBe(1736160000000);
     });
     
-    it('should return cached data if fresh (<24h)', async () => {
-      // Pre-populate cache with fresh data
+    it('should return cached data if fresh (<6h)', async () => {
+      // Pre-populate cache with fresh data (within 6h TTL)
       const cachedData = {
         data: MOCK_FX_DATA,
-        cachedAt: 1736160000000 - 1000 * 60 * 60 * 12, // 12 hours ago
+        cachedAt: 1736160000000 - 1000 * 60 * 60 * 3, // 3 hours ago (within 6h TTL)
       };
       mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
       
@@ -166,16 +184,16 @@ describe('FX Rate Client', () => {
       // Fallback URL succeeds
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => MOCK_FALLBACK_DATA,
+        json: async () => createMockApiResponse(1735000000000),
       } as Response);
       
       const result = await fetchFxRates();
       
-      expect(result).toEqual(MOCK_FALLBACK_DATA);
+      expect(result.source).toBe('exchangerate-api');
       expect(global.fetch).toHaveBeenCalledTimes(2);
       expect(global.fetch).toHaveBeenNthCalledWith(
         2,
-        'https://raw.githubusercontent.com/brainstorm4x/EQUA/main/data/fx-rates/fallback.json',
+        expect.stringContaining('exchangerate-api.com'),
         expect.any(Object)
       );
     });
@@ -216,7 +234,8 @@ describe('FX Rate Client', () => {
       expect(result.rates.USD).toBe(1);
       expect(result.rates.EUR).toBeDefined();
       expect(result.rates.INR).toBeDefined();
-      expect(result.date).toBe('2026-01-05'); // Mocked date
+      // Date is generated from Date.now() which is mocked to 1736160000000 (2026-01-06)
+      expect(result.date).toBe('2026-01-06');
     });
     
     it('should handle malformed JSON gracefully', async () => {
@@ -228,18 +247,18 @@ describe('FX Rate Client', () => {
       // Should try fallback
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => MOCK_FALLBACK_DATA,
+        json: async () => createMockApiResponse(1735000000000),
       } as Response);
       
       const result = await fetchFxRates();
       
-      expect(result).toEqual(MOCK_FALLBACK_DATA);
+      expect(result.source).toBe('exchangerate-api');
     });
     
     it('should validate required fields in response', async () => {
       const invalidData = {
         rates: { USD: 1 },
-        // Missing timestamp, date, source
+        // Missing time_last_updated
       };
       
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -250,12 +269,12 @@ describe('FX Rate Client', () => {
       // Should try fallback
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => MOCK_FALLBACK_DATA,
+        json: async () => createMockApiResponse(1735000000000),
       } as Response);
       
       const result = await fetchFxRates();
       
-      expect(result).toEqual(MOCK_FALLBACK_DATA);
+      expect(result.source).toBe('exchangerate-api');
     });
   });
   
@@ -279,7 +298,7 @@ describe('FX Rate Client', () => {
     it('should fetch rate for EUR from API', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => MOCK_FX_DATA,
+        json: async () => createMockApiResponse(1736104801000),
       } as Response);
       
       const result = await getFxRate('EUR');
@@ -290,11 +309,11 @@ describe('FX Rate Client', () => {
       expect(result.isStale).toBe(false);
     });
     
-    it('should use cached rate if fresh (<24h)', async () => {
-      // Pre-populate cache with fresh data
+    it('should use cached rate if fresh (<6h)', async () => {
+      // Pre-populate cache with fresh data (within 6h TTL)
       const cachedData = {
         data: MOCK_FX_DATA,
-        cachedAt: 1736160000000 - 1000 * 60 * 60 * 12, // 12 hours ago
+        cachedAt: 1736160000000 - 1000 * 60 * 60 * 3, // 3 hours ago (within 6h TTL)
       };
       mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
       
@@ -341,7 +360,7 @@ describe('FX Rate Client', () => {
       // API returns fresh data
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => MOCK_FX_DATA,
+        json: async () => createMockApiResponse(1736104801000),
       } as Response);
       
       const result = await getFxRate('EUR');
@@ -354,7 +373,7 @@ describe('FX Rate Client', () => {
     it('should fall back to rate 1.0 for unknown currency', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => MOCK_FX_DATA,
+        json: async () => createMockApiResponse(1736104801000),
       } as Response);
       
       const result = await getFxRate('XXX'); // Unknown currency
@@ -413,17 +432,17 @@ describe('FX Rate Client', () => {
   // ==========================================================================
   
   describe('isCacheValid()', () => {
-    it('should return true for fresh cache (<24h)', () => {
+    it('should return true for fresh cache (<6h)', () => {
       const cachedData = {
         data: MOCK_FX_DATA,
-        cachedAt: 1736160000000 - 1000 * 60 * 60 * 12, // 12 hours ago
+        cachedAt: 1736160000000 - 1000 * 60 * 60 * 3, // 3 hours ago (within 6h TTL)
       };
       mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
       
       expect(isCacheValid()).toBe(true);
     });
     
-    it('should return false for stale cache (>24h)', () => {
+    it('should return false for stale cache (>6h)', () => {
       const staleData = {
         data: MOCK_FX_DATA,
         cachedAt: 1736160000000 - 1000 * 60 * 60 * 48, // 48 hours ago
@@ -524,7 +543,7 @@ describe('FX Rate Client', () => {
     it('should handle concurrent fetchFxRates calls', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
-        json: async () => MOCK_FX_DATA,
+        json: async () => createMockApiResponse(1736104801000),
       } as Response);
       
       const [result1, result2, result3] = await Promise.all([
@@ -533,9 +552,9 @@ describe('FX Rate Client', () => {
         fetchFxRates(),
       ]);
       
-      expect(result1).toEqual(MOCK_FX_DATA);
-      expect(result2).toEqual(MOCK_FX_DATA);
-      expect(result3).toEqual(MOCK_FX_DATA);
+      expect(result1.rates).toEqual(MOCK_FX_DATA.rates);
+      expect(result2.rates).toEqual(MOCK_FX_DATA.rates);
+      expect(result3.rates).toEqual(MOCK_FX_DATA.rates);
     });
   });
 });

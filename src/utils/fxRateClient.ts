@@ -1,10 +1,10 @@
 /**
  * FX Rate Client - Real-Time Exchange Rate Fetching
  * 
- * Fetches real-time FX rates from backend via GitHub Raw API.
+ * Fetches real-time FX rates from ExchangeRate-API (exchangerate-api.com).
  * Provides 3-layer fallback chain for maximum reliability:
- * 1. GitHub Raw API (primary endpoint)
- * 2. GitHub Raw API (fallback endpoint)
+ * 1. ExchangeRate-API (primary endpoint)
+ * 2. ExchangeRate-API (fallback endpoint - same URL, retry logic)
  * 3. Stale localStorage cache
  * 4. Static DEFAULT_RATES from localeCurrency.ts
  * 
@@ -22,13 +22,16 @@ import { DEFAULT_RATES } from './localeCurrency';
 // ============================================================================
 
 /**
- * GitHub Raw API endpoints for FX rate data
- * Data is maintained by brainstorm4x/EQUA backend
+ * ExchangeRate-API endpoints for FX rate data
+ * Free tier: 1,500 requests/month, updates daily
+ * Can be overridden via NEXT_PUBLIC_FX_API_URL environment variable
  */
 const FX_RATES_PRIMARY_URL = 
-  'https://raw.githubusercontent.com/brainstorm4x/EQUA/main/data/fx-rates/current.json';
+  process.env.NEXT_PUBLIC_FX_API_URL || 
+  'https://api.exchangerate-api.com/v4/latest/USD';
 const FX_RATES_FALLBACK_URL = 
-  'https://raw.githubusercontent.com/brainstorm4x/EQUA/main/data/fx-rates/fallback.json';
+  process.env.NEXT_PUBLIC_FX_API_FALLBACK_URL || 
+  'https://api.exchangerate-api.com/v4/latest/USD';
 
 /**
  * Cache configuration
@@ -199,15 +202,41 @@ async function fetchFromUrl(url: string): Promise<FxRateData | null> {
       return null;
     }
     
-    const data = await response.json() as FxRateData;
+    const apiData = await response.json();
     
-    // Validate required fields
-    if (!data.rates || typeof data.timestamp !== 'number' || !data.date || !data.source) {
-      console.warn(`Invalid FX rate data from ${url}`);
+    // Transform ExchangeRate-API format to FxRateData
+    // API response: { base: "USD", date: "2026-01-06", time_last_updated: 1736121600, rates: {...} }
+    // Our format: { rates: {...}, timestamp: number (ms), date: string, source: string }
+    
+// Validate required fields with type checking
+    if (!apiData.rates || typeof apiData.rates !== 'object') {
+      console.warn(`Invalid FX rate data from ${url}:  missing or invalid rates`);
       return null;
     }
     
-    return data;
+    if (!apiData.time_last_updated || typeof apiData.time_last_updated !== 'number') {
+      console.warn(`Invalid FX rate data from ${url}: missing or invalid timestamp`);
+      return null;
+    }
+    
+    // Validate base currency (should always be USD for our use case)
+    if (apiData.base && apiData.base !== 'USD') {
+      console.warn(`Unexpected base currency from ${url}: ${apiData.base} (expected USD)`);
+      // Don't fail, but log the warning
+    }
+    
+    // Validate at least one rate exists
+    if (Object.keys(apiData.rates).length === 0) {
+      console.warn(`Invalid FX rate data from ${url}:  empty rates object`);
+      return null;
+    }
+        
+    return {
+      rates: apiData.rates,
+      timestamp: apiData.time_last_updated * 1000, // Convert Unix seconds to milliseconds
+      date: apiData.date || new Date().toISOString().split('T')[0],
+      source: "exchangerate-api",
+    };
   } catch (error) {
     console.warn(`Error fetching FX rates from ${url}:`, error);
     return null;
@@ -215,11 +244,11 @@ async function fetchFromUrl(url: string): Promise<FxRateData | null> {
 }
 
 /**
- * Fetch all FX rates from backend via GitHub Raw API
+ * Fetch all FX rates from ExchangeRate-API
  * 
  * Fallback chain:
- * 1. Primary GitHub URL
- * 2. Fallback GitHub URL
+ * 1. Primary ExchangeRate-API endpoint
+ * 2. Fallback ExchangeRate-API endpoint (same URL, retry logic)
  * 3. Stale localStorage cache
  * 4. Static DEFAULT_RATES (never returns null)
  * 
