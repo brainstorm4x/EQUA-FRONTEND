@@ -19,7 +19,26 @@ export interface FxRateData {
   age: number;  // Age in milliseconds
   isStale: boolean;  // True if rate is >24 hours old
 }
+/**
+ * In-memory cache for FX rates
+ */
+let fxRatesCache: Map<string, FxRateData> | null = null;
+let cacheTimestamp: number = 0;
 
+/**
+ * Cache TTL:  1 hour (rates are updated daily, so this is safe)
+ */
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
+/**
+ * Staleness threshold: 24 hours
+ */
+const STALENESS_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Backend FX rates URL
+ */
+const BACKEND_FX_RATES_URL = 'https://raw.githubusercontent.com/brainstorm4x/EQUA/main/data/fx-rates/current.json';
 /**
  * Backend FX rates format
  */
