@@ -208,11 +208,29 @@ async function fetchFromUrl(url: string): Promise<FxRateData | null> {
     // API response: { base: "USD", date: "2026-01-06", time_last_updated: 1736121600, rates: {...} }
     // Our format: { rates: {...}, timestamp: number (ms), date: string, source: string }
     
-    if (!apiData.rates || !apiData.time_last_updated) {
-      console.warn(`Invalid FX rate data from ${url}`);
+// Validate required fields with type checking
+    if (!apiData.rates || typeof apiData.rates !== 'object') {
+      console.warn(`Invalid FX rate data from ${url}:  missing or invalid rates`);
       return null;
     }
     
+    if (!apiData.time_last_updated || typeof apiData.time_last_updated !== 'number') {
+      console.warn(`Invalid FX rate data from ${url}: missing or invalid timestamp`);
+      return null;
+    }
+    
+    // Validate base currency (should always be USD for our use case)
+    if (apiData.base && apiData.base !== 'USD') {
+      console.warn(`Unexpected base currency from ${url}: ${apiData.base} (expected USD)`);
+      // Don't fail, but log the warning
+    }
+    
+    // Validate at least one rate exists
+    if (Object.keys(apiData.rates).length === 0) {
+      console.warn(`Invalid FX rate data from ${url}:  empty rates object`);
+      return null;
+    }
+        
     return {
       rates: apiData.rates,
       timestamp: apiData.time_last_updated * 1000, // Convert Unix seconds to milliseconds
