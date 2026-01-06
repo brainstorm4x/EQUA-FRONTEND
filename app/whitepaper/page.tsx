@@ -42,7 +42,7 @@ export default function WhitepaperPage() {
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                 EQUA: A Fair Economy Built on Transparent Rules
               </h1>
-              <p className="text-purple-300 text-lg">Last Updated: December 2025</p>
+              <p className="text-purple-300 text-lg">Last Updated: January 2026</p>
             </div>
 
             {/* Executive Summary */}
@@ -200,15 +200,15 @@ export default function WhitepaperPage() {
 
               {/* Tier 1 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-green-400 mb-3">Tier 1: Foundation (0.01 to 0.1 EQX, ~$0.01 to ~$0.1 USD)</h4>
+                <h4 className="text-lg font-bold text-green-400 mb-3">Tier 1: Foundation ($0.01 to $0.1)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~23,027 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1 transaction)</p>
-                    <p><strong className="text-white">Starting Price:</strong> 0.01 EQX (~$0.01 USD)</p>
+                    <p><strong className="text-white">Starting Price:</strong> ~$0.01 USD</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> 0.1 EQX (~$0.1 USD)</p>
+                    <p><strong className="text-white">End Price:</strong> ~$0.1 USD</p>
                     <p><strong className="text-white">Formula:</strong> Price = 0.01 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
@@ -216,19 +216,22 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Every single transaction counts. Precise appreciation rewards the earliest believers and network builders.
                 </p>
+                <p className="text-xs text-purple-300 mt-2 italic">
+                  (Actual pricing in EQX - USD shown for convenience)
+                </p>
               </div>
 
               {/* Tier 2 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-teal-400 mb-3">Tier 2: Early Growth (0.1 to 1 EQX, ~$0.1 to ~$1 USD)</h4>
+                <h4 className="text-lg font-bold text-teal-400 mb-3">Tier 2: Early Growth ($0.1 to $1)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~23,027 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1 transaction)</p>
-                    <p><strong className="text-white">Starting Price:</strong> 0.1 EQX (~$0.1 USD)</p>
+                    <p><strong className="text-white">Starting Price:</strong> ~$0.1 USD</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> 1 EQX (~$1 USD)</p>
+                    <p><strong className="text-white">End Price:</strong> ~$1 USD</p>
                     <p><strong className="text-white">Formula:</strong> Price = 0.1 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
@@ -236,19 +239,22 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Constant growth rate maintains transparency and fairness as the network gains traction.
                 </p>
+                <p className="text-xs text-purple-300 mt-2 italic">
+                  (Actual pricing in EQX - USD shown for convenience)
+                </p>
               </div>
 
               {/* Tier 3 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-blue-400 mb-3">Tier 3: Network Scaling (1 to 10 EQX, ~$1 to ~$10 USD)</h4>
+                <h4 className="text-lg font-bold text-blue-400 mb-3">Tier 3: Network Scaling ($1 to $10)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~230,270 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (10 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> 1 EQX (~$1 USD)</p>
+                    <p><strong className="text-white">Starting Price:</strong> ~$1 USD</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> 10 EQX (~$10 USD)</p>
+                    <p><strong className="text-white">End Price:</strong> ~$10 USD</p>
                     <p><strong className="text-white">Formula:</strong> Price = 1 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
@@ -256,19 +262,22 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Larger epochs reflect growing transaction volume. Constant growth rate ensures predictability.
                 </p>
+                <p className="text-xs text-purple-300 mt-2 italic">
+                  (Actual pricing in EQX - USD shown for convenience)
+                </p>
               </div>
 
               {/* Tier 4 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-indigo-400 mb-3">Tier 4: Market Expansion (10 to 100 EQX, ~$10 to ~$100 USD)</h4>
+                <h4 className="text-lg font-bold text-indigo-400 mb-3">Tier 4: Market Expansion ($10 to $100)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~230,270 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (10 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> 10 EQX (~$10 USD)</p>
+                    <p><strong className="text-white">Starting Price:</strong> ~$10 USD</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> 100 EQX (~$100 USD)</p>
+                    <p><strong className="text-white">End Price:</strong> ~$100 USD</p>
                     <p><strong className="text-white">Formula:</strong> Price = 10 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
@@ -276,19 +285,22 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Network is becoming established. Compounding continues to reward all holders equally.
                 </p>
+                <p className="text-xs text-purple-300 mt-2 italic">
+                  (Actual pricing in EQX - USD shown for convenience)
+                </p>
               </div>
 
               {/* Tier 5 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-violet-400 mb-3">Tier 5: Early Maturity (100 to 1,000 EQX, ~$100 to ~$1k USD)</h4>
+                <h4 className="text-lg font-bold text-violet-400 mb-3">Tier 5: Early Maturity ($100 to $1k)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~2,302,700 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (100 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> 100 EQX (~$100 USD)</p>
+                    <p><strong className="text-white">Starting Price:</strong> ~$100 USD</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> 1,000 EQX (~$1,000 USD)</p>
+                    <p><strong className="text-white">End Price:</strong> ~$1,000 USD</p>
                     <p><strong className="text-white">Formula:</strong> Price = 100 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
@@ -296,19 +308,22 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Even larger epochs reflect substantial transaction volume. Constant 0.01% rate ensures fairness.
                 </p>
+                <p className="text-xs text-purple-300 mt-2 italic">
+                  (Actual pricing in EQX - USD shown for convenience)
+                </p>
               </div>
 
               {/* Tier 6 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-pink-400 mb-3">Tier 6: Strong Adoption (1k to 10k EQX, ~$1k to ~$10k USD)</h4>
+                <h4 className="text-lg font-bold text-pink-400 mb-3">Tier 6: Strong Adoption ($1k to $10k)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~2,302,700 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (100 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> 1,000 EQX (~$1,000 USD)</p>
+                    <p><strong className="text-white">Starting Price:</strong> ~$1,000 USD</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> 10,000 EQX (~$10,000 USD)</p>
+                    <p><strong className="text-white">End Price:</strong> ~$10,000 USD</p>
                     <p><strong className="text-white">Formula:</strong> Price = 1,000 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
@@ -316,19 +331,22 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Sustained compounding rewards long-term holders. Constant rate maintains transparency.
                 </p>
+                <p className="text-xs text-purple-300 mt-2 italic">
+                  (Actual pricing in EQX - USD shown for convenience)
+                </p>
               </div>
 
               {/* Tier 7 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-orange-400 mb-3">Tier 7: Mass Market (10k to 100k EQX, ~$10k to ~$100k USD)</h4>
+                <h4 className="text-lg font-bold text-orange-400 mb-3">Tier 7: Mass Market ($10k to $100k)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~23,027,002 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> 10,000 EQX (~$10,000 USD)</p>
+                    <p><strong className="text-white">Starting Price:</strong> ~$10,000 USD</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> 100,000 EQX (~$100,000 USD)</p>
+                    <p><strong className="text-white">End Price:</strong> ~$100,000 USD</p>
                     <p><strong className="text-white">Formula:</strong> Price = 10,000 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
@@ -336,19 +354,22 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Large epoch sizes reflect massive transaction volume. Constant 0.01% ensures predictability at scale.
                 </p>
+                <p className="text-xs text-purple-300 mt-2 italic">
+                  (Actual pricing in EQX - USD shown for convenience)
+                </p>
               </div>
 
               {/* Tier 8 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-red-400 mb-3">Tier 8: Final Compounding (100k to 500k EQX, ~$100k to ~$500k USD)</h4>
+                <h4 className="text-lg font-bold text-red-400 mb-3">Tier 8: Final Compounding ($100k to $500k)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Duration:</strong> ~16,095,184 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> 100,000 EQX (~$100,000 USD)</p>
+                    <p><strong className="text-white">Starting Price:</strong> ~$100,000 USD</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> 500,000 EQX (~$500,000 USD)</p>
+                    <p><strong className="text-white">End Price:</strong> ~$500,000 USD</p>
                     <p><strong className="text-white">Formula:</strong> Price = 100,000 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
@@ -356,14 +377,17 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Final compounding tier before transition. Reaches $500,000 sustainably.
                 </p>
+                <p className="text-xs text-purple-300 mt-2 italic">
+                  (Actual pricing in EQX - USD shown for convenience)
+                </p>
               </div>
 
               {/* Tier 9 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-purple-400 mb-3">Tier 9: Perpetual Sustainable Growth (500k+ EQX, ~$500k+ USD)</h4>
+                <h4 className="text-lg font-bold text-purple-400 mb-3">Tier 9: Perpetual Sustainable Growth ($500k+)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Start:</strong> After price reaches 500,000 EQX</p>
+                    <p><strong className="text-white">Start:</strong> After price reaches ~$500,000 USD</p>
                     <p><strong className="text-white">Mechanism:</strong> 250 EQX per epoch (1,000 transactions)</p>
                     <p><strong className="text-white">Monthly Cap:</strong> 25,000 EQX maximum increase</p>
                   </div>
@@ -376,6 +400,9 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear 250 EQX/epoch (0.05% of 500,000 EQX) provides steady appreciation. The 25,000 EQX/month cap ensures stability while maintaining good returns.
                 </p>
+                <p className="text-xs text-purple-300 mt-2 italic">
+                  (Actual pricing in EQX - USD shown for convenience)
+                </p>
               </div>
 
               {/* Comparison Table */}
@@ -386,7 +413,7 @@ export default function WhitepaperPage() {
                       <th className="text-left p-3 text-white">Tier</th>
                       <th className="text-left p-3 text-white">Tx/Epoch</th>
                       <th className="text-left p-3 text-white">Growth</th>
-                      <th className="text-left p-3 text-white">Price Range (EQX)</th>
+                      <th className="text-left p-3 text-white">Price Range (USD equiv.)</th>
                       <th className="text-left p-3 text-white">Type</th>
                     </tr>
                   </thead>
@@ -456,7 +483,23 @@ export default function WhitepaperPage() {
                     </tr>
                   </tbody>
                 </table>
-                <p className="text-purple-200 text-xs mt-2 italic">Note: USD values shown in interface are approximate equivalents for convenience only. Actual pricing is in EQX. All compounding tiers use a constant 0.01% growth rate.</p>
+                <p className="text-purple-200 text-xs mt-2 italic">
+                  <strong className="text-white">Note:</strong> All prices denominated in EQX (EQUA Index). USD values shown are approximate equivalents for convenience only. Actual pricing uses EQX, which is a diversified basket of 7 components (57% currencies, 35% gold, 8% oil). The on-chain oracle updates EQX/USD exchange rates every 4 hours.
+                </p>
+              </div>
+
+              {/* EQX vs USD Clarification */}
+              <div className="bg-yellow-500/10 rounded-xl p-6 mt-8 border border-yellow-500/30">
+                <h4 className="text-lg font-bold text-yellow-400 mb-3">⚠️ Important: EQX vs USD</h4>
+                <p className="text-purple-200 leading-relaxed">
+                  <strong className="text-white">All price appreciation is calculated in EQX (EQUA Index), not USD.</strong> EQX is a diversified basket of 7 components: 57% major currencies, 35% gold, and 8% oil. The USD values shown throughout this whitepaper are <strong className="text-white">approximate equivalents for convenience only</strong>—actual pricing on-chain is denominated in EQX.
+                </p>
+                <p className="text-purple-200 leading-relaxed mt-3">
+                  This means that when the whitepaper says "Tier 1: $0.01 to $0.1," it actually means <strong className="text-white">"0.01 to 0.1 EQX"</strong>, with USD values calculated dynamically based on the current EQX/USD exchange rate (updated every 4 hours from Hermes/Pyth price feeds).
+                </p>
+                <p className="text-purple-200 leading-relaxed mt-3 italic">
+                  <strong className="text-white">Why this matters:</strong> EQX provides inflation resistance and stability by spreading risk across multiple global anchors. Your EQUA holdings appreciate in EQX terms—USD is just one of many components affecting EQX&apos;s value.
+                </p>
               </div>
             </section>
 
@@ -484,10 +527,13 @@ export default function WhitepaperPage() {
                 EQX (EQUA Index) is a weighted reference basket composed of:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li><strong className="text-white">Widely used global currencies</strong> (USD, EUR, CNY, JPY, GBP)</li>
-                <li><strong className="text-white">Gold</strong>, which has historically served as a long-term store of value across civilizations</li>
-                <li><strong className="text-white">Essential commodities</strong> (oil, copper, wheat) that track the real cost of living</li>
+                <li><strong className="text-white">Widely used global currencies</strong> (USD, EUR, CNY, JPY, GBP) - 57% weight</li>
+                <li><strong className="text-white">Gold (XAU/USD)</strong> - 35% weight, serving as a long-term store of value across civilizations</li>
+                <li><strong className="text-white">Essential energy commodity</strong> (Oil/WTI) - 8% weight, tracking energy costs that affect all economic activity</li>
               </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">7-Component Design:</strong> The basket was optimized from 10 to 7 components in January 2026 to improve oracle efficiency while maintaining robust diversification across currencies, precious metals, and commodities.
+              </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 EQUA does not require users to hold these assets directly. Instead, the system uses EQX as a <strong className="text-white">pricing lens</strong>: when the protocol calculates EQUA&apos;s fair value, it references this basket rather than any single currency.
               </p>
@@ -497,34 +543,37 @@ export default function WhitepaperPage() {
 
               {/* EQX Basket Composition */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-yellow-400 mb-4">EQX (EQUA Index) Basket Composition</h4>
+                <h4 className="text-lg font-bold text-yellow-400 mb-4">EQX (EQUA Index) Basket Composition (7 Components)</h4>
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/30">
-                    <h5 className="text-blue-300 font-semibold mb-2">Currencies (50%)</h5>
+                    <h5 className="text-blue-300 font-semibold mb-2">Currencies (57%)</h5>
                     <ul className="text-purple-200 text-sm space-y-1">
-                      <li>USD: 20%</li>
-                      <li>EUR: 15%</li>
-                      <li>CNY: 8%</li>
-                      <li>JPY: 4%</li>
-                      <li>GBP: 3%</li>
+                      <li>USD/USD: 23%</li>
+                      <li>USD/EUR: 17%</li>
+                      <li>USD/CNY: 9%</li>
+                      <li>USD/JPY: 5%</li>
+                      <li>USD/GBP: 3%</li>
                     </ul>
+                    <p className="text-blue-200 text-xs mt-2">Major global currencies</p>
                   </div>
                   <div className="bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/30">
-                    <h5 className="text-yellow-300 font-semibold mb-2">Gold (30%)</h5>
+                    <h5 className="text-yellow-300 font-semibold mb-2">Gold (35%)</h5>
                     <ul className="text-purple-200 text-sm space-y-1">
-                      <li>XAU (Gold): 30%</li>
+                      <li>XAU/USD (Gold): 35%</li>
                     </ul>
-                    <p className="text-yellow-200 text-xs mt-2">Long-term store of value</p>
+                    <p className="text-yellow-200 text-xs mt-2">Long-term store of value across civilizations</p>
                   </div>
                   <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/30">
-                    <h5 className="text-green-300 font-semibold mb-2">Commodities (20%)</h5>
+                    <h5 className="text-green-300 font-semibold mb-2">Commodities (8%)</h5>
                     <ul className="text-purple-200 text-sm space-y-1">
-                      <li>Oil (WTI): 7%</li>
-                      <li>Copper: 7%</li>
-                      <li>Wheat: 6%</li>
+                      <li>Oil (WTI): 8%</li>
                     </ul>
+                    <p className="text-green-200 text-xs mt-2">Essential energy commodity</p>
                   </div>
                 </div>
+                <p className="text-purple-300 text-sm mt-4 italic">
+                  <strong className="text-white">Updated Jan 2026:</strong> EQX basket optimized to 7 components for oracle efficiency while maintaining diversification. Weights sum to 100% (verified on-chain).
+                </p>
               </div>
 
               <h3 className="text-xl font-semibold text-white mt-8 mb-3">Stability, Inflation Resistance, and Non-Speculative Intent</h3>
@@ -594,7 +643,7 @@ export default function WhitepaperPage() {
                 EQUA is designed to create value for everyone—not just token holders. Once the terminal phase is reached and price growth stabilizes, the protocol activates <strong className="text-white">five social purpose accounts</strong> that distribute EQUA monthly to support education, healthcare, research, grants, and operations.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Critical timing:</strong> These distributions activate <em>only after</em> the terminal phase begins (when EQUA reaches $500,000 in EQX). This ensures early holders and builders are not diluted during the compounding growth phase.
+                <strong className="text-white">Critical timing:</strong> These distributions activate <em>only after</em> the compounding phase completes (76,269,935 peer-to-peer transactions, when EQUA reaches $500,000 in EQX terms). This ensures early holders and builders are not diluted during the compounding growth phase.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Delayed Activation?</h3>
@@ -619,7 +668,7 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Purpose:</strong> Support scholarships, learning materials, and educational infrastructure</p>
-                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 10,000 EQUA</p>
+                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 100 EQUA</p>
                   </div>
                   <div>
                     <p><strong className="text-white">Why Constrained?</strong></p>
@@ -634,7 +683,7 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Purpose:</strong> Fund medical care, medicines, and health clinics in underserved communities</p>
-                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 10,000 EQUA</p>
+                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 100 EQUA</p>
                   </div>
                   <div>
                     <p><strong className="text-white">Why Constrained?</strong></p>
@@ -649,7 +698,7 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Purpose:</strong> Support open research, protocol improvements, and technological innovation</p>
-                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 5,000 EQUA</p>
+                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 100 EQUA</p>
                   </div>
                   <div>
                     <p><strong className="text-white">Why Constrained?</strong></p>
@@ -664,7 +713,7 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Purpose:</strong> Support community projects, local businesses, and public goods initiatives</p>
-                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 5,000 EQUA</p>
+                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 100 EQUA</p>
                   </div>
                   <div>
                     <p><strong className="text-white">Why Constrained?</strong></p>
@@ -679,7 +728,7 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Purpose:</strong> Maintain infrastructure, pay for audits, and ensure protocol sustainability</p>
-                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 5,000 EQUA</p>
+                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 100 EQUA</p>
                   </div>
                   <div>
                     <p><strong className="text-white">Why Constrained?</strong></p>
@@ -689,7 +738,7 @@ export default function WhitepaperPage() {
               </div>
 
               <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
-                <strong className="text-white">Total Monthly Distribution: 35,000 EQUA</strong> across all five accounts. By terminal phase, each EQUA has substantial value, making even these constrained amounts meaningful for real-world impact.
+                <strong className="text-white">Total Monthly Distribution: 500 EQUA</strong> across all five accounts. By terminal phase, each EQUA has substantial value, making even these constrained allocations meaningful for real-world impact.
               </p>
             </section>
 
@@ -902,7 +951,7 @@ export default function WhitepaperPage() {
             <div className="text-center pt-8 border-t border-purple-500/30">
               <p className="text-2xl font-bold text-white mb-2">EQUA</p>
               <p className="text-purple-300">Equal Access. Equal Opportunity. Equal Economy.</p>
-              <p className="text-purple-400 text-sm mt-4">Last Updated: December 2025</p>
+              <p className="text-purple-400 text-sm mt-4">Last Updated: January 2026</p>
             </div>
           </article>
 
