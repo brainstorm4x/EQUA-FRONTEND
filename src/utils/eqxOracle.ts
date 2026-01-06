@@ -231,6 +231,12 @@ export interface MultiFormatEquaPrice {
   localCurrencyCode: string;        // Currency code
   eqxValue: number;                 // Current EQX index value (1 EQX = this many USD)
   source: 'on-chain-oracle';        // Always on-chain oracle
+  
+  // ✅ NEW: FX rate metadata (optional for backward compatibility)
+  fxRate?: number;                 // Exchange rate used
+  fxSource?: "exchangerate-api" | "fallback" | "cache" | "static";
+  fxAge?: number;                  // Milliseconds since update
+  fxIsStale?: boolean;             // True if >24 hours old
 }
 
 /**
