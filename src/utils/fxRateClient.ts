@@ -29,32 +29,17 @@ interface BackendFxRate {
   timestamp: string;  // ISO 8601
 }
 
+/**
+ * Backend FX rates format (matches brainstorm4x/EQUA/data/fx-rates/current. json)
+ */
 interface BackendFxRatesResponse {
-  baseCurrency: string;
-  rates: BackendFxRate[];
-  lastUpdated: string;  // ISO 8601
+  rates: Record<string, number>;  // { "USD": 1, "EUR": 0.92, ... }
+  timestamp: number;               // Unix timestamp in milliseconds
+  date: string;                    // YYYY-MM-DD
+  source: 'exchangerate-api' | 'fallback';
+  next_update?: number;
+  api_response_time?: number;
 }
-
-/**
- * In-memory cache for FX rates
- */
-let fxRatesCache: Map<string, FxRateData> | null = null;
-let cacheTimestamp: number = 0;
-
-/**
- * Cache TTL: 1 hour (rates are updated daily, so this is safe)
- */
-const CACHE_TTL_MS = 60 * 60 * 1000;
-
-/**
- * Staleness threshold: 24 hours
- */
-const STALENESS_THRESHOLD_MS = 24 * 60 * 60 * 1000;
-
-/**
- * Backend FX rates URL
- */
-const BACKEND_FX_RATES_URL = 'https://raw.githubusercontent.com/brainstorm4x/EQUA/main/data/fx-rates/current.json';
 
 /**
  * Fetch FX rates from backend
@@ -77,27 +62,18 @@ async function fetchFxRatesFromBackend(): Promise<Map<string, FxRateData> | null
       return null;
     }
 
-    const data: BackendFxRatesResponse = await response.json();
+    const data:  BackendFxRatesResponse = await response.json();
     
     // Parse rates
     const ratesMap = new Map<string, FxRateData>();
     const now = Date.now();
-    const lastUpdated = new Date(data.lastUpdated).getTime();
-    const age = now - lastUpdated;
+    const age = now - data. timestamp;  // ✅ Use timestamp field
     const isStale = age > STALENESS_THRESHOLD_MS;
     
-    // Add USD (always 1.0)
-    ratesMap.set('USD', {
-      rate: 1.0,
-      source: 'exchangerate-api',
-      age: 0,
-      isStale: false,
-    });
-    
-    // Add all other currencies
-    for (const rateInfo of data.rates) {
-      ratesMap.set(rateInfo.currency, {
-        rate: rateInfo.rate,
+    // Convert backend rates object to Map
+    for (const [currencyCode, rate] of Object. entries(data.rates)) {
+      ratesMap.set(currencyCode, {
+        rate,
         source: 'exchangerate-api',
         age,
         isStale,
@@ -110,7 +86,6 @@ async function fetchFxRatesFromBackend(): Promise<Map<string, FxRateData> | null
     return null;
   }
 }
-
 /**
  * Get FX rate for a specific currency
  * 
