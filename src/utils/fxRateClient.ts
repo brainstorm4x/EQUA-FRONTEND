@@ -9,7 +9,7 @@
  * 4. Static DEFAULT_RATES from localeCurrency.ts
  * 
  * Features:
- * - 24-hour localStorage caching with TTL
+ * - 6-hour localStorage caching with TTL (refreshes 4x daily)
  * - Staleness detection (>24 hours old)
  * - Never throws - always returns a rate (even if stale/static)
  * - USD always returns rate 1.0 with zero age
@@ -32,9 +32,11 @@ const FX_RATES_FALLBACK_URL =
 
 /**
  * Cache configuration
+ * - TTL: 6 hours (backend updates daily, so 6h ensures freshness within same day)
+ * - Staleness: 24 hours (for warning threshold)
  */
 const CACHE_KEY = 'equa_fx_rates_cache';
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // ============================================================================
