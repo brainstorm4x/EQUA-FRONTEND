@@ -387,12 +387,19 @@ const SendModal: FC<SendModalProps> = ({
       try {
         // Use the already-initialized localCurrency state
         const currencyCode = localCurrency;
-        const exchangeRate = DEFAULT_RATES[currencyCode]?.rate || 1;
         
         // Get current EQUA price from global state
         // For now, use a default price - in production, fetch from blockchain
-        const priceData = await getEquaPriceMultiFormat(DEFAULT_EQUA_PRICE_USD, currencyCode, exchangeRate, connection);
+        const priceData = await getEquaPriceMultiFormat(DEFAULT_EQUA_PRICE_USD, currencyCode, connection);
         setEquaPrice(priceData.localCurrency);
+        
+        // Log FX metadata for debugging
+        console.log(`FX Rate Info: ${currencyCode} = ${priceData.fxRate} (source: ${priceData.fxSource}, age: ${Math.floor((priceData.fxAge || 0) / 3600000)}h)`);
+        
+        // Warn if stale
+        if (priceData.fxIsStale) {
+          console.warn(`⚠️ FX rate for ${currencyCode} is stale (${Math.floor((priceData.fxAge || 0) / 3600000)} hours old)`);
+        }
       } catch (err) {
         console.warn('Failed to fetch EQUA price:', err);
         setEquaPrice(DEFAULT_EQUA_PRICE_USD);

@@ -4,7 +4,7 @@ import { FC, useEffect, useState } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { EquaPriceCalculator, PriceTier, formatEquaPrice } from '@/utils/priceCalculator';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
-import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
+import { getUserLocaleCurrency, formatLocalCurrency } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat, formatEQXPrice, MultiFormatEquaPrice } from '@/utils/eqxOracle';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
 
@@ -18,12 +18,20 @@ interface EqxPriceData {
   eqxPrice: number;
   eqxValue: number;
   priceSource: 'on-chain-oracle';
+  fxRate?: number;
+  fxSource?: string;
+  fxAge?: number;
+  fxIsStale?: boolean;
 }
 
 const DEFAULT_EQX_DATA: EqxPriceData = {
   eqxPrice: 0.01,
   eqxValue: 1.0,
   priceSource: 'on-chain-oracle',
+  fxRate: 1.0,
+  fxSource: 'static',
+  fxAge: 0,
+  fxIsStale: false,
 };
 
 export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats = false }) => {
@@ -65,19 +73,22 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
     // Fetch EQX price data
     const fetchEqxPrice = async () => {
       const currencyCode = getUserLocaleCurrency();
-      const exchangeRate = DEFAULT_RATES[currencyCode]?.rate || 1;
       let eqxPriceData: MultiFormatEquaPrice;
       try {
-        eqxPriceData = await getEquaPriceMultiFormat(price, currencyCode, exchangeRate, connection);
+        eqxPriceData = await getEquaPriceMultiFormat(price, currencyCode, connection);
       } catch (eqxError) {
         console.warn('Error fetching EQX price, using defaults:', eqxError);
         eqxPriceData = {
           eqx: price,
           usd: price,
-          localCurrency: price * exchangeRate,
+          localCurrency: price,
           localCurrencyCode: currencyCode,
           eqxValue: 1.0,
           source: 'on-chain-oracle',
+          fxRate: 1.0,
+          fxSource: 'static',
+          fxAge: 0,
+          fxIsStale: false,
         };
       }
       
@@ -85,6 +96,10 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         eqxPrice: eqxPriceData.eqx,
         eqxValue: eqxPriceData.eqxValue,
         priceSource: eqxPriceData.source,
+        fxRate: eqxPriceData.fxRate,
+        fxSource: eqxPriceData.fxSource,
+        fxAge: eqxPriceData.fxAge,
+        fxIsStale: eqxPriceData.fxIsStale,
       });
     };
     
@@ -142,9 +157,29 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           </p>
           {/* Local currency equivalent */}
           {localCurrency !== 'USD' && (
-            <p className="text-green-300 text-sm mt-1" data-testid="local-currency-price">
-              ≈ {formatLocalCurrency(currentPrice, localCurrency)}
-            </p>
+            <div className="mt-1">
+              <p className="text-green-300 text-sm" data-testid="local-currency-price">
+                ≈ {formatLocalCurrency(currentPrice, localCurrency)}
+              </p>
+              
+              {/* Staleness warning */}
+              {eqxData.fxIsStale && (
+                <p className="text-yellow-400 text-xs flex items-center gap-1 mt-1">
+                  <span>⚠️</span>
+                  <span>
+                    Exchange rate is {Math.floor((eqxData.fxAge || 0) / (60 * 60 * 1000))}h old
+                    {eqxData.fxSource === 'fallback' && ' (using fallback rate)'}
+                  </span>
+                </p>
+              )}
+              
+              {/* Source indicator for debugging (dev only) */}
+              {process.env.NODE_ENV === 'development' && eqxData.fxRate && (
+                <p className="text-purple-400 text-xs mt-1">
+                  FX: {eqxData.fxSource} ({eqxData.fxRate.toFixed(4)})
+                </p>
+              )}
+            </div>
           )}
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
             {getTierLabel(currentTier)}

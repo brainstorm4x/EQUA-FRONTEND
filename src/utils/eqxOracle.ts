@@ -23,6 +23,7 @@
 import { PublicKey, Connection } from '@solana/web3.js';
 import { Program, AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import { EquaToken } from '@/lib/equa_token';
+import { getFxRate } from './fxRateClient';
 
 // ============================================================================
 // Configuration
@@ -231,12 +232,10 @@ export interface MultiFormatEquaPrice {
   localCurrencyCode: string;        // Currency code
   eqxValue: number;                 // Current EQX index value (1 EQX = this many USD)
   source: 'on-chain-oracle';        // Always on-chain oracle
-  
-  // ✅ NEW: FX rate metadata (optional for backward compatibility)
-  fxRate?: number;                 // Exchange rate used
-  fxSource?: "exchangerate-api" | "fallback" | "cache" | "static";
-  fxAge?: number;                  // Milliseconds since update
-  fxIsStale?: boolean;             // True if >24 hours old
+  fxRate?: number;                  // FX rate used for conversion
+  fxSource?: string;                // Source of FX rate (exchangerate-api, cache, fallback, static)
+  fxAge?: number;                   // Age of FX rate in milliseconds
+  fxIsStale?: boolean;              // Whether FX rate is stale (>24h old)
 }
 
 /**
@@ -244,14 +243,12 @@ export interface MultiFormatEquaPrice {
  * 
  * @param equaPriceUSD - EQUA price in USD (from price calculator)
  * @param localCurrencyCode - User's local currency code
- * @param exchangeRate - Exchange rate for local currency
  * @param connection - Solana connection
  * @returns Multi-format price data
  */
 export async function getEquaPriceMultiFormat(
   equaPriceUSD: number,
   localCurrencyCode: string,
-  exchangeRate: number,
   connection: Connection
 ): Promise<MultiFormatEquaPrice> {
   const eqxPriceFloat = await getEqxPriceFloat(connection);
@@ -259,13 +256,20 @@ export async function getEquaPriceMultiFormat(
   // Fallback to 1.0 if oracle read fails (should rarely happen)
   const eqxValue = eqxPriceFloat || 1.0;
   
+  // Fetch real-time FX rate
+  const fxData = await getFxRate(localCurrencyCode);
+  
   return {
     eqx: equaPriceUSD / eqxValue,
     usd: equaPriceUSD,
-    localCurrency: equaPriceUSD * exchangeRate,
+    localCurrency: equaPriceUSD * fxData.rate,
     localCurrencyCode,
     eqxValue,
     source: 'on-chain-oracle',
+    fxRate: fxData.rate,
+    fxSource: fxData.source,
+    fxAge: fxData.age,
+    fxIsStale: fxData.isStale,
   };
 }
 
