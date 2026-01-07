@@ -21,6 +21,12 @@ export default function MerchantsPage() {
               <Link href="/whitepaper" className="text-purple-200 hover:text-white transition-colors">
                 Whitepaper
               </Link>
+              <Link href="/about" className="text-purple-200 hover:text-white transition-colors">
+                About
+              </Link>
+              <Link href="/privacy" className="text-purple-200 hover:text-white transition-colors">
+                Privacy
+              </Link>
               <Link href="/mint" className="text-purple-200 hover:text-white transition-colors">
                 Mint
               </Link>
