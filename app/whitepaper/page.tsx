@@ -728,7 +728,7 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Purpose:</strong> Maintain infrastructure, pay for audits, and ensure protocol sustainability</p>
-                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 100 EQUA</p>
+                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 1 EQUA</p>
                   </div>
                   <div>
                     <p><strong className="text-white">Why Constrained?</strong></p>
@@ -738,7 +738,7 @@ export default function WhitepaperPage() {
               </div>
 
               <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
-                <strong className="text-white">Total Monthly Distribution: 500 EQUA</strong> across all five accounts. By terminal phase, each EQUA has substantial value, making even these constrained allocations meaningful for real-world impact.
+                <strong className="text-white">Total Monthly Distribution: 401 EQUA</strong> across all five accounts. By terminal phase, each EQUA has substantial value, making even these constrained allocations meaningful for real-world impact.
               </p>
             </section>
 
