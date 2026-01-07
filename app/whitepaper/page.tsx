@@ -21,6 +21,12 @@ export default function WhitepaperPage() {
               <Link href="/merchants" className="text-purple-200 hover:text-white transition-colors">
                 For Merchants
               </Link>
+              <Link href="/about" className="text-purple-200 hover:text-white transition-colors">
+                About
+              </Link>
+              <Link href="/privacy" className="text-purple-200 hover:text-white transition-colors">
+                Privacy
+              </Link>
               <Link href="/mint" className="text-purple-200 hover:text-white transition-colors">
                 Mint
               </Link>
@@ -495,7 +501,7 @@ export default function WhitepaperPage() {
                   <strong className="text-white">All price appreciation is calculated in EQX (EQUA Index), not USD.</strong> EQX is a diversified basket of 7 components: 57% major currencies, 35% gold, and 8% oil. The USD values shown throughout this whitepaper are <strong className="text-white">approximate equivalents for convenience only</strong>—actual pricing on-chain is denominated in EQX.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
-                  This means that when the whitepaper says "Tier 1: $0.01 to $0.1," it actually means <strong className="text-white">"0.01 to 0.1 EQX"</strong>, with USD values calculated dynamically based on the current EQX/USD exchange rate (updated every 4 hours from Hermes/Pyth price feeds).
+                  This means that when the whitepaper says &quot;Tier 1: $0.01 to $0.1,&quot; it actually means <strong className="text-white">&quot;0.01 to 0.1 EQX&quot;</strong>, with USD values calculated dynamically based on the current EQX/USD exchange rate (updated every 4 hours from Hermes/Pyth price feeds).
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3 italic">
                   <strong className="text-white">Why this matters:</strong> EQX provides inflation resistance and stability by spreading risk across multiple global anchors. Your EQUA holdings appreciate in EQX terms—USD is just one of many components affecting EQX&apos;s value.
