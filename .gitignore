@@ -56,3 +56,7 @@ test-format.mjs
 *.sqlite-wal
 *.sqlite-shm
 verify-usermetadata-fix.js
+
+# Netlify
+/.netlify/
+/dist/functions/

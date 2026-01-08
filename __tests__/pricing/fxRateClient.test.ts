@@ -259,43 +259,46 @@ describe('FX Rate Client - Cache TTL', () => {
       expect(age).toBeGreaterThan(2.9);
       expect(age).toBeLessThan(3.1);
     });
-    describe('ExchangeRate-API Integration', () => {
-      it('should correctly transform Unix timestamp to milliseconds', async () => {
-        const unixTimestamp = 1736121600; // Jan 6, 2026 in Unix seconds
-        
-        (global. fetch as jest.Mock).mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            base: 'USD',
-            date: '2026-01-06',
-            time_last_updated: unixTimestamp,
-            rates: { EUR: 0.92 },
-          }),
-        });
-    
-        const result = await getFxRate('EUR');
-        
-        // Verify timestamp conversion
-        expect(result.age).toBeLessThan(1000); // Should be very recent
-        // Age should be calculated from milliseconds, not seconds
-        expect(result. age).toBeGreaterThanOrEqual(0);
+  });
+
+  describe('ExchangeRate-API Integration', () => {
+    it('should correctly transform Unix timestamp to milliseconds', async () => {
+      const unixTimestamp = 1736121600; // Jan 6, 2026 in Unix seconds
+      
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          base: 'USD',
+          date: '2026-01-06',
+          time_last_updated: unixTimestamp,
+          rates: { EUR: 0.92 },
+        }),
       });
-    
-      it('should handle malformed API response gracefully', async () => {
-        (global.fetch as jest.Mock).mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            // Missing time_last_updated
-            base: 'USD',
-            date: '2026-01-06',
-            rates: { EUR:  0.92 },
-          }),
-        });
-    
-        const result = await getFxRate('EUR');
-        
-        // Should fall back to DEFAULT_RATES
-        expect(result.source).toBe('static');
-        expect(result.rate).toBe(0.92); // From DEFAULT_RATES
+  
+      const result = await getFxRate('EUR');
+      
+      // Verify timestamp conversion
+      expect(result.age).toBeLessThan(1000); // Should be very recent
+      // Age should be calculated from milliseconds, not seconds
+      expect(result.age).toBeGreaterThanOrEqual(0);
+    });
+  
+    it('should handle malformed API response gracefully', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          // Missing time_last_updated
+          base: 'USD',
+          date: '2026-01-06',
+          rates: { EUR: 0.92 },
+        }),
+      });
+  
+      const result = await getFxRate('EUR');
+      
+      // Should fall back to DEFAULT_RATES
+      expect(result.source).toBe('static');
+      expect(result.rate).toBe(0.92); // From DEFAULT_RATES
+    });
   });
 });
