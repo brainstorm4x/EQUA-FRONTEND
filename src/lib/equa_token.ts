@@ -1701,6 +1701,35 @@ export type EquaToken = {
           "writable": true
         },
         {
+          "name": "businessRegistry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  115,
+                  105,
+                  110,
+                  101,
+                  115,
+                  115,
+                  45,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "authority",
           "writable": true,
           "signer": true
@@ -2448,7 +2477,7 @@ export type EquaToken = {
     {
       "code": 6007,
       "name": "mintAmountExceedsTierLimit",
-      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 EQUA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 EQUA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 EQUA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M+): 0.001 EQUA."
+      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 EQUA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 EQUA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 EQUA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M-100M): 0.001 EQUA; Tier 10 (#100M-1B): 0.0005 EQUA."
     },
     {
       "code": 6008,
