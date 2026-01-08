@@ -20,8 +20,13 @@ interface ReferralRewardsProps {
 
 // Default amount for bonus mint (tier 4 limit - safe for most users)
 // This is conservative to ensure the transaction succeeds for users
-// without needing to fetch their exact tier from UserMetadata
+// without needing to fetch their exact tier from UserMetadata.
+// Future enhancement: Implement tier-aware amount calculation by fetching
+// UserMetadata to get the user's actual tier limit.
 const DEFAULT_BONUS_MINT_AMOUNT_EQUA = 100;
+
+// Credits required to claim one bonus mint (from backend business rules)
+const CREDITS_REQUIRED_FOR_BONUS_MINT = 5;
 
 /**
  * ReferralRewards Component
@@ -90,8 +95,8 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
     }
 
     // Pre-flight checks
-    if (credits === null || credits < 5) {
-      setError('You need at least 5 credits to claim a bonus mint');
+    if (credits === null || credits < CREDITS_REQUIRED_FOR_BONUS_MINT) {
+      setError(`You need at least ${CREDITS_REQUIRED_FOR_BONUS_MINT} credits to claim a bonus mint`);
       return;
     }
 
@@ -108,13 +113,9 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
         throw new Error('User account not found. Please register first.');
       }
 
-      // Parse user account to get user index from UserMetadata
-      // For now, we'll use a default amount based on a reasonable tier
-      // In a full implementation, we'd fetch UserMetadata to get the exact user index
-      // and calculate the tier-appropriate amount
-      
-      // Use conservative default from constant (tier 4 limit for users 101-1000)
-      // This is safe for most users. Advanced implementation would fetch actual tier.
+      // Use conservative default amount (tier 4 limit for users 101-1000)
+      // This ensures the transaction succeeds for most users without fetching tier metadata.
+      // Future enhancement: Fetch UserMetadata.user_index and calculate exact tier limit.
       const amountInBaseUnits = decimalToRaw(DEFAULT_BONUS_MINT_AMOUNT_EQUA);
 
       if (process.env.NODE_ENV === 'development') {
@@ -133,7 +134,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       }
 
       // Show success message
-      const creditsRemaining = credits - 5;
+      const creditsRemaining = credits - CREDITS_REQUIRED_FOR_BONUS_MINT;
       setSuccessMessage(
         `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ` +
         `${creditsRemaining} credits remaining.`
@@ -189,7 +190,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
     );
   }
 
-  const hasCredits = credits !== null && credits >= 5;
+  const hasCredits = credits !== null && credits >= CREDITS_REQUIRED_FOR_BONUS_MINT;
 
   return (
     <div className={`bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30 ${className}`}>

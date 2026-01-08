@@ -32,6 +32,11 @@ import {
   BUSINESS_REFERRAL_PERCENT
 } from './referralCalculator';
 
+// Instruction discriminator for claim_bonus_mint
+// Source: public/idl/equa_token.json, instruction: claimBonusMint
+// This 8-byte prefix identifies the instruction in the Solana program
+const CLAIM_BONUS_MINT_DISCRIMINATOR = Buffer.from([165, 189, 110, 164, 88, 80, 20, 71]);
+
 /**
  * Get all users referred by a specific address
  * @param connection Solana connection
@@ -350,8 +355,7 @@ export async function claimBonusMint(
   );
 
   // Build claim_bonus_mint instruction
-  // Discriminator from IDL (public/idl/equa_token.json, instruction: claimBonusMint)
-  const discriminator = Buffer.from([165, 189, 110, 164, 88, 80, 20, 71]);
+  const discriminator = CLAIM_BONUS_MINT_DISCRIMINATOR;
   
   // Encode amount as u64 little-endian
   const amountBN = new BN(amount);
