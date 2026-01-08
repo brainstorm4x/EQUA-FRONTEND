@@ -179,11 +179,6 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
                   </span>
                 </p>
               )}
-              
-              {/* On-chain indicator - KEEP THIS */}
-              <p className="text-gray-400 text-xs">
-                ( <span className="text-green-400">●</span> On-Chain)
-              </p>
             </div>
           )}
           <p className="text-purple-300 text-xs mt-1" data-testid="price-source">
