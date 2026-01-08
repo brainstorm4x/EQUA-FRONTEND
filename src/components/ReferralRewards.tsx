@@ -93,12 +93,6 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       return;
     }
 
-    // Validate credits availability (using same logic as UI button state)
-    if (!hasCredits) {
-      setError(`You need at least ${CREDITS_REQUIRED_FOR_BONUS_MINT} credits to claim a bonus mint`);
-      return;
-    }
-
     setIsClaiming(true);
     setError('');
     setSuccessMessage('');
@@ -133,8 +127,8 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       }
 
       // Show success message
-      // Credits are guaranteed to be non-null here due to hasCredits check
-      const creditsRemaining = (credits as number) - CREDITS_REQUIRED_FOR_BONUS_MINT;
+      // Note: credits is guaranteed non-null because button is only enabled when hasCredits is true
+      const creditsRemaining = credits! - CREDITS_REQUIRED_FOR_BONUS_MINT;
       setSuccessMessage(
         `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ` +
         `${creditsRemaining} credits remaining.`
