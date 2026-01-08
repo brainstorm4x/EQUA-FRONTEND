@@ -19,6 +19,7 @@ jest.mock('@solana/wallet-adapter-react', () => ({
 // Mock utilities
 jest.mock('@/utils/referralRewards', () => ({
   getReferralStats: jest.fn(),
+  claimBonusMint: jest.fn(),
   formatReferralRewards: jest.fn((bn) => {
     // Simple mock implementation for testing
     const val = bn.toNumber();
@@ -31,6 +32,10 @@ jest.mock('@/utils/referralRewards', () => ({
   }),
 }));
 jest.mock('@/lib/program');
+jest.mock('@/utils/registration');
+jest.mock('@/utils/tokenFormat', () => ({
+  decimalToRaw: jest.fn((amount) => amount * 1_000_000), // 6 decimals
+}));
 
 describe('ReferralRewards Component', () => {
   const mockUseWallet = require('@solana/wallet-adapter-react').useWallet;
@@ -103,57 +108,67 @@ describe('ReferralRewards Component', () => {
       ]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
-        referralRewards: new BN(5000000), // 5 EQUA
-        referredUsersCount: 3,
+        credits: 5, // 5 credits
+        referredCount: 3,
         referredUsers: [
           new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
           new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C'),
           new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
         ],
+        canClaimBonus: true,
       });
 
       render(<ReferralRewards />);
 
       await waitFor(() => {
-        expect(screen.getByText('5.000000')).toBeInTheDocument();
+        expect(screen.getByText('5')).toBeInTheDocument();
       });
 
       expect(screen.getByText('3')).toBeInTheDocument();
-      expect(screen.getByText('✓ Ready to claim')).toBeInTheDocument();
+      expect(screen.getByText('✨ 1 bonus mint available')).toBeInTheDocument();
     });
 
     it('should display zero rewards when no rewards earned', async () => {
       (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
-        referralRewards: new BN(0),
-        referredUsersCount: 0,
+        credits: 0,
+        referredCount: 0,
         referredUsers: [],
+        canClaimBonus: false,
       });
 
       render(<ReferralRewards />);
 
       await waitFor(() => {
-        expect(screen.getByText('0.000000')).toBeInTheDocument();
+        expect(screen.getByText('0')).toBeInTheDocument();
       });
 
-      expect(screen.getByText('0')).toBeInTheDocument();
-      expect(screen.queryByText('✓ Ready to claim')).not.toBeInTheDocument();
+      // Should show 0 count in both cards
+      const zeroTexts = screen.getAllByText('0');
+      expect(zeroTexts.length).toBeGreaterThanOrEqual(2);
     });
 
-    it('should enable claim button when rewards > 0', async () => {
+    it('should enable claim button when credits >= 5', async () => {
       (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
-        referralRewards: new BN(1000000),
-        referredUsersCount: 1,
+        credits: 10,
+        referredCount: 5,
         referredUsers: [new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL')],
+        canClaimBonus: true,
+      });
+
+      mockUseWallet.mockReturnValue({
+        publicKey: mockPublicKey,
+        connected: true,
+        signTransaction: jest.fn(),
       });
 
       render(<ReferralRewards />);
 
       await waitFor(() => {
-        const claimButton = screen.getByText('💰 Claim Rewards');
+        const claimButton = screen.getByText('💰 Claim Credits');
         expect(claimButton).not.toBeDisabled();
       });
     });
@@ -162,15 +177,16 @@ describe('ReferralRewards Component', () => {
       (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
-        referralRewards: new BN(0),
-        referredUsersCount: 0,
+        credits: 0,
+        referredCount: 0,
         referredUsers: [],
+        canClaimBonus: false,
       });
 
       render(<ReferralRewards />);
 
       await waitFor(() => {
-        const claimButton = screen.getByText('⏳ No Rewards Available');
+        const claimButton = screen.getByText('⏳ Need 5 Credits');
         expect(claimButton).toBeDisabled();
       });
     });
@@ -180,9 +196,10 @@ describe('ReferralRewards Component', () => {
 
       const referredUser1 = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
-        referralRewards: new BN(1000000),
-        referredUsersCount: 1,
+        credits: 2,
+        referredCount: 1,
         referredUsers: [referredUser1],
+        canClaimBonus: false,
       });
 
       render(<ReferralRewards />);
@@ -217,31 +234,90 @@ describe('ReferralRewards Component', () => {
     });
 
     it('should handle claim button click', async () => {
-      const alertSpy = jest.spyOn(window, 'alert').mockImplementation();
+      const mockSignTransaction = jest.fn().mockResolvedValue({
+        serialize: () => Buffer.from('mock-serialized-tx'),
+      });
+      
+      const mockClaimBonusMint = jest.fn().mockResolvedValue('mock-signature-123');
 
       (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
-
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
-        referralRewards: new BN(1000000),
-        referredUsersCount: 1,
-        referredUsers: [new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL')],
+        credits: 10, // 10 credits = 2 possible bonus mints
+        referredCount: 5,
+        referredUsers: [],
+      });
+
+      // Mock claimBonusMint
+      (referralRewardsUtils.claimBonusMint as jest.Mock) = mockClaimBonusMint;
+
+      mockUseWallet.mockReturnValue({
+        publicKey: mockPublicKey,
+        connected: true,
+        signTransaction: mockSignTransaction,
       });
 
       render(<ReferralRewards />);
 
       await waitFor(() => {
-        const claimButton = screen.getByText('💰 Claim Rewards');
+        const claimButton = screen.getByText('💰 Claim Credits');
         expect(claimButton).toBeInTheDocument();
+        expect(claimButton).not.toBeDisabled();
       });
 
-      const claimButton = screen.getByText('💰 Claim Rewards');
+      const claimButton = screen.getByText('💰 Claim Credits');
       fireEvent.click(claimButton);
 
-      expect(alertSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Claim functionality requires backend program support')
-      );
+      // Should show claiming state
+      await waitFor(() => {
+        expect(screen.getByText('⏳ Claiming...')).toBeInTheDocument();
+      });
+    });
 
-      alertSpy.mockRestore();
+    it('should disable claim button when less than 5 credits', async () => {
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
+
+      (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
+        credits: 3, // Only 3 credits, need 5 to claim
+        referredCount: 3,
+        referredUsers: [],
+      });
+
+      mockUseWallet.mockReturnValue({
+        publicKey: mockPublicKey,
+        connected: true,
+        signTransaction: jest.fn(),
+      });
+
+      render(<ReferralRewards />);
+
+      await waitFor(() => {
+        const claimButton = screen.getByText('⏳ Need 5 Credits');
+        expect(claimButton).toBeDisabled();
+      });
+    });
+
+    it('should show updated info banner about redemption', async () => {
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
+
+      (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
+        credits: 0,
+        referredCount: 0,
+        referredUsers: [],
+      });
+
+      mockUseWallet.mockReturnValue({
+        publicKey: mockPublicKey,
+        connected: true,
+      });
+
+      render(<ReferralRewards />);
+
+      await waitFor(() => {
+        expect(screen.getByText('About Referral Credits')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText(/Redeem 5 credits for 1 bonus minting attempt/)).toBeInTheDocument();
+      expect(screen.getByText(/Maximum 5 bonus mints per calendar month/)).toBeInTheDocument();
     });
 
     it('should allow refreshing data', async () => {
@@ -249,15 +325,16 @@ describe('ReferralRewards Component', () => {
 
       const getReferralStatsMock = referralRewardsUtils.getReferralStats as jest.Mock;
       getReferralStatsMock.mockResolvedValue({
-        referralRewards: new BN(1000000),
-        referredUsersCount: 1,
+        credits: 2,
+        referredCount: 1,
         referredUsers: [new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL')],
+        canClaimBonus: false,
       });
 
       render(<ReferralRewards />);
 
       await waitFor(() => {
-        expect(screen.getByText('1.000000')).toBeInTheDocument();
+        expect(screen.getByText('2')).toBeInTheDocument();
       });
 
       // Click refresh
@@ -273,19 +350,20 @@ describe('ReferralRewards Component', () => {
       (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
-        referralRewards: new BN(0),
-        referredUsersCount: 0,
+        credits: 0,
+        referredCount: 0,
         referredUsers: [],
+        canClaimBonus: false,
       });
 
       render(<ReferralRewards />);
 
       await waitFor(() => {
-        expect(screen.getByText('About Referral Rewards')).toBeInTheDocument();
+        expect(screen.getByText('About Referral Credits')).toBeInTheDocument();
       });
 
-      expect(screen.getByText(/Rewards are tracked on-chain/)).toBeInTheDocument();
-      expect(screen.getByText(/Accumulated rewards must be claimed manually/)).toBeInTheDocument();
+      expect(screen.getByText(/Earn 1 credit per individual referral/)).toBeInTheDocument();
+      expect(screen.getByText(/Redeem 5 credits for 1 bonus minting attempt/)).toBeInTheDocument();
     });
   });
 
@@ -299,9 +377,10 @@ describe('ReferralRewards Component', () => {
       (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
-        referralRewards: new BN(0),
-        referredUsersCount: 0,
+        credits: 0,
+        referredCount: 0,
         referredUsers: [],
+        canClaimBonus: false,
       });
     });
 
