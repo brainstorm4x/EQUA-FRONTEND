@@ -265,7 +265,7 @@ describe('FX Rate Client - Cache TTL', () => {
     it('should correctly transform Unix timestamp to milliseconds', async () => {
       const unixTimestamp = 1736121600; // Jan 6, 2026 in Unix seconds
       
-      (global. fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           base: 'USD',
@@ -280,7 +280,7 @@ describe('FX Rate Client - Cache TTL', () => {
       // Verify timestamp conversion
       expect(result.age).toBeLessThan(1000); // Should be very recent
       // Age should be calculated from milliseconds, not seconds
-      expect(result. age).toBeGreaterThanOrEqual(0);
+      expect(result.age).toBeGreaterThanOrEqual(0);
     });
   
     it('should handle malformed API response gracefully', async () => {
@@ -290,7 +290,7 @@ describe('FX Rate Client - Cache TTL', () => {
           // Missing time_last_updated
           base: 'USD',
           date: '2026-01-06',
-          rates: { EUR:  0.92 },
+          rates: { EUR: 0.92 },
         }),
       });
   

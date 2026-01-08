@@ -10,7 +10,7 @@
  * 4. Store price snapshot in Netlify Blobs
  */
 
-import { Handler, schedule } from '@netlify/functions';
+import { Handler } from '@netlify/functions';
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { Program, AnchorProvider, Wallet, BN } from '@coral-xyz/anchor';
 import bs58 from 'bs58';
@@ -127,7 +127,7 @@ const handler: Handler = async (event, context) => {
     
     // Build update instruction
     // Note: This requires the update_eqx_price instruction to exist in the IDL
-    // If not available, we'll skip the on-chain update and just store to blobs
+    // The eqxOracle PDA is auto-derived by Anchor from the seeds defined in the IDL
     try {
       // Convert types for Anchor
       const priceAsBN = new BN(basketPriceFixed.toString());
@@ -147,7 +147,7 @@ const handler: Handler = async (event, context) => {
       
       console.log('Oracle updated successfully. Transaction signature:', tx);
     } catch (error) {
-      console.warn('Failed to update on-chain oracle (instruction may not exist):', error);
+      console.warn('Failed to update on-chain oracle (instruction may not exist or authority mismatch):', error);
       console.log('Continuing with blob storage...');
     }
     

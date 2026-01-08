@@ -4,6 +4,9 @@
  * Fetches real-time price data for EQX basket components from Pyth Network's Hermes API.
  * Provides fallback to hardcoded prices if API fails.
  * 
+ * Note: This uses Pyth Hermes mainnet API which provides price data for all networks.
+ * The fetched prices are network-agnostic.
+ * 
  * Component mapping:
  * - USDUSD: 1.0 (fixed)
  * - EURUSD: Inverted from USD/JPY
@@ -20,7 +23,7 @@
 
 /**
  * Pyth Hermes API endpoint
- * Production endpoint for mainnet-beta
+ * Note: Hermes API is network-agnostic and provides prices for all networks
  */
 const HERMES_API_URL = 'https://hermes.pyth.network/v2/updates/price/latest';
 
@@ -94,9 +97,16 @@ export interface ComponentPrices {
  */
 async function fetchFromHermes(): Promise<ComponentPrices | null> {
   try {
-    // Build query string with all feed IDs
-    const feedIds = Object.values(HERMES_FEED_IDS).join(',');
-    const url = `${HERMES_API_URL}?ids[]=${HERMES_FEED_IDS.XAUUSD}&ids[]=${HERMES_FEED_IDS.USDJPY}&ids[]=${HERMES_FEED_IDS.USDCNH}&ids[]=${HERMES_FEED_IDS.EURUSD}&ids[]=${HERMES_FEED_IDS.GBPUSD}&ids[]=${HERMES_FEED_IDS.USOILSPOT}`;
+    // Build query string with URLSearchParams for cleaner parameter handling
+    const params = new URLSearchParams();
+    params.append('ids[]', HERMES_FEED_IDS.XAUUSD);
+    params.append('ids[]', HERMES_FEED_IDS.USDJPY);
+    params.append('ids[]', HERMES_FEED_IDS.USDCNH);
+    params.append('ids[]', HERMES_FEED_IDS.EURUSD);
+    params.append('ids[]', HERMES_FEED_IDS.GBPUSD);
+    params.append('ids[]', HERMES_FEED_IDS.USOILSPOT);
+    
+    const url = `${HERMES_API_URL}?${params.toString()}`;
     
     const response = await fetch(url, {
       method: 'GET',
