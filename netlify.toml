@@ -1,0 +1,21 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Scheduled Functions
+[[functions]]
+  name = "update-eqx-price"
+  schedule = "0 * * * *"  # Hourly
+
+[[functions]]
+  name = "update-fx-rates"
+  schedule = "0 * * * *"  # Hourly
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

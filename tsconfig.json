@@ -42,6 +42,7 @@
   "exclude": [
     "node_modules",
     "create_mint.ts",
-    "src/services"
+    "src/services",
+    "netlify"
   ]
 }
