@@ -133,7 +133,8 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       }
 
       // Show success message
-      const creditsRemaining = credits - CREDITS_REQUIRED_FOR_BONUS_MINT;
+      // Credits are guaranteed to be non-null here due to hasCredits check
+      const creditsRemaining = (credits as number) - CREDITS_REQUIRED_FOR_BONUS_MINT;
       setSuccessMessage(
         `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ` +
         `${creditsRemaining} credits remaining.`

@@ -239,6 +239,9 @@ describe('ReferralRewards Component', () => {
       });
       
       const mockClaimBonusMint = jest.fn().mockResolvedValue('mock-signature-123');
+      
+      // Properly mock the claimBonusMint function
+      jest.spyOn(referralRewardsUtils, 'claimBonusMint').mockImplementation(mockClaimBonusMint);
 
       (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
@@ -246,9 +249,6 @@ describe('ReferralRewards Component', () => {
         referredCount: 5,
         referredUsers: [],
       });
-
-      // Mock claimBonusMint
-      (referralRewardsUtils.claimBonusMint as jest.Mock) = mockClaimBonusMint;
 
       mockUseWallet.mockReturnValue({
         publicKey: mockPublicKey,
