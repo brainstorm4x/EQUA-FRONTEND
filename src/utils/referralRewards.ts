@@ -11,10 +11,18 @@
  * Backend source: programs/equa_token/src/lib.rs (lines 765-790)
  */
 
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { parseUserAccountData, UserAccountData } from './onchainRegistration';
-import { PROGRAM_ID } from '@/lib/constants';
+import { PROGRAM_ID, TOKEN_PROGRAM_ID } from '@/lib/constants';
+import { 
+  getUserAccountPDA,
+  getUserMetadataPDA,
+  getGlobalStatePDA,
+  getMintPDA,
+  getMintAuthorityPDA
+} from '@/lib/program';
 import { 
   INDIVIDUAL_CREDIT_AWARD,
   BUSINESS_CREDIT_AWARD,
@@ -303,4 +311,100 @@ export async function getReferredUsersDetails(
   }
 
   return details;
+}
+
+/**
+ * Claim a bonus mint by redeeming referral credits
+ * 
+ * Redeems 5 credits for 1 bonus mint attempt. The amount minted respects the user's tier limits.
+ * Monthly cap: 5 bonus mints per calendar month.
+ * 
+ * @param connection Solana connection
+ * @param wallet Wallet adapter with signTransaction and publicKey
+ * @param amount Amount of EQUA tokens to mint (in base units, 6 decimals)
+ * @returns Transaction signature on success
+ * @throws Error on validation failure or transaction error
+ */
+export async function claimBonusMint(
+  connection: Connection,
+  wallet: { signTransaction: (tx: Transaction) => Promise<Transaction>; publicKey: PublicKey },
+  amount: number
+): Promise<string> {
+  if (!wallet.publicKey) {
+    throw new Error('Wallet not connected');
+  }
+
+  // Derive all required PDAs
+  const [userAccountPDA] = getUserAccountPDA(wallet.publicKey);
+  const [userMetadataPDA] = getUserMetadataPDA(wallet.publicKey);
+  const [globalStatePDA] = getGlobalStatePDA();
+  const [mintPDA] = getMintPDA();
+  const [mintAuthorityPDA] = getMintAuthorityPDA();
+
+  // Get user's token account (ATA)
+  const userTokenAccount = await getAssociatedTokenAddress(
+    mintPDA,
+    wallet.publicKey,
+    false, // allowOwnerOffCurve
+    TOKEN_PROGRAM_ID
+  );
+
+  // Build claim_bonus_mint instruction
+  // Discriminator from IDL: [165, 189, 110, 164, 88, 80, 20, 71]
+  const discriminator = Buffer.from([165, 189, 110, 164, 88, 80, 20, 71]);
+  
+  // Encode amount as u64 little-endian
+  const amountBN = new BN(amount);
+  const amountBuffer = amountBN.toArrayLike(Buffer, 'le', 8);
+  
+  // Instruction data: discriminator + amount
+  const data = Buffer.concat([discriminator, amountBuffer]);
+
+  // Build accounts array in exact order from IDL
+  // Order: user_account, user_metadata, global_state, user_token_account, 
+  //        mint, mint_authority, authority, token_program
+  const keys = [
+    { pubkey: userAccountPDA, isSigner: false, isWritable: true },       // 0. user_account
+    { pubkey: userMetadataPDA, isSigner: false, isWritable: true },      // 1. user_metadata
+    { pubkey: globalStatePDA, isSigner: false, isWritable: false },      // 2. global_state
+    { pubkey: userTokenAccount, isSigner: false, isWritable: true },     // 3. user_token_account
+    { pubkey: mintPDA, isSigner: false, isWritable: true },              // 4. mint
+    { pubkey: mintAuthorityPDA, isSigner: false, isWritable: false },    // 5. mint_authority
+    { pubkey: wallet.publicKey, isSigner: true, isWritable: false },     // 6. authority (signer)
+    { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },    // 7. token_program
+  ];
+
+  const instruction = new TransactionInstruction({
+    keys,
+    programId: PROGRAM_ID,
+    data,
+  });
+
+  // Create and send transaction
+  const transaction = new Transaction().add(instruction);
+  transaction.feePayer = wallet.publicKey;
+  
+  // Get recent blockhash
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+  transaction.recentBlockhash = blockhash;
+
+  // Sign transaction
+  const signedTransaction = await wallet.signTransaction(transaction);
+
+  // Send and confirm transaction
+  const signature = await connection.sendRawTransaction(signedTransaction.serialize(), {
+    skipPreflight: false,
+    preflightCommitment: 'confirmed',
+  });
+
+  // Wait for confirmation
+  await connection.confirmTransaction({
+    signature,
+    blockhash,
+    lastValidBlockHeight,
+  }, 'confirmed');
+
+  console.log('✅ Bonus mint claimed successfully. Transaction:', signature);
+  
+  return signature;
 }
