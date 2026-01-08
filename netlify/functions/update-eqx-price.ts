@@ -12,7 +12,7 @@
 
 import { Handler, schedule } from '@netlify/functions';
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { Program, AnchorProvider, Wallet } from '@coral-xyz/anchor';
+import { Program, AnchorProvider, Wallet, BN } from '@coral-xyz/anchor';
 import bs58 from 'bs58';
 import crypto from 'crypto';
 import { fetchComponentPrices, componentPricesToArray } from './lib/pythPrices';
@@ -126,17 +126,21 @@ const handler: Handler = async (event, context) => {
     console.log('Weights hash:', weightsHash);
     
     // Build update instruction
-    // Note: This requires the update_eqx_oracle instruction to exist in the IDL
+    // Note: This requires the update_eqx_price instruction to exist in the IDL
     // If not available, we'll skip the on-chain update and just store to blobs
     try {
+      // Convert types for Anchor
+      const priceAsBN = new BN(basketPriceFixed.toString());
+      const componentHashArray = Array.from(Buffer.from(componentPricesHash, 'hex'));
+      const weightsHashArray = Array.from(Buffer.from(weightsHash, 'hex'));
+      
       const tx = await program.methods
-        .updateEqxOracle(
-          basketPriceFixed,
-          Buffer.from(componentPricesHash, 'hex'),
-          Buffer.from(weightsHash, 'hex')
+        .updateEqxPrice(
+          priceAsBN,
+          componentHashArray,
+          weightsHashArray
         )
         .accounts({
-          eqxOracle: oraclePda,
           authority: wallet.publicKey,
         })
         .rpc();

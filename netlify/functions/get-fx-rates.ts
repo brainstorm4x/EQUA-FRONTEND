@@ -4,14 +4,14 @@
  * On-demand function to get the latest FX rates for frontend consumption
  */
 
-import { Handler } from '@netlify/functions';
+import { Handler, HandlerResponse } from '@netlify/functions';
 import { getLatestFxRates } from './lib/blobStorage';
 
 // ============================================================================
 // Main Handler
 // ============================================================================
 
-const handler: Handler = async (event, context) => {
+const handler: Handler = async (event, context): Promise<HandlerResponse> => {
   try {
     console.log('Fetching latest FX rates...');
     
@@ -25,6 +25,7 @@ const handler: Handler = async (event, context) => {
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
         body: JSON.stringify({
           error: 'No FX rate data available',
@@ -60,6 +61,7 @@ const handler: Handler = async (event, context) => {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
       },
       body: JSON.stringify({
         error: error instanceof Error ? error.message : 'Unknown error',
