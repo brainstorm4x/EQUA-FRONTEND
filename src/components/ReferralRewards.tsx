@@ -11,7 +11,6 @@ import {
   claimBonusMint,
 } from '@/utils/referralRewards';
 import { getUserAccountPDA } from '@/lib/program';
-import { getUserMintTier } from '@/utils/registration';
 import { decimalToRaw } from '@/utils/tokenFormat';
 
 interface ReferralRewardsProps {
@@ -94,8 +93,8 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       return;
     }
 
-    // Pre-flight checks
-    if (credits === null || credits < CREDITS_REQUIRED_FOR_BONUS_MINT) {
+    // Validate credits availability (using same logic as UI button state)
+    if (!hasCredits) {
       setError(`You need at least ${CREDITS_REQUIRED_FOR_BONUS_MINT} credits to claim a bonus mint`);
       return;
     }
@@ -190,6 +189,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
     );
   }
 
+  // Helper to check if user has enough credits to claim
   const hasCredits = credits !== null && credits >= CREDITS_REQUIRED_FOR_BONUS_MINT;
 
   return (
