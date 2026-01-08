@@ -350,7 +350,7 @@ export async function claimBonusMint(
   );
 
   // Build claim_bonus_mint instruction
-  // Discriminator from IDL: [165, 189, 110, 164, 88, 80, 20, 71]
+  // Discriminator from IDL (public/idl/equa_token.json, instruction: claimBonusMint)
   const discriminator = Buffer.from([165, 189, 110, 164, 88, 80, 20, 71]);
   
   // Encode amount as u64 little-endian
@@ -404,7 +404,9 @@ export async function claimBonusMint(
     lastValidBlockHeight,
   }, 'confirmed');
 
-  console.log('✅ Bonus mint claimed successfully. Transaction:', signature);
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ Bonus mint claimed successfully. Transaction:', signature);
+  }
   
   return signature;
 }

@@ -18,6 +18,11 @@ interface ReferralRewardsProps {
   className?: string;
 }
 
+// Default amount for bonus mint (tier 4 limit - safe for most users)
+// This is conservative to ensure the transaction succeeds for users
+// without needing to fetch their exact tier from UserMetadata
+const DEFAULT_BONUS_MINT_AMOUNT_EQUA = 100;
+
 /**
  * ReferralRewards Component
  * 
@@ -108,12 +113,13 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       // In a full implementation, we'd fetch UserMetadata to get the exact user index
       // and calculate the tier-appropriate amount
       
-      // Use a conservative default: 100 EQUA (tier 4 limit for users 101-1000)
+      // Use conservative default from constant (tier 4 limit for users 101-1000)
       // This is safe for most users. Advanced implementation would fetch actual tier.
-      const defaultEquaAmount = 100;
-      const amountInBaseUnits = decimalToRaw(defaultEquaAmount);
+      const amountInBaseUnits = decimalToRaw(DEFAULT_BONUS_MINT_AMOUNT_EQUA);
 
-      console.log(`Claiming bonus mint: ${defaultEquaAmount} EQUA (${amountInBaseUnits} base units)`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Claiming bonus mint: ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA (${amountInBaseUnits} base units)`);
+      }
 
       // Call claimBonusMint utility
       const signature = await claimBonusMint(
@@ -122,12 +128,14 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
         amountInBaseUnits
       );
 
-      console.log('✅ Bonus mint claimed. Signature:', signature);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Bonus mint claimed. Signature:', signature);
+      }
 
       // Show success message
       const creditsRemaining = credits - 5;
       setSuccessMessage(
-        `✅ Successfully claimed ${defaultEquaAmount} EQUA! ` +
+        `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ` +
         `${creditsRemaining} credits remaining.`
       );
 
