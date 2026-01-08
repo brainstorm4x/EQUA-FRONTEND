@@ -249,3 +249,22 @@ export function calculateBasketPrice(componentPrices: number[]): number {
 export function getBasketComposition(): ComponentInfo[] {
   return BASKET_COMPONENTS;
 }
+
+// ============================================================================
+// Hash Validation Utilities
+// ============================================================================
+
+/**
+ * Validate SHA-256 hash is exactly 32 bytes
+ * @param hash - Hex string
+ * @param name - Hash name for error messages
+ */
+export function validateHash(hash: string, name: string): void {
+  const buffer = Buffer.from(hash, 'hex');
+  if (buffer.length !== 32) {
+    throw new Error(
+      `${name} must be exactly 32 bytes, got ${buffer.length}. ` +
+      `Hex string: ${hash}`
+    );
+  }
+}

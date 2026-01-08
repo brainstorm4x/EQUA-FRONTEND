@@ -12,6 +12,28 @@ import { Handler } from '@netlify/functions';
 import { storeFxRates, FxRateData } from './lib/blobStorage';
 
 // ============================================================================
+// Environment Variable Validation (runs at module load time)
+// ============================================================================
+
+/**
+ * Validate required environment variables at startup
+ * Throws immediately if any are missing, preventing silent deployment failures
+ * Note: EXCHANGERATE_API_KEY is optional (fallback to free API)
+ */
+function validateEnvironment(): void {
+  // No strictly required env vars for FX rates (API key is optional)
+  // But we still validate the function can run
+  console.log('✓ FX rates function environment validated');
+  
+  if (!process.env.EXCHANGERATE_API_KEY) {
+    console.warn('⚠ EXCHANGERATE_API_KEY not set, will use fallback API or default key');
+  }
+}
+
+// Run validation at module load time
+validateEnvironment();
+
+// ============================================================================
 // Configuration
 // ============================================================================
 

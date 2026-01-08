@@ -21,11 +21,42 @@ import {
   floatToFixed, 
   calculateBasketPrice,
   BASKET_COMPONENTS,
-  PRECISION 
+  PRECISION,
+  validateHash
 } from './lib/eqxOracle';
 import { storeEqxPrice, EqxPriceSnapshot } from './lib/blobStorage';
 import { EquaToken } from './lib/equa_token';
 import idl from './lib/equa_token.json';
+
+// ============================================================================
+// Environment Variable Validation (runs at module load time)
+// ============================================================================
+
+/**
+ * Validate required environment variables at startup
+ * Throws immediately if any are missing, preventing silent deployment failures
+ */
+function validateEnvironment(): void {
+  const required = [
+    'SOLANA_WALLET_PRIVATE_KEY',
+    'SOLANA_RPC_ENDPOINT',
+    'NEXT_PUBLIC_PROGRAM_ID',
+  ];
+  
+  const missing = required.filter(key => !process.env[key]);
+  
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missing.join(', ')}\n` +
+      `Please configure these in Netlify dashboard before deployment.`
+    );
+  }
+  
+  console.log('✓ Environment variables validated');
+}
+
+// Run validation at module load time
+validateEnvironment();
 
 // ============================================================================
 // Configuration
@@ -125,20 +156,32 @@ const handler: Handler = async (event, context) => {
     console.log('Component prices hash:', componentPricesHash);
     console.log('Weights hash:', weightsHash);
     
+    // Validate hashes before conversion
+    validateHash(componentPricesHash, 'Component prices hash');
+    validateHash(weightsHash, 'Weights hash');
+    
     // Build update instruction
     // Note: This requires the update_eqx_price instruction to exist in the IDL
     // The eqxOracle PDA is auto-derived by Anchor from the seeds defined in the IDL
     try {
       // Convert types for Anchor
       const priceAsBN = new BN(basketPriceFixed.toString());
-      const componentHashArray = Array.from(Buffer.from(componentPricesHash, 'hex'));
-      const weightsHashArray = Array.from(Buffer.from(weightsHash, 'hex'));
+      
+      // Ensure hashes are exactly 32 bytes
+      const componentHashBuffer = Buffer.from(componentPricesHash, 'hex');
+      const weightsHashBuffer = Buffer.from(weightsHash, 'hex');
+      
+      if (componentHashBuffer.length !== 32 || weightsHashBuffer.length !== 32) {
+        throw new Error(
+          `Invalid hash length: component=${componentHashBuffer.length}, weights=${weightsHashBuffer.length}`
+        );
+      }
       
       const tx = await program.methods
         .updateEqxPrice(
           priceAsBN,
-          componentHashArray,
-          weightsHashArray
+          Array.from(componentHashBuffer),  // Guaranteed [number; 32]
+          Array.from(weightsHashBuffer)     // Guaranteed [number; 32]
         )
         .accounts({
           authority: wallet.publicKey,
