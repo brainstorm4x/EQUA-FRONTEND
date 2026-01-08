@@ -167,15 +167,9 @@ const handler: Handler = async (event, context) => {
       // Convert types for Anchor
       const priceAsBN = new BN(basketPriceFixed.toString());
       
-      // Ensure hashes are exactly 32 bytes
+      // Convert hashes to number arrays (guaranteed 32 bytes by validation above)
       const componentHashBuffer = Buffer.from(componentPricesHash, 'hex');
       const weightsHashBuffer = Buffer.from(weightsHash, 'hex');
-      
-      if (componentHashBuffer.length !== 32 || weightsHashBuffer.length !== 32) {
-        throw new Error(
-          `Invalid hash length: component=${componentHashBuffer.length}, weights=${weightsHashBuffer.length}`
-        );
-      }
       
       const tx = await program.methods
         .updateEqxPrice(

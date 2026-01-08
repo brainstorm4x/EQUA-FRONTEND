@@ -16,13 +16,10 @@ import { storeFxRates, FxRateData } from './lib/blobStorage';
 // ============================================================================
 
 /**
- * Validate required environment variables at startup
- * Throws immediately if any are missing, preventing silent deployment failures
+ * Validate environment at startup
  * Note: EXCHANGERATE_API_KEY is optional (fallback to free API)
  */
 function validateEnvironment(): void {
-  // No strictly required env vars for FX rates (API key is optional)
-  // But we still validate the function can run
   console.log('✓ FX rates function environment validated');
   
   if (!process.env.EXCHANGERATE_API_KEY) {
