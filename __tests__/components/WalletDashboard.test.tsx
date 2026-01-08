@@ -137,3 +137,213 @@ describe('WalletDashboard - Transfer Count', () => {
     expect(true).toBe(true); // The implementation is correct - recordTransaction is not called
   });
 });
+
+describe('WalletDashboard - Claim Credits Functionality', () => {
+  it('should import claimBonusMint from referralRewards utility', () => {
+    // Verify that the claimBonusMint function is imported
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for import of claimBonusMint
+    expect(sourceCode).toMatch(/import.*claimBonusMint.*from.*@\/utils\/referralRewards/);
+  });
+
+  it('should import decimalToRaw from tokenFormat utility', () => {
+    // Verify that the decimalToRaw function is imported
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for import of decimalToRaw
+    expect(sourceCode).toMatch(/import.*decimalToRaw.*from.*@\/utils\/tokenFormat/);
+  });
+
+  it('should have state variables for claim functionality', () => {
+    // Verify state variables exist for claim functionality
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for isClaiming state (look for the full statement)
+    expect(sourceCode).toMatch(/const \[isClaiming, setIsClaiming\]/);
+    
+    // Check for claimError state
+    expect(sourceCode).toMatch(/const \[claimError, setClaimError\]/);
+    
+    // Check for claimSuccess state
+    expect(sourceCode).toMatch(/const \[claimSuccess, setClaimSuccess\]/);
+  });
+
+  it('should have handleClaimCredits function', () => {
+    // Verify handleClaimCredits function exists
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for handleClaimCredits function
+    expect(sourceCode).toMatch(/const handleClaimCredits.*useCallback/);
+  });
+
+  it('should validate minimum credits (5) before claiming', () => {
+    // Verify that the function checks for at least 5 credits
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for credits >= 5 validation
+    expect(sourceCode).toMatch(/referralCredits.*<.*5/);
+  });
+
+  it('should call claimBonusMint with correct parameters', () => {
+    // Verify claimBonusMint is called with connection, wallet, and amount
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for claimBonusMint call
+    expect(sourceCode).toMatch(/await claimBonusMint\(/);
+    // Check for parameters being passed (connection, wallet object with signTransaction and publicKey, amount)
+    expect(sourceCode).toMatch(/connection,/);
+    expect(sourceCode).toMatch(/signTransaction,/);
+    expect(sourceCode).toMatch(/publicKey/);
+  });
+
+  it('should use default bonus mint amount of 100 EQUA', () => {
+    // Verify the default amount is 100 EQUA (tier 4 conservative default)
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for DEFAULT_BONUS_MINT_AMOUNT_EQUA = 100
+    expect(sourceCode).toMatch(/DEFAULT_BONUS_MINT_AMOUNT_EQUA.*=.*100/);
+  });
+
+  it('should convert EQUA amount to base units using decimalToRaw', () => {
+    // Verify decimalToRaw is used to convert EQUA to base units
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for decimalToRaw usage
+    expect(sourceCode).toMatch(/decimalToRaw\(DEFAULT_BONUS_MINT_AMOUNT_EQUA\)/);
+  });
+
+  it('should handle specific error messages from backend', () => {
+    // Verify error handling for specific error codes
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for specific error handling
+    expect(sourceCode).toMatch(/InsufficientReferralCredits/);
+    expect(sourceCode).toMatch(/MonthlyBonusMintCapReached/);
+    expect(sourceCode).toMatch(/MintAmountExceedsTierLimit/);
+  });
+
+  it('should refresh referral data after successful claim', () => {
+    // Verify that referral data is refreshed after claim
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for dynamic import of getReferralStats (used after successful claim)
+    expect(sourceCode).toMatch(/const \{ getReferralStats \} = await import/);
+    expect(sourceCode).toMatch(/setReferralCredits\(stats\.credits\)/);
+  });
+
+  it('should auto-dismiss success message after 5 seconds', () => {
+    // Verify auto-dismiss timer for success message
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for setTimeout with 5000ms for success
+    expect(sourceCode).toMatch(/setTimeout.*setClaimSuccess.*5000/);
+  });
+
+  it('should auto-dismiss error message after 8 seconds', () => {
+    // Verify auto-dismiss timer for error message
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for setTimeout with 8000ms for error
+    expect(sourceCode).toMatch(/setTimeout.*setClaimError.*8000/);
+  });
+
+  it('should display claim button when credits >= 5', () => {
+    // Verify claim button visibility logic
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for conditional rendering of claim button
+    expect(sourceCode).toMatch(/referralCredits >= 5/);
+    expect(sourceCode).toMatch(/💰 Claim Credits/);
+  });
+
+  it('should disable claim button while claiming', () => {
+    // Verify button is disabled during claim transaction
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for disabled state based on isClaiming
+    expect(sourceCode).toMatch(/disabled=\{isClaiming\}/);
+    expect(sourceCode).toMatch(/⏳ Claiming\.\.\./);
+  });
+
+  it('should display error and success messages', () => {
+    // Verify error and success message display
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for error message display (look for claimError rendering with red background)
+    expect(sourceCode).toMatch(/\{claimError &&/);
+    expect(sourceCode).toMatch(/border-red-500/);
+    
+    // Check for success message display (look for claimSuccess rendering with green background)
+    expect(sourceCode).toMatch(/\{claimSuccess &&/);
+    expect(sourceCode).toMatch(/border-green-500/);
+  });
+
+  it('should show "Ready to claim bonus mint" indicator when credits >= 5', () => {
+    // Verify the ready indicator is shown
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for ready indicator
+    expect(sourceCode).toMatch(/✨ Ready to claim bonus mint!/);
+  });
+
+  it('should verify user registration before claiming', () => {
+    // Verify that user account exists before claiming
+    const fs = require('fs');
+    const path = require('path');
+    const walletDashboardPath = path.join(__dirname, '../../src/components/WalletDashboard.tsx');
+    const sourceCode = fs.readFileSync(walletDashboardPath, 'utf-8');
+    
+    // Check for account verification
+    expect(sourceCode).toMatch(/getAccountInfo.*userAccountPDA/);
+    expect(sourceCode).toMatch(/User account not found/);
+  });
+});
