@@ -2,14 +2,14 @@
  * FX Rate Client - Real-Time Exchange Rate Fetching
  * 
  * Fetches real-time FX rates from ExchangeRate-API (exchangerate-api.com).
- * Provides 3-layer fallback chain for maximum reliability:
- * 1. ExchangeRate-API (primary endpoint)
- * 2. ExchangeRate-API (fallback endpoint - same URL, retry logic)
- * 3. Stale localStorage cache
+ * Provides 4-layer fallback chain for maximum reliability:
+ * 1. Fresh localStorage cache (<2h old)
+ * 2. ExchangeRate-API (primary endpoint)
+ * 3. Stale localStorage cache (emergency fallback)
  * 4. Static DEFAULT_RATES from localeCurrency.ts
  * 
  * Features:
- * - 6-hour localStorage caching with TTL (refreshes 4x daily)
+ * - 2-hour localStorage caching with TTL (aligns with hourly Netlify backend updates)
  * - Staleness detection (>24 hours old)
  * - Never throws - always returns a rate (even if stale/static)
  * - USD always returns rate 1.0 with zero age
@@ -35,11 +35,16 @@ const FX_RATES_FALLBACK_URL =
 
 /**
  * Cache configuration
- * - TTL: 6 hours (backend updates daily, so 6h ensures freshness within same day)
+ * - TTL: 2 hours (aligns with hourly Netlify scheduled function updates)
  * - Staleness: 24 hours (for warning threshold)
+ * 
+ * With Netlify updating FX rates hourly, a 2h cache ensures:
+ * - Frontend refreshes within 3 backend update cycles max
+ * - Offline resilience still maintained
+ * - Balance between freshness and API call reduction
  */
 const CACHE_KEY = 'equa_fx_rates_cache';
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours (reduced from 6h)
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // ============================================================================

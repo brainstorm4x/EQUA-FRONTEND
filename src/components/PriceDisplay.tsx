@@ -161,9 +161,15 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
             <div className="mt-1">
               <p className="text-green-300 text-sm" data-testid="local-currency-price">
                 ≈ {formatLocalCurrencyDynamic(currentPrice, localCurrency, eqxData.fxRate || 1)}
+                {/* Add subtle cache indicator only when using cached data */}
+                {eqxData.fxSource === 'cache' && (
+                  <span className="text-purple-300 text-xs ml-1" title="Using cached exchange rate">
+                    (cached)
+                  </span>
+                )}
               </p>
               
-              {/* Staleness warning */}
+              {/* Staleness warning - KEEP THIS */}
               {eqxData.fxIsStale && (
                 <p className="text-yellow-400 text-xs flex items-center gap-1 mt-1">
                   <span>⚠️</span>
@@ -171,13 +177,6 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
                     Exchange rate is {Math.floor((eqxData.fxAge || 0) / (60 * 60 * 1000))}h old
                     {eqxData.fxSource === 'fallback' && ' (using fallback rate)'}
                   </span>
-                </p>
-              )}
-              
-              {/* Source indicator for debugging (dev only) */}
-              {process.env.NODE_ENV === 'development' && eqxData.fxRate && (
-                <p className="text-purple-400 text-xs mt-1">
-                  FX: {eqxData.fxSource} ({eqxData.fxRate.toFixed(4)})
                 </p>
               )}
             </div>

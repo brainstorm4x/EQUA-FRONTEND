@@ -106,10 +106,32 @@ export default function AboutPage() {
               </div>
 
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
-                <h4 className="text-lg font-semibold text-white mb-3">Referral Rewards</h4>
+                <h4 className="text-lg font-semibold text-white mb-3">Referral Rewards (Credit-Based System)</h4>
                 <p className="text-purple-200 leading-relaxed">
-                  EQUA&apos;s referral system is merit-based: rewards come only when real value is created. When someone you refer becomes active and contributes to the network, you receive <strong className="text-white">1% of their minted allocation</strong>—not as tokens handed to you, but as recognition of your contribution to bringing them into the ecosystem.
+                  EQUA&apos;s referral system rewards network growth through a merit-based credit system. When someone you refer successfully registers and joins the ecosystem, you earn <strong className="text-white">referral credits</strong> based on their account type:
                 </p>
+                
+                <div className="bg-purple-500/10 rounded-lg p-4 mt-3 border border-purple-500/20">
+                  <ul className="space-y-2 text-purple-200">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-400 font-bold">✓</span>
+                      <span><strong className="text-white">Individual Referral:</strong> 1 referral credit</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-400 font-bold">✓</span>
+                      <span><strong className="text-white">Business Referral:</strong> 2 referral credits</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-400 font-bold">🎁</span>
+                      <span><strong className="text-white">Redemption:</strong> Accumulate 5 credits to unlock 1 bonus minting attempt using your current tier&apos;s mint rate</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <p className="text-purple-200 leading-relaxed mt-3">
+                  This credit-based approach maintains token scarcity while recognizing your contribution to ecosystem growth. Credits are awarded on successful registration and can be redeemed for bonus minting opportunities.
+                </p>
+                
                 <p className="text-purple-200 leading-relaxed mt-3">
                   <strong className="text-white">First 100 users:</strong> Referral optional<br />
                   <strong className="text-white">User 101+:</strong> Referral required for registration
