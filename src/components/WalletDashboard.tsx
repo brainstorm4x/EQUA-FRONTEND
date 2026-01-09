@@ -29,8 +29,10 @@ import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
-import { fetchUserMetadata } from '@/utils/userMetadata';
+import { fetchUserMetadata, getRemainingMonthlyBonusMints } from '@/utils/userMetadata';
 import { claimBonusMint, getReferralStats } from '@/utils/referralRewards';
+import { calculateTierLimit, getTierName } from '@/utils/tierCalculator';
+import { getTransactionExplorerLink } from '@/utils/explorerLink';
 
 interface WalletDashboardProps {
   className?: string;
@@ -82,6 +84,9 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [claimSuccess, setClaimSuccess] = useState('');
+  const [remainingClaims, setRemainingClaims] = useState<number | null>(null);
+  const [tierLimit, setTierLimit] = useState<number | null>(null);
+  const [tierName, setTierName] = useState<string>('');
   
   // ✅ Registration check state
   const [isRegistered, setIsRegistered] = useState(false);
@@ -135,6 +140,9 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       setMintDecimals(6);
       setReferralCount(0);
       setReferralCredits(null);
+      setRemainingClaims(null);
+      setTierLimit(null);
+      setTierName('');
       return;
     }
 
@@ -158,6 +166,18 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
               console.log('✓ On-chain referral count:', stats.referredCount);
             }
           }
+        }
+
+        // Fetch remaining monthly claims
+        const remaining = await getRemainingMonthlyBonusMints(connection, publicKey);
+        setRemainingClaims(remaining);
+
+        // Fetch user metadata to determine tier
+        const metadata = await fetchUserMetadata(connection, publicKey);
+        if (metadata) {
+          const limit = calculateTierLimit(metadata.user_index, metadata.elevated_mint_attempts_used);
+          setTierLimit(limit);
+          setTierName(getTierName(limit));
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -206,41 +226,41 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     setClaimSuccess('');
 
     try {
-      // Get user account to verify registration
-      const [userAccountPDA] = getUserAccountPDA(publicKey);
-      const accountInfo = await connection.getAccountInfo(userAccountPDA);
+      // Fetch user metadata to determine tier (claimBonusMint will also fetch it)
+      const metadata = await fetchUserMetadata(connection, publicKey);
       
-      if (!accountInfo) {
-        throw new Error('User account not found. Please register first.');
+      if (!metadata) {
+        throw new Error('User metadata not found. Please ensure you are registered.');
       }
 
-      // Use conservative default amount (tier 4 limit for users 101-1000)
-      const DEFAULT_BONUS_MINT_AMOUNT_EQUA = 100;
-      const amountInBaseUnits = decimalToRaw(DEFAULT_BONUS_MINT_AMOUNT_EQUA);
+      // Calculate tier-aware amount for display purposes
+      const amount = calculateTierLimit(metadata.user_index, metadata.elevated_mint_attempts_used);
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Claiming bonus mint: ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA (${amountInBaseUnits} base units)`);
+        console.log(`Claiming bonus mint: ${amount} EQUA (user #${metadata.user_index})`);
       }
 
-      // Call claimBonusMint utility
+      // Call claimBonusMint utility (now tier-aware internally)
       const signature = await claimBonusMint(
         connection,
-        { signTransaction, publicKey },
-        amountInBaseUnits
+        { signTransaction, publicKey }
       );
 
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Bonus mint claimed. Signature:', signature);
       }
 
-      // Show success message
+      // Generate explorer link
+      const explorerLink = getTransactionExplorerLink(signature);
+
+      // Show success message with explorer link
       const creditsRemaining = referralCredits - 5;
       setClaimSuccess(
-        `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ${creditsRemaining} credits remaining.`
+        `✅ Successfully claimed ${amount} EQUA! ${creditsRemaining} credits remaining. View transaction: ${explorerLink}`
       );
 
-      // Auto-dismiss success message after 5 seconds
-      setTimeout(() => setClaimSuccess(''), 5000);
+      // Auto-dismiss success message after 8 seconds
+      setTimeout(() => setClaimSuccess(''), 8000);
 
       // Refresh referral data after successful claim
       const [userPDA] = getUserAccountPDA(publicKey);
@@ -249,6 +269,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         setReferralCredits(stats.credits);
         setReferralCount(stats.referredCount);
       }
+
+      // Refresh remaining monthly claims and tier info
+      const remaining = await getRemainingMonthlyBonusMints(connection, publicKey);
+      setRemainingClaims(remaining);
 
     } catch (err: any) {
       console.error('Error claiming bonus mint:', err);
@@ -377,6 +401,33 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
                 </p>
               )}
             </div>
+
+            {/* Tier and Monthly Claims Information */}
+            {(tierLimit !== null || remainingClaims !== null) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {/* Tier Information */}
+                {tierLimit !== null && (
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-2">
+                    <div className="text-blue-300 text-xs mb-1">Your Tier</div>
+                    <div className="text-sm font-bold text-white">
+                      {tierName}: {tierLimit} EQUA
+                    </div>
+                  </div>
+                )}
+                
+                {/* Remaining Monthly Claims */}
+                {remainingClaims !== null && (
+                  <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-2">
+                    <div className="text-purple-300 text-xs mb-1">This Month</div>
+                    <div className="text-sm font-bold text-white">
+                      {remainingClaims > 0 
+                        ? `${remainingClaims}/5 left`
+                        : 'Limit reached'}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Claim Button - Only show when credits >= 5 */}
             {referralCredits >= 5 && (

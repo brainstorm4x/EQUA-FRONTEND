@@ -193,7 +193,7 @@ describe('WalletDashboard - Claim Credits Functionality', () => {
   });
 
   it('should call claimBonusMint with correct parameters', () => {
-    // Verify that claimBonusMint is called with connection, wallet, and amount
+    // Verify that claimBonusMint is called with connection and wallet (amount now calculated internally)
     const handleClaimCreditsMatch = sourceCode.match(/const\s+handleClaimCredits\s*=\s*useCallback\(async\s*\(\)\s*=>\s*\{[\s\S]*?\}\s*,\s*\[/);
     expect(handleClaimCreditsMatch).toBeTruthy();
     
@@ -203,18 +203,21 @@ describe('WalletDashboard - Claim Credits Functionality', () => {
       expect(functionBody).toContain('connection');
       expect(functionBody).toContain('signTransaction');
       expect(functionBody).toContain('publicKey');
-      expect(functionBody).toContain('amountInBaseUnits');
+      // Amount is now calculated internally in claimBonusMint
     }
   });
 
-  it('should use DEFAULT_BONUS_MINT_AMOUNT_EQUA of 100', () => {
-    // Verify that the default bonus mint amount is 100 EQUA
+  it('should use tier-aware bonus mint amount calculation', () => {
+    // Verify that tier-aware calculation is used (no hardcoded amount)
     const handleClaimCreditsMatch = sourceCode.match(/const\s+handleClaimCredits\s*=\s*useCallback\(async\s*\(\)\s*=>\s*\{[\s\S]*?\}\s*,\s*\[/);
     expect(handleClaimCreditsMatch).toBeTruthy();
     
     if (handleClaimCreditsMatch) {
       const functionBody = handleClaimCreditsMatch[0];
-      expect(functionBody).toContain('DEFAULT_BONUS_MINT_AMOUNT_EQUA = 100');
+      // Should fetch user metadata
+      expect(functionBody).toContain('fetchUserMetadata');
+      // Should calculate tier limit
+      expect(functionBody).toContain('calculateTierLimit');
     }
   });
 
@@ -231,15 +234,15 @@ describe('WalletDashboard - Claim Credits Functionality', () => {
     }
   });
 
-  it('should auto-dismiss success message after 5 seconds', () => {
-    // Verify success message auto-dismissal
+  it('should auto-dismiss success message after 8 seconds', () => {
+    // Verify success message auto-dismissal (changed to 8 seconds)
     const handleClaimCreditsMatch = sourceCode.match(/const\s+handleClaimCredits\s*=\s*useCallback\(async\s*\(\)\s*=>\s*\{[\s\S]*?\}\s*,\s*\[/);
     expect(handleClaimCreditsMatch).toBeTruthy();
     
     if (handleClaimCreditsMatch) {
       const functionBody = handleClaimCreditsMatch[0];
-      // Look for setTimeout with 5000ms for success message
-      const successTimeoutMatch = functionBody.match(/setTimeout\([^,]+,\s*5000\)/);
+      // Look for setTimeout with 8000ms for success message
+      const successTimeoutMatch = functionBody.match(/setTimeout\([^,]+,\s*8000\)/);
       expect(successTimeoutMatch).toBeTruthy();
     }
   });

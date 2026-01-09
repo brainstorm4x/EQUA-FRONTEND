@@ -11,18 +11,13 @@ import {
   claimBonusMint,
 } from '@/utils/referralRewards';
 import { getUserAccountPDA } from '@/lib/program';
-import { decimalToRaw } from '@/utils/tokenFormat';
+import { fetchUserMetadata, getRemainingMonthlyBonusMints } from '@/utils/userMetadata';
+import { calculateTierLimit, getTierName } from '@/utils/tierCalculator';
+import { getTransactionExplorerLink } from '@/utils/explorerLink';
 
 interface ReferralRewardsProps {
   className?: string;
 }
-
-// Default amount for bonus mint (tier 4 limit - safe for most users)
-// This is conservative to ensure the transaction succeeds for users
-// without needing to fetch their exact tier from UserMetadata.
-// Future enhancement: Implement tier-aware amount calculation by fetching
-// UserMetadata to get the user's actual tier limit.
-const DEFAULT_BONUS_MINT_AMOUNT_EQUA = 100;
 
 // Credits required to claim one bonus mint (from backend business rules)
 const CREDITS_REQUIRED_FOR_BONUS_MINT = 5;
@@ -45,6 +40,9 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showDetails, setShowDetails] = useState(false);
+  const [remainingClaims, setRemainingClaims] = useState<number | null>(null);
+  const [tierLimit, setTierLimit] = useState<number | null>(null);
+  const [tierName, setTierName] = useState<string>('');
 
   const loadReferralData = useCallback(async () => {
     if (!publicKey) return;
@@ -67,6 +65,18 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
         setReferredUsers(stats.referredUsers);
       } else {
         setError('Could not load referral data.');
+      }
+
+      // Fetch remaining monthly claims
+      const remaining = await getRemainingMonthlyBonusMints(connection, publicKey);
+      setRemainingClaims(remaining);
+
+      // Fetch user metadata to determine tier
+      const metadata = await fetchUserMetadata(connection, publicKey);
+      if (metadata) {
+        const limit = calculateTierLimit(metadata.user_index, metadata.elevated_mint_attempts_used);
+        setTierLimit(limit);
+        setTierName(getTierName(limit));
       }
     } catch (err) {
       console.error('Error loading referral data:', err);
@@ -98,40 +108,39 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
     setSuccessMessage('');
 
     try {
-      // Get user account to determine tier
-      const [userAccountPDA] = getUserAccountPDA(publicKey);
-      const accountInfo = await connection.getAccountInfo(userAccountPDA);
+      // Fetch user metadata to determine tier (claimBonusMint will also fetch it)
+      const metadata = await fetchUserMetadata(connection, publicKey);
       
-      if (!accountInfo) {
-        throw new Error('User account not found. Please register first.');
+      if (!metadata) {
+        throw new Error('User metadata not found. Please ensure you are registered.');
       }
 
-      // Use conservative default amount (tier 4 limit for users 101-1000)
-      // This ensures the transaction succeeds for most users without fetching tier metadata.
-      // Future enhancement: Fetch UserMetadata.user_index and calculate exact tier limit.
-      const amountInBaseUnits = decimalToRaw(DEFAULT_BONUS_MINT_AMOUNT_EQUA);
+      // Calculate tier-aware amount for display purposes
+      const amount = calculateTierLimit(metadata.user_index, metadata.elevated_mint_attempts_used);
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Claiming bonus mint: ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA (${amountInBaseUnits} base units)`);
+        console.log(`Claiming bonus mint: ${amount} EQUA (user #${metadata.user_index})`);
       }
 
-      // Call claimBonusMint utility
+      // Call claimBonusMint utility (now tier-aware internally)
       const signature = await claimBonusMint(
         connection,
-        { signTransaction, publicKey },
-        amountInBaseUnits
+        { signTransaction, publicKey }
       );
 
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Bonus mint claimed. Signature:', signature);
       }
 
-      // Show success message
+      // Generate explorer link
+      const explorerLink = getTransactionExplorerLink(signature);
+
+      // Show success message with explorer link
       // Note: credits is guaranteed non-null because button is only enabled when hasCredits is true
       const creditsRemaining = credits! - CREDITS_REQUIRED_FOR_BONUS_MINT;
       setSuccessMessage(
-        `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ` +
-        `${creditsRemaining} credits remaining.`
+        `✅ Successfully claimed ${amount} EQUA! ${creditsRemaining} credits remaining. ` +
+        `View transaction: ${explorerLink}`
       );
 
       // Refresh data after successful claim
@@ -268,6 +277,41 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
 
       {/* Claim Button */}
       <div className="space-y-3">
+        {/* Tier and Monthly Claims Information */}
+        {(tierLimit !== null || remainingClaims !== null) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            {/* Tier Information */}
+            {tierLimit !== null && (
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3">
+                <div className="text-blue-300 text-xs mb-1">Your Tier</div>
+                <div className="text-lg font-bold text-white">
+                  {tierName}: {tierLimit} EQUA
+                </div>
+                <div className="text-blue-200 text-xs mt-1">
+                  per claim
+                </div>
+              </div>
+            )}
+            
+            {/* Remaining Monthly Claims */}
+            {remainingClaims !== null && (
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-3">
+                <div className="text-purple-300 text-xs mb-1">This Month</div>
+                <div className="text-lg font-bold text-white">
+                  {remainingClaims > 0 
+                    ? `${remainingClaims} / 5 remaining`
+                    : 'Limit reached (5 max)'}
+                </div>
+                <div className="text-purple-200 text-xs mt-1">
+                  {remainingClaims > 0 
+                    ? `${remainingClaims} bonus mint${remainingClaims !== 1 ? 's' : ''} available`
+                    : 'Monthly cap reached'}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
         <button
           onClick={handleClaimRewards}
           disabled={!hasCredits || isClaiming}
