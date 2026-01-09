@@ -30,7 +30,7 @@ import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
 import { fetchUserMetadata } from '@/utils/userMetadata';
-import { claimBonusMint } from '@/utils/referralRewards';
+import { claimBonusMint, getReferralStats } from '@/utils/referralRewards';
 
 interface WalletDashboardProps {
   className?: string;
@@ -146,8 +146,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         
         // Get referral credits from on-chain (integer count, not EQUA amounts)
         if (userAccountPDA) {
-          // Import the referral stats function
-          const { getReferralStats } = await import('@/utils/referralRewards');
           const stats = await getReferralStats(connection, userAccountPDA);
           
           if (stats) {
@@ -245,9 +243,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       setTimeout(() => setClaimSuccess(''), 5000);
 
       // Refresh referral data after successful claim
-      // The useEffect hook will automatically refresh when the interval triggers
-      // or we can force an immediate refresh by re-fetching
-      const { getReferralStats } = await import('@/utils/referralRewards');
       const [userPDA] = getUserAccountPDA(publicKey);
       const stats = await getReferralStats(connection, userPDA);
       if (stats) {
