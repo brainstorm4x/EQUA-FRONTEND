@@ -36,6 +36,17 @@ jest.mock('@/utils/registration');
 jest.mock('@/utils/tokenFormat', () => ({
   decimalToRaw: jest.fn((amount) => amount * 1_000_000), // 6 decimals
 }));
+jest.mock('@/utils/userMetadata', () => ({
+  fetchUserMetadata: jest.fn(),
+  getRemainingMonthlyBonusMints: jest.fn(),
+}));
+jest.mock('@/utils/tierCalculator', () => ({
+  calculateTierLimit: jest.fn(),
+  getTierName: jest.fn(),
+}));
+jest.mock('@/utils/explorerLink', () => ({
+  getTransactionExplorerLink: jest.fn((sig) => `https://explorer.solana.com/tx/${sig}?cluster=devnet`),
+}));
 
 describe('ReferralRewards Component', () => {
   const mockUseWallet = require('@solana/wallet-adapter-react').useWallet;
@@ -54,6 +65,15 @@ describe('ReferralRewards Component', () => {
     mockUseConnection.mockReturnValue({
       connection: mockConnection,
     });
+    
+    // Mock the new utility functions with default returns
+    const userMetadataUtils = require('@/utils/userMetadata');
+    const tierCalculatorUtils = require('@/utils/tierCalculator');
+    
+    userMetadataUtils.fetchUserMetadata.mockResolvedValue(null);
+    userMetadataUtils.getRemainingMonthlyBonusMints.mockResolvedValue(5);
+    tierCalculatorUtils.calculateTierLimit.mockReturnValue(100);
+    tierCalculatorUtils.getTierName.mockReturnValue('Tier 4');
   });
 
   describe('When wallet is not connected', () => {
@@ -141,12 +161,10 @@ describe('ReferralRewards Component', () => {
       render(<ReferralRewards />);
 
       await waitFor(() => {
-        expect(screen.getByText('0')).toBeInTheDocument();
+        // Should show 0 count in both cards (credits and referred users)
+        const zeroTexts = screen.getAllByText('0');
+        expect(zeroTexts.length).toBeGreaterThanOrEqual(2);
       });
-
-      // Should show 0 count in both cards
-      const zeroTexts = screen.getAllByText('0');
-      expect(zeroTexts.length).toBeGreaterThanOrEqual(2);
     });
 
     it('should enable claim button when credits >= 5', async () => {
