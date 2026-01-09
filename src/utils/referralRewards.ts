@@ -31,6 +31,9 @@ import {
   INDIVIDUAL_REFERRAL_PERCENT, 
   BUSINESS_REFERRAL_PERCENT
 } from './referralCalculator';
+import { fetchUserMetadata } from './userMetadata';
+import { calculateTierLimit } from './tierCalculator';
+import { decimalToRaw } from './tokenFormat';
 
 // Instruction discriminator for claim_bonus_mint
 // Source: public/idl/equa_token.json, instruction: claimBonusMint
@@ -321,22 +324,37 @@ export async function getReferredUsersDetails(
 /**
  * Claim a bonus mint by redeeming referral credits
  * 
- * Redeems 5 credits for 1 bonus mint attempt. The amount minted respects the user's tier limits.
+ * Redeems 5 credits for 1 bonus mint attempt. The amount minted is tier-aware,
+ * calculated based on the user's tier limits from UserMetadata.
  * Monthly cap: 5 bonus mints per calendar month.
  * 
  * @param connection Solana connection
  * @param wallet Wallet adapter with signTransaction and publicKey
- * @param amount Amount of EQUA tokens to mint (in base units, 6 decimals)
  * @returns Transaction signature on success
  * @throws Error on validation failure or transaction error
  */
 export async function claimBonusMint(
   connection: Connection,
-  wallet: { signTransaction: (tx: Transaction) => Promise<Transaction>; publicKey: PublicKey },
-  amount: number
+  wallet: { signTransaction: (tx: Transaction) => Promise<Transaction>; publicKey: PublicKey }
 ): Promise<string> {
   if (!wallet.publicKey) {
     throw new Error('Wallet not connected');
+  }
+
+  // Fetch user metadata to determine tier-aware amount
+  const metadata = await fetchUserMetadata(connection, wallet.publicKey);
+  
+  if (!metadata) {
+    throw new Error('User metadata not found. Please ensure you are registered.');
+  }
+
+  // Calculate tier-aware amount based on user's tier
+  const tierLimit = calculateTierLimit(metadata.user_index, metadata.elevated_mint_attempts_used);
+  const amountInBaseUnits = decimalToRaw(tierLimit);
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`Tier-aware bonus mint: ${tierLimit} EQUA (user #${metadata.user_index})`);
+    console.log(`Amount in base units: ${amountInBaseUnits}`);
   }
 
   // Derive all required PDAs
@@ -358,7 +376,7 @@ export async function claimBonusMint(
   const discriminator = CLAIM_BONUS_MINT_DISCRIMINATOR;
   
   // Encode amount as u64 little-endian
-  const amountBN = new BN(amount);
+  const amountBN = new BN(amountInBaseUnits);
   const amountBuffer = amountBN.toArrayLike(Buffer, 'le', 8);
   
   // Instruction data: discriminator + amount
