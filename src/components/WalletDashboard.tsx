@@ -23,13 +23,14 @@ import {
 } from '@/lib/program';
 import { Logo } from './Logo';
 import Image from 'next/image';
-import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw } from '@/utils/tokenFormat';
+import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRaw } from '@/utils/tokenFormat';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
 import { fetchUserMetadata } from '@/utils/userMetadata';
+import { claimBonusMint } from '@/utils/referralRewards';
 
 interface WalletDashboardProps {
   className?: string;
@@ -78,6 +79,9 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const [shareMessage, setShareMessage] = useState('');
   const [referralCount, setReferralCount] = useState<number>(0);
   const [referralCredits, setReferralCredits] = useState<number | null>(null);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [claimError, setClaimError] = useState('');
+  const [claimSuccess, setClaimSuccess] = useState('');
   
   // ✅ Registration check state
   const [isRegistered, setIsRegistered] = useState(false);
@@ -187,6 +191,97 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     setShowShareModal(true);
   }, [publicKey]);
 
+  // Claim referral credits for bonus mint
+  const handleClaimCredits = useCallback(async () => {
+    if (!publicKey || !signTransaction) {
+      setClaimError('Wallet not connected properly');
+      return;
+    }
+
+    if (!referralCredits || referralCredits < 5) {
+      setClaimError('You need at least 5 credits to claim');
+      return;
+    }
+
+    setIsClaiming(true);
+    setClaimError('');
+    setClaimSuccess('');
+
+    try {
+      // Get user account to verify registration
+      const [userAccountPDA] = getUserAccountPDA(publicKey);
+      const accountInfo = await connection.getAccountInfo(userAccountPDA);
+      
+      if (!accountInfo) {
+        throw new Error('User account not found. Please register first.');
+      }
+
+      // Use conservative default amount (tier 4 limit for users 101-1000)
+      const DEFAULT_BONUS_MINT_AMOUNT_EQUA = 100;
+      const amountInBaseUnits = decimalToRaw(DEFAULT_BONUS_MINT_AMOUNT_EQUA);
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Claiming bonus mint: ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA (${amountInBaseUnits} base units)`);
+      }
+
+      // Call claimBonusMint utility
+      const signature = await claimBonusMint(
+        connection,
+        { signTransaction, publicKey },
+        amountInBaseUnits
+      );
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Bonus mint claimed. Signature:', signature);
+      }
+
+      // Show success message
+      const creditsRemaining = referralCredits - 5;
+      setClaimSuccess(
+        `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ${creditsRemaining} credits remaining.`
+      );
+
+      // Auto-dismiss success message after 5 seconds
+      setTimeout(() => setClaimSuccess(''), 5000);
+
+      // Refresh referral data after successful claim
+      // The useEffect hook will automatically refresh when the interval triggers
+      // or we can force an immediate refresh by re-fetching
+      const { getReferralStats } = await import('@/utils/referralRewards');
+      const [userPDA] = getUserAccountPDA(publicKey);
+      const stats = await getReferralStats(connection, userPDA);
+      if (stats) {
+        setReferralCredits(stats.credits);
+        setReferralCount(stats.referredCount);
+      }
+
+    } catch (err: any) {
+      console.error('Error claiming bonus mint:', err);
+      
+      // Parse specific error messages
+      let errorMessage = 'Failed to claim bonus mint. ';
+      
+      if (err.message?.includes('InsufficientReferralCredits')) {
+        errorMessage += 'You need at least 5 credits.';
+      } else if (err.message?.includes('MonthlyBonusMintCapReached')) {
+        errorMessage += 'You have reached the monthly limit of 5 bonus mints.';
+      } else if (err.message?.includes('MintAmountExceedsTierLimit')) {
+        errorMessage += 'Amount exceeds your tier limit.';
+      } else if (err.message) {
+        errorMessage += err.message;
+      } else {
+        errorMessage += 'Please try again.';
+      }
+      
+      setClaimError(errorMessage);
+      
+      // Auto-dismiss error message after 8 seconds
+      setTimeout(() => setClaimError(''), 8000);
+    } finally {
+      setIsClaiming(false);
+    }
+  }, [publicKey, signTransaction, connection, referralCredits]);
+
   if (!connected || !publicKey) {
     return null;
   }
@@ -260,15 +355,48 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         
         {/* Referral Credits Display */}
         {referralCredits !== null && referralCredits > 0 && (
-          <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-3 mb-4">
-            <p className="text-green-300 text-xs mb-1">Referral Credits</p>
-            <p className="text-white text-lg font-bold">
-              {referralCredits} Credit{referralCredits !== 1 ? 's' : ''}
-            </p>
-            {referralCredits >= 5 && (
-              <p className="text-yellow-300 text-xs mt-1">
-                ✨ Ready to claim bonus mint!
+          <div className="space-y-3 mb-4">
+            {/* Error Message */}
+            {claimError && (
+              <div className="bg-red-500/20 border-2 border-red-500 rounded-xl p-3">
+                <p className="text-red-200 text-xs">{claimError}</p>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {claimSuccess && (
+              <div className="bg-green-500/20 border-2 border-green-500 rounded-xl p-3">
+                <p className="text-green-200 text-xs">{claimSuccess}</p>
+              </div>
+            )}
+
+            {/* Credits Display Card */}
+            <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-3">
+              <p className="text-green-300 text-xs mb-1">Referral Credits</p>
+              <p className="text-white text-lg font-bold">
+                {referralCredits} Credit{referralCredits !== 1 ? 's' : ''}
               </p>
+              {referralCredits >= 5 && (
+                <p className="text-yellow-300 text-xs mt-1">
+                  ✨ Ready to claim bonus mint!
+                </p>
+              )}
+            </div>
+
+            {/* Claim Button - Only show when credits >= 5 */}
+            {referralCredits >= 5 && (
+              <button
+                onClick={handleClaimCredits}
+                disabled={isClaiming}
+                className={`w-full font-bold py-3 px-4 rounded-xl transition-all text-sm ${
+                  isClaiming
+                    ? 'bg-gray-500/50 text-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+                }`}
+                title={isClaiming ? 'Claiming...' : 'Claim your referral credits for a bonus mint'}
+              >
+                {isClaiming ? '⏳ Claiming...' : '💰 Claim Credits'}
+              </button>
             )}
           </div>
         )}
