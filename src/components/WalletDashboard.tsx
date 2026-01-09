@@ -23,13 +23,14 @@ import {
 } from '@/lib/program';
 import { Logo } from './Logo';
 import Image from 'next/image';
-import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw } from '@/utils/tokenFormat';
+import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRaw } from '@/utils/tokenFormat';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
 import { fetchUserMetadata } from '@/utils/userMetadata';
+import { claimBonusMint } from '@/utils/referralRewards';
 
 interface WalletDashboardProps {
   className?: string;
@@ -78,6 +79,11 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const [shareMessage, setShareMessage] = useState('');
   const [referralCount, setReferralCount] = useState<number>(0);
   const [referralCredits, setReferralCredits] = useState<number | null>(null);
+  
+  // Claim credits state
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [claimError, setClaimError] = useState('');
+  const [claimSuccess, setClaimSuccess] = useState('');
   
   // ✅ Registration check state
   const [isRegistered, setIsRegistered] = useState(false);
@@ -187,6 +193,83 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     setShowShareModal(true);
   }, [publicKey]);
 
+  // Handle claim credits
+  const handleClaimCredits = async () => {
+    if (!publicKey || !signTransaction) {
+      setClaimError('Wallet not connected properly');
+      return;
+    }
+
+    if (referralCredits === null || referralCredits < 5) {
+      setClaimError('You need at least 5 credits to claim');
+      return;
+    }
+
+    setIsClaiming(true);
+    setClaimError('');
+    setClaimSuccess('');
+
+    try {
+      const [userAccountPDA] = getUserAccountPDA(publicKey);
+      const accountInfo = await connection.getAccountInfo(userAccountPDA);
+      
+      if (!accountInfo) {
+        throw new Error('User account not found. Please register first.');
+      }
+
+      // Conservative default amount (Tier 4 limit: 100 EQUA)
+      const DEFAULT_BONUS_MINT_AMOUNT_EQUA = 100;
+      const amountInBaseUnits = decimalToRaw(DEFAULT_BONUS_MINT_AMOUNT_EQUA);
+
+      const signature = await claimBonusMint(
+        connection,
+        { signTransaction, publicKey },
+        amountInBaseUnits
+      );
+
+      const creditsRemaining = referralCredits - 5;
+      setClaimSuccess(
+        `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ${creditsRemaining} credits remaining.`
+      );
+
+      // Auto-dismiss success message after 5 seconds
+      setTimeout(() => setClaimSuccess(''), 5000);
+
+      // Refresh referral data
+      // Re-fetch stats to update credit count
+      const { getReferralStats } = await import('@/utils/referralRewards');
+      const stats = await getReferralStats(connection, userAccountPDA);
+      if (stats) {
+        setReferralCredits(stats.credits);
+        setReferralCount(stats.referredCount);
+      }
+
+    } catch (err: any) {
+      console.error('Error claiming bonus mint:', err);
+      
+      let errorMessage = 'Failed to claim bonus mint. ';
+      
+      if (err.message?.includes('InsufficientReferralCredits')) {
+        errorMessage += 'You need at least 5 credits.';
+      } else if (err.message?.includes('MonthlyBonusMintCapReached')) {
+        errorMessage += 'You have reached the monthly limit of 5 bonus mints.';
+      } else if (err.message?.includes('MintAmountExceedsTierLimit')) {
+        errorMessage += 'Amount exceeds your tier limit.';
+      } else if (err.message) {
+        errorMessage += err.message;
+      } else {
+        errorMessage += 'Please try again.';
+      }
+      
+      setClaimError(errorMessage);
+      
+      // Auto-dismiss error message after 8 seconds
+      setTimeout(() => setClaimError(''), 8000);
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
   if (!connected || !publicKey) {
     return null;
   }
@@ -258,6 +341,19 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           Redeem 5 credits for bonus minting attempts!
         </p>
         
+        {/* Error and Success Messages */}
+        {claimError && (
+          <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3 mb-3">
+            <p className="text-red-200 text-xs">{claimError}</p>
+          </div>
+        )}
+
+        {claimSuccess && (
+          <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-3 mb-3">
+            <p className="text-green-200 text-xs">{claimSuccess}</p>
+          </div>
+        )}
+        
         {/* Referral Credits Display */}
         {referralCredits !== null && referralCredits > 0 && (
           <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-3 mb-4">
@@ -271,6 +367,21 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
               </p>
             )}
           </div>
+        )}
+        
+        {/* Claim Button */}
+        {referralCredits !== null && referralCredits >= 5 && (
+          <button
+            onClick={handleClaimCredits}
+            disabled={isClaiming}
+            className={`w-full font-bold py-3 px-4 rounded-xl transition-all mb-3 ${
+              isClaiming
+                ? 'bg-gray-500/50 text-gray-400 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+            }`}
+          >
+            {isClaiming ? '⏳ Claiming...' : '💰 Claim Credits'}
+          </button>
         )}
         
         <div className="bg-black/20 rounded-xl p-3 mb-4">
