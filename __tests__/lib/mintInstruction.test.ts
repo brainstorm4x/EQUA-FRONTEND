@@ -111,6 +111,8 @@ describe('createMintTokensInstruction', () => {
   const userTokenAccount = new PublicKey('F6r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
   const mint = new PublicKey('G7r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
   const mintAuthority = new PublicKey('H8r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const referrerAccount = new PublicKey('J9r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
+  const businessRegistry = new PublicKey('BuzR8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yz');
   const authority = new PublicKey('A9r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
   const lockedTokenAccount = new PublicKey('4awfvNMTVwDq5czmfh5h6Ps9cam7Pa8UfuDircmoRPt9');
   const lockedTokenAta = new PublicKey('FKwqPEXfav7cvC5qe1jLQqQYWmAfpkrcegczYmnGWPTj');
@@ -118,7 +120,6 @@ describe('createMintTokensInstruction', () => {
 
   it('should create instruction with correct discriminator for mint_tokens', () => {
     const amount = 10_000_000_000; // 10,000 EQUA in base units (6 decimals)
-    const referrerAccount = PublicKey.default; // No referrer
     
     const instruction = createMintTokensInstruction(
       userAccount,
@@ -128,6 +129,7 @@ describe('createMintTokensInstruction', () => {
       mint,
       mintAuthority,
       referrerAccount,
+      businessRegistry,
       authority,
       lockedTokenAccount,
       lockedTokenAta,
@@ -145,7 +147,6 @@ describe('createMintTokensInstruction', () => {
 
   it('should encode amount correctly as u64 little-endian', () => {
     const amount = 10_000_000_000; // 10,000 EQUA in base units
-    const referrerAccount = PublicKey.default; // No referrer
     
     const instruction = createMintTokensInstruction(
       userAccount,
@@ -155,6 +156,7 @@ describe('createMintTokensInstruction', () => {
       mint,
       mintAuthority,
       referrerAccount,
+      businessRegistry,
       authority,
       lockedTokenAccount,
       lockedTokenAta,
@@ -176,9 +178,8 @@ describe('createMintTokensInstruction', () => {
     expect(decodedAmount).toBe(amount);
   });
 
-  it('should have correct 14 account metas in order per backend IDL', () => {
+  it('should have correct 15 account metas in order per backend IDL', () => {
     const amount = 1_000_000; // 1 EQUA
-    const referrerAccount = PublicKey.default; // No referrer
     
     const instruction = createMintTokensInstruction(
       userAccount,
@@ -188,6 +189,7 @@ describe('createMintTokensInstruction', () => {
       mint,
       mintAuthority,
       referrerAccount,
+      businessRegistry,
       authority,
       lockedTokenAccount,
       lockedTokenAta,
@@ -196,8 +198,8 @@ describe('createMintTokensInstruction', () => {
       amount
     );
 
-    // Verify account order and flags match backend IDL for mint_tokens (14 accounts)
-    expect(instruction.keys).toHaveLength(14);
+    // Verify account order and flags match backend IDL for mint_tokens (15 accounts)
+    expect(instruction.keys).toHaveLength(15);
     
     // 0. user_account - writable, not signer
     expect(instruction.keys[0].pubkey).toEqual(userAccount);
@@ -234,30 +236,35 @@ describe('createMintTokensInstruction', () => {
     expect(instruction.keys[6].isWritable).toBe(true); // ALWAYS writable per IDL
     expect(instruction.keys[6].isSigner).toBe(false);
     
-    // 7. authority - writable (for rent), signer
-    expect(instruction.keys[7].pubkey).toEqual(authority);
-    expect(instruction.keys[7].isWritable).toBe(true);
-    expect(instruction.keys[7].isSigner).toBe(true);
+    // 7. business_registry - read-only, not signer
+    expect(instruction.keys[7].pubkey).toEqual(businessRegistry);
+    expect(instruction.keys[7].isWritable).toBe(false);
+    expect(instruction.keys[7].isSigner).toBe(false);
     
-    // 8. locked_token_account - writable, not signer
-    expect(instruction.keys[8].pubkey).toEqual(lockedTokenAccount);
+    // 8. authority - writable (for rent), signer
+    expect(instruction.keys[8].pubkey).toEqual(authority);
     expect(instruction.keys[8].isWritable).toBe(true);
-    expect(instruction.keys[8].isSigner).toBe(false);
+    expect(instruction.keys[8].isSigner).toBe(true);
     
-    // 9. locked_token_ata - writable, not signer
-    expect(instruction.keys[9].pubkey).toEqual(lockedTokenAta);
+    // 9. locked_token_account - writable, not signer
+    expect(instruction.keys[9].pubkey).toEqual(lockedTokenAccount);
     expect(instruction.keys[9].isWritable).toBe(true);
     expect(instruction.keys[9].isSigner).toBe(false);
     
-    // 10. locked_token_pda - not writable, not signer
-    expect(instruction.keys[10].pubkey).toEqual(lockedTokenPda);
-    expect(instruction.keys[10].isWritable).toBe(false);
+    // 10. locked_token_ata - writable, not signer
+    expect(instruction.keys[10].pubkey).toEqual(lockedTokenAta);
+    expect(instruction.keys[10].isWritable).toBe(true);
     expect(instruction.keys[10].isSigner).toBe(false);
     
-    // 11. token_program - not writable, not signer
-    expect(instruction.keys[11].pubkey).toEqual(TOKEN_PROGRAM_ID);
+    // 11. locked_token_pda - not writable, not signer
+    expect(instruction.keys[11].pubkey).toEqual(lockedTokenPda);
     expect(instruction.keys[11].isWritable).toBe(false);
     expect(instruction.keys[11].isSigner).toBe(false);
+    
+    // 12. token_program - not writable, not signer
+    expect(instruction.keys[12].pubkey).toEqual(TOKEN_PROGRAM_ID);
+    expect(instruction.keys[12].isWritable).toBe(false);
+    expect(instruction.keys[12].isSigner).toBe(false);
   });
 
   it('should handle different amount values correctly', () => {
@@ -267,7 +274,6 @@ describe('createMintTokensInstruction', () => {
       10_000_000_000, // 10,000 EQUA (pioneer)
       100_000_000_000, // 100,000 EQUA (early adopter)
     ];
-    const referrerAccount = PublicKey.default; // No referrer
 
     testCases.forEach(amount => {
       const instruction = createMintTokensInstruction(
@@ -278,6 +284,7 @@ describe('createMintTokensInstruction', () => {
         mint,
         mintAuthority,
         referrerAccount,
+        businessRegistry,
         authority,
         lockedTokenAccount,
         lockedTokenAta,

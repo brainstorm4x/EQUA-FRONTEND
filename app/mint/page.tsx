@@ -1284,7 +1284,10 @@ export default function MintPage() {
       const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
       const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
       
-      // Build the mint_tokens instruction (14-account version for deployed program)
+      // Derive business_registry PDA
+      const [businessRegistryPDA] = getBusinessRegistryPDA();
+      
+      // Build the mint_tokens instruction (15-account version for deployed program)
       const mintInstruction = createMintTokensInstruction(
         userAccountPDA,
         userMetadataPDA,
@@ -1293,6 +1296,7 @@ export default function MintPage() {
         mintPDA,
         mintAuthority,
         referrerAccountPDA,
+        businessRegistryPDA,
         publicKey,
         lockedTokenAccountPda,
         lockedTokenAta,
@@ -1301,7 +1305,7 @@ export default function MintPage() {
         mintAmount
       );
       
-      console.log('📝 Mint instruction accounts (14 accounts):');
+      console.log('📝 Mint instruction accounts (15 accounts):');
       console.log('  0. user_account:', userAccountPDA.toBase58());
       console.log('  1. user_metadata:', userMetadataPDA.toBase58());
       console.log('  2. global_state:', globalStatePDA.toBase58());
@@ -1309,13 +1313,14 @@ export default function MintPage() {
       console.log('  4. mint:', mintPDA.toBase58());
       console.log('  5. mint_authority:', mintAuthority.toBase58());
       console.log('  6. referrer_account:', referrerAccountPDA.toBase58());
-      console.log('  7. authority:', publicKey.toBase58());
-      console.log('  8. locked_token_account:', lockedTokenAccountPda.toBase58());
-      console.log('  9. locked_token_ata:', lockedTokenAta.toBase58());
-      console.log('  10. locked_token_pda:', lockedTokenPda.toBase58());
-      console.log('  11. token_program:', TOKEN_PROGRAM_ID.toBase58());
-      console.log('  12. associated_token_program:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
-      console.log('  13. system_program:', SystemProgram.programId.toBase58());
+      console.log('  7. business_registry:', businessRegistryPDA.toBase58());
+      console.log('  8. authority:', publicKey.toBase58());
+      console.log('  9. locked_token_account:', lockedTokenAccountPda.toBase58());
+      console.log('  10. locked_token_ata:', lockedTokenAta.toBase58());
+      console.log('  11. locked_token_pda:', lockedTokenPda.toBase58());
+      console.log('  12. token_program:', TOKEN_PROGRAM_ID.toBase58());
+      console.log('  13. associated_token_program:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
+      console.log('  14. system_program:', SystemProgram.programId.toBase58());
       
       // Create and send transaction using wallet adapter's sendTransaction
       // This ensures proper signature handling and prevents AccountNotSigner errors
