@@ -221,9 +221,22 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       return;
     }
 
+    // Import cooldown guard for bonus mint tracking
+    const CooldownGuard = await import('@/utils/cooldown');
+    const walletAddress = publicKey.toBase58();
+    
+    // Check if there's an in-flight transaction (prevents double-claiming)
+    if (CooldownGuard.hasInFlightMint(walletAddress)) {
+      setClaimError('A transaction is already in progress. Please wait.');
+      return;
+    }
+
     setIsClaiming(true);
     setClaimError('');
     setClaimSuccess('');
+    
+    // Start bonus mint with 'bonus' type (no cooldown, only in-flight lock)
+    CooldownGuard.startMint(walletAddress, 'bonus');
 
     try {
       // Fetch user metadata to determine tier (claimBonusMint will also fetch it)
@@ -249,6 +262,9 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Bonus mint claimed. Signature:', signature);
       }
+      
+      // End bonus mint successfully with 'bonus' type (clears in-flight lock only)
+      CooldownGuard.endMint(walletAddress, true, undefined, undefined, 'bonus');
 
       // Generate explorer link
       const explorerLink = getTransactionExplorerLink(signature);
@@ -276,6 +292,9 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
 
     } catch (err: any) {
       console.error('Error claiming bonus mint:', err);
+      
+      // End bonus mint with error with 'bonus' type (clears in-flight lock only)
+      CooldownGuard.endMint(walletAddress, false, undefined, undefined, 'bonus');
       
       // Parse specific error messages
       let errorMessage = 'Failed to claim bonus mint. ';
