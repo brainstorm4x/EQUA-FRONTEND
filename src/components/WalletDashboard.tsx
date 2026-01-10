@@ -25,9 +25,9 @@ import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRaw } from '@/utils/tokenFormat';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
-import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
+import { useEquaPrice } from '@/hooks/useEquaPrice';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
 import { fetchUserMetadata, getRemainingMonthlyBonusMints } from '@/utils/userMetadata';
 import { claimBonusMint, getReferralStats } from '@/utils/referralRewards';
@@ -40,9 +40,6 @@ interface WalletDashboardProps {
 
 // EQUA Token decimals will be fetched from on-chain mint
 // Default to 6 decimals as per the on-chain mint configuration
-
-// Default EQUA price in USD per 1 EQUA token (used as fallback if price fetch fails)
-const DEFAULT_EQUA_PRICE_USD = 1.00;
 
 // Shared constants for referral messages
 const EQUA_SHARE_BASE_URL = 'https://equa.live/mint';
@@ -552,15 +549,12 @@ const SendModal: FC<SendModalProps> = ({
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [localCurrencyAmount, setLocalCurrencyAmount] = useState('');
-  const [equaPrice, setEquaPrice] = useState<number>(0.01);
-  const [localCurrency, setLocalCurrency] = useState(() => {
-    // Detect currency on initialization (runs once, synchronously on first render)
-    if (typeof window !== 'undefined') {
-      return getUserLocaleCurrency();
-    }
-    return 'USD'; // SSR fallback
-  });
-  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
+  
+  // Use shared price hook for consistent pricing
+  const equaPriceData = useEquaPrice();
+  const equaPrice = equaPriceData.localCurrency; // Price in user's local currency
+  const localCurrency = equaPriceData.localCurrencyCode;
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [txSignature, setTxSignature] = useState('');
@@ -572,36 +566,6 @@ const SendModal: FC<SendModalProps> = ({
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const jsQRRef = useRef<typeof import('jsqr').default | null>(null);
-
-  // Fetch EQUA price on mount
-  useEffect(() => {
-    const fetchPrice = async () => {
-      setIsLoadingPrice(true);
-      try {
-        // Use the already-initialized localCurrency state
-        const currencyCode = localCurrency;
-        
-        // Get current EQUA price from global state
-        // For now, use a default price - in production, fetch from blockchain
-        const priceData = await getEquaPriceMultiFormat(DEFAULT_EQUA_PRICE_USD, currencyCode, connection);
-        setEquaPrice(priceData.localCurrency);
-        
-        // Log FX metadata for debugging
-        console.log(`FX Rate Info: ${currencyCode} = ${priceData.fxRate} (source: ${priceData.fxSource}, age: ${Math.floor((priceData.fxAge || 0) / 3600000)}h)`);
-        
-        // Warn if stale
-        if (priceData.fxIsStale) {
-          console.warn(`⚠️ FX rate for ${currencyCode} is stale (${Math.floor((priceData.fxAge || 0) / 3600000)} hours old)`);
-        }
-      } catch (err) {
-        console.warn('Failed to fetch EQUA price:', err);
-        setEquaPrice(DEFAULT_EQUA_PRICE_USD);
-      } finally {
-        setIsLoadingPrice(false);
-      }
-    };
-    fetchPrice();
-  }, [connection, localCurrency]);
 
   // Handle local currency amount change
   const handleLocalCurrencyChange = (value: string) => {
