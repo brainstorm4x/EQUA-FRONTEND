@@ -1486,6 +1486,10 @@ export type EquaToken = {
         },
         {
           "name": "businessRegistry",
+          "docs": [
+            "MUST be writable to auto-register business users during registration"
+          ],
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -2653,6 +2657,11 @@ export type EquaToken = {
       "code": 6042,
       "name": "timestampOverflow",
       "msg": "Timestamp overflow. The calculated unlock timestamp exceeds the maximum representable value."
+    },
+    {
+      "code": 6043,
+      "name": "businessRegistryFull",
+      "msg": "Business registry is full. Maximum capacity of 100 business referrers reached."
     }
   ],
   "types": [
