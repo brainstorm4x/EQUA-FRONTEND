@@ -702,10 +702,10 @@ export function createMintEquaTokensInstruction(
   return instruction;
 }
 
-// ✅ Create mint_tokens instruction (14-account version aligned with backend IDL)
+// ✅ Create mint_tokens instruction (15-account version aligned with backend IDL)
 // This is the correct instruction for daily EQUA minting on the deployed program
 // Account order: user_account, user_metadata, global_state, user_token_account, mint, mint_authority, 
-// referrer_account, authority, locked_token_account, locked_token_ata, locked_token_pda, 
+// referrer_account, business_registry, authority, locked_token_account, locked_token_ata, locked_token_pda, 
 // token_program, associated_token_program, system_program
 export function createMintTokensInstruction(
   userAccount: PublicKey,
@@ -715,6 +715,7 @@ export function createMintTokensInstruction(
   mint: PublicKey,
   mintAuthority: PublicKey,
   referrerAccount: PublicKey,
+  businessRegistry: PublicKey,
   authority: PublicKey,
   lockedTokenAccount: PublicKey,
   lockedTokenAta: PublicKey,
@@ -757,7 +758,7 @@ export function createMintTokensInstruction(
   // Log referrer account handling
   const isReferrerProvided = !referrerAccount.equals(PublicKey.default);
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Building mint_tokens instruction (14 accounts):');
+    console.log('🔧 Building mint_tokens instruction (15 accounts):');
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Amount (raw base units):', amount);
     console.log('  - Amount BN:', amountBN.toString());
@@ -770,6 +771,7 @@ export function createMintTokensInstruction(
     console.log('  - Mint:', mint.toBase58());
     console.log('  - Mint Authority:', mintAuthority.toBase58());
     console.log('  - Referrer Account:', referrerAccount.toBase58());
+    console.log('  - Business Registry:', businessRegistry.toBase58());
     console.log('  - Authority:', authority.toBase58());
     console.log('  - Locked Token Account:', lockedTokenAccount.toBase58());
     console.log('  - Locked Token ATA:', lockedTokenAta.toBase58());
@@ -790,13 +792,14 @@ export function createMintTokensInstruction(
     { pubkey: mint, isSigner: false, isWritable: true },             // 4. mint
     { pubkey: mintAuthority, isSigner: false, isWritable: false },   // 5. mint_authority
     { pubkey: referrerAccount, isSigner: false, isWritable: true },  // 6. referrer_account (ALWAYS writable per IDL)
-    { pubkey: authority, isSigner: true, isWritable: true },         // 7. authority (MUST be signer, writable for rent)
-    { pubkey: lockedTokenAccount, isSigner: false, isWritable: true }, // 8. locked_token_account
-    { pubkey: lockedTokenAta, isSigner: false, isWritable: true },   // 9. locked_token_ata
-    { pubkey: lockedTokenPda, isSigner: false, isWritable: false },  // 10. locked_token_pda
-    { pubkey: tokenProgram, isSigner: false, isWritable: false },    // 11. token_program
-    { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }, // 12. associated_token_program
-    { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },     // 13. system_program
+    { pubkey: businessRegistry, isSigner: false, isWritable: false }, // 7. business_registry (read-only)
+    { pubkey: authority, isSigner: true, isWritable: true },         // 8. authority (MUST be signer, writable for rent)
+    { pubkey: lockedTokenAccount, isSigner: false, isWritable: true }, // 9. locked_token_account
+    { pubkey: lockedTokenAta, isSigner: false, isWritable: true },   // 10. locked_token_ata
+    { pubkey: lockedTokenPda, isSigner: false, isWritable: false },  // 11. locked_token_pda
+    { pubkey: tokenProgram, isSigner: false, isWritable: false },    // 12. token_program
+    { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }, // 13. associated_token_program
+    { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },     // 14. system_program
   ];
 
   const instruction = new TransactionInstruction({
@@ -806,7 +809,7 @@ export function createMintTokensInstruction(
   });
   
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Instruction account metas (14 accounts):');
+    console.log('🔧 Instruction account metas (15 accounts):');
     instruction.keys.forEach((meta, idx) => {
       console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
     });
