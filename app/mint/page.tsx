@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useProgram } from '@/hooks/useProgram';
 import { Logo } from '@/components/Logo';
-import { PublicKey, Transaction, Connection, SystemProgram } from '@solana/web3.js';
+import { PublicKey, Transaction, Connection, SystemProgram, ComputeBudgetProgram } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
@@ -872,7 +872,19 @@ export default function MintPage() {
         console.log(`${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`);
       });
 
-      const transaction = new Transaction().add(instruction);
+      // Set compute budget for complex registration transaction
+      // Registration requires ~300k compute units due to:
+      // - 12 account validations
+      // - PDA derivations
+      // - Business registry auto-registration (when user_type = 1)
+      // - Account initializations
+      const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
+        units: 400_000  // Set to 400k to provide headroom
+      });
+
+      const transaction = new Transaction()
+        .add(computeBudgetIx)  // Add compute budget FIRST
+        .add(instruction);      // Then add initialize_user instruction
       transaction.feePayer = publicKey;
 
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
