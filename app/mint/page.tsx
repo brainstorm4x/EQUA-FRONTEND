@@ -1024,7 +1024,8 @@ export default function MintPage() {
     }
     
     // ✅ COOLDOWN GUARD: Start mint - set optimistic cooldown and in-flight lock
-    CooldownGuard.startMint(walletAddress);
+    // Pass 'regular' to apply 24-hour cooldown for daily mints
+    CooldownGuard.startMint(walletAddress, 'regular');
     
     // Update UI state immediately
     setIsLoading(true);
@@ -1367,8 +1368,9 @@ export default function MintPage() {
         console.log('⏰ Updated last mint time:', newLastMintTime);
         
         // ✅ COOLDOWN GUARD: End mint successfully - reconcile with on-chain data
+        // Pass 'regular' to apply cooldown for daily mints
         const now = Math.floor(Date.now() / 1000);
-        CooldownGuard.endMint(walletAddress, true, now, newLastMintTime);
+        CooldownGuard.endMint(walletAddress, true, now, newLastMintTime, 'regular');
       } catch (sendTxErr: any) {
         // Enhanced error logging for wallet adapter sendTransaction failures
         console.error('❌ wallet.sendTransaction failed:', sendTxErr);
@@ -1385,7 +1387,8 @@ export default function MintPage() {
       console.error('❌ Minting error:', err);
       
       // ✅ COOLDOWN GUARD: End mint with error - clear optimistic cooldown
-      CooldownGuard.endMint(walletAddress, false);
+      // Pass 'regular' to properly clear cooldown for daily mints
+      CooldownGuard.endMint(walletAddress, false, undefined, undefined, 'regular');
       
       // Extract transaction logs for detailed diagnostics
       let logs: string[] = [];

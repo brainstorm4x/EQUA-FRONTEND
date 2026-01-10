@@ -259,22 +259,28 @@ export function canMintNow(walletAddress: string): boolean {
  * Call this immediately when user clicks mint button
  * 
  * @param walletAddress - Wallet address
+ * @param mintType - Type of mint ('regular' for daily mints, 'bonus' for referral reward mints)
  */
-export function startMint(walletAddress: string): void {
+export function startMint(walletAddress: string, mintType: 'regular' | 'bonus' = 'regular'): void {
   const now = Math.floor(Date.now() / 1000);
   
-  // Set optimistic cooldown
-  const cooldownState: CooldownState = {
-    lastMintTime: now,
-    cooldownUntil: now + MINT_COOLDOWN_SECONDS,
-    isOptimistic: true,
-  };
-  setCooldownState(walletAddress, cooldownState);
+  // Only set cooldown for regular mints, not bonus mints
+  if (mintType === 'regular') {
+    // Set optimistic cooldown
+    const cooldownState: CooldownState = {
+      lastMintTime: now,
+      cooldownUntil: now + MINT_COOLDOWN_SECONDS,
+      isOptimistic: true,
+    };
+    setCooldownState(walletAddress, cooldownState);
+    
+    console.log(`🚀 Regular mint started - optimistic cooldown set until ${new Date(cooldownState.cooldownUntil * 1000).toLocaleString()}`);
+  } else {
+    console.log(`🎁 Bonus mint started - no cooldown applied`);
+  }
   
-  // Set in-flight lock
+  // Always set in-flight lock (prevents multiple concurrent transactions)
   setInFlightLock(walletAddress);
-  
-  console.log(`🚀 Mint started - optimistic cooldown set until ${new Date(cooldownState.cooldownUntil * 1000).toLocaleString()}`);
 }
 
 /**
@@ -285,41 +291,51 @@ export function startMint(walletAddress: string): void {
  * @param success - Whether the mint was successful
  * @param currentTime - Current Unix timestamp in seconds (for reconciliation)
  * @param onchainLastMintTime - On-chain last_mint_time after confirmation (optional)
+ * @param mintType - Type of mint ('regular' for daily mints, 'bonus' for referral reward mints)
  */
 export function endMint(
   walletAddress: string,
   success: boolean,
   currentTime?: number,
-  onchainLastMintTime?: number
+  onchainLastMintTime?: number,
+  mintType: 'regular' | 'bonus' = 'regular'
 ): void {
   // Always clear in-flight lock
   clearInFlightLock(walletAddress);
   
   if (!success) {
-    // On error, clear optimistic cooldown
-    console.log('❌ Mint failed - clearing optimistic cooldown');
-    
-    // Restore previous cooldown state if it exists
-    // For now, just clear it - the next refresh will fetch from chain
-    if (typeof window !== 'undefined') {
-      const key = getCooldownKey(walletAddress);
-      localStorage.removeItem(key);
+    // On error, clear optimistic cooldown only for regular mints
+    if (mintType === 'regular') {
+      console.log('❌ Regular mint failed - clearing optimistic cooldown');
+      
+      // Restore previous cooldown state if it exists
+      // For now, just clear it - the next refresh will fetch from chain
+      if (typeof window !== 'undefined') {
+        const key = getCooldownKey(walletAddress);
+        localStorage.removeItem(key);
+      }
+    } else {
+      console.log('❌ Bonus mint failed - no cooldown to clear');
     }
     return;
   }
   
-  // On success, reconcile with on-chain data
-  const now = currentTime || Math.floor(Date.now() / 1000);
-  const lastMintTime = onchainLastMintTime || now;
-  
-  const cooldownState: CooldownState = {
-    lastMintTime,
-    cooldownUntil: lastMintTime + MINT_COOLDOWN_SECONDS,
-    isOptimistic: false, // Now confirmed on-chain
-  };
-  setCooldownState(walletAddress, cooldownState);
-  
-  console.log(`✅ Mint confirmed - cooldown set until ${new Date(cooldownState.cooldownUntil * 1000).toLocaleString()}`);
+  // On success, only update cooldown for regular mints
+  if (mintType === 'regular') {
+    const now = currentTime || Math.floor(Date.now() / 1000);
+    const lastMintTime = onchainLastMintTime || now;
+    
+    const cooldownState: CooldownState = {
+      lastMintTime,
+      cooldownUntil: lastMintTime + MINT_COOLDOWN_SECONDS,
+      isOptimistic: false, // Now confirmed on-chain
+    };
+    setCooldownState(walletAddress, cooldownState);
+    
+    console.log(`✅ Regular mint confirmed - cooldown set until ${new Date(cooldownState.cooldownUntil * 1000).toLocaleString()}`);
+  } else {
+    console.log(`✅ Bonus mint confirmed - no cooldown applied`);
+  }
 }
 
 /**
