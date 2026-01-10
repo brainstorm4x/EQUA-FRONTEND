@@ -43,6 +43,7 @@
     "node_modules",
     "create_mint.ts",
     "src/services",
-    "netlify"
+    "netlify",
+    "scripts"
   ]
 }
