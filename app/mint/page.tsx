@@ -872,7 +872,7 @@ export default function MintPage() {
         console.log(`${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`);
       });
 
-      // Set compute budget for complex registration transaction
+      // Set compute budget and priority fee for complex registration transaction
       // Registration requires ~300k compute units due to:
       // - 12 account validations
       // - PDA derivations
@@ -882,8 +882,16 @@ export default function MintPage() {
         units: 400_000  // Set to 400k to provide headroom
       });
 
+      // Add priority fee to ensure wallet acceptance and faster processing
+      // Priority fee: 1000 micro-lamports per compute unit
+      // Total priority fee: 400 lamports (0.0000004 SOL) for 400k units (negligible cost)
+      const priorityFeeIx = ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 1_000  // 1000 micro-lamports per CU
+      });
+
       const transaction = new Transaction()
-        .add(computeBudgetIx)  // Add compute budget FIRST
+        .add(computeBudgetIx)   // Add compute budget FIRST
+        .add(priorityFeeIx)     // Add priority fee SECOND
         .add(instruction);      // Then add initialize_user instruction
       transaction.feePayer = publicKey;
 
