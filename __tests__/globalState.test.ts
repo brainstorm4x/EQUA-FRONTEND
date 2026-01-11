@@ -15,7 +15,7 @@ import { getGlobalTransactionCount, getGlobalStatePDAPublicKey } from '@/utils/t
 // Mock the program module to provide known PDA values
 jest.mock('@/lib/program', () => {
   const { PublicKey } = jest.requireActual('@solana/web3.js');
-  const PROGRAM_ID = new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C');
+  const PROGRAM_ID = new PublicKey('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4');
   const GLOBAL_STATE_PDA = new PublicKey('F6HyQcuQfMc1RuSCxq5dAYNoERMkdyAt65fUPajudPpc');
   
   return {
@@ -65,7 +65,7 @@ describe('getGlobalTransactionCount', () => {
       data: mockAccountData,
       executable: false,
       lamports: 1000000,
-      owner: new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C'),
+      owner: new PublicKey('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4'),
     } as any);
     
     const result = await getGlobalTransactionCount(mockConnection);
@@ -89,7 +89,7 @@ describe('getGlobalTransactionCount', () => {
       data: mockAccountData,
       executable: false,
       lamports: 1000000,
-      owner: new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C'),
+      owner: new PublicKey('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4'),
     } as any);
     
     const result = await getGlobalTransactionCount(mockConnection);
@@ -114,7 +114,7 @@ describe('getGlobalTransactionCount', () => {
       data: mockAccountData,
       executable: false,
       lamports: 1000000,
-      owner: new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C'),
+      owner: new PublicKey('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4'),
     } as any);
     
     const result = await getGlobalTransactionCount(mockConnection);
@@ -139,7 +139,7 @@ describe('getGlobalTransactionCount', () => {
       data: mockAccountData,
       executable: false,
       lamports: 1000000,
-      owner: new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C'),
+      owner: new PublicKey('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4'),
     } as any);
     
     const result = await getGlobalTransactionCount(mockConnection);
@@ -166,7 +166,7 @@ describe('getGlobalTransactionCount', () => {
       data: mockAccountData,
       executable: false,
       lamports: 1000000,
-      owner: new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C'),
+      owner: new PublicKey('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4'),
     } as any);
     
     const result = await getGlobalTransactionCount(mockConnection);
@@ -188,7 +188,7 @@ describe('getGlobalTransactionCount', () => {
       data: null as any,
       executable: false,
       lamports: 1000000,
-      owner: new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C'),
+      owner: new PublicKey('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4'),
     } as any);
     
     const result = await getGlobalTransactionCount(mockConnection);
@@ -212,7 +212,7 @@ describe('getGlobalTransactionCount', () => {
       data: mockAccountData,
       executable: false,
       lamports: 1000000,
-      owner: new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C'),
+      owner: new PublicKey('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4'),
     } as any);
     
     const result = await getGlobalTransactionCount(mockConnection);
@@ -243,7 +243,7 @@ describe('getGlobalTransactionCount', () => {
       data: mockAccountData,
       executable: false,
       lamports: 1000000,
-      owner: new PublicKey('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C'),
+      owner: new PublicKey('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4'),
     } as any);
     
     const result = await getGlobalTransactionCount(mockConnection);
