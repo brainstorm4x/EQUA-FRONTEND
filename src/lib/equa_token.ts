@@ -1832,6 +1832,35 @@ export type EquaToken = {
           "writable": true
         },
         {
+          "name": "businessRegistry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  115,
+                  105,
+                  110,
+                  101,
+                  115,
+                  115,
+                  45,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "authority",
           "writable": true,
           "signer": true
@@ -2755,6 +2784,11 @@ export type EquaToken = {
       "code": 6042,
       "name": "timestampOverflow",
       "msg": "Timestamp overflow. The calculated unlock timestamp exceeds the maximum representable value."
+    },
+    {
+      "code": 6043,
+      "name": "mintingCooldownNotExpired",
+      "msg": "Minting cooldown has not expired. You must wait 24 hours between mints (including bonus mints)."
     }
   ],
   "types": [
