@@ -442,7 +442,22 @@ export function serializeTransactionForDebug(transaction: Transaction): {
     
     // Convert to base64 and hex using browser-safe methods
     const bytes = Array.from(serialized);
-    const base64 = btoa(String.fromCharCode(...bytes));
+    
+    // For base64: Use btoa with chunking to avoid stack overflow on large arrays
+    let base64: string;
+    if (bytes.length > 10000) {
+      // Chunk large arrays to avoid stack overflow with spread operator
+      const chunks: string[] = [];
+      for (let i = 0; i < bytes.length; i += 10000) {
+        const chunk = bytes.slice(i, i + 10000);
+        chunks.push(String.fromCharCode(...chunk));
+      }
+      base64 = btoa(chunks.join(''));
+    } else {
+      base64 = btoa(String.fromCharCode(...bytes));
+    }
+    
+    // For hex: Use map for efficiency
     const hex = bytes.map(b => b.toString(16).padStart(2, '0')).join('');
     
     return {

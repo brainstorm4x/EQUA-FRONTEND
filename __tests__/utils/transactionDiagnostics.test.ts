@@ -164,7 +164,7 @@ describe('Transaction Diagnostics', () => {
           { pubkey: PublicKey.default, isSigner: true, isWritable: false },
         ],
         programId: PROGRAM_ID,
-        data: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+        data: Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
       });
       
       const result = validateInstruction(instruction, 2, PROGRAM_ID);
@@ -178,7 +178,7 @@ describe('Transaction Diagnostics', () => {
       const instruction = new TransactionInstruction({
         keys: [],
         programId: wrongProgramId,
-        data: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]),
+        data: Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]),
       });
       
       const result = validateInstruction(instruction, 0, PROGRAM_ID);
@@ -194,7 +194,7 @@ describe('Transaction Diagnostics', () => {
           { pubkey: PublicKey.default, isSigner: false, isWritable: true },
         ],
         programId: PROGRAM_ID,
-        data: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]),
+        data: Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]),
       });
       
       const result = validateInstruction(instruction, 5, PROGRAM_ID);
@@ -207,7 +207,7 @@ describe('Transaction Diagnostics', () => {
       const instruction = new TransactionInstruction({
         keys: [],
         programId: PROGRAM_ID,
-        data: Buffer.from([1, 2, 3]), // Only 3 bytes, needs at least 8 for discriminator
+        data: Uint8Array.from([1, 2, 3]), // Only 3 bytes, needs at least 8 for discriminator
       });
       
       const result = validateInstruction(instruction, 0, PROGRAM_ID);
