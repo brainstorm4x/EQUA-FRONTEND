@@ -17,8 +17,6 @@ import {
   TransactionInstruction, 
   Connection, 
   PublicKey,
-  Message,
-  VersionedTransaction,
 } from '@solana/web3.js';
 import { PROGRAM_ID } from '@/lib/constants';
 
@@ -245,7 +243,11 @@ export function logTransactionDetails(
     });
     console.log('    Data (bytes):', ix.data.length);
     if (ix.data.length <= 32) {
-      console.log('    Data (hex):', Buffer.from(ix.data).toString('hex'));
+      // Convert Uint8Array to hex string (browser-safe)
+      const hexString = Array.from(ix.data)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      console.log('    Data (hex):', hexString);
     }
     console.groupEnd();
   });
@@ -277,6 +279,7 @@ export function logWalletError(error: any, context: string = 'Wallet Error'): Wa
   
   if (details.signature) {
     console.error('Signature:', details.signature);
+    // Note: Explorer URL defaults to devnet. Adjust cluster parameter for mainnet/testnet.
     console.error(
       'Explorer:',
       `https://explorer.solana.com/tx/${details.signature}?cluster=devnet`
@@ -429,9 +432,11 @@ export function serializeTransactionForDebug(transaction: Transaction): {
   wireFormat: string;
 } {
   try {
+    // Serialize without signature verification for debugging purposes
+    // This allows us to inspect the transaction structure even before signing
     const serialized = transaction.serialize({
-      requireAllSignatures: false,
-      verifySignatures: false,
+      requireAllSignatures: false,  // Don't require all signatures (may not be signed yet)
+      verifySignatures: false,      // Don't verify signatures (debugging pre-signed transactions)
     });
     
     return {

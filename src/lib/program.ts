@@ -1172,7 +1172,11 @@ export function logInstructionData(
     
     // Log full data as hex (for small data)
     if (instruction.data.length <= 64) {
-      console.log('Data (hex):', Buffer.from(instruction.data).toString('hex'));
+      // Convert Uint8Array to hex string (browser-safe)
+      const hexString = Array.from(instruction.data)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      console.log('Data (hex):', hexString);
     }
   }
   
