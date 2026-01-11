@@ -279,7 +279,8 @@ export function logWalletError(error: any, context: string = 'Wallet Error'): Wa
   
   if (details.signature) {
     console.error('Signature:', details.signature);
-    // Note: Explorer URL defaults to devnet. Adjust cluster parameter for mainnet/testnet.
+    // TODO: Make cluster parameter configurable based on network
+    // For now, hardcoded to devnet. Change to 'mainnet-beta' for mainnet or '' for localhost.
     console.error(
       'Explorer:',
       `https://explorer.solana.com/tx/${details.signature}?cluster=devnet`
@@ -439,10 +440,15 @@ export function serializeTransactionForDebug(transaction: Transaction): {
       verifySignatures: false,      // Don't verify signatures (debugging pre-signed transactions)
     });
     
+    // Convert to base64 and hex using browser-safe methods
+    const bytes = Array.from(serialized);
+    const base64 = btoa(String.fromCharCode(...bytes));
+    const hex = bytes.map(b => b.toString(16).padStart(2, '0')).join('');
+    
     return {
-      serialized: serialized.toString('base64'),
+      serialized: base64,
       size: serialized.length,
-      wireFormat: serialized.toString('hex'),
+      wireFormat: hex,
     };
   } catch (error) {
     return {
