@@ -54,6 +54,11 @@ import * as CooldownGuard from '@/utils/cooldown';
 import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
+import { 
+  preTransactionValidation, 
+  logWalletError, 
+  logTransactionDetails 
+} from '@/utils/transactionDiagnostics';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -898,6 +903,28 @@ export default function MintPage() {
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
 
+      // ============================================================================
+      // PRE-TRANSACTION VALIDATION & DIAGNOSTICS
+      // Validate transaction structure and log details before sending to wallet
+      // ============================================================================
+      console.log('🔍 Running pre-transaction validation for registration...');
+      const validationResult = await preTransactionValidation(
+        transaction, 
+        connection, 
+        'Registration'
+      );
+      
+      if (!validationResult.canProceed) {
+        console.error('❌ Pre-transaction validation failed:');
+        validationResult.issues.forEach(issue => console.error(`  - ${issue}`));
+        throw new Error(
+          `Transaction validation failed:\n${validationResult.issues.join('\n')}\n\n` +
+          'This indicates a transaction construction error. Please report this to support.'
+        );
+      }
+      
+      console.log('✅ Pre-transaction validation passed');
+
       console.log('📝 Sending registration transaction via wallet adapter...');
       if (!wallet.sendTransaction) {
         throw new Error('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
@@ -956,14 +983,22 @@ export default function MintPage() {
 
         await checkUserRegistration();
       } catch (sendTxErr: any) {
-        // Enhanced error logging for wallet adapter sendTransaction failures
-        console.error('❌ wallet.sendTransaction failed during registration:', sendTxErr);
-        console.error('Error details:', {
-          message: sendTxErr?.message,
-          name: sendTxErr?.name,
-          code: sendTxErr?.code,
-          logs: sendTxErr?.logs,
-        });
+        // ============================================================================
+        // ENHANCED WALLET ADAPTER ERROR LOGGING
+        // Extract and log all available error details from wallet adapter
+        // ============================================================================
+        console.error('❌ wallet.sendTransaction failed during registration');
+        
+        // Use diagnostic utility to extract and log full error details
+        const errorDetails = logWalletError(sendTxErr, 'Registration Transaction Failed');
+        
+        // Log additional context
+        console.group('🔍 Additional Context');
+        console.error('Transaction type: Registration (initialize_user)');
+        console.error('Wallet adapter:', wallet.adapter?.name || 'Unknown');
+        console.error('Connection endpoint:', connection.rpcEndpoint);
+        console.groupEnd();
+        
         throw sendTxErr; // Re-throw to be caught by outer catch block
       }
     } catch (err: unknown) {
@@ -1351,6 +1386,28 @@ export default function MintPage() {
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
       
+      // ============================================================================
+      // PRE-TRANSACTION VALIDATION & DIAGNOSTICS
+      // Validate transaction structure and log details before sending to wallet
+      // ============================================================================
+      console.log('🔍 Running pre-transaction validation for minting...');
+      const validationResult = await preTransactionValidation(
+        transaction, 
+        connection, 
+        'Minting (mint_tokens)'
+      );
+      
+      if (!validationResult.canProceed) {
+        console.error('❌ Pre-transaction validation failed:');
+        validationResult.issues.forEach(issue => console.error(`  - ${issue}`));
+        throw new Error(
+          `Transaction validation failed:\n${validationResult.issues.join('\n')}\n\n` +
+          'This indicates a transaction construction error. Please report this to support.'
+        );
+      }
+      
+      console.log('✅ Pre-transaction validation passed');
+      
       console.log('📝 Sending transaction via wallet adapter...');
       if (!wallet.sendTransaction) {
         throw new Error('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
@@ -1392,14 +1449,24 @@ export default function MintPage() {
         const now = Math.floor(Date.now() / 1000);
         CooldownGuard.endMint(walletAddress, true, now, newLastMintTime, 'regular');
       } catch (sendTxErr: any) {
-        // Enhanced error logging for wallet adapter sendTransaction failures
-        console.error('❌ wallet.sendTransaction failed:', sendTxErr);
-        console.error('Error details:', {
-          message: sendTxErr?.message,
-          name: sendTxErr?.name,
-          code: sendTxErr?.code,
-          logs: sendTxErr?.logs,
-        });
+        // ============================================================================
+        // ENHANCED WALLET ADAPTER ERROR LOGGING
+        // Extract and log all available error details from wallet adapter
+        // ============================================================================
+        console.error('❌ wallet.sendTransaction failed during minting');
+        
+        // Use diagnostic utility to extract and log full error details
+        const errorDetails = logWalletError(sendTxErr, 'Minting Transaction Failed');
+        
+        // Log additional context
+        console.group('🔍 Additional Context');
+        console.error('Transaction type: Minting (mint_tokens)');
+        console.error('Mint amount:', mintAmount, 'base units');
+        console.error('User tier:', userTier);
+        console.error('Wallet adapter:', wallet.adapter?.name || 'Unknown');
+        console.error('Connection endpoint:', connection.rpcEndpoint);
+        console.groupEnd();
+        
         throw sendTxErr; // Re-throw to be caught by outer catch block
       }
 
