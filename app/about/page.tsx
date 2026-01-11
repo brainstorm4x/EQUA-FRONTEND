@@ -190,7 +190,7 @@ export default function AboutPage() {
                   EQUA is currently deployed on Solana Devnet for testing and community validation. This allows us to refine the mechanics, gather feedback, and ensure everything works flawlessly before mainnet launch.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
-                  <strong className="text-white">Program ID (Devnet):</strong> <code className="text-purple-300 text-sm">GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C</code>
+                  <strong className="text-white">Program ID (Devnet):</strong> <code className="text-purple-300 text-sm">2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4</code>
                 </p>
               </div>
             </section>
