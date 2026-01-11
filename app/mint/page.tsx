@@ -995,7 +995,7 @@ export default function MintPage() {
         // Log additional context
         console.group('🔍 Additional Context');
         console.error('Transaction type: Registration (initialize_user)');
-        console.error('Wallet adapter:', wallet.adapter?.name || 'Unknown');
+        console.error('Wallet adapter:', wallet.wallet?.adapter?.name || 'Unknown');
         console.error('Connection endpoint:', connection.rpcEndpoint);
         console.groupEnd();
         
@@ -1463,7 +1463,7 @@ export default function MintPage() {
         console.error('Transaction type: Minting (mint_tokens)');
         console.error('Mint amount:', mintAmount, 'base units');
         console.error('User tier:', userTier);
-        console.error('Wallet adapter:', wallet.adapter?.name || 'Unknown');
+        console.error('Wallet adapter:', wallet.wallet?.adapter?.name || 'Unknown');
         console.error('Connection endpoint:', connection.rpcEndpoint);
         console.groupEnd();
         
