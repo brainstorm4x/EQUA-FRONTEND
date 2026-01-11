@@ -1039,5 +1039,149 @@ export function invalidateUserCache(userPubkey: PublicKey): void {
   rpcCache.delete(`splBalance:${base58}`);
 }
 
+// ============================================================================
+// TRANSACTION SERIALIZATION VALIDATION
+// Helper functions for validating transaction structure and serialization
+// ============================================================================
+
+/**
+ * Validate that an instruction's discriminator matches expected value
+ * @param instruction - Transaction instruction to validate
+ * @param expectedDiscriminator - Expected 8-byte discriminator
+ * @returns true if discriminator matches, false otherwise
+ */
+export function validateInstructionDiscriminator(
+  instruction: TransactionInstruction,
+  expectedDiscriminator: number[]
+): boolean {
+  if (instruction.data.length < 8) {
+    console.error('❌ Instruction data too short for discriminator check:', instruction.data.length);
+    return false;
+  }
+  
+  const actualDiscriminator = Array.from(instruction.data.slice(0, 8));
+  const matches = actualDiscriminator.every((byte, index) => byte === expectedDiscriminator[index]);
+  
+  if (!matches) {
+    console.error('❌ Discriminator mismatch:');
+    console.error('  Expected:', expectedDiscriminator.join(', '));
+    console.error('  Actual:  ', actualDiscriminator.join(', '));
+  }
+  
+  return matches;
+}
+
+/**
+ * Validate initialize_user instruction structure
+ * @param instruction - Instruction to validate
+ * @returns Validation result with details
+ */
+export function validateInitializeUserInstruction(
+  instruction: TransactionInstruction
+): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  // Check discriminator
+  const expectedDiscriminator = [111, 17, 185, 250, 60, 122, 38, 254];
+  if (!validateInstructionDiscriminator(instruction, expectedDiscriminator)) {
+    errors.push('Invalid discriminator for initialize_user instruction');
+  }
+  
+  // Check account count (should be 12)
+  if (instruction.keys.length !== 12) {
+    errors.push(`Expected 12 accounts, got ${instruction.keys.length}`);
+  }
+  
+  // Check program ID
+  if (!instruction.programId.equals(PROGRAM_ID)) {
+    errors.push(
+      `Program ID mismatch: expected ${PROGRAM_ID.toBase58()}, got ${instruction.programId.toBase58()}`
+    );
+  }
+  
+  // Check data length (8 discriminator + 32 referrer + 8 mint_start + 1 user_type = 49 bytes)
+  if (instruction.data.length !== 49) {
+    errors.push(`Expected 49 bytes of data, got ${instruction.data.length}`);
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * Validate mint_tokens instruction structure
+ * @param instruction - Instruction to validate
+ * @returns Validation result with details
+ */
+export function validateMintTokensInstruction(
+  instruction: TransactionInstruction
+): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  // Check discriminator
+  const expectedDiscriminator = [59, 132, 24, 246, 122, 39, 8, 243];
+  if (!validateInstructionDiscriminator(instruction, expectedDiscriminator)) {
+    errors.push('Invalid discriminator for mint_tokens instruction');
+  }
+  
+  // Check account count (should be 15)
+  if (instruction.keys.length !== 15) {
+    errors.push(`Expected 15 accounts, got ${instruction.keys.length}`);
+  }
+  
+  // Check program ID
+  if (!instruction.programId.equals(PROGRAM_ID)) {
+    errors.push(
+      `Program ID mismatch: expected ${PROGRAM_ID.toBase58()}, got ${instruction.programId.toBase58()}`
+    );
+  }
+  
+  // Check data length (8 discriminator + 8 amount = 16 bytes)
+  if (instruction.data.length !== 16) {
+    errors.push(`Expected 16 bytes of data, got ${instruction.data.length}`);
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * Log instruction data in a human-readable format for debugging
+ * @param instruction - Instruction to log
+ * @param label - Label for the log entry
+ */
+export function logInstructionData(
+  instruction: TransactionInstruction,
+  label: string = 'Instruction'
+): void {
+  console.group(`🔍 ${label} Data`);
+  console.log('Program ID:', instruction.programId.toBase58());
+  console.log('Accounts:', instruction.keys.length);
+  console.log('Data length:', instruction.data.length, 'bytes');
+  
+  if (instruction.data.length > 0) {
+    // Log discriminator (first 8 bytes)
+    if (instruction.data.length >= 8) {
+      const discriminator = Array.from(instruction.data.slice(0, 8));
+      console.log('Discriminator:', discriminator.join(', '));
+    }
+    
+    // Log full data as hex (for small data)
+    if (instruction.data.length <= 64) {
+      // Convert Uint8Array to hex string (browser-safe)
+      const hexString = Array.from(instruction.data)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      console.log('Data (hex):', hexString);
+    }
+  }
+  
+  console.groupEnd();
+}
+
 // Re-export token program constants for convenience
 export { PROGRAM_ID, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID };
