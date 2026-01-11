@@ -11,11 +11,11 @@
  * Backend source: programs/equa_token/src/lib.rs (lines 765-790)
  */
 
-import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { parseUserAccountData, UserAccountData } from './onchainRegistration';
-import { PROGRAM_ID, TOKEN_PROGRAM_ID } from '@/lib/constants';
+import { PROGRAM_ID, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@/lib/constants';
 import { 
   getUserAccountPDA,
   getUserMetadataPDA,
@@ -23,6 +23,11 @@ import {
   getMintPDA,
   getMintAuthorityPDA
 } from '@/lib/program';
+import { 
+  getLockedTokenAccountPda,
+  getLockedTokenPda,
+  getLockedTokenAta
+} from './pda-helpers';
 import { 
   INDIVIDUAL_CREDIT_AWARD,
   BUSINESS_CREDIT_AWARD,
@@ -354,6 +359,11 @@ export async function claimBonusMint(
     TOKEN_PROGRAM_ID
   );
 
+  // Derive locked token account PDAs (required for tiers 1-3)
+  const [lockedTokenAccount] = getLockedTokenAccountPda(wallet.publicKey, PROGRAM_ID);
+  const lockedTokenPda = getLockedTokenPda(wallet.publicKey, PROGRAM_ID);
+  const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
+
   // Build claim_bonus_mint instruction
   const discriminator = CLAIM_BONUS_MINT_DISCRIMINATOR;
   
@@ -366,7 +376,8 @@ export async function claimBonusMint(
 
   // Build accounts array in exact order from IDL
   // Order: user_account, user_metadata, global_state, user_token_account, 
-  //        mint, mint_authority, authority, token_program
+  //        mint, mint_authority, authority, locked_token_account, locked_token_ata,
+  //        locked_token_pda, token_program, associated_token_program, system_program
   const keys = [
     { pubkey: userAccountPDA, isSigner: false, isWritable: true },       // 0. user_account
     { pubkey: userMetadataPDA, isSigner: false, isWritable: true },      // 1. user_metadata
@@ -374,8 +385,13 @@ export async function claimBonusMint(
     { pubkey: userTokenAccount, isSigner: false, isWritable: true },     // 3. user_token_account
     { pubkey: mintPDA, isSigner: false, isWritable: true },              // 4. mint
     { pubkey: mintAuthorityPDA, isSigner: false, isWritable: false },    // 5. mint_authority
-    { pubkey: wallet.publicKey, isSigner: true, isWritable: false },     // 6. authority (signer)
-    { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },    // 7. token_program
+    { pubkey: wallet.publicKey, isSigner: true, isWritable: true },      // 6. authority (MUST be writable - pays for init_if_needed)
+    { pubkey: lockedTokenAccount, isSigner: false, isWritable: true },   // 7. locked_token_account
+    { pubkey: lockedTokenAta, isSigner: false, isWritable: true },       // 8. locked_token_ata
+    { pubkey: lockedTokenPda, isSigner: false, isWritable: false },      // 9. locked_token_pda
+    { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },    // 10. token_program
+    { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }, // 11. associated_token_program
+    { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },     // 12. system_program
   ];
 
   const instruction = new TransactionInstruction({
