@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/equa_token.json`.
  */
 export type EquaToken = {
-  "address": "GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C",
+  "address": "2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4",
   "metadata": {
     "name": "equaToken",
     "version": "0.1.0",
