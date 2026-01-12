@@ -3,7 +3,7 @@
 import { FC, useEffect, useState } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { EquaPriceCalculator, PriceTier, formatEquaPrice } from '@/utils/priceCalculator';
-import { ELEVATED_MINT_TIERS } from '@/utils/registration';
+import { ELEVATED_MINT_TIERS, getTierDecimalAmount } from '@/utils/registration';
 import { getUserLocaleCurrency, formatLocalCurrency, formatLocalCurrencyDynamic } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat, formatEQXPrice, MultiFormatEquaPrice } from '@/utils/eqxOracle';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
@@ -67,7 +67,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
     );
     
     const rate = currentTier 
-      ? currentTier.equaPerAttempt.toLocaleString() 
+      ? getTierDecimalAmount(currentTier).toLocaleString() 
       : '100';
     setMintingRate(rate);
     

@@ -41,6 +41,7 @@ import {
   REFERRAL_FREE_LIMIT,
   hasMinimumSolBalance,
   getUserMintTier,
+  getTierDecimalAmount,
   accountTypeToUserType,
 } from '@/utils/registration';
 import { safeParseUserCount, safeParseTimestamp } from '@/utils/safeAccountParsing';
@@ -543,7 +544,7 @@ export default function MintPage() {
               setTotalMints(metadata.elevated_mint_attempts_used);
             } else if (userTier) {
               // Standard user: calculate from total minted amount
-              const equaPerMint = userTier.equaPerAttempt;
+              const equaPerMint = getTierDecimalAmount(userTier);
               const baseUnitsPerMint = decimalToRaw(equaPerMint);
               const calculatedTotalMints = baseUnitsPerMint > 0
                 ? Math.floor(mintedAmount / baseUnitsPerMint)
@@ -1253,7 +1254,7 @@ export default function MintPage() {
         );
       }
       
-      const equaAmount = userTier.equaPerAttempt;
+      const equaAmount = getTierDecimalAmount(userTier);
       const mintAmount = decimalToRaw(equaAmount); // Convert to base units using utility
       
       console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${userMetadata.user_index} (tier: ${userTier.minUser}-${userTier.maxUser})`);
@@ -1761,7 +1762,7 @@ export default function MintPage() {
                         <>
                           <p className="text-green-100 text-3xl font-bold mb-2">✅ Ready to mint!</p>
                           <p className="text-green-200 text-lg">
-                            Claim your {userMetadata && getUserMintTier(userMetadata.user_index)?.equaPerAttempt.toLocaleString() || '...'} EQUA
+                            Claim your {userMetadata && getUserMintTier(userMetadata.user_index) ? getTierDecimalAmount(getUserMintTier(userMetadata.user_index)!).toLocaleString() : '...'} EQUA
                           </p>
                         </>
                       ) : (

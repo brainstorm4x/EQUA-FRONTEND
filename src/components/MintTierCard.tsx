@@ -8,6 +8,7 @@ import {
   getUserMintTier, 
   isElevatedUser, 
   getRemainingElevatedAttempts,
+  getTierDecimalAmount,
   ELEVATED_MINT_TIERS 
 } from '@/utils/registration';
 import { hasTokenLocking, canUnlock, formatTimeRemaining, formatUnlockDate, getSecondsUntilUnlock } from '@/utils/locked-tokens';
@@ -256,7 +257,7 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
         <div className="bg-black/20 rounded-xl p-4">
           <p className="text-purple-300 text-sm mb-1">Max per Attempt</p>
           <p className="text-white text-2xl font-bold">
-            {tier.equaPerAttempt.toLocaleString()} EQUA
+            {getTierDecimalAmount(tier).toLocaleString()} EQUA
           </p>
         </div>
         
@@ -385,7 +386,7 @@ export const MintScheduleCard: FC<MintScheduleCardProps> = ({ className }) => {
             </div>
             <div className="text-right">
               <p className={`font-bold ${index < 2 ? 'text-yellow-400' : 'text-white'}`}>
-                {tier.equaPerAttempt.toLocaleString()}
+                {getTierDecimalAmount(tier).toLocaleString()}
               </p>
               <p className="text-purple-300 text-sm">EQUA/attempt</p>
             </div>

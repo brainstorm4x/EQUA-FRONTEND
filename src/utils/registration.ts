@@ -95,6 +95,17 @@ export function getUserMintTier(userNumber: number): ElevatedMintTier | null {
 }
 
 /**
+ * Get the decimal EQUA amount for a tier
+ * Converts raw amount (6 decimals) to human-readable EQUA
+ * 
+ * @param tier - Mint tier configuration
+ * @returns Decimal EQUA amount (e.g., 100000 for Tier 1)
+ */
+export function getTierDecimalAmount(tier: ElevatedMintTier): number {
+  return tier.rawAmountPerAttempt / 1_000_000; // 6 decimals
+}
+
+/**
  * Check if a user is in an elevated tier (users with elevated attempts)
  */
 export function isElevatedUser(userNumber: number): boolean {
