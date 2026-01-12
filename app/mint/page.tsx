@@ -353,6 +353,7 @@ export default function MintPage() {
   const [userMetadata, setUserMetadata] = useState<UserMetadata | null>(null);
   const [totalMints, setTotalMints] = useState<number>(0);
   const [minLoadingComplete, setMinLoadingComplete] = useState(false);
+  const [needsRepair, setNeedsRepair] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -517,6 +518,16 @@ export default function MintPage() {
         
         setUserMetadata(metadata);
         
+        // Check if locked token ATA exists (migration support for pre-PR#198 users)
+        const lockedAtaExists = await checkLockedTokenAtaExists();
+        if (!lockedAtaExists) {
+          console.warn('⚠️  Locked token ATA not found - user needs migration');
+          setNeedsRepair(true);
+        } else {
+          console.log('✅ Locked token ATA exists');
+          setNeedsRepair(false);
+        }
+        
         // Get user's registration number and total mints from account
         try {
           const accountInfo = await connection.getAccountInfo(userAccountPDA);
@@ -654,6 +665,22 @@ export default function MintPage() {
       return false;
     }
   }, [connection]);
+
+  // Check if locked token ATA exists (for migration support)
+  const checkLockedTokenAtaExists = useCallback(async (): Promise<boolean> => {
+    if (!publicKey || !connection) return false;
+    
+    try {
+      const lockedTokenPda = getLockedTokenPda(publicKey, new PublicKey(PROGRAM_ID));
+      const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
+      
+      const accountInfo = await connection.getAccountInfo(lockedTokenAta);
+      return accountInfo !== null;
+    } catch (error) {
+      console.error('Error checking locked token ATA:', error);
+      return false;
+    }
+  }, [publicKey, connection, mintPDA]);
 
   const handleRegisterWithForm = async (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => {
     if (!wallet.connected || !publicKey || !userAccountPDA) {
@@ -1073,6 +1100,88 @@ export default function MintPage() {
   // Keep the old handleRegister for backward compatibility
   const handleRegister = async () => {
     handleRegisterWithForm('individual', null);
+  };
+
+  // Repair registration for users missing locked token ATA (migration support)
+  const handleRepairRegistration = async () => {
+    if (!wallet.connected || !publicKey) {
+      setError('Wallet not connected');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    setTxSignature('');
+
+    try {
+      console.log('🔧 Starting registration repair...');
+      console.log('Creating missing locked token ATA for user:', publicKey.toBase58());
+
+      // Derive locked token PDAs (same logic as registration)
+      const lockedTokenPda = getLockedTokenPda(publicKey, new PublicKey(PROGRAM_ID));
+      const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
+
+      console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
+      console.log('- Locked Token ATA:', lockedTokenAta.toBase58());
+
+      // Check if ATA already exists (shouldn't happen, but safety check)
+      const lockedTokenAtaInfo = await connection.getAccountInfo(lockedTokenAta);
+      if (lockedTokenAtaInfo) {
+        console.log('✅ Locked token ATA already exists, no repair needed');
+        setNeedsRepair(false);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!wallet.signTransaction) {
+        throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
+      }
+
+      // Create locked token ATA using same pattern as registration
+      const createLockedAtaIx = createAssociatedTokenAccountInstruction(
+        publicKey,           // payer
+        lockedTokenAta,      // ata
+        lockedTokenPda,      // owner (PDA)
+        mintPDA,             // mint
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+
+      const lockedAtaTx = new Transaction().add(createLockedAtaIx);
+      lockedAtaTx.feePayer = publicKey;
+
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      lockedAtaTx.recentBlockhash = blockhash;
+
+      console.log('📝 Blockhash:', blockhash);
+
+      const signedLockedAtaTx = await wallet.signTransaction(lockedAtaTx);
+      const lockedAtaSig = await connection.sendRawTransaction(signedLockedAtaTx.serialize(), {
+        skipPreflight: true,
+        maxRetries: 5
+      });
+
+      console.log('📤 Locked token ATA creation transaction sent:', lockedAtaSig);
+
+      await connection.confirmTransaction({
+        signature: lockedAtaSig,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed');
+
+      console.log('✅ Registration repair successful!', lockedAtaSig);
+      setTxSignature(lockedAtaSig);
+      setNeedsRepair(false);
+
+      // Refresh registration status
+      await checkUserRegistration();
+    } catch (err: unknown) {
+      console.error('❌ Registration repair failed:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Registration repair failed';
+      setError(`❌ Repair failed: ${errorMessage}. Please try again or contact support.`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
 
@@ -1729,6 +1838,35 @@ export default function MintPage() {
             </div>
           )}
 
+          {needsRepair && registered && (
+            <div className="max-w-2xl mx-auto mb-6">
+              <div className="bg-yellow-500/20 border border-yellow-500 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="text-4xl">⚠️</div>
+                  <div className="flex-1">
+                    <h3 className="text-yellow-100 font-bold text-lg mb-2">
+                      One-Time Setup Required
+                    </h3>
+                    <p className="text-yellow-200 mb-4">
+                      Your account needs a quick update to enable minting. This is a one-time setup for users who registered before our latest update.
+                    </p>
+                    <button
+                      onClick={handleRepairRegistration}
+                      disabled={isLoading}
+                      className={`font-bold py-3 px-6 rounded-xl transition-all ${
+                        isLoading
+                          ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
+                          : 'bg-yellow-600 hover:bg-yellow-700 text-white cursor-pointer'
+                      }`}
+                    >
+                      {isLoading ? '⏳ Setting up...' : '🔧 Complete Setup'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid md:grid-cols-2 gap-6">
             {!registered ? (
               <>
@@ -1780,10 +1918,10 @@ export default function MintPage() {
                     
                     <button
                       onClick={handleMint}
-                      disabled={isLoading || !canMint}
-                      style={{ pointerEvents: (isLoading || !canMint) ? 'none' : 'auto' }}
+                      disabled={isLoading || !canMint || needsRepair}
+                      style={{ pointerEvents: (isLoading || !canMint || needsRepair) ? 'none' : 'auto' }}
                       className={`w-full font-bold py-4 px-8 rounded-xl transition-all ${
-                        canMint && !isLoading
+                        canMint && !isLoading && !needsRepair
                           ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
                           : 'bg-gray-500/50 text-gray-300 cursor-not-allowed opacity-60'
                       }`}
@@ -1791,6 +1929,10 @@ export default function MintPage() {
                       {isLoading ? (
                         <span className="flex items-center justify-center gap-2">
                           <span>⏳ Minting...</span>
+                        </span>
+                      ) : needsRepair ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span>⚠️ Setup Required</span>
                         </span>
                       ) : canMint ? (
                         <span className="flex items-center justify-center gap-2">
