@@ -9,11 +9,11 @@ import {
   getMintPDA,
   getMintAuthorityPDA,
   getUserAccountPDA,
-  isUserRegistered,
   getUserBalance,
   getSPLTokenBalance,
   getGlobalState,
 } from '@/lib/program';
+import { isUserRegistered } from '@/utils/registrationCheck';
 
 // ============================================================================
 // STATE MACHINE: Program Initialization States
@@ -286,6 +286,7 @@ export function useProgram() {
   // Memoized callback functions with stable references
   const checkRegistration = useCallback(
     async (userPubkey: PublicKey): Promise<boolean> => {
+      // ✅ Use canonical registration check (UserMetadata)
       return await isUserRegistered(connection, userPubkey);
     },
     [connection]

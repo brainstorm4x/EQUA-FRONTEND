@@ -28,7 +28,6 @@ import {
   getGlobalStatePDA,
   getMintPDA,
   getMintAuthorityPDA,
-  isUserRegistered,
   verifyMintOwner,
 } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';

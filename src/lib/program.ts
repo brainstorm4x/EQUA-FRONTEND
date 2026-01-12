@@ -207,7 +207,18 @@ function setCachedRpcResponse<T>(key: string, value: T): void {
   rpcCache.set(key, { value, timestamp: Date.now() });
 }
 
-// Check if user is registered with caching
+/**
+ * @deprecated Use isUserRegistered from @/utils/registrationCheck instead
+ * 
+ * This function checks UserAccount existence, but the canonical registration
+ * check should use UserMetadata (via fetchUserMetadata).
+ * 
+ * Kept for backward compatibility only. Will be removed in future version.
+ * 
+ * @param connection - Solana RPC connection
+ * @param userAccountPubkey - User account PDA (not authority!)
+ * @returns true if UserAccount exists
+ */
 export async function isUserRegistered(
   connection: Connection,
   userAccountPubkey: PublicKey
