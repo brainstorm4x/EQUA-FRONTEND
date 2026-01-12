@@ -29,7 +29,6 @@ import {
   getGlobalStatePDA,
   getMintPDA,
   getMintAuthorityPDA,
-  isUserRegistered,
   verifyMintOwner,
 } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
@@ -53,6 +52,7 @@ import {
 import { isUserAccountRegisteredOnchain } from '@/utils/onchainRegistration';
 import * as CooldownGuard from '@/utils/cooldown';
 import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
+import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrationCheck';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
 
@@ -385,10 +385,10 @@ export default function MintPage() {
       setIsCheckingRegistration(true);
       
       try {
-        // ✅ Check on-chain registration status
-        const metadata = await fetchUserMetadata(connection, publicKey);
+        // ✅ Check on-chain registration status using canonical check
+        const registered = await isUserRegistered(connection, publicKey);
         
-        if (metadata) {
+        if (registered) {
           // ✅ Registered → show mint interface
           console.log('✅ User registered, showing mint interface');
           setRegistered(true);

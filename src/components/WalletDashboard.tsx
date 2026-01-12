@@ -29,7 +29,7 @@ import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
-import { fetchUserMetadata } from '@/utils/userMetadata';
+import { isUserRegistered } from '@/utils/registrationCheck';
 import { claimBonusMint, getReferralStats } from '@/utils/referralRewards';
 
 interface WalletDashboardProps {
@@ -110,10 +110,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       setIsCheckingRegistration(true);
       
       try {
-        const metadata = await fetchUserMetadata(connection, publicKey);
-        setIsRegistered(metadata !== null);
+        const registered = await isUserRegistered(connection, publicKey);
+        setIsRegistered(registered);
         
-        if (metadata) {
+        if (registered) {
           console.log('✅ [WalletDashboard] User is registered, showing Send/Receive');
         } else {
           console.log('💡 [WalletDashboard] User not registered, hiding Send/Receive');

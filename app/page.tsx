@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { Logo } from '@/components/Logo';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
-import { fetchUserMetadata } from '@/utils/userMetadata';
+import { isUserRegistered } from '@/utils/registrationCheck';
 
 // Loading placeholder components
 const WalletButtonLoading = () => (
@@ -62,16 +62,8 @@ export default function HomePage() {
       }
       
       try {
-        const metadata = await fetchUserMetadata(connection, publicKey);
-        
-        if (metadata) {
-          // ✅ Just set state, don't redirect
-          console.log('✅ User is registered');
-          setIsRegistered(true);
-        } else {
-          console.log('💡 User not registered');
-          setIsRegistered(false);
-        }
+        const registered = await isUserRegistered(connection, publicKey);
+        setIsRegistered(registered);
       } catch (error) {
         console.error('❌ Error checking registration:', error);
         // On error, assume not registered (safe fallback)
