@@ -214,9 +214,6 @@ async function main() {
   const lockedTokenPda = getLockedTokenPda(payer.publicKey, PROGRAM_ID);
   const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
   
-  // Derive business registry PDA
-  const [businessRegistryPDA] = getBusinessRegistryPDA();
-  
   // Use new 15-account mint_tokens instruction (with all accounts)
   const mintIx = createMintTokensInstruction(
     userAccountPDA,                // user_account (PDA)
