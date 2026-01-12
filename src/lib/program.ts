@@ -762,7 +762,7 @@ export function createMintTokensInstruction(
     console.log('  - Amount (raw base units):', amount);
     console.log('  - Amount BN:', amountBN.toString());
     console.log(`  - Token Program: ${tokenProgram.toBase58()} (Token-2022 ✅)`);
-    console.log('  - Note: Locked token accounts pre-created during registration');
+    console.log('  - Note: Locked token ATA pre-created during registration');
     console.log('  - Referrer:', isReferrerProvided ? referrerAccount.toBase58() : `Self-referral (${referrerAccount.toBase58()})`);
     console.log('  - User Account:', userAccount.toBase58());
     console.log('  - User Metadata:', userMetadata.toBase58());

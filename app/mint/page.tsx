@@ -794,8 +794,9 @@ export default function MintPage() {
       }
 
       // ============================================================================
-      // PRE-CREATE LOCKED TOKEN ACCOUNTS
-      // Create locked token accounts during registration to reduce mint transaction size
+      // PRE-CREATE LOCKED TOKEN ATA
+      // Create locked token ATA during registration to reduce mint transaction size
+      // Note: locked_token_account PDA is still created by the program during first mint
       // ============================================================================
       
       // Derive locked token PDAs
@@ -803,63 +804,12 @@ export default function MintPage() {
       const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
       const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
       
-      console.log('🔍 Checking locked token accounts...');
-      console.log('- Locked Token Account PDA:', lockedTokenAccountPda.toBase58());
+      console.log('🔍 Checking locked token ATA...');
       console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
       console.log('- Locked Token ATA:', lockedTokenAta.toBase58());
       
-      // Create locked token account PDA (if needed)
-      const lockedTokenAccountInfo = await connection.getAccountInfo(lockedTokenAccountPda);
-      if (!lockedTokenAccountInfo) {
-        console.log('📝 Pre-creating locked token account PDA...');
-        
-        if (!wallet.signTransaction) {
-          throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
-        }
-        
-        try {
-          // LockedTokenAccount structure: discriminator(8) + authority(32) + locked_amount(8) + lock_start_timestamp(8) + unlock_timestamp(8) + is_unlocked(1) = 65 bytes
-          const lockedAccountSize = 65;
-          const createLockedAccountIx = SystemProgram.createAccount({
-            fromPubkey: publicKey,
-            newAccountPubkey: lockedTokenAccountPda,
-            lamports: await connection.getMinimumBalanceForRentExemption(lockedAccountSize),
-            space: lockedAccountSize,
-            programId: PROGRAM_ID,
-          });
-          
-          const lockedAccountTx = new Transaction().add(createLockedAccountIx);
-          lockedAccountTx.feePayer = publicKey;
-          
-          const { blockhash: lockedBlockhash, lastValidBlockHeight: lockedLastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-          lockedAccountTx.recentBlockhash = lockedBlockhash;
-          
-          console.log('📝 Blockhash (locked account):', lockedBlockhash);
-          
-          const signedLockedAccountTx = await wallet.signTransaction(lockedAccountTx);
-          const lockedAccountSig = await connection.sendRawTransaction(signedLockedAccountTx.serialize(), {
-            skipPreflight: true,
-            maxRetries: 5
-          });
-          
-          console.log('📤 Locked token account creation transaction sent:', lockedAccountSig);
-          
-          await connection.confirmTransaction({
-            signature: lockedAccountSig,
-            blockhash: lockedBlockhash,
-            lastValidBlockHeight: lockedLastValidBlockHeight
-          }, 'confirmed');
-          
-          console.log('✅ Locked token account PDA created:', lockedAccountSig);
-        } catch (lockedAccountError: unknown) {
-          console.error('❌ Failed to create locked token account:', lockedAccountError);
-          throw new Error('Failed to create locked token account. Please try again.');
-        }
-      } else {
-        console.log('✅ Locked token account PDA already exists');
-      }
-      
       // Create locked token ATA (if needed)
+      // This reduces mint transaction size by pre-creating the ATA
       const lockedTokenAtaInfo = await connection.getAccountInfo(lockedTokenAta);
       if (!lockedTokenAtaInfo) {
         console.log('📝 Pre-creating locked token ATA...');
@@ -903,13 +853,14 @@ export default function MintPage() {
           console.log('✅ Locked token ATA created:', lockedAtaSig);
         } catch (lockedAtaError: unknown) {
           console.error('❌ Failed to create locked token ATA:', lockedAtaError);
-          throw new Error('Failed to create locked token ATA. Please try again.');
+          const errorMessage = lockedAtaError instanceof Error ? lockedAtaError.message : 'Unknown error';
+          throw new Error(`Failed to create locked token ATA: ${errorMessage}. Please try again.`);
         }
       } else {
         console.log('✅ Locked token ATA already exists');
       }
       
-      console.log('✅ All locked token accounts ready');
+      console.log('✅ Locked token ATA ready for first mint');
 
       const now = Math.floor(Date.now() / 1000);
 
@@ -1403,25 +1354,23 @@ export default function MintPage() {
       const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
       
       // ============================================================================
-      // VERIFY LOCKED TOKEN ACCOUNTS EXIST
-      // These accounts should have been pre-created during registration
+      // VERIFY LOCKED TOKEN ATA EXISTS
+      // The ATA should have been pre-created during registration to reduce transaction size
+      // Note: locked_token_account PDA is initialized by the program during first mint
       // ============================================================================
-      console.log('🔍 Verifying locked token accounts exist...');
-      const lockedAccountInfo = await connection.getAccountInfo(lockedTokenAccountPda);
+      console.log('🔍 Verifying locked token ATA exists...');
       const lockedAtaInfo = await connection.getAccountInfo(lockedTokenAta);
       
-      if (!lockedAccountInfo || !lockedAtaInfo) {
+      if (!lockedAtaInfo) {
         throw new Error(
-          '❌ Locked token accounts not found. This usually means registration was incomplete.\n\n' +
+          '❌ Locked token ATA not found. This usually means registration was incomplete.\n\n' +
           'Please refresh the page and try registering again.\n\n' +
-          `Missing accounts:\n` +
-          `- Locked Token Account: ${!lockedAccountInfo ? 'NOT FOUND' : 'OK'}\n` +
-          `- Locked Token ATA: ${!lockedAtaInfo ? 'NOT FOUND' : 'OK'}`
+          `Missing account: Locked Token ATA (${lockedTokenAta.toBase58()})`
         );
       }
-      console.log('✅ Locked token accounts verified');
-      console.log('  - Locked Token Account PDA:', lockedTokenAccountPda.toBase58());
+      console.log('✅ Locked token ATA verified');
       console.log('  - Locked Token ATA:', lockedTokenAta.toBase58());
+      console.log('  - Note: Locked Token Account PDA will be initialized by program if needed');
       
       // Build the mint_tokens instruction (14-account version for deployed program)
       const mintInstruction = createMintTokensInstruction(
