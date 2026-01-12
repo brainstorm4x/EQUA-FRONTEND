@@ -9,6 +9,7 @@ import { PublicKey, Transaction, Connection, SystemProgram } from '@solana/web3.
 import { 
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
+  createAssociatedTokenAccountIdempotentInstruction,
 } from '@solana/spl-token';
 import { 
   TOKEN_PROGRAM_ID,
@@ -686,7 +687,7 @@ export default function MintPage() {
     if (!publicKey || !connection) return false;
     
     try {
-      const lockedTokenPda = getLockedTokenPda(publicKey, new PublicKey(PROGRAM_ID));
+      const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
       const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
       
       const accountInfo = await connection.getAccountInfo(lockedTokenAta);
@@ -1154,27 +1155,19 @@ export default function MintPage() {
       console.log('Creating missing locked token ATA for user:', publicKey.toBase58());
 
       // Derive locked token PDAs (same logic as registration)
-      const lockedTokenPda = getLockedTokenPda(publicKey, new PublicKey(PROGRAM_ID));
+      const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
       const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
 
       console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
       console.log('- Locked Token ATA:', lockedTokenAta.toBase58());
 
-      // Check if ATA already exists (shouldn't happen, but safety check)
-      const lockedTokenAtaInfo = await connection.getAccountInfo(lockedTokenAta);
-      if (lockedTokenAtaInfo) {
-        console.log('✅ Locked token ATA already exists, no repair needed');
-        setNeedsRepair(false);
-        setIsLoading(false);
-        return;
-      }
-
       if (!wallet.signTransaction) {
         throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
       }
 
-      // Create locked token ATA using same pattern as registration
-      const createLockedAtaIx = createAssociatedTokenAccountInstruction(
+      // Create locked token ATA using idempotent instruction
+      // This prevents errors if the account somehow already exists
+      const createLockedAtaIx = createAssociatedTokenAccountIdempotentInstruction(
         publicKey,           // payer
         lockedTokenAta,      // ata
         lockedTokenPda,      // owner (PDA)
