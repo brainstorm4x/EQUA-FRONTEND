@@ -793,6 +793,73 @@ export default function MintPage() {
         console.log('✅ Token account already exists');
       }
 
+      // ============================================================================
+      // PRE-CREATE LOCKED TOKEN ATA
+      // Create locked token ATA during registration to reduce mint transaction size
+      // Note: locked_token_account PDA is still created by the program during first mint
+      // ============================================================================
+      
+      // Derive locked token PDAs
+      const [lockedTokenAccountPda] = getLockedTokenAccountPda(publicKey, PROGRAM_ID);
+      const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
+      const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
+      
+      console.log('🔍 Checking locked token ATA...');
+      console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
+      console.log('- Locked Token ATA:', lockedTokenAta.toBase58());
+      
+      // Create locked token ATA (if needed)
+      // This reduces mint transaction size by pre-creating the ATA
+      const lockedTokenAtaInfo = await connection.getAccountInfo(lockedTokenAta);
+      if (!lockedTokenAtaInfo) {
+        console.log('📝 Pre-creating locked token ATA...');
+        
+        if (!wallet.signTransaction) {
+          throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
+        }
+        
+        try {
+          const createLockedAtaIx = createAssociatedTokenAccountInstruction(
+            publicKey,           // payer
+            lockedTokenAta,      // ata
+            lockedTokenPda,      // owner (PDA)
+            mintPDA,             // mint
+            TOKEN_PROGRAM_ID,
+            ASSOCIATED_TOKEN_PROGRAM_ID
+          );
+          
+          const lockedAtaTx = new Transaction().add(createLockedAtaIx);
+          lockedAtaTx.feePayer = publicKey;
+          
+          const { blockhash: ataBlockhash, lastValidBlockHeight: ataLastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+          lockedAtaTx.recentBlockhash = ataBlockhash;
+          
+          console.log('📝 Blockhash (locked ATA):', ataBlockhash);
+          
+          const signedLockedAtaTx = await wallet.signTransaction(lockedAtaTx);
+          const lockedAtaSig = await connection.sendRawTransaction(signedLockedAtaTx.serialize(), {
+            skipPreflight: true,
+            maxRetries: 5
+          });
+          
+          console.log('📤 Locked token ATA creation transaction sent:', lockedAtaSig);
+          
+          await connection.confirmTransaction({
+            signature: lockedAtaSig,
+            blockhash: ataBlockhash,
+            lastValidBlockHeight: ataLastValidBlockHeight
+          }, 'confirmed');
+          
+          console.log('✅ Locked token ATA created:', lockedAtaSig);
+        } catch (lockedAtaError: unknown) {
+          throw handleAtaCreationError(lockedAtaError, 'registration');
+        }
+      } else {
+        console.log('✅ Locked token ATA already exists');
+      }
+      
+      console.log('✅ Locked token ATA ready for first mint');
+
       const now = Math.floor(Date.now() / 1000);
 
       console.log('Accounts:');
@@ -1283,6 +1350,25 @@ export default function MintPage() {
       const [lockedTokenAccountPda] = getLockedTokenAccountPda(publicKey, PROGRAM_ID);
       const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
       const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
+      
+      // ============================================================================
+      // VERIFY LOCKED TOKEN ATA EXISTS
+      // The ATA should have been pre-created during registration to reduce transaction size
+      // Note: locked_token_account PDA is initialized by the program during first mint
+      // ============================================================================
+      console.log('🔍 Verifying locked token ATA exists...');
+      const lockedAtaInfo = await connection.getAccountInfo(lockedTokenAta);
+      
+      if (!lockedAtaInfo) {
+        throw new Error(
+          '❌ Locked token ATA not found. This usually means registration was incomplete.\n\n' +
+          'Please refresh the page and try registering again.\n\n' +
+          `Missing account: Locked Token ATA (${lockedTokenAta.toBase58()})`
+        );
+      }
+      console.log('✅ Locked token ATA verified');
+      console.log('  - Locked Token ATA:', lockedTokenAta.toBase58());
+      console.log('  - Note: Locked Token Account PDA will be initialized by program if needed');
       
       // Build the mint_tokens instruction (14-account version for deployed program)
       const mintInstruction = createMintTokensInstruction(
