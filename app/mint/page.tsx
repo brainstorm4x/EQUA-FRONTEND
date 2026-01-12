@@ -852,9 +852,7 @@ export default function MintPage() {
           
           console.log('✅ Locked token ATA created:', lockedAtaSig);
         } catch (lockedAtaError: unknown) {
-          console.error('❌ Failed to create locked token ATA:', lockedAtaError);
-          const errorMessage = lockedAtaError instanceof Error ? lockedAtaError.message : 'Unknown error';
-          throw new Error(`Failed to create locked token ATA: ${errorMessage}. Please try again.`);
+          throw handleAtaCreationError(lockedAtaError, 'registration');
         }
       } else {
         console.log('✅ Locked token ATA already exists');
