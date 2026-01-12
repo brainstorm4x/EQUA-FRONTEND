@@ -353,6 +353,7 @@ export default function MintPage() {
   const [userMetadata, setUserMetadata] = useState<UserMetadata | null>(null);
   const [totalMints, setTotalMints] = useState<number>(0);
   const [minLoadingComplete, setMinLoadingComplete] = useState(false);
+  // Migration support: Track users who registered before PR#198 and need locked token ATA created
   const [needsRepair, setNeedsRepair] = useState(false);
 
   useEffect(() => {
@@ -666,7 +667,21 @@ export default function MintPage() {
     }
   }, [connection]);
 
-  // Check if locked token ATA exists (for migration support)
+  /**
+   * Check if locked token ATA exists (migration support for pre-PR#198 users)
+   * 
+   * Background:
+   * - PR #198 added code to pre-create locked token ATA during registration
+   * - Users who registered BEFORE PR #198 are missing this account
+   * - When they try to mint, the transaction fails with "Locked token ATA not found"
+   * 
+   * This function:
+   * 1. Derives the expected locked token ATA address for the user
+   * 2. Checks if the account exists on-chain
+   * 3. Returns true if exists, false if missing
+   * 
+   * Used by checkUserRegistration() to detect if user needs migration
+   */
   const checkLockedTokenAtaExists = useCallback(async (): Promise<boolean> => {
     if (!publicKey || !connection) return false;
     
@@ -1102,7 +1117,28 @@ export default function MintPage() {
     handleRegisterWithForm('individual', null);
   };
 
-  // Repair registration for users missing locked token ATA (migration support)
+  /**
+   * Repair registration for users missing locked token ATA (migration support)
+   * 
+   * This function handles the one-time migration for users who registered before PR #198.
+   * 
+   * What it does:
+   * 1. Derives the locked token PDA and ATA addresses (same as registration flow)
+   * 2. Checks if ATA already exists (safety check)
+   * 3. Creates the missing locked token ATA using createAssociatedTokenAccountInstruction
+   * 4. Confirms the transaction and updates UI state
+   * 
+   * Why it's needed:
+   * - PR #198 added pre-creation of locked token ATA during registration
+   * - Users who registered before this PR don't have the ATA
+   * - Without it, minting fails with "Locked token ATA not found" error
+   * 
+   * Technical details:
+   * - Uses same PDA derivation as registration (src/utils/pda-helpers.ts)
+   * - Reuses ATA creation pattern from registration flow (lines 822-856)
+   * - User pays for rent (small SOL amount ~0.002 SOL)
+   * - Idempotent safety check prevents duplicate creation
+   */
   const handleRepairRegistration = async () => {
     if (!wallet.connected || !publicKey) {
       setError('Wallet not connected');
