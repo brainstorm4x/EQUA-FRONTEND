@@ -25,24 +25,61 @@ export const MIN_SOL_BALANCE = 0.05;
 // Number of users who can register without a referral
 export const REFERRAL_FREE_LIMIT = 100;
 
-// Elevated mint tier configuration
+// ============================================================================
+// TIER CONSTANTS - SYNCHRONIZED WITH BACKEND (6 DECIMALS)
+// ============================================================================
+// All amounts in RAW base units (6 decimals: 1 EQUA = 1,000,000 units)
+// Backend source: brainstorm4x/EQUA - CANONICAL_CONFIG.md
+
+// Elevated Tiers (1-3): High amounts with locked tokens
+export const TIER_1_MINT_LIMIT = 100_000_000_000; // 100,000 EQUA
+export const TIER_2_MINT_LIMIT = 10_000_000_000;  // 10,000 EQUA
+export const TIER_3_MINT_LIMIT = 1_000_000_000;   // 1,000 EQUA
+
+// Flat Rate Tiers (4-9): Lower amounts, no locking
+export const TIER_4_MINT_LIMIT = 100_000_000;     // 100 EQUA
+export const TIER_5_MINT_LIMIT = 10_000_000;      // 10 EQUA
+export const TIER_6_MINT_LIMIT = 1_000_000;       // 1 EQUA
+export const TIER_7_MINT_LIMIT = 100_000;         // 0.1 EQUA
+export const TIER_8_MINT_LIMIT = 10_000;          // 0.01 EQUA
+export const TIER_9_MINT_LIMIT = 1_000;           // 0.001 EQUA
+
+// Lock percentages for elevated tiers
+export const TIER_1_LOCK_PERCENTAGE = 99.9; // 99.9% locked
+export const TIER_2_LOCK_PERCENTAGE = 99.0; // 99% locked
+export const TIER_3_LOCK_PERCENTAGE = 90.0; // 90% locked
+
+// Elevated mint attempts (Tiers 1-3 only)
+export const ELEVATED_MINT_ATTEMPTS = 100;
+
+// Time constants (seconds)
+export const MINTING_COOLDOWN_SECONDS = 86400;    // 24 hours
+export const LOCK_PERIOD_SECONDS = 126144000;     // 4 years (1461 days)
+
+// Tier configuration interface
 export interface ElevatedMintTier {
   minUser: number;
   maxUser: number;
-  equaPerAttempt: number;
+  rawAmountPerAttempt: number; // Raw base units (6 decimals)
   elevatedAttempts: number;
+  lockPercentage: number; // Percentage of tokens locked (0-100)
 }
 
+// Tier definitions matching backend exactly
+// Backend has 9 tiers total (NOT 10)
 export const ELEVATED_MINT_TIERS: ElevatedMintTier[] = [
-  { minUser: 1, maxUser: 1, equaPerAttempt: 100000, elevatedAttempts: 100 },        // User #1: 100,000 EQUA/day × 100 days
-  { minUser: 2, maxUser: 10, equaPerAttempt: 10000, elevatedAttempts: 100 },        // Users #2-10: 10,000 EQUA/day × 100 days
-  { minUser: 11, maxUser: 100, equaPerAttempt: 1000, elevatedAttempts: 100 },       // Users #11-100: 1,000 EQUA/day × 100 days
-  { minUser: 101, maxUser: 1000, equaPerAttempt: 100, elevatedAttempts: 0 },        // Users #101-1000: 100 EQUA/day
-  { minUser: 1001, maxUser: 10000, equaPerAttempt: 10, elevatedAttempts: 0 },       // Users #1001-10000: 10 EQUA/day
-  { minUser: 10001, maxUser: 100000, equaPerAttempt: 1, elevatedAttempts: 0 },      // Users #10001-100000: 1 EQUA/day
-  { minUser: 100001, maxUser: 1000000, equaPerAttempt: 0.1, elevatedAttempts: 0 },  // Users #100001-1000000: 0.1 EQUA/day
-  { minUser: 1000001, maxUser: 10000000, equaPerAttempt: 0.01, elevatedAttempts: 0 }, // Users #1000001-10000000: 0.01 EQUA/day
-  { minUser: 10000001, maxUser: Infinity, equaPerAttempt: 0.001, elevatedAttempts: 0 }, // Users #10000001+: 0.001 EQUA/day (unlimited)
+  // Elevated Tiers (1-3): High amounts with locked tokens
+  { minUser: 1, maxUser: 1, rawAmountPerAttempt: TIER_1_MINT_LIMIT, elevatedAttempts: ELEVATED_MINT_ATTEMPTS, lockPercentage: TIER_1_LOCK_PERCENTAGE },
+  { minUser: 2, maxUser: 10, rawAmountPerAttempt: TIER_2_MINT_LIMIT, elevatedAttempts: ELEVATED_MINT_ATTEMPTS, lockPercentage: TIER_2_LOCK_PERCENTAGE },
+  { minUser: 11, maxUser: 100, rawAmountPerAttempt: TIER_3_MINT_LIMIT, elevatedAttempts: ELEVATED_MINT_ATTEMPTS, lockPercentage: TIER_3_LOCK_PERCENTAGE },
+  
+  // Flat Rate Tiers (4-9): Lower amounts, no locking, unlimited attempts
+  { minUser: 101, maxUser: 1000, rawAmountPerAttempt: TIER_4_MINT_LIMIT, elevatedAttempts: 0, lockPercentage: 0 },
+  { minUser: 1001, maxUser: 10000, rawAmountPerAttempt: TIER_5_MINT_LIMIT, elevatedAttempts: 0, lockPercentage: 0 },
+  { minUser: 10001, maxUser: 100000, rawAmountPerAttempt: TIER_6_MINT_LIMIT, elevatedAttempts: 0, lockPercentage: 0 },
+  { minUser: 100001, maxUser: 1000000, rawAmountPerAttempt: TIER_7_MINT_LIMIT, elevatedAttempts: 0, lockPercentage: 0 },
+  { minUser: 1000001, maxUser: 10000000, rawAmountPerAttempt: TIER_8_MINT_LIMIT, elevatedAttempts: 0, lockPercentage: 0 },
+  { minUser: 10000001, maxUser: 100000000, rawAmountPerAttempt: TIER_9_MINT_LIMIT, elevatedAttempts: 0, lockPercentage: 0 },
 ];
 
 /**

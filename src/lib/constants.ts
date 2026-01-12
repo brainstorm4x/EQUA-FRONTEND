@@ -122,12 +122,16 @@ export function getEnvConfigWarnings(): string[] {
 }
 
 // PDA Seeds (must match Rust backend exactly)
+// Source: brainstorm4x/EQUA - programs/equa_token/src/pda_helpers.rs
 export const GLOBAL_STATE_SEED = 'global-state';
 export const MINT_SEED = 'equa-mint';
 export const MINT_AUTHORITY_SEED = 'mint-authority';
 export const USER_ACCOUNT_SEED = 'user-account';
 export const USER_META_SEED = 'user-meta';
 export const BUSINESS_REGISTRY_SEED = 'business-registry';
+export const LOCKED_TOKENS_SEED = 'locked-tokens';
+export const SOCIAL_FUNDS_STATE_SEED = 'social-funds-state';
+export const EQX_ORACLE_SEED = 'eqx-oracle';
 
 // Token Program Addresses (for validation)
 export const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';

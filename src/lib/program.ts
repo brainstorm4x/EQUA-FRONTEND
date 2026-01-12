@@ -11,6 +11,9 @@ import {
   USER_ACCOUNT_SEED,
   USER_META_SEED,
   BUSINESS_REGISTRY_SEED,
+  LOCKED_TOKENS_SEED,
+  SOCIAL_FUNDS_STATE_SEED,
+  EQX_ORACLE_SEED,
   TOKEN_2022_PROGRAM_ADDRESS,
   STANDARD_TOKEN_PROGRAM_ADDRESS,
 } from "./constants";
@@ -81,6 +84,22 @@ export function getUserMetadataPDA(authority: PublicKey): [PublicKey, number] {
  */
 export function getBusinessRegistryPDA(): [PublicKey, number] {
   return getCachedPDA('business_registry', [Buffer.from(BUSINESS_REGISTRY_SEED)]);
+}
+
+/**
+ * Get social funds state PDA (global account for social funds tracking)
+ * @returns PDA and bump seed
+ */
+export function getSocialFundsStatePDA(): [PublicKey, number] {
+  return getCachedPDA('social_funds_state', [Buffer.from(SOCIAL_FUNDS_STATE_SEED)]);
+}
+
+/**
+ * Get EQX oracle PDA (global account for EQX price oracle)
+ * @returns PDA and bump seed
+ */
+export function getEqxOraclePDA(): [PublicKey, number] {
+  return getCachedPDA('eqx_oracle', [Buffer.from(EQX_ORACLE_SEED)]);
 }
 
 /**
@@ -638,55 +657,6 @@ export function createMintEquaInstruction(
     keys: [
       { pubkey: userAccount, isSigner: false, isWritable: true },
       { pubkey: authority, isSigner: true, isWritable: false },
-    ],
-    programId: PROGRAM_ID,
-    data,
-  });
-  
-  if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Instruction account metas:');
-    instruction.keys.forEach((meta, idx) => {
-      console.log(`  ${idx}. ${meta.pubkey.toBase58()} writable=${meta.isWritable} signer=${meta.isSigner}`);
-    });
-  }
-
-  return instruction;
-}
-
-// ✅ Create mint_equa_tokens instruction (low-level token minting)
-// This is used internally by mint_equa, not for direct daily minting
-export function createMintEquaTokensInstruction(
-  userAccount: PublicKey,
-  userTokenAccount: PublicKey,
-  mint: PublicKey,
-  mintAuthority: PublicKey,
-  authority: PublicKey,
-  tokenProgram: PublicKey,
-  amount: number
-): TransactionInstruction {
-  const discriminator = Buffer.from([166, 66, 221, 55, 153, 196, 139, 85]);
-  const amountBN = new BN(amount);
-  
-  const data = Buffer.concat([
-    discriminator,
-    amountBN.toArrayLike(Buffer, 'le', 8),
-  ]);
-
-  if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Building mint_equa_tokens instruction:');
-    console.log('  - Discriminator:', Array.from(discriminator).join(', '));
-    console.log('  - Amount (raw base units):', amount);
-    console.log('  - Amount BN:', amountBN.toString());
-  }
-  
-  const instruction = new TransactionInstruction({
-    keys: [
-      { pubkey: userAccount, isSigner: false, isWritable: true },
-      { pubkey: userTokenAccount, isSigner: false, isWritable: true },
-      { pubkey: mint, isSigner: false, isWritable: true },
-      { pubkey: mintAuthority, isSigner: false, isWritable: false },
-      { pubkey: authority, isSigner: true, isWritable: false },
-      { pubkey: tokenProgram, isSigner: false, isWritable: false },
     ],
     programId: PROGRAM_ID,
     data,
