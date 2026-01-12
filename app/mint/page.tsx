@@ -1125,9 +1125,8 @@ export default function MintPage() {
    * 
    * What it does:
    * 1. Derives the locked token PDA and ATA addresses (same as registration flow)
-   * 2. Checks if ATA already exists (safety check)
-   * 3. Creates the missing locked token ATA using createAssociatedTokenAccountInstruction
-   * 4. Confirms the transaction and updates UI state
+   * 2. Creates the missing locked token ATA using createAssociatedTokenAccountIdempotentInstruction
+   * 3. Confirms the transaction and updates UI state
    * 
    * Why it's needed:
    * - PR #198 added pre-creation of locked token ATA during registration
@@ -1136,9 +1135,9 @@ export default function MintPage() {
    * 
    * Technical details:
    * - Uses same PDA derivation as registration (src/utils/pda-helpers.ts)
-   * - Reuses ATA creation pattern from registration flow (lines 822-856)
+   * - Uses idempotent ATA creation (handles existing accounts automatically)
    * - User pays for rent (small SOL amount ~0.002 SOL)
-   * - Idempotent safety check prevents duplicate creation
+   * - Idempotent instruction prevents errors if account already exists
    */
   const handleRepairRegistration = async () => {
     if (!wallet.connected || !publicKey) {

@@ -69,17 +69,9 @@ const handleRepairRegistration = async () => {
     const lockedTokenPda = getLockedTokenPda(publicKey, new PublicKey(PROGRAM_ID));
     const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
 
-    // Safety check: if ATA already exists, no repair needed
-    const lockedTokenAtaInfo = await connection.getAccountInfo(lockedTokenAta);
-    if (lockedTokenAtaInfo) {
-      console.log('✅ Locked token ATA already exists, no repair needed');
-      setNeedsRepair(false);
-      setIsLoading(false);
-      return;
-    }
-
-    // Create locked token ATA (same pattern as registration)
-    const createLockedAtaIx = createAssociatedTokenAccountInstruction(
+    // Create locked token ATA using idempotent instruction
+    // This prevents errors if the account somehow already exists
+    const createLockedAtaIx = createAssociatedTokenAccountIdempotentInstruction(
       publicKey,           // payer
       lockedTokenAta,      // ata
       lockedTokenPda,      // owner (PDA)
