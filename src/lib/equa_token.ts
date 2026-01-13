@@ -1617,6 +1617,7 @@ export type EquaToken = {
         },
         {
           "name": "businessRegistry",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -2789,6 +2790,16 @@ export type EquaToken = {
       "code": 6043,
       "name": "mintingCooldownNotExpired",
       "msg": "Minting cooldown has not expired. You must wait 24 hours between mints (including bonus mints)."
+    },
+    {
+      "code": 6044,
+      "name": "businessRegistryNotInitialized",
+      "msg": "Business registry is not initialized. Initialize the registry before registering business users."
+    },
+    {
+      "code": 6045,
+      "name": "businessRegistryFull",
+      "msg": "Business registry is full. Maximum capacity of 100 business referrers reached."
     }
   ],
   "types": [
