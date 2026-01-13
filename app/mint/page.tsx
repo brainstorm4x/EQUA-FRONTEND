@@ -726,6 +726,19 @@ export default function MintPage() {
       console.log('Account type:', accountType);
       console.log('Referrer:', referrer || 'None');
       
+      // Check wallet balance BEFORE building transaction
+      const balance = await connection.getBalance(publicKey);
+      console.log(`💰 Wallet balance: ${balance / anchor.web3.LAMPORTS_PER_SOL} SOL`);
+
+      if (balance < 0.02 * anchor.web3.LAMPORTS_PER_SOL) {
+        setError(
+          `Insufficient SOL balance (${(balance / anchor.web3.LAMPORTS_PER_SOL).toFixed(4)} SOL). ` +
+          `Need at least 0.02 SOL. Run: solana airdrop 1 --url devnet`
+        );
+        setIsLoading(false);
+        return;
+      }
+      
       // Check if public key has already been registered (prevent duplicate registrations)
       // Use onchain check as source of truth, with localStorage for fast client-side validation
       const publicKeyBase58 = publicKey.toBase58();
@@ -985,10 +998,45 @@ export default function MintPage() {
       const transaction = new Transaction().add(instruction);
       transaction.feePayer = publicKey;
 
+      // Add compute budget (prevents compute limit errors)
+      const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
+        units: 400_000, // Increase from default 200k
+      });
+
+      const addPriorityFee = anchor.web3.ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 1, // Small priority fee
+      });
+
+      // Add to beginning of transaction
+      transaction.instructions.unshift(modifyComputeUnits, addPriorityFee);
+
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
 
-      console.log('📝 Sending registration transaction via wallet adapter...');
+      console.log('🧪 Transaction diagnostic:');
+      console.log('  - Instructions:', transaction.instructions.length);
+      console.log('  - Fee payer:', transaction.feePayer?.toString());
+      console.log('  - Recent blockhash:', transaction.recentBlockhash);
+
+      // Manual simulation for debugging
+      try {
+        const simulation = await connection.simulateTransaction(transaction);
+        console.log('✅ Simulation result:', simulation.value);
+        
+        if (simulation.value.err) {
+          console.error('❌ Simulation failed:', simulation.value.err);
+          console.error('📜 Logs:', simulation.value.logs);
+          throw new Error(
+            `Transaction would fail: ${JSON.stringify(simulation.value.err)}\n` +
+            `Logs: ${simulation.value.logs?.join('\n')}`
+          );
+        }
+      } catch (simError: any) {
+        console.error('❌ Manual simulation error:', simError);
+        throw simError;
+      }
+
+      console.log('📝 Sending transaction via wallet adapter...');
       if (!wallet.sendTransaction) {
         throw new Error('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
       }
@@ -1010,6 +1058,7 @@ export default function MintPage() {
         }, 'confirmed');
 
         console.log('✅ Registration successful!', tx);
+        console.log(`🔍 Explorer: https://explorer.solana.com/tx/${tx}?cluster=devnet`);
         setTxSignature(tx);
         setRegistered(true);
 
@@ -1057,9 +1106,9 @@ export default function MintPage() {
         throw sendTxErr; // Re-throw to be caught by outer catch block
       }
     } catch (err: unknown) {
-      console.error('Registration error:', err);
+      console.error('❌ Registration error:', err);
+      console.error('Full error:', JSON.stringify(err, null, 2));
       
-      // Try to extract Anchor log if it's a SendTransactionError
       let errorMessage = err instanceof Error ? err.message : 'Registration failed';
       const errorObj = err as any;
       
@@ -1067,27 +1116,27 @@ export default function MintPage() {
       let logs: string[] = [];
       if (errorObj?.logs) {
         logs = errorObj.logs;
+        console.error('📜 Transaction logs:', logs);
       } else if (errorObj?.signature && connection) {
-        // Try to fetch logs from the transaction
         try {
           logs = await getTransactionLogs(connection, errorObj.signature);
+          console.error('📜 Fetched transaction logs:', logs);
         } catch (logErr) {
           console.error('Failed to fetch transaction logs:', logErr);
         }
       }
       
+      // Enhanced error categorization with actionable messages
       if (logs.length > 0) {
-        console.error('📋 Transaction logs:', logs);
         const anchorLog = extractAnchorLog(logs);
         if (anchorLog) {
-          errorMessage = `Transaction failed: ${anchorLog}`;
           console.log('📋 Anchor program log:', anchorLog);
         }
       }
       
-      // ✅ Provide specific error messages based on error type
+      // Provide specific error messages based on error type
       if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
-        errorMessage = '❌ Insufficient SOL balance. You need at least 0.1 SOL for registration fees. Please add SOL to your wallet and try again.';
+        errorMessage = '❌ Insufficient SOL balance. You need at least 0.02 SOL for registration fees.\n\nRun: solana airdrop 1 --url devnet';
       } else if (errorMessage.includes('User rejected') || errorMessage.includes('User denied')) {
         errorMessage = '❌ Transaction rejected. Please approve the transaction in your wallet to continue.';
       } else if (errorMessage.includes('0x0') || errorMessage.includes('already in use')) {
@@ -1095,16 +1144,15 @@ export default function MintPage() {
       } else if (errorMessage.includes('blockhash') || errorMessage.includes('timeout')) {
         errorMessage = '❌ Network timeout. Please check your connection and try again.';
       } else if (errorMessage.includes('Simulation failed') || errorMessage.includes('simulation failed')) {
-        errorMessage = '❌ Transaction simulation failed. This may be due to insufficient SOL or invalid referral code. Please check and try again.';
+        errorMessage = '❌ Transaction simulation failed. This may be due to:\n• Insufficient SOL (need 0.02 SOL minimum)\n• Invalid referral code\n• Network congestion\n\nPlease check your wallet balance and try again.';
       } else if (errorMessage.includes('ConstraintMut') || errorMessage.includes('2000')) {
-        errorMessage = '❌ Account constraint violation. Please ensure you have the latest app version and try again.';
+        errorMessage = '❌ Account constraint violation. Please refresh the page and try again.';
       } else if (errorMessage.includes('0x66') || errorMessage.includes('InstructionDidNotDeserialize')) {
         errorMessage = '❌ Instruction format mismatch. Please refresh the page and try again.';
       } else if (totalUsers >= REFERRAL_FREE_LIMIT && !referrer) {
         errorMessage = `❌ A referral code is required after the first ${REFERRAL_FREE_LIMIT} users. Please enter a valid referral code.`;
       } else if (!errorMessage.startsWith('❌')) {
-        // Add generic error prefix if not already present
-        errorMessage = `❌ Registration failed: ${errorMessage}. Please try again or contact support if the issue persists.`;
+        errorMessage = `❌ Registration failed: ${errorMessage}.\n\nCheck the browser console for detailed logs.`;
       }
       
       setError(errorMessage);
