@@ -795,126 +795,15 @@ export default function MintPage() {
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
-      // Check if token account exists, create it first if needed
-      console.log('🔍 Checking if token account exists...');
-      const accountInfo = await connection.getAccountInfo(userTokenAccount);
-      
-      if (!accountInfo) {
-        console.log('⚠️  Token account does not exist, creating it before registration...');
-        
-        if (!wallet.signTransaction) {
-          throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
-        }
-        
-        try {
-          const createAtaIx = createAssociatedTokenAccountInstruction(
-            publicKey,           // payer
-            userTokenAccount,    // ata
-            publicKey,           // owner
-            mintPDA,             // mint
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-          );
-          
-          const transaction = new Transaction().add(createAtaIx);
-          transaction.feePayer = publicKey;
-          
-          // Fetch blockhash with confirmed commitment level
-          const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-          transaction.recentBlockhash = blockhash;
-          
-          console.log('📝 Blockhash:', blockhash, 'lastValidBlockHeight:', lastValidBlockHeight);
-          
-          // Sign and send the transaction
-          const signed = await wallet.signTransaction(transaction);
-          const signature = await connection.sendRawTransaction(signed.serialize(), {
-            skipPreflight: true,
-            maxRetries: 5
-          });
-          
-          console.log('📤 Token account creation transaction sent:', signature);
-          
-          // Confirm with proper blockhash context
-          await connection.confirmTransaction({
-            signature,
-            blockhash,
-            lastValidBlockHeight
-          }, 'confirmed');
-          
-          console.log('✅ Token account created:', signature);
-        } catch (ataError: unknown) {
-          throw handleAtaCreationError(ataError, 'registration');
-        }
-      } else {
-        console.log('✅ Token account already exists');
-      }
-
-      // ============================================================================
-      // PRE-CREATE LOCKED TOKEN ATA
-      // Create locked token ATA during registration to reduce mint transaction size
-      // Note: locked_token_account PDA is still created by the program during first mint
-      // ============================================================================
-      
-      // Derive locked token PDAs
+      // Derive locked token PDAs (for inclusion in registration transaction)
       const [lockedTokenAccountPda] = getLockedTokenAccountPda(publicKey, PROGRAM_ID);
       const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
       const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
       
-      console.log('🔍 Checking locked token ATA...');
+      console.log('📝 Preparing to create ATAs in registration transaction (if needed)...');
+      console.log('- User Token Account:', userTokenAccount.toBase58());
       console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
       console.log('- Locked Token ATA:', lockedTokenAta.toBase58());
-      
-      // Create locked token ATA (if needed)
-      // This reduces mint transaction size by pre-creating the ATA
-      const lockedTokenAtaInfo = await connection.getAccountInfo(lockedTokenAta);
-      if (!lockedTokenAtaInfo) {
-        console.log('📝 Pre-creating locked token ATA...');
-        
-        if (!wallet.signTransaction) {
-          throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
-        }
-        
-        try {
-          const createLockedAtaIx = createAssociatedTokenAccountInstruction(
-            publicKey,           // payer
-            lockedTokenAta,      // ata
-            lockedTokenPda,      // owner (PDA)
-            mintPDA,             // mint
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-          );
-          
-          const lockedAtaTx = new Transaction().add(createLockedAtaIx);
-          lockedAtaTx.feePayer = publicKey;
-          
-          const { blockhash: ataBlockhash, lastValidBlockHeight: ataLastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-          lockedAtaTx.recentBlockhash = ataBlockhash;
-          
-          console.log('📝 Blockhash (locked ATA):', ataBlockhash);
-          
-          const signedLockedAtaTx = await wallet.signTransaction(lockedAtaTx);
-          const lockedAtaSig = await connection.sendRawTransaction(signedLockedAtaTx.serialize(), {
-            skipPreflight: true,
-            maxRetries: 5
-          });
-          
-          console.log('📤 Locked token ATA creation transaction sent:', lockedAtaSig);
-          
-          await connection.confirmTransaction({
-            signature: lockedAtaSig,
-            blockhash: ataBlockhash,
-            lastValidBlockHeight: ataLastValidBlockHeight
-          }, 'confirmed');
-          
-          console.log('✅ Locked token ATA created:', lockedAtaSig);
-        } catch (lockedAtaError: unknown) {
-          throw handleAtaCreationError(lockedAtaError, 'registration');
-        }
-      } else {
-        console.log('✅ Locked token ATA already exists');
-      }
-      
-      console.log('✅ Locked token ATA ready for first mint');
 
       const now = Math.floor(Date.now() / 1000);
 
@@ -995,9 +884,6 @@ export default function MintPage() {
         console.log(`${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`);
       });
 
-      const transaction = new Transaction().add(instruction);
-      transaction.feePayer = publicKey;
-
       // Add compute budget (prevents compute limit errors)
       const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
         units: 400_000, // Increase from default 200k
@@ -1007,8 +893,40 @@ export default function MintPage() {
         microLamports: 1, // Small priority fee
       });
 
-      // Add to beginning of transaction
-      transaction.instructions.unshift(modifyComputeUnits, addPriorityFee);
+      // Create idempotent ATA creation instructions (no-op if already exists)
+      // This consolidates all ATA creation into the registration transaction
+      const createUserAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+        publicKey,           // payer
+        userTokenAccount,    // ata
+        publicKey,           // owner
+        mintPDA,             // mint
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+
+      const createLockedAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+        publicKey,           // payer
+        lockedTokenAta,      // ata
+        lockedTokenPda,      // owner (PDA)
+        mintPDA,             // mint
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+
+      // Build transaction with all instructions in one transaction
+      const transaction = new Transaction();
+      transaction.feePayer = publicKey;
+      
+      // Add instructions in order:
+      // 1. Compute budget instructions
+      transaction.add(modifyComputeUnits);
+      transaction.add(addPriorityFee);
+      // 2. Create user ATA (idempotent)
+      transaction.add(createUserAtaIx);
+      // 3. Create locked ATA (idempotent)
+      transaction.add(createLockedAtaIx);
+      // 4. Initialize user (registration)
+      transaction.add(instruction);
 
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
@@ -1060,7 +978,6 @@ export default function MintPage() {
         console.log('✅ Registration successful!', tx);
         console.log(`🔍 Explorer: https://explorer.solana.com/tx/${tx}?cluster=devnet`);
         setTxSignature(tx);
-        setRegistered(true);
 
         // Note: Registration is now persisted on-chain only. No database storage needed.
         // The blockchain is the source of truth for all registration data.
@@ -1093,6 +1010,30 @@ export default function MintPage() {
           console.log('📝 Registration metadata recorded');
         }
 
+        // Wait for on-chain state propagation before fetching metadata
+        console.log(`⏳ Waiting ${CHAIN_STATE_UPDATE_DELAY_MS}ms for on-chain state propagation...`);
+        await new Promise(resolve => setTimeout(resolve, CHAIN_STATE_UPDATE_DELAY_MS));
+
+        // Fetch user metadata to verify registration completed successfully
+        console.log('📋 Fetching user metadata to verify registration...');
+        const fetchedMetadata = await fetchUserMetadata(connection, publicKey);
+        
+        if (!fetchedMetadata) {
+          // Registration transaction succeeded but metadata not found
+          // Don't set registered=true - let user refresh or try again
+          console.error('❌ Registration transaction succeeded but user metadata not found');
+          throw new Error(
+            'Registration transaction succeeded but user metadata not found. ' +
+            'Please wait a moment and refresh the page.'
+          );
+        }
+        
+        // Metadata exists - now it's safe to update all registration state
+        console.log('✅ Registration verified - user metadata loaded successfully');
+        setUserMetadata(fetchedMetadata);
+        setRegistered(true);
+        
+        // Refresh other user data now that we're registered
         await checkUserRegistration();
       } catch (sendTxErr: any) {
         // Enhanced error logging for wallet adapter sendTransaction failures
