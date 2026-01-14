@@ -1016,25 +1016,39 @@ export default function MintPage() {
 
         // Fetch user metadata to verify registration completed successfully
         console.log('📋 Fetching user metadata to verify registration...');
-        const fetchedMetadata = await fetchUserMetadata(connection, publicKey);
-        
-        if (!fetchedMetadata) {
-          // Registration transaction succeeded but metadata not found
-          // Don't set registered=true - let user refresh or try again
-          console.error('❌ Registration transaction succeeded but user metadata not found');
-          throw new Error(
-            'Registration transaction succeeded but user metadata not found. ' +
-            'Please wait a moment and refresh the page.'
-          );
+        try {
+          const fetchedMetadata = await fetchUserMetadata(connection, publicKey);
+          
+          if (!fetchedMetadata) {
+            // Registration transaction succeeded but metadata not found
+            // Don't set registered=true - let user refresh or try again
+            console.error('❌ Registration transaction succeeded but user metadata not found');
+            throw new Error(
+              'Registration transaction succeeded but user metadata not found. ' +
+              'Please wait a moment and refresh the page. ' +
+              `Transaction: https://explorer.solana.com/tx/${tx}?cluster=devnet`
+            );
+          }
+          
+          // Metadata exists - now it's safe to update all registration state
+          console.log('✅ Registration verified - user metadata loaded successfully');
+          setUserMetadata(fetchedMetadata);
+          setRegistered(true);
+          
+          // Refresh other user data now that we're registered
+          await checkUserRegistration();
+        } catch (metadataErr: any) {
+          // Metadata fetch failed - registration succeeded but we can't verify it
+          console.error('❌ Failed to fetch user metadata after registration:', metadataErr);
+          
+          // Provide helpful error message with transaction link for user to verify
+          const errorMsg = `Registration transaction succeeded, but failed to verify user metadata. ` +
+            `Your registration may be complete - please refresh the page to check. ` +
+            `Transaction: https://explorer.solana.com/tx/${tx}?cluster=devnet`;
+          
+          // Don't set registered=true - let user refresh to verify
+          throw new Error(errorMsg);
         }
-        
-        // Metadata exists - now it's safe to update all registration state
-        console.log('✅ Registration verified - user metadata loaded successfully');
-        setUserMetadata(fetchedMetadata);
-        setRegistered(true);
-        
-        // Refresh other user data now that we're registered
-        await checkUserRegistration();
       } catch (sendTxErr: any) {
         // Enhanced error logging for wallet adapter sendTransaction failures
         console.error('❌ wallet.sendTransaction failed during registration:', sendTxErr);
