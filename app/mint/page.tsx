@@ -322,6 +322,8 @@ async function getLastMintTime(connection: any, userPubkey: PublicKey): Promise<
 }
 
 // Track last registration attempt timestamp for cooldown enforcement
+// Module-level variable is intentional - each browser session gets its own instance
+// since this is a client-side component ('use client') with per-user state
 let lastRegistrationAttempt = 0;
 
 export default function MintPage() {
@@ -744,7 +746,11 @@ export default function MintPage() {
     const alreadyRegistered = await isUserRegistered(connection, publicKey);
     if (alreadyRegistered) {
       console.warn('⚠️ User already registered, skipping duplicate registration');
-      setError('You are already registered. Please refresh the page.');
+      setError('You are already registered. Refreshing the page to load your account details...');
+      // Auto-refresh after short delay to show the registered state
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
       return;
     }
 
