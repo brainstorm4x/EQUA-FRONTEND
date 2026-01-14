@@ -96,6 +96,9 @@ const MAX_REASONABLE_USERS = 10_000_000;
 // Delay for on-chain state propagation after transactions (in milliseconds)
 const CHAIN_STATE_UPDATE_DELAY_MS = 2000;
 
+// Registration cooldown to prevent rapid successive attempts (in milliseconds)
+const REGISTRATION_COOLDOWN_MS = 5000; // 5 seconds
+
 /**
  * Extract the first Anchor program log from transaction logs
  * Anchor logs typically start with "Program log: " followed by the actual error message
@@ -318,6 +321,11 @@ async function getLastMintTime(connection: any, userPubkey: PublicKey): Promise<
   }
 }
 
+// Track last registration attempt timestamp for cooldown enforcement
+// Module-level variable is intentional - each browser session gets its own instance
+// since this is a client-side component ('use client') with per-user state
+let lastRegistrationAttempt = 0;
+
 export default function MintPage() {
   const {
     program,
@@ -356,6 +364,8 @@ export default function MintPage() {
   const [minLoadingComplete, setMinLoadingComplete] = useState(false);
   // Migration support: Track users who registered before PR#198 and need locked token ATA created
   const [needsRepair, setNeedsRepair] = useState(false);
+  // Transaction submission guard: Prevent duplicate registration transactions
+  const [isSubmittingRegistration, setIsSubmittingRegistration] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -715,6 +725,40 @@ export default function MintPage() {
       return;
     }
 
+    // Guard 1: Prevent duplicate submissions while a transaction is in flight
+    if (isSubmittingRegistration) {
+      console.warn('⚠️ Registration transaction already in progress - ignoring duplicate attempt');
+      setError('Registration transaction already in progress. Please wait...');
+      return;
+    }
+
+    // Guard 2: Enforce cooldown between registration attempts
+    const now = Date.now();
+    if (now - lastRegistrationAttempt < REGISTRATION_COOLDOWN_MS) {
+      const remainingSeconds = Math.ceil((REGISTRATION_COOLDOWN_MS - (now - lastRegistrationAttempt)) / 1000);
+      console.warn(`⚠️ Registration cooldown active - ${remainingSeconds}s remaining`);
+      setError(`Please wait ${remainingSeconds} second(s) before trying again`);
+      return;
+    }
+
+    // Guard 3: Check if user is already registered BEFORE building transaction
+    console.log('🔍 Checking if user is already registered...');
+    const alreadyRegistered = await isUserRegistered(connection, publicKey);
+    if (alreadyRegistered) {
+      console.warn('⚠️ User already registered, skipping duplicate registration');
+      setError('You are already registered. Refreshing the page to load your account details...');
+      // Auto-refresh after short delay to show the registered state
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+      return;
+    }
+
+    // Update cooldown timestamp
+    lastRegistrationAttempt = now;
+
+    // Set in-flight lock to prevent concurrent submissions
+    setIsSubmittingRegistration(true);
     setIsLoading(true);
     setError('');
     setTxSignature('');
@@ -961,9 +1005,10 @@ export default function MintPage() {
       
       try {
         // Use wallet.sendTransaction to ensure proper signing by the wallet adapter
+        // maxRetries: 0 to prevent duplicate submissions - registration is a one-time operation
         const tx = await wallet.sendTransaction(transaction, connection, {
           skipPreflight: false,
-          maxRetries: 3
+          maxRetries: 0
         });
         
         console.log('📤 Registration transaction sent:', tx);
@@ -1113,6 +1158,7 @@ export default function MintPage() {
       setError(errorMessage);
     } finally {
       setIsLoading(false);
+      setIsSubmittingRegistration(false); // Clear in-flight lock
     }
   };
 
@@ -1910,7 +1956,7 @@ export default function MintPage() {
                   totalUsers={totalUsers}
                   walletBalance={walletBalance}
                   onRegister={handleRegisterWithForm}
-                  isLoading={isLoading}
+                  isLoading={isLoading || isSubmittingRegistration}
                   validateReferrer={validateReferrer}
                   userWalletAddress={publicKey?.toBase58()}
                 />
