@@ -560,7 +560,9 @@ export function createInitializeUserInstruction(
     { pubkey: referrerMetadata, isSigner: false, isWritable: true },   // 5. referrer_metadata
     { pubkey: userTokenAccount, isSigner: false, isWritable: true },   // 6. user_token_account
     { pubkey: mint, isSigner: false, isWritable: false },              // 7. mint
-    { pubkey: businessRegistry, isSigner: false, isWritable: false },  // 8. business_registry
+    // Note: business_registry MUST be writable per backend constraint (#[account(mut)])
+    // The program may update this account during business user registration
+    { pubkey: businessRegistry, isSigner: false, isWritable: true },   // 8. business_registry (mut in backend)
     { pubkey: associatedTokenProgram, isSigner: false, isWritable: false }, // 9. associated_token_program
     { pubkey: tokenProgram, isSigner: false, isWritable: false },      // 10. token_program
     { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // 11. system_program
