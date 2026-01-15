@@ -719,6 +719,12 @@ export default function MintPage() {
       return;
     }
 
+    // Check wallet compatibility early to fail fast
+    if (!wallet.sendTransaction) {
+      setError('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
+      return;
+    }
+
     // Check SOL balance
     if (!hasMinimumSolBalance(walletBalance)) {
       setError(`Insufficient SOL balance. You need at least ${MIN_SOL_BALANCE} SOL to register.`);
@@ -928,17 +934,7 @@ export default function MintPage() {
         console.log(`${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`);
       });
 
-      // Add compute budget (prevents compute limit errors)
-      const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
-        units: 400_000, // Increase from default 200k
-      });
-
-      const addPriorityFee = anchor.web3.ComputeBudgetProgram.setComputeUnitPrice({
-        microLamports: 1, // Small priority fee
-      });
-
       // Create idempotent ATA creation instructions (no-op if already exists)
-      // This consolidates all ATA creation into the registration transaction
       const createUserAtaIx = createAssociatedTokenAccountIdempotentInstruction(
         publicKey,           // payer
         userTokenAccount,    // ata
@@ -957,153 +953,179 @@ export default function MintPage() {
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
-      // Build transaction with all instructions in one transaction
-      const transaction = new Transaction();
-      transaction.feePayer = publicKey;
+      // STEP 1: Create ATAs in a separate transaction (reduces wallet complexity)
+      console.log('📝 Step 1/2: Creating token accounts...');
       
-      // Add instructions in order:
-      // 1. Compute budget instructions
-      transaction.add(modifyComputeUnits);
-      transaction.add(addPriorityFee);
-      // 2. Create user ATA (idempotent)
-      transaction.add(createUserAtaIx);
-      // 3. Create locked ATA (idempotent)
-      transaction.add(createLockedAtaIx);
-      // 4. Initialize user (registration)
-      transaction.add(instruction);
+      const setupTx = new Transaction();
+      setupTx.feePayer = publicKey;
+      
+      // Reduced compute budget for ATA creation
+      const setupComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
+        units: 200_000,
+      });
+      const setupPriorityFee = anchor.web3.ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 1,
+      });
+      
+      setupTx.add(setupComputeUnits);
+      setupTx.add(setupPriorityFee);
+      setupTx.add(createUserAtaIx);
+      setupTx.add(createLockedAtaIx);
+      
+      const setupBlockhash = await connection.getLatestBlockhash('confirmed');
+      setupTx.recentBlockhash = setupBlockhash.blockhash;
+      
+      console.log('🧪 Setup transaction diagnostic:');
+      console.log('  - Instructions:', setupTx.instructions.length);
+      console.log('  - Fee payer:', setupTx.feePayer?.toString());
+      console.log('  - Recent blockhash:', setupTx.recentBlockhash);
+      
+      const setupTxSig = await wallet.sendTransaction(setupTx, connection, {
+        skipPreflight: false,
+        maxRetries: 0
+      });
+      
+      console.log('📤 ATA creation transaction sent:', setupTxSig);
+      console.log('⏳ Confirming ATA creation...');
+      
+      await connection.confirmTransaction({
+        signature: setupTxSig,
+        blockhash: setupBlockhash.blockhash,
+        lastValidBlockHeight: setupBlockhash.lastValidBlockHeight
+      }, 'confirmed');
+      
+      console.log('✅ Token accounts created:', setupTxSig);
+      console.log(`🔍 Explorer: https://explorer.solana.com/tx/${setupTxSig}?cluster=devnet`);
 
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-      transaction.recentBlockhash = blockhash;
-
-      console.log('🧪 Transaction diagnostic:');
-      console.log('  - Instructions:', transaction.instructions.length);
-      console.log('  - Fee payer:', transaction.feePayer?.toString());
-      console.log('  - Recent blockhash:', transaction.recentBlockhash);
-
-      // Manual simulation for debugging
+      // STEP 2: Register user (WITHOUT ATA creation instructions)
+      console.log('📝 Step 2/2: Registering user account...');
+      
+      const registrationTx = new Transaction();
+      registrationTx.feePayer = publicKey;
+      
+      // Compute budget for registration only
+      const regComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
+        units: 300_000,
+      });
+      const regPriorityFee = anchor.web3.ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 1,
+      });
+      
+      registrationTx.add(regComputeUnits);
+      registrationTx.add(regPriorityFee);
+      registrationTx.add(instruction); // The initialize_user instruction
+      
+      const regBlockhash = await connection.getLatestBlockhash('confirmed');
+      registrationTx.recentBlockhash = regBlockhash.blockhash;
+      
+      console.log('🧪 Registration transaction diagnostic:');
+      console.log('  - Instructions:', registrationTx.instructions.length);
+      console.log('  - Fee payer:', registrationTx.feePayer?.toString());
+      console.log('  - Recent blockhash:', registrationTx.recentBlockhash);
+      
+      // Simulate registration transaction
       try {
-        const simulation = await connection.simulateTransaction(transaction);
-        console.log('✅ Simulation result:', simulation.value);
-        
-        if (simulation.value.err) {
-          console.error('❌ Simulation failed:', simulation.value.err);
-          console.error('📜 Logs:', simulation.value.logs);
-          throw new Error(
-            `Transaction would fail: ${JSON.stringify(simulation.value.err)}\n` +
-            `Logs: ${simulation.value.logs?.join('\n')}`
-          );
+        const simResult = await connection.simulateTransaction(registrationTx);
+        if (simResult.value.err) {
+          console.error('❌ Registration simulation failed:', simResult.value.err);
+          console.error('📜 Logs:', simResult.value.logs);
+          throw new Error(`Simulation failed: ${JSON.stringify(simResult.value.err)}`);
         }
+        console.log('✅ Registration simulation passed');
       } catch (simError: any) {
-        console.error('❌ Manual simulation error:', simError);
+        console.error('❌ Registration simulation error:', simError);
         throw simError;
       }
+      
+      // Send registration transaction
+      const regTxSig = await wallet.sendTransaction(registrationTx, connection, {
+        skipPreflight: false,
+        maxRetries: 0
+      });
+      
+      console.log('📤 Registration transaction sent:', regTxSig);
+      console.log('⏳ Confirming registration...');
+      
+      await connection.confirmTransaction({
+        signature: regTxSig,
+        blockhash: regBlockhash.blockhash,
+        lastValidBlockHeight: regBlockhash.lastValidBlockHeight
+      }, 'confirmed');
 
-      console.log('📝 Sending transaction via wallet adapter...');
-      if (!wallet.sendTransaction) {
-        throw new Error('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
+      console.log('✅ Registration successful!', regTxSig);
+      console.log(`🔍 Explorer: https://explorer.solana.com/tx/${regTxSig}?cluster=devnet`);
+      
+      setTxSignature(regTxSig);
+
+      // Note: Registration is now persisted on-chain only. No database storage needed.
+      // The blockchain is the source of truth for all registration data.
+      console.log('✅ Registration persisted on-chain (blockchain is source of truth)');
+      
+      if (typeof window !== 'undefined') {
+        // Record the public key as registered (prevent duplicate registration)
+        recordRegisteredKey(publicKey.toBase58(), metadata?.fingerprint?.fingerprint);
+        console.log('🔑 Public key recorded to prevent duplicate registration');
+        
+        // Store fingerprint AFTER successful registration (Sybil prevention)
+        if (metadata?.fingerprint) {
+          const existingFingerprints = JSON.parse(localStorage.getItem('equa_registered_fingerprints') || '[]');
+          existingFingerprints.push(metadata.fingerprint.fingerprint);
+          localStorage.setItem('equa_registered_fingerprints', JSON.stringify(existingFingerprints));
+          localStorage.setItem(`equa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
+          console.log('🔐 Device fingerprint stored for Sybil prevention');
+        }
+        
+        // Notify other components that registration is complete
+        // This triggers GetStartedButton to update its state
+        localStorage.setItem('equa_registration_complete', Date.now().toString());
+        window.dispatchEvent(new CustomEvent('equa_registration_complete'));
+        console.log('📢 Registration complete event dispatched');
       }
       
+      // Call the metadata callback for referral/registration recording
+      if (metadata?.onSuccessfulRegistration) {
+        metadata.onSuccessfulRegistration();
+        console.log('📝 Registration metadata recorded');
+      }
+
+      // Wait for on-chain state propagation before fetching metadata
+      console.log(`⏳ Waiting ${CHAIN_STATE_UPDATE_DELAY_MS}ms for on-chain state propagation...`);
+      await new Promise(resolve => setTimeout(resolve, CHAIN_STATE_UPDATE_DELAY_MS));
+
+      // Fetch user metadata to verify registration completed successfully
+      console.log('📋 Fetching user metadata to verify registration...');
       try {
-        // Use wallet.sendTransaction to ensure proper signing by the wallet adapter
-        // maxRetries: 0 to prevent duplicate submissions - registration is a one-time operation
-        const tx = await wallet.sendTransaction(transaction, connection, {
-          skipPreflight: false,
-          maxRetries: 0
-        });
+        const fetchedMetadata = await fetchUserMetadata(connection, publicKey);
         
-        console.log('📤 Registration transaction sent:', tx);
-        console.log('⏳ Confirming transaction...');
-        
-        await connection.confirmTransaction({
-          signature: tx,
-          blockhash,
-          lastValidBlockHeight
-        }, 'confirmed');
-
-        console.log('✅ Registration successful!', tx);
-        console.log(`🔍 Explorer: https://explorer.solana.com/tx/${tx}?cluster=devnet`);
-        setTxSignature(tx);
-
-        // Note: Registration is now persisted on-chain only. No database storage needed.
-        // The blockchain is the source of truth for all registration data.
-        console.log('✅ Registration persisted on-chain (blockchain is source of truth)');
-        
-        if (typeof window !== 'undefined') {
-          // Record the public key as registered (prevent duplicate registration)
-          recordRegisteredKey(publicKey.toBase58(), metadata?.fingerprint?.fingerprint);
-          console.log('🔑 Public key recorded to prevent duplicate registration');
-          
-          // Store fingerprint AFTER successful registration (Sybil prevention)
-          if (metadata?.fingerprint) {
-            const existingFingerprints = JSON.parse(localStorage.getItem('equa_registered_fingerprints') || '[]');
-            existingFingerprints.push(metadata.fingerprint.fingerprint);
-            localStorage.setItem('equa_registered_fingerprints', JSON.stringify(existingFingerprints));
-            localStorage.setItem(`equa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
-            console.log('🔐 Device fingerprint stored for Sybil prevention');
-          }
-          
-          // Notify other components that registration is complete
-          // This triggers GetStartedButton to update its state
-          localStorage.setItem('equa_registration_complete', Date.now().toString());
-          window.dispatchEvent(new CustomEvent('equa_registration_complete'));
-          console.log('📢 Registration complete event dispatched');
+        if (!fetchedMetadata) {
+          // Registration transaction succeeded but metadata not found
+          // Don't set registered=true - let user refresh or try again
+          console.error('❌ Registration transaction succeeded but user metadata not found');
+          throw new Error(
+            'Registration transaction succeeded but user metadata not found. ' +
+            'Please wait a moment and refresh the page. ' +
+            `Transaction: https://explorer.solana.com/tx/${regTxSig}?cluster=devnet`
+          );
         }
         
-        // Call the metadata callback for referral/registration recording
-        if (metadata?.onSuccessfulRegistration) {
-          metadata.onSuccessfulRegistration();
-          console.log('📝 Registration metadata recorded');
-        }
-
-        // Wait for on-chain state propagation before fetching metadata
-        console.log(`⏳ Waiting ${CHAIN_STATE_UPDATE_DELAY_MS}ms for on-chain state propagation...`);
-        await new Promise(resolve => setTimeout(resolve, CHAIN_STATE_UPDATE_DELAY_MS));
-
-        // Fetch user metadata to verify registration completed successfully
-        console.log('📋 Fetching user metadata to verify registration...');
-        try {
-          const fetchedMetadata = await fetchUserMetadata(connection, publicKey);
-          
-          if (!fetchedMetadata) {
-            // Registration transaction succeeded but metadata not found
-            // Don't set registered=true - let user refresh or try again
-            console.error('❌ Registration transaction succeeded but user metadata not found');
-            throw new Error(
-              'Registration transaction succeeded but user metadata not found. ' +
-              'Please wait a moment and refresh the page. ' +
-              `Transaction: https://explorer.solana.com/tx/${tx}?cluster=devnet`
-            );
-          }
-          
-          // Metadata exists - now it's safe to update all registration state
-          console.log('✅ Registration verified - user metadata loaded successfully');
-          setUserMetadata(fetchedMetadata);
-          setRegistered(true);
-          
-          // Refresh other user data now that we're registered
-          await checkUserRegistration();
-        } catch (metadataErr: any) {
-          // Metadata fetch failed - registration succeeded but we can't verify it
-          console.error('❌ Failed to fetch user metadata after registration:', metadataErr);
-          
-          // Provide helpful error message with transaction link for user to verify
-          const errorMsg = `Registration transaction succeeded, but failed to verify user metadata. ` +
-            `Your registration may be complete - please refresh the page to check. ` +
-            `Transaction: https://explorer.solana.com/tx/${tx}?cluster=devnet`;
-          
-          // Don't set registered=true - let user refresh to verify
-          throw new Error(errorMsg);
-        }
-      } catch (sendTxErr: any) {
-        // Enhanced error logging for wallet adapter sendTransaction failures
-        console.error('❌ wallet.sendTransaction failed during registration:', sendTxErr);
-        console.error('Error details:', {
-          message: sendTxErr?.message,
-          name: sendTxErr?.name,
-          code: sendTxErr?.code,
-          logs: sendTxErr?.logs,
-        });
-        throw sendTxErr; // Re-throw to be caught by outer catch block
+        // Metadata exists - now it's safe to update all registration state
+        console.log('✅ Registration verified - user metadata loaded successfully');
+        setUserMetadata(fetchedMetadata);
+        setRegistered(true);
+        
+        // Refresh other user data now that we're registered
+        await checkUserRegistration();
+      } catch (metadataErr: any) {
+        // Metadata fetch failed - registration succeeded but we can't verify it
+        console.error('❌ Failed to fetch user metadata after registration:', metadataErr);
+        
+        // Provide helpful error message with transaction link for user to verify
+        const errorMsg = `Registration transaction succeeded, but failed to verify user metadata. ` +
+          `Your registration may be complete - please refresh the page to check. ` +
+          `Transaction: https://explorer.solana.com/tx/${regTxSig}?cluster=devnet`;
+        
+        // Don't set registered=true - let user refresh to verify
+        throw new Error(errorMsg);
       }
     } catch (err: unknown) {
       console.error('❌ Registration error:', err);
