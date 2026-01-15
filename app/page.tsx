@@ -61,13 +61,38 @@ export default function HomePage() {
         return;
       }
       
+      // Check localStorage first for immediate feedback
+      const locallyRegistered = typeof window !== 'undefined'
+        ? localStorage.getItem(`equa_registered_${publicKey.toBase58()}`) === 'true'
+        : false;
+      
+      if (locallyRegistered) {
+        console.log('💾 User locally registered, setting state optimistically');
+        setIsRegistered(true);
+      }
+      
+      // Then verify on-chain
       try {
         const registered = await isUserRegistered(connection, publicKey);
         setIsRegistered(registered);
+        
+        // Update localStorage to match on-chain state
+        if (registered) {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(`equa_registered_${publicKey.toBase58()}`, 'true');
+          }
+        } else {
+          // Clear localStorage if on-chain check shows not registered
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(`equa_registered_${publicKey.toBase58()}`);
+          }
+        }
       } catch (error) {
         console.error('❌ Error checking registration:', error);
-        // On error, assume not registered (safe fallback)
-        setIsRegistered(false);
+        // Keep locally registered state if on-chain check fails
+        if (!locallyRegistered) {
+          setIsRegistered(false);
+        }
       }
     }
     

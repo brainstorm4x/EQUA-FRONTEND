@@ -94,7 +94,10 @@ const ERROR_KEYWORD_USER_REJECTED = 'user rejected';
 const MAX_REASONABLE_USERS = 10_000_000;
 
 // Delay for on-chain state propagation after transactions (in milliseconds)
-const CHAIN_STATE_UPDATE_DELAY_MS = 2000;
+const CHAIN_STATE_UPDATE_DELAY_MS = 3000;
+
+// Grace period after successful registration to prevent immediate re-checks (in milliseconds)
+const REGISTRATION_GRACE_PERIOD_MS = 5000; // 5 seconds
 
 // Registration cooldown to prevent rapid successive attempts (in milliseconds)
 const REGISTRATION_COOLDOWN_MS = 5000; // 5 seconds
@@ -366,6 +369,8 @@ export default function MintPage() {
   const [needsRepair, setNeedsRepair] = useState(false);
   // Transaction submission guard: Prevent duplicate registration transactions
   const [isSubmittingRegistration, setIsSubmittingRegistration] = useState(false);
+  // Registration grace period: Prevent checks immediately after successful registration
+  const [justRegistered, setJustRegistered] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -384,6 +389,16 @@ export default function MintPage() {
       if (!publicKey) {
         console.log('💡 No wallet connected, showing wallet connect screen');
         setIsCheckingRegistration(false); // Stop the loading state
+        
+        // Clear localStorage when wallet disconnects
+        if (typeof window !== 'undefined') {
+          const keys = Object.keys(localStorage);
+          keys.forEach(key => {
+            if (key.startsWith('equa_registered_')) {
+              localStorage.removeItem(key);
+            }
+          });
+        }
         return;
       }
       
@@ -395,6 +410,16 @@ export default function MintPage() {
       setIsCheckingRegistration(true);
       
       try {
+        // Check localStorage first for immediate feedback
+        const locallyRegistered = typeof window !== 'undefined' 
+          ? localStorage.getItem(`equa_registered_${publicKey.toBase58()}`) === 'true'
+          : false;
+        
+        if (locallyRegistered) {
+          console.log('💾 User locally registered, setting state optimistically');
+          setRegistered(true);
+        }
+        
         // ✅ Check on-chain registration status using canonical check
         const registered = await isUserRegistered(connection, publicKey);
         
@@ -402,17 +427,35 @@ export default function MintPage() {
           // ✅ Registered → show mint interface
           console.log('✅ User registered, showing mint interface');
           setRegistered(true);
+          
+          // Update localStorage to match on-chain state
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(`equa_registered_${publicKey.toBase58()}`, 'true');
+          }
         } else {
           // ✅ NOT registered → show registration form (don't redirect)
           console.log('💡 User not registered, showing registration form');
           setRegistered(false);
+          
+          // Clear localStorage if on-chain check shows not registered
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(`equa_registered_${publicKey.toBase58()}`);
+          }
         }
       } catch (error) {
         console.error('❌ Error checking registration:', error);
-        // ✅ On error, assume not registered and show registration form
-        // This is safer than redirecting - user can still attempt to register
-        console.log('💡 Error checking registration, showing registration form as fallback');
-        setRegistered(false);
+        // ✅ On error, keep localStorage state if available, otherwise assume not registered
+        const locallyRegistered = typeof window !== 'undefined' 
+          ? localStorage.getItem(`equa_registered_${publicKey.toBase58()}`) === 'true'
+          : false;
+        
+        if (locallyRegistered) {
+          console.log('💾 Using local registration state due to RPC error');
+          setRegistered(true);
+        } else {
+          console.log('💡 Error checking registration, showing registration form as fallback');
+          setRegistered(false);
+        }
       } finally {
         setIsCheckingRegistration(false);
       }
@@ -473,6 +516,13 @@ export default function MintPage() {
       return;
     }
 
+    // Skip check if we just registered (grace period)
+    if (justRegistered) {
+      console.log('⏳ Skipping registration check - just registered, waiting for on-chain propagation');
+      setIsCheckingRegistration(false);
+      return;
+    }
+
     setIsCheckingRegistration(true);
     try {
       const isReg = await checkRegistration(userAccountPDA);
@@ -511,24 +561,79 @@ export default function MintPage() {
         // Fetch user metadata from on-chain (canonical source of truth)
         // This contains user_index and elevated_mint_attempts_used
         console.log('📋 Fetching UserMetadata from on-chain...');
+        
+        // Check localStorage for registration state hint
+        const locallyRegistered = typeof window !== 'undefined' 
+          ? localStorage.getItem(`equa_registered_${publicKey.toBase58()}`) === 'true'
+          : false;
+        
         const metadata = await fetchUserMetadata(connection, publicKey);
         
         if (!metadata) {
-          console.error('❌ Failed to fetch UserMetadata - user may not be fully registered');
-          // Clear registration state and show registration-required UI
-          setRegistered(false);
-          setUserMetadata(null);
-          // Don't set error here - let the UI show the registration form instead
-          console.log('💡 UserMetadata not found - user needs to register or re-register');
-          return;
+          // Don't immediately set registered=false if we have local confirmation
+          if (locallyRegistered) {
+            console.warn('⚠️ UserMetadata temporarily unavailable but user is locally registered - retrying...');
+            
+            // Retry metadata fetch with exponential backoff
+            let retryCount = 0;
+            const maxRetries = 3;
+            let retryMetadata = null;
+            
+            while (retryCount < maxRetries && !retryMetadata) {
+              const delay = 1000 * Math.pow(2, retryCount); // 1s, 2s, 4s
+              console.log(`⏳ Retry ${retryCount + 1}/${maxRetries} in ${delay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              
+              retryMetadata = await fetchUserMetadata(connection, publicKey);
+              retryCount++;
+            }
+            
+            if (retryMetadata) {
+              console.log('✅ Metadata retrieved on retry');
+              setUserMetadata(retryMetadata);
+              setRegistered(true);
+              
+              // Continue with the rest of the registration flow
+              // (we'll handle this below after the metadata check block)
+            } else {
+              console.error('❌ Failed to fetch UserMetadata after retries - clearing local state');
+              // Clear localStorage if we can't verify on-chain
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem(`equa_registered_${publicKey.toBase58()}`);
+              }
+              setRegistered(false);
+              setUserMetadata(null);
+              return;
+            }
+          } else {
+            console.error('❌ Failed to fetch UserMetadata - user may not be fully registered');
+            // Clear registration state and show registration-required UI
+            setRegistered(false);
+            setUserMetadata(null);
+            // Don't set error here - let the UI show the registration form instead
+            console.log('💡 UserMetadata not found - user needs to register or re-register');
+            return;
+          }
+        } else {
+          console.log('✅ UserMetadata loaded:', {
+            user_index: metadata.user_index,
+            elevated_mint_attempts_used: metadata.elevated_mint_attempts_used
+          });
+          
+          setUserMetadata(metadata);
+          
+          // Update localStorage to match on-chain state
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(`equa_registered_${publicKey.toBase58()}`, 'true');
+          }
         }
         
-        console.log('✅ UserMetadata loaded:', {
-          user_index: metadata.user_index,
-          elevated_mint_attempts_used: metadata.elevated_mint_attempts_used
-        });
-        
-        setUserMetadata(metadata);
+        // Use the metadata that was either fetched initially or after retry
+        const currentMetadata = metadata || userMetadata;
+        if (!currentMetadata) {
+          console.error('❌ No metadata available after all checks');
+          return;
+        }
         
         // Check if locked token ATA exists (migration support for pre-PR#198 users)
         const lockedAtaExists = await checkLockedTokenAtaExists();
@@ -560,11 +665,11 @@ export default function MintPage() {
             // Calculate total mints based on user's tier
             // For elevated users (1-100): Use elevated_mint_attempts_used
             // For standard users (101+): Calculate from minted_amount / equaPerMint
-            const userTier = getUserMintTier(metadata.user_index);
+            const userTier = getUserMintTier(currentMetadata.user_index);
             
             if (userTier && userTier.elevatedAttempts > 0) {
               // Elevated user: use on-chain elevated attempts counter
-              setTotalMints(metadata.elevated_mint_attempts_used);
+              setTotalMints(currentMetadata.elevated_mint_attempts_used);
             } else if (userTier) {
               // Standard user: calculate from total minted amount
               const equaPerMint = userTier.equaPerAttempt;
@@ -1112,6 +1217,19 @@ export default function MintPage() {
         console.log('✅ Registration verified - user metadata loaded successfully');
         setUserMetadata(fetchedMetadata);
         setRegistered(true);
+        
+        // Persist registration state in localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`equa_registered_${publicKey.toBase58()}`, 'true');
+          console.log('💾 Registration state persisted in localStorage');
+        }
+        
+        // Set grace period to prevent immediate re-checks
+        setJustRegistered(true);
+        setTimeout(() => {
+          setJustRegistered(false);
+          console.log('✅ Registration grace period ended');
+        }, REGISTRATION_GRACE_PERIOD_MS);
         
         // Refresh other user data now that we're registered
         await checkUserRegistration();
