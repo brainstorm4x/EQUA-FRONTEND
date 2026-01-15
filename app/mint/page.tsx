@@ -719,6 +719,12 @@ export default function MintPage() {
       return;
     }
 
+    // Check wallet compatibility early to fail fast
+    if (!wallet.sendTransaction) {
+      setError('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
+      return;
+    }
+
     // Check SOL balance
     if (!hasMinimumSolBalance(walletBalance)) {
       setError(`Insufficient SOL balance. You need at least ${MIN_SOL_BALANCE} SOL to register.`);
@@ -974,11 +980,6 @@ export default function MintPage() {
       console.log('  - Fee payer:', setupTx.feePayer?.toString());
       console.log('  - Recent blockhash:', setupTx.recentBlockhash);
       
-      // Send setup transaction
-      if (!wallet.sendTransaction) {
-        throw new Error('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
-      }
-      
       const setupTxSig = await wallet.sendTransaction(setupTx, connection, {
         skipPreflight: false,
         maxRetries: 0
@@ -1054,12 +1055,7 @@ export default function MintPage() {
       console.log('✅ Registration successful!', regTxSig);
       console.log(`🔍 Explorer: https://explorer.solana.com/tx/${regTxSig}?cluster=devnet`);
       
-      // Use the registration transaction signature for final confirmation
-      const tx = regTxSig;
-      const blockhash = regBlockhash.blockhash;
-      const lastValidBlockHeight = regBlockhash.lastValidBlockHeight;
-      
-      setTxSignature(tx);
+      setTxSignature(regTxSig);
 
       // Note: Registration is now persisted on-chain only. No database storage needed.
       // The blockchain is the source of truth for all registration data.
@@ -1108,7 +1104,7 @@ export default function MintPage() {
           throw new Error(
             'Registration transaction succeeded but user metadata not found. ' +
             'Please wait a moment and refresh the page. ' +
-            `Transaction: https://explorer.solana.com/tx/${tx}?cluster=devnet`
+            `Transaction: https://explorer.solana.com/tx/${regTxSig}?cluster=devnet`
           );
         }
         
@@ -1126,7 +1122,7 @@ export default function MintPage() {
         // Provide helpful error message with transaction link for user to verify
         const errorMsg = `Registration transaction succeeded, but failed to verify user metadata. ` +
           `Your registration may be complete - please refresh the page to check. ` +
-          `Transaction: https://explorer.solana.com/tx/${tx}?cluster=devnet`;
+          `Transaction: https://explorer.solana.com/tx/${regTxSig}?cluster=devnet`;
         
         // Don't set registered=true - let user refresh to verify
         throw new Error(errorMsg);
