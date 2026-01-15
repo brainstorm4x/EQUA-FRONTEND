@@ -567,7 +567,7 @@ export default function MintPage() {
           ? localStorage.getItem(`equa_registered_${publicKey.toBase58()}`) === 'true'
           : false;
         
-        const metadata = await fetchUserMetadata(connection, publicKey);
+        let metadata = await fetchUserMetadata(connection, publicKey);
         
         if (!metadata) {
           // Don't immediately set registered=false if we have local confirmation
@@ -592,9 +592,8 @@ export default function MintPage() {
               console.log('✅ Metadata retrieved on retry');
               setUserMetadata(retryMetadata);
               setRegistered(true);
-              
-              // Continue with the rest of the registration flow
-              // (we'll handle this below after the metadata check block)
+              // Use retryMetadata for the rest of the flow
+              metadata = retryMetadata;
             } else {
               console.error('❌ Failed to fetch UserMetadata after retries - clearing local state');
               // Clear localStorage if we can't verify on-chain
@@ -628,13 +627,7 @@ export default function MintPage() {
           }
         }
         
-        // Use the metadata that was either fetched initially or after retry
-        const currentMetadata = metadata || userMetadata;
-        if (!currentMetadata) {
-          console.error('❌ No metadata available after all checks');
-          return;
-        }
-        
+        // At this point, metadata is guaranteed to be non-null (either from initial fetch or retry)
         // Check if locked token ATA exists (migration support for pre-PR#198 users)
         const lockedAtaExists = await checkLockedTokenAtaExists();
         if (!lockedAtaExists) {
@@ -665,11 +658,11 @@ export default function MintPage() {
             // Calculate total mints based on user's tier
             // For elevated users (1-100): Use elevated_mint_attempts_used
             // For standard users (101+): Calculate from minted_amount / equaPerMint
-            const userTier = getUserMintTier(currentMetadata.user_index);
+            const userTier = getUserMintTier(metadata.user_index);
             
             if (userTier && userTier.elevatedAttempts > 0) {
               // Elevated user: use on-chain elevated attempts counter
-              setTotalMints(currentMetadata.elevated_mint_attempts_used);
+              setTotalMints(metadata.elevated_mint_attempts_used);
             } else if (userTier) {
               // Standard user: calculate from total minted amount
               const equaPerMint = userTier.equaPerAttempt;

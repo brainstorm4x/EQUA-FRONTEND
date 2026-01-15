@@ -165,6 +165,7 @@ Potential improvements for production:
 
 ## Related Documentation
 
-- [Testing Frontend](./testing-frontend.md) - Test patterns and practices
 - [API Documentation](./API.md) - Backend API reference
 - [Transaction Counting](./TRANSACTION_COUNTING.md) - On-chain state tracking
+- [Business Registry API](./BUSINESS_REGISTRY_API.md) - Business user registration
+- [Netlify Deployment](./NETLIFY_DEPLOYMENT.md) - Deployment guide
