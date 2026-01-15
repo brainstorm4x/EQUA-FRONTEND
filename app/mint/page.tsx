@@ -968,7 +968,6 @@ export default function MintPage() {
       
       const setupBlockhash = await connection.getLatestBlockhash('confirmed');
       setupTx.recentBlockhash = setupBlockhash.blockhash;
-      setupTx.lastValidBlockHeight = setupBlockhash.lastValidBlockHeight;
       
       console.log('🧪 Setup transaction diagnostic:');
       console.log('  - Instructions:', setupTx.instructions.length);
@@ -1017,7 +1016,6 @@ export default function MintPage() {
       
       const regBlockhash = await connection.getLatestBlockhash('confirmed');
       registrationTx.recentBlockhash = regBlockhash.blockhash;
-      registrationTx.lastValidBlockHeight = regBlockhash.lastValidBlockHeight;
       
       console.log('🧪 Registration transaction diagnostic:');
       console.log('  - Instructions:', registrationTx.instructions.length);
