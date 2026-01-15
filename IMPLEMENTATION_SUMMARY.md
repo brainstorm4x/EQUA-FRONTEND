@@ -152,7 +152,7 @@ PASS  __tests__/locked-tokens.test.ts
 
 ### Required Variables (Already Set)
 ```bash
-NEXT_PUBLIC_PROGRAM_ID=2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4
+NEXT_PUBLIC_PROGRAM_ID=D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw
 NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com
 NEXT_PUBLIC_NETWORK=devnet
 ```

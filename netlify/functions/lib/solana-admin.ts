@@ -60,7 +60,7 @@ export function getConnection(): Connection {
  * @returns PublicKey of the EQUA token program
  */
 export function getProgramId(): PublicKey {
-  const programIdStr = process.env.NEXT_PUBLIC_PROGRAM_ID || '2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4';
+  const programIdStr = process.env.NEXT_PUBLIC_PROGRAM_ID || 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw';
   return new PublicKey(programIdStr);
 }
 

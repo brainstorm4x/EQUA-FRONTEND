@@ -16,7 +16,7 @@ import {
 // Mock the program module to provide known PDA values
 jest.mock('@/lib/program', () => {
   const { PublicKey } = jest.requireActual('@solana/web3.js');
-  const PROGRAM_ID = new PublicKey('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4');
+  const PROGRAM_ID = new PublicKey('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw');
   const MINT_AUTHORITY_PDA = new PublicKey('HGkf8CpCU8GZbD6JS2WcYeJCdJnG7qAh6TiDErUMktVC');
   const GLOBAL_STATE_PDA = new PublicKey('F6HyQcuQfMc1RuSCxq5dAYNoERMkdyAt65fUPajudPpc');
   

@@ -76,7 +76,7 @@ Add to `.env.local` for development or Netlify dashboard for production:
 ```bash
 ADMIN_PRIVATE_KEY=<base58_encoded_private_key>
 NEXT_PUBLIC_RPC_URL=https://api.devnet.solana.com
-NEXT_PUBLIC_PROGRAM_ID=2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4
+NEXT_PUBLIC_PROGRAM_ID=D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw
 ```
 
 ## Testing Checklist
@@ -196,6 +196,6 @@ Potential improvements for future PRs:
 ## References
 
 - **Backend Program:** brainstorm4x/EQUA (Anchor program)
-- **Program ID:** `2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4`
+- **Program ID:** `D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw`
 - **Network:** Solana Devnet
 - **Documentation:** `docs/BUSINESS_REGISTRY_API.md`

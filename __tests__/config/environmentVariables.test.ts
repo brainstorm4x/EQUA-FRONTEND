@@ -63,13 +63,13 @@ describe('Environment Variables', () => {
       jest.resetModules();
       const { PROGRAM_ID } = require('@/lib/constants');
       
-      expect(PROGRAM_ID.toBase58()).toBe('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4');
+      expect(PROGRAM_ID.toBase58()).toBe('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw');
     });
 
     it('should prefer NEXT_PUBLIC_PROGRAM_ID over legacy variable', () => {
       // Use valid Solana public keys for testing
       const preferredId = 'BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL';
-      const legacyId = '2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4';
+      const legacyId = 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw';
       
       process.env.NEXT_PUBLIC_PROGRAM_ID = preferredId;
       process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID = legacyId;

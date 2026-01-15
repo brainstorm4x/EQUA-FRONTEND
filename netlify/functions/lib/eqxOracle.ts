@@ -31,7 +31,7 @@ import { EquaToken } from './equa_token';
 /**
  * EQUA Program ID (from backend Anchor.toml)
  */
-const EQUA_PROGRAM_ID = new PublicKey('2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4');
+const EQUA_PROGRAM_ID = new PublicKey('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw');
 
 /**
  * Fixed-point precision (1e8)
