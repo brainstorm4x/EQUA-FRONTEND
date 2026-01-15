@@ -592,7 +592,7 @@ export default function MintPage() {
               console.log('✅ Metadata retrieved on retry');
               setUserMetadata(retryMetadata);
               setRegistered(true);
-              // Use retryMetadata for the rest of the flow
+              // Reassign to metadata variable for subsequent use
               metadata = retryMetadata;
             } else {
               console.error('❌ Failed to fetch UserMetadata after retries - clearing local state');
