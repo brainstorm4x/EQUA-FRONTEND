@@ -12,6 +12,7 @@ import {
 } from '@solana/wallet-adapter-wallets';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { RPC_ENDPOINT } from '@/lib/constants';
+import { RegistrationProvider } from '@/contexts/RegistrationContext';
 
 import '@solana/wallet-adapter-react-ui/styles.css';
 import { ProgramIdMigration } from '@/components/ProgramIdMigration';
@@ -201,25 +202,27 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
     <ConnectionProvider endpoint={RPC_ENDPOINT}>
       <SolanaWalletProvider wallets={wallets} autoConnect onError={onError}>
         <WalletModalProvider>
-          {walletWarning && (
-            <div 
-              className="fixed top-4 right-4 max-w-md bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded shadow-lg z-50"
-              role="alert"
-            >
-              <div className="flex justify-between items-start">
-                <p className="text-sm">{walletWarning}</p>
-                <button
-                  onClick={() => setWalletWarning(null)}
-                  className="ml-4 text-yellow-700 hover:text-yellow-900"
-                  aria-label="Dismiss warning"
-                >
-                  ✕
-                </button>
+          <RegistrationProvider>
+            {walletWarning && (
+              <div 
+                className="fixed top-4 right-4 max-w-md bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded shadow-lg z-50"
+                role="alert"
+              >
+                <div className="flex justify-between items-start">
+                  <p className="text-sm">{walletWarning}</p>
+                  <button
+                    onClick={() => setWalletWarning(null)}
+                    className="ml-4 text-yellow-700 hover:text-yellow-900"
+                    aria-label="Dismiss warning"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-          <ProgramIdMigration />
-          {children}
+            )}
+            <ProgramIdMigration />
+            {children}
+          </RegistrationProvider>
         </WalletModalProvider>
       </SolanaWalletProvider>
     </ConnectionProvider>
