@@ -94,7 +94,10 @@ const ERROR_KEYWORD_USER_REJECTED = 'user rejected';
 const MAX_REASONABLE_USERS = 10_000_000;
 
 // Delay for on-chain state propagation after transactions (in milliseconds)
-const CHAIN_STATE_UPDATE_DELAY_MS = 2000;
+const CHAIN_STATE_UPDATE_DELAY_MS = 3000;
+
+// Grace period after successful registration to prevent immediate re-checks (in milliseconds)
+const REGISTRATION_GRACE_PERIOD_MS = 5000; // 5 seconds
 
 // Registration cooldown to prevent rapid successive attempts (in milliseconds)
 const REGISTRATION_COOLDOWN_MS = 5000; // 5 seconds
@@ -366,6 +369,8 @@ export default function MintPage() {
   const [needsRepair, setNeedsRepair] = useState(false);
   // Transaction submission guard: Prevent duplicate registration transactions
   const [isSubmittingRegistration, setIsSubmittingRegistration] = useState(false);
+  // Registration grace period: Prevent checks immediately after successful registration
+  const [justRegistered, setJustRegistered] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -384,6 +389,16 @@ export default function MintPage() {
       if (!publicKey) {
         console.log('💡 No wallet connected, showing wallet connect screen');
         setIsCheckingRegistration(false); // Stop the loading state
+        
+        // Clear localStorage when wallet disconnects
+        if (typeof window !== 'undefined') {
+          const keys = Object.keys(localStorage);
+          keys.forEach(key => {
+            if (key.startsWith('equa_registered_')) {
+              localStorage.removeItem(key);
+            }
+          });
+        }
         return;
       }
       
@@ -395,6 +410,16 @@ export default function MintPage() {
       setIsCheckingRegistration(true);
       
       try {
+        // Check localStorage first for immediate feedback
+        const locallyRegistered = typeof window !== 'undefined' 
+          ? localStorage.getItem(`equa_registered_${publicKey.toBase58()}`) === 'true'
+          : false;
+        
+        if (locallyRegistered) {
+          console.log('💾 User locally registered, setting state optimistically');
+          setRegistered(true);
+        }
+        
         // ✅ Check on-chain registration status using canonical check
         const registered = await isUserRegistered(connection, publicKey);
         
@@ -402,17 +427,35 @@ export default function MintPage() {
           // ✅ Registered → show mint interface
           console.log('✅ User registered, showing mint interface');
           setRegistered(true);
+          
+          // Update localStorage to match on-chain state
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(`equa_registered_${publicKey.toBase58()}`, 'true');
+          }
         } else {
           // ✅ NOT registered → show registration form (don't redirect)
           console.log('💡 User not registered, showing registration form');
           setRegistered(false);
+          
+          // Clear localStorage if on-chain check shows not registered
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(`equa_registered_${publicKey.toBase58()}`);
+          }
         }
       } catch (error) {
         console.error('❌ Error checking registration:', error);
-        // ✅ On error, assume not registered and show registration form
-        // This is safer than redirecting - user can still attempt to register
-        console.log('💡 Error checking registration, showing registration form as fallback');
-        setRegistered(false);
+        // ✅ On error, keep localStorage state if available, otherwise assume not registered
+        const locallyRegistered = typeof window !== 'undefined' 
+          ? localStorage.getItem(`equa_registered_${publicKey.toBase58()}`) === 'true'
+          : false;
+        
+        if (locallyRegistered) {
+          console.log('💾 Using local registration state due to RPC error');
+          setRegistered(true);
+        } else {
+          console.log('💡 Error checking registration, showing registration form as fallback');
+          setRegistered(false);
+        }
       } finally {
         setIsCheckingRegistration(false);
       }
@@ -473,6 +516,13 @@ export default function MintPage() {
       return;
     }
 
+    // Skip check if we just registered (grace period)
+    if (justRegistered) {
+      console.log('⏳ Skipping registration check - just registered, waiting for on-chain propagation');
+      setIsCheckingRegistration(false);
+      return;
+    }
+
     setIsCheckingRegistration(true);
     try {
       const isReg = await checkRegistration(userAccountPDA);
@@ -511,25 +561,73 @@ export default function MintPage() {
         // Fetch user metadata from on-chain (canonical source of truth)
         // This contains user_index and elevated_mint_attempts_used
         console.log('📋 Fetching UserMetadata from on-chain...');
-        const metadata = await fetchUserMetadata(connection, publicKey);
+        
+        // Check localStorage for registration state hint
+        const locallyRegistered = typeof window !== 'undefined' 
+          ? localStorage.getItem(`equa_registered_${publicKey.toBase58()}`) === 'true'
+          : false;
+        
+        let metadata = await fetchUserMetadata(connection, publicKey);
         
         if (!metadata) {
-          console.error('❌ Failed to fetch UserMetadata - user may not be fully registered');
-          // Clear registration state and show registration-required UI
-          setRegistered(false);
-          setUserMetadata(null);
-          // Don't set error here - let the UI show the registration form instead
-          console.log('💡 UserMetadata not found - user needs to register or re-register');
-          return;
+          // Don't immediately set registered=false if we have local confirmation
+          if (locallyRegistered) {
+            console.warn('⚠️ UserMetadata temporarily unavailable but user is locally registered - retrying...');
+            
+            // Retry metadata fetch with exponential backoff
+            let retryCount = 0;
+            const maxRetries = 3;
+            let retryMetadata = null;
+            
+            while (retryCount < maxRetries && !retryMetadata) {
+              const delay = 1000 * Math.pow(2, retryCount); // 1s, 2s, 4s
+              console.log(`⏳ Retry ${retryCount + 1}/${maxRetries} in ${delay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              
+              retryMetadata = await fetchUserMetadata(connection, publicKey);
+              retryCount++;
+            }
+            
+            if (retryMetadata) {
+              console.log('✅ Metadata retrieved on retry');
+              setUserMetadata(retryMetadata);
+              setRegistered(true);
+              // Reassign to metadata variable for subsequent use
+              metadata = retryMetadata;
+            } else {
+              console.error('❌ Failed to fetch UserMetadata after retries - clearing local state');
+              // Clear localStorage if we can't verify on-chain
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem(`equa_registered_${publicKey.toBase58()}`);
+              }
+              setRegistered(false);
+              setUserMetadata(null);
+              return;
+            }
+          } else {
+            console.error('❌ Failed to fetch UserMetadata - user may not be fully registered');
+            // Clear registration state and show registration-required UI
+            setRegistered(false);
+            setUserMetadata(null);
+            // Don't set error here - let the UI show the registration form instead
+            console.log('💡 UserMetadata not found - user needs to register or re-register');
+            return;
+          }
+        } else {
+          console.log('✅ UserMetadata loaded:', {
+            user_index: metadata.user_index,
+            elevated_mint_attempts_used: metadata.elevated_mint_attempts_used
+          });
+          
+          setUserMetadata(metadata);
+          
+          // Update localStorage to match on-chain state
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(`equa_registered_${publicKey.toBase58()}`, 'true');
+          }
         }
         
-        console.log('✅ UserMetadata loaded:', {
-          user_index: metadata.user_index,
-          elevated_mint_attempts_used: metadata.elevated_mint_attempts_used
-        });
-        
-        setUserMetadata(metadata);
-        
+        // At this point, metadata is guaranteed to be non-null (either from initial fetch or retry)
         // Check if locked token ATA exists (migration support for pre-PR#198 users)
         const lockedAtaExists = await checkLockedTokenAtaExists();
         if (!lockedAtaExists) {
@@ -728,6 +826,26 @@ export default function MintPage() {
     // Check SOL balance
     if (!hasMinimumSolBalance(walletBalance)) {
       setError(`Insufficient SOL balance. You need at least ${MIN_SOL_BALANCE} SOL to register.`);
+      return;
+    }
+
+    // Wallet health check
+    console.log('🔍 Checking wallet connection health...');
+    try {
+      // Simple ping to verify wallet is responsive
+      const testMessage = new Uint8Array([1, 2, 3]);
+      if (wallet.signMessage) {
+        await Promise.race([
+          wallet.signMessage(testMessage).catch(() => null),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Wallet timeout')), 3000))
+        ]);
+        console.log('✅ Wallet connection healthy');
+      }
+    } catch (healthErr) {
+      console.warn('⚠️ Wallet health check failed - wallet might be unresponsive:', healthErr);
+      setError('Your wallet appears to be unresponsive. Please close and reopen your wallet extension, then refresh this page.');
+      setIsLoading(false);
+      setIsSubmittingRegistration(false);
       return;
     }
 
@@ -1037,13 +1155,57 @@ export default function MintPage() {
         throw simError;
       }
       
-      // Send registration transaction
-      const regTxSig = await wallet.sendTransaction(registrationTx, connection, {
-        skipPreflight: false,
-        maxRetries: 0
-      });
-      
-      console.log('📤 Registration transaction sent:', regTxSig);
+      // Send registration transaction with retry logic for wallet communication errors
+      console.log('📝 Sending transaction via wallet adapter...');
+      let regTxSig: string;
+      let sendAttempt = 0;
+      const maxSendAttempts = 3;
+
+      while (sendAttempt < maxSendAttempts) {
+        try {
+          sendAttempt++;
+          console.log(`📤 Send attempt ${sendAttempt}/${maxSendAttempts}...`);
+          
+          regTxSig = await wallet.sendTransaction(registrationTx, connection, {
+            skipPreflight: false,
+            maxRetries: 0 // We handle retries ourselves at a higher level
+          });
+          
+          console.log('📤 Registration transaction sent:', regTxSig);
+          break; // Success - exit retry loop
+          
+        } catch (sendErr: any) {
+          console.error(`❌ Send attempt ${sendAttempt} failed:`, sendErr);
+          
+          // Check if it's a wallet communication error (Phantom service worker issue)
+          const isWalletCommError = 
+            sendErr?.message?.includes('service worker') ||
+            sendErr?.message?.includes('disconnected port') ||
+            sendErr?.message?.includes('Unexpected error') ||
+            sendErr?.name === 'WalletSendTransactionError';
+          
+          if (isWalletCommError && sendAttempt < maxSendAttempts) {
+            // Wallet communication error - retry after delay
+            const retryDelay = 1000 * sendAttempt; // Exponential: 1s, 2s, 3s
+            console.warn(`⏳ Wallet communication error - retrying in ${retryDelay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            
+            // Refresh blockhash before retry (might have expired)
+            const newBlockhash = await connection.getLatestBlockhash('confirmed');
+            registrationTx.recentBlockhash = newBlockhash.blockhash;
+            
+            continue; // Retry
+          } else {
+            // Not a wallet comm error, or out of retries - rethrow
+            throw sendErr;
+          }
+        }
+      }
+
+      if (!regTxSig!) {
+        throw new Error('Failed to send registration transaction after all retry attempts');
+      }
+
       console.log('⏳ Confirming registration...');
       
       await connection.confirmTransaction({
@@ -1113,6 +1275,19 @@ export default function MintPage() {
         setUserMetadata(fetchedMetadata);
         setRegistered(true);
         
+        // Persist registration state in localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`equa_registered_${publicKey.toBase58()}`, 'true');
+          console.log('💾 Registration state persisted in localStorage');
+        }
+        
+        // Set grace period to prevent immediate re-checks
+        setJustRegistered(true);
+        setTimeout(() => {
+          setJustRegistered(false);
+          console.log('✅ Registration grace period ended');
+        }, REGISTRATION_GRACE_PERIOD_MS);
+        
         // Refresh other user data now that we're registered
         await checkUserRegistration();
       } catch (metadataErr: any) {
@@ -1156,8 +1331,18 @@ export default function MintPage() {
         }
       }
       
+      // Check for Phantom wallet communication errors FIRST
+      if (errorObj?.message?.includes('service worker') || 
+          errorObj?.message?.includes('disconnected port') ||
+          (errorObj?.name === 'WalletSendTransactionError' && errorObj?.message === 'Unexpected error')) {
+        errorMessage = '❌ Wallet communication error. Please try again.\n\n' +
+                       'If this persists:\n' +
+                       '1. Close and reopen your wallet extension\n' +
+                       '2. Refresh this page\n' +
+                       '3. Try again';
+      }
       // Provide specific error messages based on error type
-      if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
+      else if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
         errorMessage = '❌ Insufficient SOL balance. You need at least 0.02 SOL for registration fees.\n\nRun: solana airdrop 1 --url devnet';
       } else if (errorMessage.includes('User rejected') || errorMessage.includes('User denied')) {
         errorMessage = '❌ Transaction rejected. Please approve the transaction in your wallet to continue.';
