@@ -29,8 +29,8 @@ import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
-import { isUserRegistered } from '@/utils/registrationCheck';
 import { claimBonusMint, getReferralStats } from '@/utils/referralRewards';
+import { useRegistrationStatus, RegistrationStatus } from '@/contexts/RegistrationContext';
 
 interface WalletDashboardProps {
   className?: string;
@@ -67,6 +67,12 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const { publicKey, connected, signTransaction } = useWallet();
   const { connection } = useConnection();
   
+  // ✅ NEW: Use centralized registration context
+  const { 
+    status: registrationStatus, 
+    isLoading: isCheckingRegistration 
+  } = useRegistrationStatus();
+  
   // Use real-time balance hook instead of manual fetching
   const { balance, isLoading: isBalanceLoading } = useEquaBalance();
   
@@ -82,10 +88,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [claimSuccess, setClaimSuccess] = useState('');
-  
-  // ✅ Registration check state
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [isCheckingRegistration, setIsCheckingRegistration] = useState(true);
 
   // Get user account PDA derived from connected wallet (memoized to prevent repeated calls)
   const userAccountPDA = useMemo(() => {
@@ -97,37 +99,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     userAccountPDA,
     { enabled: connected && !!userAccountPDA }
   );
-
-  // ✅ Check registration status
-  useEffect(() => {
-    async function checkRegistration() {
-      if (!publicKey) {
-        setIsRegistered(false);
-        setIsCheckingRegistration(false);
-        return;
-      }
-      
-      setIsCheckingRegistration(true);
-      
-      try {
-        const registered = await isUserRegistered(connection, publicKey);
-        setIsRegistered(registered);
-        
-        if (registered) {
-          console.log('✅ [WalletDashboard] User is registered, showing Send/Receive');
-        } else {
-          console.log('💡 [WalletDashboard] User not registered, hiding Send/Receive');
-        }
-      } catch (error) {
-        console.error('❌ [WalletDashboard] Error checking registration:', error);
-        setIsRegistered(false);
-      } finally {
-        setIsCheckingRegistration(false);
-      }
-    }
-    
-    checkRegistration();
-  }, [publicKey, connection]);
 
   // Fetch mint decimals and referral data from onchain
   useEffect(() => {
@@ -277,186 +248,199 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     }
   }, [publicKey, signTransaction, connection, referralCredits]);
 
+  // ✅ Early return if wallet not connected
   if (!connected || !publicKey) {
     return null;
   }
 
   // ✅ Show loading state while checking (silent - no flicker)
-  if (isCheckingRegistration) {
+  if (isCheckingRegistration || registrationStatus === RegistrationStatus.CHECKING) {
     return null;
   }
 
   // ✅ Hide Send/Receive for unregistered users
-  if (!isRegistered) {
+  if (registrationStatus === RegistrationStatus.NOT_REGISTERED || 
+      registrationStatus === RegistrationStatus.UNKNOWN) {
+    console.log('💡 [WalletDashboard] User not registered or status unknown, hiding dashboard');
     return null;
   }
 
   // ✅ Only registered users reach here
-  return (
-    <div className={`${className}`}>
-      {/* Network Diagnostics Banner */}
-      <NetworkDiagnosticsBanner />
-      
-      {/* Balance Card */}
-      <div className="bg-gradient-to-br from-purple-500/30 to-purple-600/30 backdrop-blur-md rounded-2xl p-6 border border-purple-400/50 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-purple-200 text-lg font-medium">Your EQUA Balance</h3>
-          <Logo size={32} />
-        </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-white text-4xl font-bold" data-testid="equa-balance">
-            {balance > 0 ? formatEquaBalance(balance) : '--'}
-          </span>
-          <span className="text-purple-300 text-xl">EQUA</span>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <button
-          onClick={() => setShowSendModal(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
-        >
-          <span className="text-xl">📤</span>
-          Send EQUA
-        </button>
-        <button
-          onClick={() => setShowReceiveModal(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
-        >
-          <span className="text-xl">📥</span>
-          Receive EQUA
-        </button>
-      </div>
-
-      {/* Referral Card */}
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-white text-lg font-bold flex items-center gap-2">
-            <span className="text-2xl">🎁</span>
-            Refer & Earn
-          </h3>
-          {/* Referral Count Badge */}
-          <div className="bg-purple-600/30 px-3 py-1 rounded-full">
-            <span className="text-purple-200 text-sm font-medium">
-              {referralCount} {referralCount === 1 ? 'referral' : 'referrals'}
+  if (registrationStatus === RegistrationStatus.REGISTERED) {
+    return (
+      <div className={`${className}`}>
+        {/* Network Diagnostics Banner */}
+        <NetworkDiagnosticsBanner />
+        
+        {/* Balance Card */}
+        <div className="bg-gradient-to-br from-purple-500/30 to-purple-600/30 backdrop-blur-md rounded-2xl p-6 border border-purple-400/50 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-purple-200 text-lg font-medium">Your EQUA Balance</h3>
+            <Logo size={32} />
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-white text-4xl font-bold" data-testid="equa-balance">
+              {balance > 0 ? formatEquaBalance(balance) : '--'}
             </span>
+            <span className="text-purple-300 text-xl">EQUA</span>
           </div>
         </div>
-        <p className="text-purple-200 text-sm mb-4">
-          Earn referral credits: 1 credit per individual referral, 2 credits per business referral. 
-          Redeem 5 credits for bonus minting attempts!
-        </p>
-        
-        {/* Referral Credits Display */}
-        {referralCredits !== null && referralCredits > 0 && (
-          <div className="space-y-3 mb-4">
-            {/* Error Message */}
-            {claimError && (
-              <div className="bg-red-500/20 border-2 border-red-500 rounded-xl p-3">
-                <p className="text-red-200 text-xs">{claimError}</p>
-              </div>
-            )}
 
-            {/* Success Message */}
-            {claimSuccess && (
-              <div className="bg-green-500/20 border-2 border-green-500 rounded-xl p-3">
-                <p className="text-green-200 text-xs">{claimSuccess}</p>
-              </div>
-            )}
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <button
+            onClick={() => setShowSendModal(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+          >
+            <span className="text-xl">📤</span>
+            Send EQUA
+          </button>
+          <button
+            onClick={() => setShowReceiveModal(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+          >
+            <span className="text-xl">📥</span>
+            Receive EQUA
+          </button>
+        </div>
 
-            {/* Credits Display Card */}
-            <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-3">
-              <p className="text-green-300 text-xs mb-1">Referral Credits</p>
-              <p className="text-white text-lg font-bold">
-                {referralCredits} Credit{referralCredits !== 1 ? 's' : ''}
-              </p>
-              {referralCredits >= 5 && (
-                <p className="text-yellow-300 text-xs mt-1">
-                  ✨ Ready to claim bonus mint!
+        {/* Referral Card */}
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-white text-lg font-bold flex items-center gap-2">
+              <span className="text-2xl">🎁</span>
+              Refer & Earn
+            </h3>
+            {/* Referral Count Badge */}
+            <div className="bg-purple-600/30 px-3 py-1 rounded-full">
+              <span className="text-purple-200 text-sm font-medium">
+                {referralCount} {referralCount === 1 ? 'referral' : 'referrals'}
+              </span>
+            </div>
+          </div>
+          <p className="text-purple-200 text-sm mb-4">
+            Earn referral credits: 1 credit per individual referral, 2 credits per business referral. 
+            Redeem 5 credits for bonus minting attempts!
+          </p>
+          
+          {/* Referral Credits Display */}
+          {referralCredits !== null && referralCredits > 0 && (
+            <div className="space-y-3 mb-4">
+              {/* Error Message */}
+              {claimError && (
+                <div className="bg-red-500/20 border-2 border-red-500 rounded-xl p-3">
+                  <p className="text-red-200 text-xs">{claimError}</p>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {claimSuccess && (
+                <div className="bg-green-500/20 border-2 border-green-500 rounded-xl p-3">
+                  <p className="text-green-200 text-xs">{claimSuccess}</p>
+                </div>
+              )}
+
+              {/* Credits Display Card */}
+              <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-3">
+                <p className="text-green-300 text-xs mb-1">Referral Credits</p>
+                <p className="text-white text-lg font-bold">
+                  {referralCredits} Credit{referralCredits !== 1 ? 's' : ''}
                 </p>
+                {referralCredits >= 5 && (
+                  <p className="text-yellow-300 text-xs mt-1">
+                    ✨ Ready to claim bonus mint!
+                  </p>
+                )}
+              </div>
+
+              {/* Claim Button - Only show when credits >= 5 */}
+              {referralCredits >= 5 && (
+                <button
+                  onClick={handleClaimCredits}
+                  disabled={isClaiming}
+                  className={`w-full font-bold py-3 px-4 rounded-xl transition-all text-sm ${
+                    isClaiming
+                      ? 'bg-gray-500/50 text-gray-400 cursor-not-allowed'
+                      : 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+                  }`}
+                  title={isClaiming ? 'Claiming...' : 'Claim your referral credits for a bonus mint'}
+                >
+                  {isClaiming ? '⏳ Claiming...' : '💰 Claim Credits'}
+                </button>
               )}
             </div>
-
-            {/* Claim Button - Only show when credits >= 5 */}
-            {referralCredits >= 5 && (
-              <button
-                onClick={handleClaimCredits}
-                disabled={isClaiming}
-                className={`w-full font-bold py-3 px-4 rounded-xl transition-all text-sm ${
-                  isClaiming
-                    ? 'bg-gray-500/50 text-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
-                }`}
-                title={isClaiming ? 'Claiming...' : 'Claim your referral credits for a bonus mint'}
-              >
-                {isClaiming ? '⏳ Claiming...' : '💰 Claim Credits'}
-              </button>
-            )}
+          )}
+          
+          <div className="bg-black/20 rounded-xl p-3 mb-4">
+            <p className="text-purple-300 text-xs mb-1">Your Referral Key</p>
+            <p className="text-white text-xs font-mono break-all">
+              {publicKey.toBase58()}
+            </p>
           </div>
-        )}
-        
-        <div className="bg-black/20 rounded-xl p-3 mb-4">
-          <p className="text-purple-300 text-xs mb-1">Your Referral Key</p>
-          <p className="text-white text-xs font-mono break-all">
-            {publicKey.toBase58()}
-          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={copyPublicKey}
+              className="bg-purple-500/30 hover:bg-purple-500/50 text-white py-3 px-4 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2"
+            >
+              {copied ? '✅ Copied!' : '📋 Copy Key'}
+            </button>
+            <button
+              onClick={shareReferral}
+              className="bg-green-500/30 hover:bg-green-500/50 text-white py-3 px-4 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2"
+            >
+              📲 Share
+            </button>
+          </div>
+          
+          {shareMessage && (
+            <p className="text-green-400 text-sm text-center mt-3">{shareMessage}</p>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={copyPublicKey}
-            className="bg-purple-500/30 hover:bg-purple-500/50 text-white py-3 px-4 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2"
-          >
-            {copied ? '✅ Copied!' : '📋 Copy Key'}
-          </button>
-          <button
-            onClick={shareReferral}
-            className="bg-green-500/30 hover:bg-green-500/50 text-white py-3 px-4 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2"
-          >
-            📲 Share
-          </button>
-        </div>
-        
-        {shareMessage && (
-          <p className="text-green-400 text-sm text-center mt-3">{shareMessage}</p>
+        {/* Send Modal */}
+        {showSendModal && (
+          <SendModal
+            publicKey={publicKey}
+            balance={balance}
+            mintDecimals={mintDecimals}
+            connection={connection}
+            signTransaction={signTransaction}
+            onClose={() => setShowSendModal(false)}
+            onSuccess={() => {
+              setShowSendModal(false);
+              // Balance will be updated automatically via useEquaBalance subscription
+            }}
+          />
+        )}
+
+        {/* Receive Modal */}
+        {showReceiveModal && (
+          <ReceiveModal
+            publicKey={publicKey}
+            onClose={() => setShowReceiveModal(false)}
+          />
+        )}
+
+        {/* Share Modal */}
+        {showShareModal && (
+          <ShareModal
+            publicKey={publicKey}
+            onClose={() => setShowShareModal(false)}
+          />
         )}
       </div>
+    );
+  }
 
-      {/* Send Modal */}
-      {showSendModal && (
-        <SendModal
-          publicKey={publicKey}
-          balance={balance}
-          mintDecimals={mintDecimals}
-          connection={connection}
-          signTransaction={signTransaction}
-          onClose={() => setShowSendModal(false)}
-          onSuccess={() => {
-            setShowSendModal(false);
-            // Balance will be updated automatically via useEquaBalance subscription
-            // No manual refresh needed
-          }}
-        />
-      )}
+  // ✅ Fallback for error state
+  if (registrationStatus === RegistrationStatus.ERROR) {
+    console.warn('⚠️ [WalletDashboard] Registration status error');
+    return null;
+  }
 
-      {/* Receive Modal */}
-      {showReceiveModal && (
-        <ReceiveModal
-          publicKey={publicKey}
-          onClose={() => setShowReceiveModal(false)}
-        />
-      )}
-
-      {/* Share Modal */}
-      {showShareModal && (
-        <ShareModal
-          publicKey={publicKey}
-          onClose={() => setShowShareModal(false)}
-        />
-      )}
-    </div>
-  );
+  // Should never reach here
+  return null;
 };
 
 // Send Modal Component
@@ -508,18 +492,12 @@ const SendModal: FC<SendModalProps> = ({
     const fetchPrice = async () => {
       setIsLoadingPrice(true);
       try {
-        // Use the already-initialized localCurrency state
         const currencyCode = localCurrency;
-        
-        // Get current EQUA price from global state
-        // For now, use a default price - in production, fetch from blockchain
         const priceData = await getEquaPriceMultiFormat(DEFAULT_EQUA_PRICE_USD, currencyCode, connection);
         setEquaPrice(priceData.localCurrency);
         
-        // Log FX metadata for debugging
         console.log(`FX Rate Info: ${currencyCode} = ${priceData.fxRate} (source: ${priceData.fxSource}, age: ${Math.floor((priceData.fxAge || 0) / 3600000)}h)`);
         
-        // Warn if stale
         if (priceData.fxIsStale) {
           console.warn(`⚠️ FX rate for ${currencyCode} is stale (${Math.floor((priceData.fxAge || 0) / 3600000)} hours old)`);
         }
@@ -537,7 +515,6 @@ const SendModal: FC<SendModalProps> = ({
   const handleLocalCurrencyChange = (value: string) => {
     setLocalCurrencyAmount(value);
     
-    // Convert to EQUA
     if (value && !isNaN(parseFloat(value)) && equaPrice > 0) {
       const localAmount = parseFloat(value);
       const equaAmount = localAmount / equaPrice;
@@ -551,7 +528,6 @@ const SendModal: FC<SendModalProps> = ({
   const handleEquaAmountChange = (value: string) => {
     setAmount(value);
     
-    // Convert to local currency
     if (value && !isNaN(parseFloat(value)) && equaPrice > 0) {
       const equaAmount = parseFloat(value);
       const localAmount = equaAmount * equaPrice;
@@ -578,13 +554,11 @@ const SendModal: FC<SendModalProps> = ({
       setError('');
       const jsQR = await getJsQR();
       
-      // Create an image element to read the file
       const img = document.createElement('img');
       const reader = new FileReader();
       
       reader.onload = () => {
         img.onload = () => {
-          // Create a canvas to get image data
           const canvas = document.createElement('canvas');
           canvas.width = img.width;
           canvas.height = img.height;
@@ -597,11 +571,9 @@ const SendModal: FC<SendModalProps> = ({
           ctx.drawImage(img, 0, 0);
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           
-          // Decode QR code
           const code = jsQR(imageData.data, imageData.width, imageData.height);
           
           if (code) {
-            // Validate as Solana address
             try {
               new PublicKey(code.data.trim());
               setRecipientAddress(code.data.trim());
@@ -623,7 +595,6 @@ const SendModal: FC<SendModalProps> = ({
       setError('Failed to read QR code from image');
     }
     
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -679,7 +650,6 @@ const SendModal: FC<SendModalProps> = ({
         const code = jsQR(imageData.data, imageData.width, imageData.height);
         
         if (code) {
-          // Validate as Solana address
           try {
             new PublicKey(code.data.trim());
             setRecipientAddress(code.data.trim());
@@ -723,7 +693,6 @@ const SendModal: FC<SendModalProps> = ({
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      // Try to validate as Solana address
       try {
         new PublicKey(text.trim());
         setRecipientAddress(text.trim());
@@ -744,7 +713,6 @@ const SendModal: FC<SendModalProps> = ({
     setTxSignature('');
 
     try {
-      // Validate recipient address
       let recipientPubkey: PublicKey;
       try {
         recipientPubkey = new PublicKey(recipientAddress);
@@ -756,10 +724,8 @@ const SendModal: FC<SendModalProps> = ({
       const [mintAuthorityPDA] = getMintAuthorityPDA();
       const [globalStatePDA] = getGlobalStatePDA();
       
-      // Verify mint owner is Token-2022 (preflight validation)
       await verifyMintOwner(connection, mintPDA);
       
-      // Get sender's token account
       const senderTokenAccount = getAssociatedTokenAddressSync(
         mintPDA,
         publicKey,
@@ -768,10 +734,8 @@ const SendModal: FC<SendModalProps> = ({
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
-      // Re-fetch current balance to ensure we have the latest value
       const currentBalance = await getSPLTokenBalance(connection, senderTokenAccount);
       
-      // Parse amount using BigInt to avoid float issues
       const amountInBaseUnits = parseDecimalStringToRaw(amount, mintDecimals);
       
       if (amountInBaseUnits === null) {
@@ -782,13 +746,11 @@ const SendModal: FC<SendModalProps> = ({
         throw new Error('Amount must be greater than zero');
       }
 
-      // Validate against current balance
       if (amountInBaseUnits > BigInt(currentBalance)) {
         const balanceInEqua = rawToDecimal(currentBalance, mintDecimals);
         throw new Error(`Insufficient balance. You have ${balanceInEqua.toFixed(6)} EQUA available.`);
       }
 
-      // Get recipient's token account
       const recipientTokenAccount = getAssociatedTokenAddressSync(
         mintPDA,
         recipientPubkey,
@@ -797,29 +759,25 @@ const SendModal: FC<SendModalProps> = ({
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
-      // Get sender and recipient UserAccount PDAs (required for transfer_tokens)
       const [senderUserAccount] = getUserAccountPDA(publicKey);
       const [recipientUserAccount] = getUserAccountPDA(recipientPubkey);
 
       const transaction = new Transaction();
 
-      // Check if recipient token account exists, if not create it
       const recipientAccountInfo = await connection.getAccountInfo(recipientTokenAccount);
       if (!recipientAccountInfo) {
         transaction.add(
           createAssociatedTokenAccountInstruction(
-            publicKey, // payer
-            recipientTokenAccount, // ata
-            recipientPubkey, // owner
-            mintPDA, // mint
+            publicKey,
+            recipientTokenAccount,
+            recipientPubkey,
+            mintPDA,
             TOKEN_PROGRAM_ID,
             ASSOCIATED_TOKEN_PROGRAM_ID
           )
         );
       }
 
-      // Add Anchor transfer_tokens instruction (uses Token-2022 transfer_checked via CPI)
-      // Pass bigint directly - createTransferTokensInstruction handles the conversion
       transaction.add(
         createTransferTokensInstruction(
           senderUserAccount,
@@ -853,39 +811,22 @@ const SendModal: FC<SendModalProps> = ({
 
       setTxSignature(signature);
       
-      // Clear RPC cache to force fresh balance fetch
       clearRpcCache();
-      
-      // Note: GlobalState.total_transactions is already incremented by the
-      // transfer_tokens instruction on-chain. Transfer count is tracked on-chain only.
-      // UI components should use useGlobalStateStats() to display transaction counts.
       
       setTimeout(onSuccess, 2000);
     } catch (err: any) {
       console.error('Send error:', err);
       
-      // Extract detailed error message from SendTransactionError
       let errorMessage = 'Failed to send EQUA';
       
       if (err instanceof SendTransactionError) {
         const logs = await err.getLogs(connection);
         console.error('Transaction logs:', logs);
         
-        // Check for common error patterns in logs
         if (logs) {
           const logsString = logs.join('\n');
           if (logsString.includes('insufficient funds') || logsString.includes('0x1')) {
             errorMessage = 'Insufficient funds. Please check your balance and try again.';
-          } else if (logsString.includes('custom program error')) {
-            // Extract error code if available
-            const errorMatch = logsString.match(/custom program error: (0x[0-9a-fA-F]+)/);
-            if (errorMatch) {
-              errorMessage = `Transaction failed with error code ${errorMatch[1]}. ${
-                errorMatch[1] === '0x1' ? 'This usually means insufficient funds.' : ''
-              }`;
-            } else {
-              errorMessage = 'Transaction failed. Please check the console for details.';
-            }
           }
         }
       } else if (err.message) {
@@ -961,7 +902,6 @@ const SendModal: FC<SendModalProps> = ({
                 className="w-full bg-white/10 border-2 border-purple-500/30 rounded-xl px-4 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:border-purple-500"
               />
               
-              {/* Quick actions for address input */}
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={handlePaste}
@@ -987,7 +927,6 @@ const SendModal: FC<SendModalProps> = ({
                 </label>
               </div>
               
-              {/* Scanner error message */}
               {scannerError && (
                 <p className="text-yellow-400 text-xs mt-2">{scannerError}</p>
               )}
@@ -1076,16 +1015,13 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [isGeneratingQR, setIsGeneratingQR] = useState(true);
 
-  // Generate QR code for wallet address only
   useEffect(() => {
     const generateQR = async () => {
       try {
         setIsGeneratingQR(true);
         
-        // Lazy load QRCode library
         const QRCode = (await import('qrcode')).default;
         
-        // Generate QR code with just the wallet address
         const walletAddress = publicKey.toBase58();
         const dataUrl = await QRCode.toDataURL(walletAddress, {
           width: 200,
@@ -1130,7 +1066,6 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
         </div>
 
         <div className="text-center">
-          {/* Wallet Address QR Code */}
           <div className="bg-white rounded-xl p-4 inline-block mb-4">
             {isGeneratingQR ? (
               <div className="w-[200px] h-[200px] flex items-center justify-center">
@@ -1156,7 +1091,6 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
             Scan the QR code or copy your wallet address to receive EQUA tokens
           </p>
 
-          {/* Copy Address Button */}
           <button
             onClick={copyAddress}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-all mb-4"
@@ -1164,7 +1098,6 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
             {copied ? '✅ Copied!' : '📋 Copy Address'}
           </button>
 
-          {/* Address display */}
           <div className="bg-black/20 rounded-xl p-3">
             <p className="text-purple-300 text-xs mb-2">Your Wallet Address</p>
             <p className="text-white text-xs font-mono break-all">
@@ -1193,7 +1126,6 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
   const encodedMessage = encodeURIComponent(referralMessage);
   const encodedUrl = encodeURIComponent(referralUrl);
   
-  // Share via different platforms
   const shareOptions = [
     {
       name: 'WhatsApp',
@@ -1276,7 +1208,6 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
             Share your referral link and earn credits: 1 credit per individual referral, 2 credits per business referral!
           </p>
 
-          {/* Referral Link Preview */}
           <div className="bg-black/20 rounded-xl p-4 mb-6">
             <p className="text-purple-300 text-xs mb-2">Your Referral Link</p>
             <p className="text-white text-sm font-mono break-all">
@@ -1284,7 +1215,6 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
             </p>
           </div>
 
-          {/* Share Options Grid */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             {shareOptions.map((option) => (
               <a
@@ -1299,7 +1229,6 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
               </a>
             ))}
             
-            {/* Native Share (if supported) */}
             {typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'share' in navigator && (
               <button
                 onClick={handleNativeShare}
@@ -1311,7 +1240,6 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
             )}
           </div>
 
-          {/* Copy Button */}
           <button
             onClick={copyToClipboard}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all mb-4"
