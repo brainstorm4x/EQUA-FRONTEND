@@ -63,13 +63,13 @@ describe('Environment Variables', () => {
       jest.resetModules();
       const { PROGRAM_ID } = require('@/lib/constants');
       
-      expect(PROGRAM_ID.toBase58()).toBe('GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C');
+      expect(PROGRAM_ID.toBase58()).toBe('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw');
     });
 
     it('should prefer NEXT_PUBLIC_PROGRAM_ID over legacy variable', () => {
       // Use valid Solana public keys for testing
-      const preferredId = 'BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL';
-      const legacyId = 'GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C';
+      const preferredId = 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw';
+      const legacyId = 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw';
       
       process.env.NEXT_PUBLIC_PROGRAM_ID = preferredId;
       process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID = legacyId;
@@ -83,7 +83,7 @@ describe('Environment Variables', () => {
 
     it('should fall back to legacy variable when preferred is not set', () => {
       // Use valid Solana public key for testing
-      const legacyId = 'BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL';
+      const legacyId = 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw';
       
       delete process.env.NEXT_PUBLIC_PROGRAM_ID;
       process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID = legacyId;

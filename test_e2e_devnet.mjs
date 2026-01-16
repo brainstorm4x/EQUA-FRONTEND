@@ -22,7 +22,7 @@ import {
 import BN from 'bn.js';
 
 // Constants from the frontend
-const PROGRAM_ID = new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL');
+const PROGRAM_ID = new PublicKey('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw');
 const GLOBAL_STATE_SEED = 'global-state';
 const MINT_SEED = 'equa-mint';
 const MINT_AUTHORITY_SEED = 'mint-authority';

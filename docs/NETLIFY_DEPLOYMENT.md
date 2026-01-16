@@ -71,7 +71,7 @@ In **Netlify Dashboard → Site Settings → Environment Variables**, add:
 SOLANA_WALLET_PRIVATE_KEY=<Base58 encoded private key>
 SOLANA_RPC_ENDPOINT=https://api.devnet.solana.com
 SOLANA_NETWORK=devnet
-NEXT_PUBLIC_PROGRAM_ID=GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C
+NEXT_PUBLIC_PROGRAM_ID=D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw
 ```
 
 #### Optional Variables (Have Defaults)

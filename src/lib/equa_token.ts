@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/equa_token.json`.
  */
 export type EquaToken = {
-  "address": "GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C",
+  "address": "D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw",
   "metadata": {
     "name": "equaToken",
     "version": "0.1.0",
@@ -316,13 +316,144 @@ export type EquaToken = {
         },
         {
           "name": "authority",
+          "writable": true,
           "signer": true,
           "relations": [
             "userAccount"
           ]
         },
         {
+          "name": "lockedTokenAccount",
+          "docs": [
+            "Locked token account PDA (only for tiers 1-3)"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lockedTokenAta",
+          "docs": [
+            "Associated token account for locked tokens"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "lockedTokenPda"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "lockedTokenPda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
           "name": "tokenProgram"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -1486,6 +1617,7 @@ export type EquaToken = {
         },
         {
           "name": "businessRegistry",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -2653,6 +2785,21 @@ export type EquaToken = {
       "code": 6042,
       "name": "timestampOverflow",
       "msg": "Timestamp overflow. The calculated unlock timestamp exceeds the maximum representable value."
+    },
+    {
+      "code": 6043,
+      "name": "mintingCooldownNotExpired",
+      "msg": "Minting cooldown has not expired. You must wait 24 hours between mints (including bonus mints)."
+    },
+    {
+      "code": 6044,
+      "name": "businessRegistryNotInitialized",
+      "msg": "Business registry is not initialized. Initialize the registry before registering business users."
+    },
+    {
+      "code": 6045,
+      "name": "businessRegistryFull",
+      "msg": "Business registry is full. Maximum capacity of 100 business referrers reached."
     }
   ],
   "types": [

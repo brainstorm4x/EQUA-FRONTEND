@@ -20,7 +20,7 @@ jest.mock('@solana/wallet-adapter-react', () => ({
 
 // Mock the program ID with proper PublicKey methods
 jest.mock('@/lib/constants', () => ({
-  PROGRAM_ID: new (require('@solana/web3.js').PublicKey)('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
+  PROGRAM_ID: new (require('@solana/web3.js').PublicKey)('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw'),
   GLOBAL_STATE_SEED: 'global-state',
 }));
 
@@ -33,7 +33,7 @@ describe('Mint Rate Display', () => {
     jest.clearAllMocks();
     // Mock PublicKey.findProgramAddressSync to return a valid PDA
     jest.spyOn(PublicKey, 'findProgramAddressSync').mockReturnValue([
-      new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
+      new PublicKey('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw'),
       255
     ]);
   });

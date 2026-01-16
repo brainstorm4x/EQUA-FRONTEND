@@ -1,5 +1,5 @@
 {
-  "address": "GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C",
+  "address": "D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw",
   "metadata": {
     "name": "equa_token",
     "version": "0.1.0",
@@ -310,13 +310,144 @@
         },
         {
           "name": "authority",
+          "writable": true,
           "signer": true,
           "relations": [
             "user_account"
           ]
         },
         {
+          "name": "locked_token_account",
+          "docs": [
+            "Locked token account PDA (only for tiers 1-3)"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "locked_token_ata",
+          "docs": [
+            "Associated token account for locked tokens"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "locked_token_pda"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "locked_token_pda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
           "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -1480,6 +1611,7 @@
         },
         {
           "name": "business_registry",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -2647,6 +2779,21 @@
       "code": 6042,
       "name": "TimestampOverflow",
       "msg": "Timestamp overflow. The calculated unlock timestamp exceeds the maximum representable value."
+    },
+    {
+      "code": 6043,
+      "name": "MintingCooldownNotExpired",
+      "msg": "Minting cooldown has not expired. You must wait 24 hours between mints (including bonus mints)."
+    },
+    {
+      "code": 6044,
+      "name": "BusinessRegistryNotInitialized",
+      "msg": "Business registry is not initialized. Initialize the registry before registering business users."
+    },
+    {
+      "code": 6045,
+      "name": "BusinessRegistryFull",
+      "msg": "Business registry is full. Maximum capacity of 100 business referrers reached."
     }
   ],
   "types": [

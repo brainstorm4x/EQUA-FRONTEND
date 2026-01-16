@@ -64,7 +64,7 @@ validateEnvironment();
 
 const SOLANA_RPC_ENDPOINT = process.env.SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
 const SOLANA_NETWORK = process.env.SOLANA_NETWORK || 'devnet';
-const PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PROGRAM_ID || 'GR1XrKDd6VT56Rcpa6H6nwGxBVJeTg2KnmJ9RdAwok7C');
+const PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PROGRAM_ID || 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw');
 
 // ============================================================================
 // Helper Functions

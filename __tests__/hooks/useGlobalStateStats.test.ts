@@ -17,7 +17,7 @@ const mockGlobalStatePDA = new PublicKey('7Z8vCjHAXJ4zzHvZePTn6bfuRoSZVCcv4uWKh3
 jest.mock('@/lib/constants', () => {
   const { PublicKey } = require('@solana/web3.js');
   return {
-    PROGRAM_ID: new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
+    PROGRAM_ID: new PublicKey('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw'),
     GLOBAL_STATE_SEED: 'global-state',
   };
 });
@@ -86,7 +86,7 @@ describe('useGlobalStateStats', () => {
       data: mockAccountData,
       executable: false,
       lamports: 5000000,
-      owner: new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
+      owner: new PublicKey('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw'),
     });
 
     const { result } = renderHook(() => useGlobalStateStats());
@@ -123,7 +123,7 @@ describe('useGlobalStateStats', () => {
       data: mockAccountData,
       executable: false,
       lamports: 5000000,
-      owner: new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
+      owner: new PublicKey('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw'),
     });
 
     const { result } = renderHook(() => useGlobalStateStats());
@@ -152,7 +152,7 @@ describe('useGlobalStateStats', () => {
       data: mockAccountData,
       executable: false,
       lamports: 5000000,
-      owner: new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
+      owner: new PublicKey('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw'),
     });
 
     const { result } = renderHook(() => useGlobalStateStats());
@@ -247,7 +247,7 @@ describe('useGlobalStateStats', () => {
       data: initialAccountData,
       executable: false,
       lamports: 5000000,
-      owner: new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
+      owner: new PublicKey('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw'),
     });
 
     const { result } = renderHook(() => useGlobalStateStats());
@@ -270,7 +270,7 @@ describe('useGlobalStateStats', () => {
         data: updatedAccountData,
         executable: false,
         lamports: 5000000,
-        owner: new PublicKey('BgNRqYsP1JW8X65rKji4dF47pX5aVPtsFhKioow6aDtL'),
+        owner: new PublicKey('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw'),
       });
     }
 
