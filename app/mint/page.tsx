@@ -829,6 +829,26 @@ export default function MintPage() {
       return;
     }
 
+    // Wallet health check
+    console.log('🔍 Checking wallet connection health...');
+    try {
+      // Simple ping to verify wallet is responsive
+      const testMessage = new Uint8Array([1, 2, 3]);
+      if (wallet.signMessage) {
+        await Promise.race([
+          wallet.signMessage(testMessage).catch(() => null),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Wallet timeout')), 3000))
+        ]);
+        console.log('✅ Wallet connection healthy');
+      }
+    } catch (healthErr) {
+      console.warn('⚠️ Wallet health check failed - wallet might be unresponsive:', healthErr);
+      setError('Your wallet appears to be unresponsive. Please close and reopen your wallet extension, then refresh this page.');
+      setIsLoading(false);
+      setIsSubmittingRegistration(false);
+      return;
+    }
+
     // Guard 1: Prevent duplicate submissions while a transaction is in flight
     if (isSubmittingRegistration) {
       console.warn('⚠️ Registration transaction already in progress - ignoring duplicate attempt');
@@ -1135,13 +1155,57 @@ export default function MintPage() {
         throw simError;
       }
       
-      // Send registration transaction
-      const regTxSig = await wallet.sendTransaction(registrationTx, connection, {
-        skipPreflight: false,
-        maxRetries: 0
-      });
-      
-      console.log('📤 Registration transaction sent:', regTxSig);
+      // Send registration transaction with retry logic for wallet communication errors
+      console.log('📝 Sending transaction via wallet adapter...');
+      let regTxSig: string;
+      let sendAttempt = 0;
+      const maxSendAttempts = 3;
+
+      while (sendAttempt < maxSendAttempts) {
+        try {
+          sendAttempt++;
+          console.log(`📤 Send attempt ${sendAttempt}/${maxSendAttempts}...`);
+          
+          regTxSig = await wallet.sendTransaction(registrationTx, connection, {
+            skipPreflight: false,
+            maxRetries: 0 // We handle retries ourselves at a higher level
+          });
+          
+          console.log('📤 Registration transaction sent:', regTxSig);
+          break; // Success - exit retry loop
+          
+        } catch (sendErr: any) {
+          console.error(`❌ Send attempt ${sendAttempt} failed:`, sendErr);
+          
+          // Check if it's a wallet communication error (Phantom service worker issue)
+          const isWalletCommError = 
+            sendErr?.message?.includes('service worker') ||
+            sendErr?.message?.includes('disconnected port') ||
+            sendErr?.message?.includes('Unexpected error') ||
+            sendErr?.name === 'WalletSendTransactionError';
+          
+          if (isWalletCommError && sendAttempt < maxSendAttempts) {
+            // Wallet communication error - retry after delay
+            const retryDelay = 1000 * sendAttempt; // Exponential: 1s, 2s, 3s
+            console.warn(`⏳ Wallet communication error - retrying in ${retryDelay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            
+            // Refresh blockhash before retry (might have expired)
+            const newBlockhash = await connection.getLatestBlockhash('confirmed');
+            registrationTx.recentBlockhash = newBlockhash.blockhash;
+            
+            continue; // Retry
+          } else {
+            // Not a wallet comm error, or out of retries - rethrow
+            throw sendErr;
+          }
+        }
+      }
+
+      if (!regTxSig!) {
+        throw new Error('Failed to send registration transaction after all retry attempts');
+      }
+
       console.log('⏳ Confirming registration...');
       
       await connection.confirmTransaction({
@@ -1267,8 +1331,18 @@ export default function MintPage() {
         }
       }
       
+      // Check for Phantom wallet communication errors FIRST
+      if (errorObj?.message?.includes('service worker') || 
+          errorObj?.message?.includes('disconnected port') ||
+          (errorObj?.name === 'WalletSendTransactionError' && errorObj?.message === 'Unexpected error')) {
+        errorMessage = '❌ Wallet communication error. Please try again.\n\n' +
+                       'If this persists:\n' +
+                       '1. Close and reopen your wallet extension\n' +
+                       '2. Refresh this page\n' +
+                       '3. Try again';
+      }
       // Provide specific error messages based on error type
-      if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
+      else if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
         errorMessage = '❌ Insufficient SOL balance. You need at least 0.02 SOL for registration fees.\n\nRun: solana airdrop 1 --url devnet';
       } else if (errorMessage.includes('User rejected') || errorMessage.includes('User denied')) {
         errorMessage = '❌ Transaction rejected. Please approve the transaction in your wallet to continue.';
