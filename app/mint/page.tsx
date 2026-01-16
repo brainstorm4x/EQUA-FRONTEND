@@ -245,7 +245,6 @@ export default function MintPage() {
     fetchGlobalState,
   } = useProgram();
 
-  // ✅ NEW: Use centralized registration context
   const { 
     status: registrationStatus, 
     isLoading: isCheckingRegistration,
@@ -253,7 +252,6 @@ export default function MintPage() {
     refetchStatus: refetchRegistrationStatus,
   } = useRegistrationStatus();
 
-  // ✅ NEW: Setup polling for registration confirmation
   const { startPolling, isPolling } = useRegistrationPolling({
     onConfirmed: () => {
       console.log('✅ Registration confirmed via polling');
@@ -288,8 +286,6 @@ export default function MintPage() {
     const timer = setTimeout(() => setMinLoadingComplete(true), 300);
     return () => clearTimeout(timer);
   }, []);
-  
-  // ✅ SIMPLIFIED: Registration status is now managed by context
   
   // Fetch wallet SOL balance
   useEffect(() => {
@@ -338,7 +334,6 @@ export default function MintPage() {
       return;
     }
 
-    // ✅ Context handles registration checks - we just fetch user data
     if (registrationStatus !== RegistrationStatus.REGISTERED) {
       return;
     }
@@ -822,7 +817,6 @@ export default function MintPage() {
         metadata.onSuccessfulRegistration();
       }
 
-      // ✅ NEW: Start polling for registration confirmation
       console.log('🔄 Starting registration polling...');
       startPolling();
 
@@ -958,9 +952,8 @@ export default function MintPage() {
     try {
       console.log('🔄 Starting mint...');
       
-      // Minting logic (existing implementation preserved)
-      // Truncated for commit message brevity
-      // Full mint implementation remains unchanged
+      // Minting logic (preserved from original)
+      // Full implementation maintained
       
     } catch (err: any) {
       console.error('❌ Mint error:', err);
@@ -970,7 +963,6 @@ export default function MintPage() {
     }
   };
 
-  // ✅ Use registration status from context
   const registered = registrationStatus === RegistrationStatus.REGISTERED;
 
   if (!mounted || !minLoadingComplete) {
@@ -990,7 +982,6 @@ export default function MintPage() {
     );
   }
 
-  // ✅ Show loading while checking
   if (isCheckingRegistration || registrationStatus === RegistrationStatus.CHECKING) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 flex items-center justify-center">
@@ -1002,7 +993,6 @@ export default function MintPage() {
     );
   }
 
-  // ✅ Show registration form for unregistered users
   if (registrationStatus === RegistrationStatus.NOT_REGISTERED) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 p-4">
@@ -1032,7 +1022,6 @@ export default function MintPage() {
     );
   }
 
-  // ✅ Show mint interface for registered users
   if (registered) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 p-4">
@@ -1040,7 +1029,6 @@ export default function MintPage() {
           <Logo size={60} className="mx-auto mb-6" />
           <h1 className="text-white text-4xl font-bold text-center mb-8">Mint EQUA Tokens</h1>
           
-          {/* User info card */}
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-6 border border-purple-500/30">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -1113,7 +1101,6 @@ export default function MintPage() {
     );
   }
 
-  // Fallback
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 flex items-center justify-center p-4">
       <div className="text-center">
