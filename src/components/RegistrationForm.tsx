@@ -25,7 +25,7 @@ import {
 interface RegistrationFormProps {
   totalUsers: number;
   walletBalance: number; // in lamports
-  onRegister: (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => void;
+  onSubmit: (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => void;
   isLoading: boolean;
   validateReferrer?: (referrer: string) => Promise<boolean>;
   userWalletAddress?: string;
@@ -42,7 +42,7 @@ export interface RegistrationMetadata {
 export const RegistrationForm: FC<RegistrationFormProps> = ({
   totalUsers,
   walletBalance,
-  onRegister,
+  onSubmit,
   isLoading,
   validateReferrer,
   userWalletAddress,
@@ -153,7 +153,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
     };
     
     // Register with selected account type
-    onRegister(accountType, effectiveReferrer, metadata);
+    onSubmit(accountType, effectiveReferrer, metadata);
   };
 
   // Check if referral code validation has an error state
