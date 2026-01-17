@@ -1525,6 +1525,8 @@ export default function MintPage() {
         lockedTokenAta,
         lockedTokenPda,
         TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        SystemProgram.programId,
         mintAmount
       );
       
