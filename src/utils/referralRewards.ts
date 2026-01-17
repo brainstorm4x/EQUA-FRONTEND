@@ -323,7 +323,14 @@ export async function getReferredUsersDetails(
  * Claim a bonus mint by redeeming referral credits
  * 
  * Redeems 5 credits for 1 bonus mint attempt. The amount minted respects the user's tier limits.
- * Monthly cap: 5 bonus mints per calendar month.
+ * 
+ * **Important:** Bonus mints DO NOT have a cooldown period (unlike regular mints).
+ * Users can claim multiple bonus mints back-to-back as long as they have sufficient credits.
+ * 
+ * Restrictions:
+ * - Requires 5 referral credits per bonus mint
+ * - Monthly cap: 5 bonus mints per calendar month
+ * - Tier limits still apply (same as regular minting)
  * 
  * @param connection Solana connection
  * @param wallet Wallet adapter with signTransaction and publicKey
