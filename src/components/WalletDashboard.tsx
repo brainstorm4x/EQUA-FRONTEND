@@ -236,7 +236,8 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       // Show success message
       const creditsRemaining = referralCredits - 5;
       setClaimSuccess(
-        `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ${creditsRemaining} credits remaining.`
+        `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ` +
+        `${creditsRemaining} credits remaining. You can claim another bonus mint immediately if you have 5+ credits.`
       );
 
       // Auto-dismiss success message after 5 seconds
@@ -262,6 +263,8 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         errorMessage += 'You have reached the monthly limit of 5 bonus mints.';
       } else if (err.message?.includes('MintAmountExceedsTierLimit')) {
         errorMessage += 'Amount exceeds your tier limit.';
+      } else if (err.message?.includes('MintingCooldownNotExpired')) {
+        errorMessage += 'Unexpected cooldown error. Bonus mints should bypass cooldowns. Please contact support.';
       } else if (err.message) {
         errorMessage += err.message;
       } else {
@@ -376,6 +379,9 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
                   ✨ Ready to claim bonus mint!
                 </p>
               )}
+              <p className="text-purple-300 text-xs mt-2">
+                💡 Bonus mints bypass the 24-hour cooldown that applies to regular minting
+              </p>
             </div>
 
             {/* Claim Button - Only show when credits >= 5 */}

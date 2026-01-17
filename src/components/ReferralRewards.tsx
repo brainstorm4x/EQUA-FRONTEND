@@ -131,7 +131,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       const creditsRemaining = credits! - CREDITS_REQUIRED_FOR_BONUS_MINT;
       setSuccessMessage(
         `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ` +
-        `${creditsRemaining} credits remaining.`
+        `${creditsRemaining} credits remaining. You can claim another bonus mint immediately if you have 5+ credits.`
       );
 
       // Refresh data after successful claim
@@ -149,6 +149,8 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
         errorMessage += 'You have reached the monthly limit of 5 bonus mints.';
       } else if (err.message?.includes('MintAmountExceedsTierLimit')) {
         errorMessage += 'Amount exceeds your tier limit.';
+      } else if (err.message?.includes('MintingCooldownNotExpired')) {
+        errorMessage += 'Unexpected: Bonus mints should not have cooldown restrictions. Please try again or contact support.';
       } else if (err.message) {
         errorMessage += err.message;
       } else {
@@ -298,6 +300,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
                 <li>Credits are awarded on successful registration</li>
                 <li>Redeem 5 credits for 1 bonus minting attempt</li>
                 <li>Maximum 5 bonus mints per calendar month</li>
+                <li>✨ Bonus mints bypass the 24-hour cooldown (instant redemption)</li>
               </ul>
             </div>
           </div>
