@@ -229,6 +229,8 @@ async function main() {
     lockedTokenAta,                // locked_token_ata
     lockedTokenPda,                // locked_token_pda
     TOKEN_PROGRAM_ID,              // token_program
+    ASSOCIATED_TOKEN_PROGRAM_ID,   // associated_token_program
+    SystemProgram.programId,       // system_program
     1000_000000                    // 1000 EQUA with 6 decimals
   );
   
