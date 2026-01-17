@@ -662,10 +662,16 @@ export function createMintEquaTokensInstruction(
   mintAuthority: PublicKey,
   authority: PublicKey,
   tokenProgram: PublicKey,
-  amount: number
+  amount: number | string
 ): TransactionInstruction {
   const discriminator = Buffer.from([166, 66, 221, 55, 153, 196, 139, 85]);
-  const amountBN = new BN(amount);
+  
+  // Safe BN construction: convert to string for large numbers
+  const amountBN = new BN(
+    typeof amount === 'number' && amount > Number.MAX_SAFE_INTEGER
+      ? amount.toString()
+      : amount
+  );
   
   const data = Buffer.concat([
     discriminator,
@@ -723,11 +729,17 @@ export function createMintTokensInstruction(
   tokenProgram: PublicKey,
   associatedTokenProgram: PublicKey,
   systemProgram: PublicKey,
-  amount: number
+  amount: number | string
 ): TransactionInstruction {
   // Discriminator from backend IDL for mint_tokens instruction
   const discriminator = Buffer.from([59, 132, 24, 246, 122, 39, 8, 243]);
-  const amountBN = new BN(amount);
+  
+  // Safe BN construction: convert to string for large numbers
+  const amountBN = new BN(
+    typeof amount === 'number' && amount > Number.MAX_SAFE_INTEGER
+      ? amount.toString()
+      : amount
+  );
   
   const data = Buffer.concat([
     discriminator,

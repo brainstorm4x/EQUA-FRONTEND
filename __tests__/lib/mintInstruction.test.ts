@@ -4,6 +4,7 @@
  */
 
 import { PublicKey } from '@solana/web3.js';
+import { BN } from '@coral-xyz/anchor';
 import { createMintEquaInstruction, createMintTokensInstruction, TOKEN_PROGRAM_ID, PROGRAM_ID } from '@/lib/program';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 
@@ -328,5 +329,100 @@ describe('createMintTokensInstruction', () => {
       }
       expect(decodedAmount).toBe(amount);
     });
+  });
+
+  it('should handle large amounts passed as strings', () => {
+    const largeAmount = '100000000000'; // 100,000 EQUA with 6 decimals (user #1 tier)
+    const referrerAccount = PublicKey.default;
+    
+    const instruction = createMintTokensInstruction(
+      userAccount,
+      userMetadata,
+      globalState,
+      userTokenAccount,
+      mint,
+      mintAuthority,
+      referrerAccount,
+      businessRegistry,
+      authority,
+      lockedTokenAccount,
+      lockedTokenAta,
+      lockedTokenPda,
+      TOKEN_PROGRAM_ID,
+      associatedTokenProgram,
+      systemProgram,
+      largeAmount
+    );
+    
+    // Verify instruction data length: 8 (discriminator) + 8 (amount u64)
+    expect(instruction.data.length).toBe(16);
+    
+    // Decode and verify amount using BN
+    const amountBytes = instruction.data.slice(8, 16);
+    const decodedBN = new BN(amountBytes, 'le');
+    expect(decodedBN.toString()).toBe(largeAmount);
+  });
+
+  it('should handle extremely large amounts that exceed MAX_SAFE_INTEGER', () => {
+    // Test with a value larger than Number.MAX_SAFE_INTEGER
+    const veryLargeAmount = '10000000000000000'; // Way beyond MAX_SAFE_INTEGER
+    const referrerAccount = PublicKey.default;
+    
+    const instruction = createMintTokensInstruction(
+      userAccount,
+      userMetadata,
+      globalState,
+      userTokenAccount,
+      mint,
+      mintAuthority,
+      referrerAccount,
+      businessRegistry,
+      authority,
+      lockedTokenAccount,
+      lockedTokenAta,
+      lockedTokenPda,
+      TOKEN_PROGRAM_ID,
+      associatedTokenProgram,
+      systemProgram,
+      veryLargeAmount
+    );
+    
+    // Verify instruction data length: 8 (discriminator) + 8 (amount u64)
+    expect(instruction.data.length).toBe(16);
+    
+    // Decode and verify amount using BN
+    const amountBytes = instruction.data.slice(8, 16);
+    const decodedBN = new BN(amountBytes, 'le');
+    expect(decodedBN.toString()).toBe(veryLargeAmount);
+  });
+
+  it('should convert numbers exceeding MAX_SAFE_INTEGER to strings automatically', () => {
+    // Create a number that exceeds MAX_SAFE_INTEGER
+    // Note: In practice, this would come from mathematical operations
+    const exceedingNumber = Number.MAX_SAFE_INTEGER + 1000;
+    const referrerAccount = PublicKey.default;
+    
+    // This should work because the function converts to string internally
+    const instruction = createMintTokensInstruction(
+      userAccount,
+      userMetadata,
+      globalState,
+      userTokenAccount,
+      mint,
+      mintAuthority,
+      referrerAccount,
+      businessRegistry,
+      authority,
+      lockedTokenAccount,
+      lockedTokenAta,
+      lockedTokenPda,
+      TOKEN_PROGRAM_ID,
+      associatedTokenProgram,
+      systemProgram,
+      exceedingNumber
+    );
+    
+    // Verify instruction was created successfully
+    expect(instruction.data.length).toBe(16);
   });
 });

@@ -1527,7 +1527,7 @@ export default function MintPage() {
         TOKEN_PROGRAM_ID,
         ASSOCIATED_TOKEN_PROGRAM_ID,
         SystemProgram.programId,
-        mintAmount
+        mintAmount > Number.MAX_SAFE_INTEGER ? mintAmount.toString() : mintAmount
       );
       
       console.log('📝 Mint instruction accounts (15 accounts):');
