@@ -356,8 +356,9 @@ export async function claimBonusMint(
   );
 
   // Derive locked token account PDAs (required for tiers 1-3, init_if_needed for others)
+  // Note: lockedTokenAccount and lockedTokenPda are the same PDA with different derivations
   const [lockedTokenAccount] = getLockedTokenAccountPda(wallet.publicKey, PROGRAM_ID);
-  const lockedTokenPda = getLockedTokenPda(wallet.publicKey, PROGRAM_ID);
+  const lockedTokenPda = lockedTokenAccount; // Reuse the same PDA (optimization)
   const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
 
   // Build claim_bonus_mint instruction
