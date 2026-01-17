@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useProgram } from '@/hooks/useProgram';
 import { Logo } from '@/components/Logo';
-import { PublicKey, Transaction, Connection, SystemProgram } from '@solana/web3.js';
+import { PublicKey, Transaction, Connection, SystemProgram, ComputeBudgetProgram } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
@@ -982,7 +982,14 @@ export default function MintPage() {
         console.log(`${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`);
       });
 
-      const transaction = new Transaction().add(instruction);
+      // Add compute budget instruction to prevent preflight warnings
+      const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
+        units: 400_000  // Sufficient for registration + account creations
+      });
+
+      const transaction = new Transaction()
+        .add(computeBudgetIx)
+        .add(instruction);
       transaction.feePayer = publicKey;
 
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
