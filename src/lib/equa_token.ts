@@ -2800,6 +2800,11 @@ export type EquaToken = {
       "code": 6045,
       "name": "businessRegistryFull",
       "msg": "Business registry is full. Maximum capacity of 100 business referrers reached."
+    },
+    {
+      "code": 6046,
+      "name": "invalidUserType",
+      "msg": "Invalid user type. User type must be 0 (Individual) or 1 (Business)."
     }
   ],
   "types": [

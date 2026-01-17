@@ -2794,6 +2794,11 @@
       "code": 6045,
       "name": "BusinessRegistryFull",
       "msg": "Business registry is full. Maximum capacity of 100 business referrers reached."
+    },
+    {
+      "code": 6046,
+      "name": "InvalidUserType",
+      "msg": "Invalid user type. User type must be 0 (Individual) or 1 (Business)."
     }
   ],
   "types": [
