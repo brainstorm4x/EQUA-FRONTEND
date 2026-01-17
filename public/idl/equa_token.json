@@ -159,9 +159,10 @@
         "- Bonus mints consume elevated_mint_attempts_used",
         "",
         "Monthly Caps:",
-        "- Base cap: 3 bonus mints per calendar month",
         "- Absolute cap: 5 bonus mints per calendar month",
         "- No rollover between months",
+        "",
+        "Cooldown: NO cooldown for bonus mints (cooldown only applies to regular mints)",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
         "Only P2P transfers (transfer_tokens) increment the transaction counter."
@@ -1674,6 +1675,8 @@
         "Users #2-10: 100 attempts at 10,000 EQUA each",
         "Users #11+: Normal limit (1,000 EQUA)",
         "",
+        "Cooldown: 24-hour cooldown enforced between regular mints",
+        "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
         "Only P2P transfers (transfer_tokens) increment the transaction counter."
       ],
@@ -2783,7 +2786,7 @@
     {
       "code": 6043,
       "name": "MintingCooldownNotExpired",
-      "msg": "Minting cooldown has not expired. You must wait 24 hours between mints (including bonus mints)."
+      "msg": "Minting cooldown has not expired. You must wait 24 hours between regular mints."
     },
     {
       "code": 6044,
