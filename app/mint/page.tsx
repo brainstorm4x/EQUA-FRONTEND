@@ -9,6 +9,7 @@ import { PublicKey, Transaction, Connection, SystemProgram } from '@solana/web3.
 import { 
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
+  createAssociatedTokenAccountIdempotentInstruction,
 } from '@solana/spl-token';
 import { 
   TOKEN_PROGRAM_ID,
@@ -28,7 +29,6 @@ import {
   getGlobalStatePDA,
   getMintPDA,
   getMintAuthorityPDA,
-  isUserRegistered,
   verifyMintOwner,
 } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
@@ -52,6 +52,7 @@ import {
 import { isUserAccountRegisteredOnchain } from '@/utils/onchainRegistration';
 import * as CooldownGuard from '@/utils/cooldown';
 import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
+import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrationCheck';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
 
@@ -353,6 +354,8 @@ export default function MintPage() {
   const [userMetadata, setUserMetadata] = useState<UserMetadata | null>(null);
   const [totalMints, setTotalMints] = useState<number>(0);
   const [minLoadingComplete, setMinLoadingComplete] = useState(false);
+  // Migration support: Track users who registered before PR#198 and need locked token ATA created
+  const [needsRepair, setNeedsRepair] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -382,10 +385,10 @@ export default function MintPage() {
       setIsCheckingRegistration(true);
       
       try {
-        // ✅ Check on-chain registration status
-        const metadata = await fetchUserMetadata(connection, publicKey);
+        // ✅ Check on-chain registration status using canonical check
+        const registered = await isUserRegistered(connection, publicKey);
         
-        if (metadata) {
+        if (registered) {
           // ✅ Registered → show mint interface
           console.log('✅ User registered, showing mint interface');
           setRegistered(true);
@@ -516,6 +519,16 @@ export default function MintPage() {
         });
         
         setUserMetadata(metadata);
+        
+        // Check if locked token ATA exists (migration support for pre-PR#198 users)
+        const lockedAtaExists = await checkLockedTokenAtaExists();
+        if (!lockedAtaExists) {
+          console.warn('⚠️  Locked token ATA not found - user needs migration');
+          setNeedsRepair(true);
+        } else {
+          console.log('✅ Locked token ATA exists');
+          setNeedsRepair(false);
+        }
         
         // Get user's registration number and total mints from account
         try {
@@ -655,6 +668,36 @@ export default function MintPage() {
     }
   }, [connection]);
 
+  /**
+   * Check if locked token ATA exists (migration support for pre-PR#198 users)
+   * 
+   * Background:
+   * - PR #198 added code to pre-create locked token ATA during registration
+   * - Users who registered BEFORE PR #198 are missing this account
+   * - When they try to mint, the transaction fails with "Locked token ATA not found"
+   * 
+   * This function:
+   * 1. Derives the expected locked token ATA address for the user
+   * 2. Checks if the account exists on-chain
+   * 3. Returns true if exists, false if missing
+   * 
+   * Used by checkUserRegistration() to detect if user needs migration
+   */
+  const checkLockedTokenAtaExists = useCallback(async (): Promise<boolean> => {
+    if (!publicKey || !connection) return false;
+    
+    try {
+      const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
+      const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
+      
+      const accountInfo = await connection.getAccountInfo(lockedTokenAta);
+      return accountInfo !== null;
+    } catch (error) {
+      console.error('Error checking locked token ATA:', error);
+      return false;
+    }
+  }, [publicKey, connection, mintPDA]);
+
   const handleRegisterWithForm = async (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => {
     if (!wallet.connected || !publicKey || !userAccountPDA) {
       setError('Wallet not connected');
@@ -792,6 +835,73 @@ export default function MintPage() {
       } else {
         console.log('✅ Token account already exists');
       }
+
+      // ============================================================================
+      // PRE-CREATE LOCKED TOKEN ATA
+      // Create locked token ATA during registration to reduce mint transaction size
+      // Note: locked_token_account PDA is still created by the program during first mint
+      // ============================================================================
+      
+      // Derive locked token PDAs
+      const [lockedTokenAccountPda] = getLockedTokenAccountPda(publicKey, PROGRAM_ID);
+      const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
+      const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
+      
+      console.log('🔍 Checking locked token ATA...');
+      console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
+      console.log('- Locked Token ATA:', lockedTokenAta.toBase58());
+      
+      // Create locked token ATA (if needed)
+      // This reduces mint transaction size by pre-creating the ATA
+      const lockedTokenAtaInfo = await connection.getAccountInfo(lockedTokenAta);
+      if (!lockedTokenAtaInfo) {
+        console.log('📝 Pre-creating locked token ATA...');
+        
+        if (!wallet.signTransaction) {
+          throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
+        }
+        
+        try {
+          const createLockedAtaIx = createAssociatedTokenAccountInstruction(
+            publicKey,           // payer
+            lockedTokenAta,      // ata
+            lockedTokenPda,      // owner (PDA)
+            mintPDA,             // mint
+            TOKEN_PROGRAM_ID,
+            ASSOCIATED_TOKEN_PROGRAM_ID
+          );
+          
+          const lockedAtaTx = new Transaction().add(createLockedAtaIx);
+          lockedAtaTx.feePayer = publicKey;
+          
+          const { blockhash: ataBlockhash, lastValidBlockHeight: ataLastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+          lockedAtaTx.recentBlockhash = ataBlockhash;
+          
+          console.log('📝 Blockhash (locked ATA):', ataBlockhash);
+          
+          const signedLockedAtaTx = await wallet.signTransaction(lockedAtaTx);
+          const lockedAtaSig = await connection.sendRawTransaction(signedLockedAtaTx.serialize(), {
+            skipPreflight: true,
+            maxRetries: 5
+          });
+          
+          console.log('📤 Locked token ATA creation transaction sent:', lockedAtaSig);
+          
+          await connection.confirmTransaction({
+            signature: lockedAtaSig,
+            blockhash: ataBlockhash,
+            lastValidBlockHeight: ataLastValidBlockHeight
+          }, 'confirmed');
+          
+          console.log('✅ Locked token ATA created:', lockedAtaSig);
+        } catch (lockedAtaError: unknown) {
+          throw handleAtaCreationError(lockedAtaError, 'registration');
+        }
+      } else {
+        console.log('✅ Locked token ATA already exists');
+      }
+      
+      console.log('✅ Locked token ATA ready for first mint');
 
       const now = Math.floor(Date.now() / 1000);
 
@@ -1006,6 +1116,100 @@ export default function MintPage() {
   // Keep the old handleRegister for backward compatibility
   const handleRegister = async () => {
     handleRegisterWithForm('individual', null);
+  };
+
+  /**
+   * Repair registration for users missing locked token ATA (migration support)
+   * 
+   * This function handles the one-time migration for users who registered before PR #198.
+   * 
+   * What it does:
+   * 1. Derives the locked token PDA and ATA addresses (same as registration flow)
+   * 2. Creates the missing locked token ATA using createAssociatedTokenAccountIdempotentInstruction
+   * 3. Confirms the transaction and updates UI state
+   * 
+   * Why it's needed:
+   * - PR #198 added pre-creation of locked token ATA during registration
+   * - Users who registered before this PR don't have the ATA
+   * - Without it, minting fails with "Locked token ATA not found" error
+   * 
+   * Technical details:
+   * - Uses same PDA derivation as registration (src/utils/pda-helpers.ts)
+   * - Uses idempotent ATA creation (handles existing accounts automatically)
+   * - User pays for rent (small SOL amount ~0.002 SOL)
+   * - Idempotent instruction prevents errors if account already exists
+   */
+  const handleRepairRegistration = async () => {
+    if (!wallet.connected || !publicKey) {
+      setError('Wallet not connected');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    setTxSignature('');
+
+    try {
+      console.log('🔧 Starting registration repair...');
+      console.log('Creating missing locked token ATA for user:', publicKey.toBase58());
+
+      // Derive locked token PDAs (same logic as registration)
+      const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
+      const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
+
+      console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
+      console.log('- Locked Token ATA:', lockedTokenAta.toBase58());
+
+      if (!wallet.signTransaction) {
+        throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
+      }
+
+      // Create locked token ATA using idempotent instruction
+      // This prevents errors if the account somehow already exists
+      const createLockedAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+        publicKey,           // payer
+        lockedTokenAta,      // ata
+        lockedTokenPda,      // owner (PDA)
+        mintPDA,             // mint
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+
+      const lockedAtaTx = new Transaction().add(createLockedAtaIx);
+      lockedAtaTx.feePayer = publicKey;
+
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      lockedAtaTx.recentBlockhash = blockhash;
+
+      console.log('📝 Blockhash:', blockhash);
+
+      const signedLockedAtaTx = await wallet.signTransaction(lockedAtaTx);
+      const lockedAtaSig = await connection.sendRawTransaction(signedLockedAtaTx.serialize(), {
+        skipPreflight: true,
+        maxRetries: 5
+      });
+
+      console.log('📤 Locked token ATA creation transaction sent:', lockedAtaSig);
+
+      await connection.confirmTransaction({
+        signature: lockedAtaSig,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed');
+
+      console.log('✅ Registration repair successful!', lockedAtaSig);
+      setTxSignature(lockedAtaSig);
+      setNeedsRepair(false);
+
+      // Refresh registration status
+      await checkUserRegistration();
+    } catch (err: unknown) {
+      console.error('❌ Registration repair failed:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Registration repair failed';
+      setError(`❌ Repair failed: ${errorMessage}. Please try again or contact support.`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
 
@@ -1284,7 +1488,29 @@ export default function MintPage() {
       const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
       const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
       
-      // Build the mint_tokens instruction (14-account version for deployed program)
+      // Derive business registry PDA
+      const [businessRegistryPDA] = getBusinessRegistryPDA();
+      
+      // ============================================================================
+      // VERIFY LOCKED TOKEN ATA EXISTS
+      // The ATA should have been pre-created during registration to reduce transaction size
+      // Note: locked_token_account PDA is initialized by the program during first mint
+      // ============================================================================
+      console.log('🔍 Verifying locked token ATA exists...');
+      const lockedAtaInfo = await connection.getAccountInfo(lockedTokenAta);
+      
+      if (!lockedAtaInfo) {
+        throw new Error(
+          '❌ Locked token ATA not found. This usually means registration was incomplete.\n\n' +
+          'Please refresh the page and try registering again.\n\n' +
+          `Missing account: Locked Token ATA (${lockedTokenAta.toBase58()})`
+        );
+      }
+      console.log('✅ Locked token ATA verified');
+      console.log('  - Locked Token ATA:', lockedTokenAta.toBase58());
+      console.log('  - Note: Locked Token Account PDA will be initialized by program if needed');
+      
+      // Build the mint_tokens instruction (15-account version for deployed program)
       const mintInstruction = createMintTokensInstruction(
         userAccountPDA,
         userMetadataPDA,
@@ -1293,6 +1519,7 @@ export default function MintPage() {
         mintPDA,
         mintAuthority,
         referrerAccountPDA,
+        businessRegistryPDA,
         publicKey,
         lockedTokenAccountPda,
         lockedTokenAta,
@@ -1301,7 +1528,7 @@ export default function MintPage() {
         mintAmount
       );
       
-      console.log('📝 Mint instruction accounts (14 accounts):');
+      console.log('📝 Mint instruction accounts (15 accounts):');
       console.log('  0. user_account:', userAccountPDA.toBase58());
       console.log('  1. user_metadata:', userMetadataPDA.toBase58());
       console.log('  2. global_state:', globalStatePDA.toBase58());
@@ -1309,13 +1536,14 @@ export default function MintPage() {
       console.log('  4. mint:', mintPDA.toBase58());
       console.log('  5. mint_authority:', mintAuthority.toBase58());
       console.log('  6. referrer_account:', referrerAccountPDA.toBase58());
-      console.log('  7. authority:', publicKey.toBase58());
-      console.log('  8. locked_token_account:', lockedTokenAccountPda.toBase58());
-      console.log('  9. locked_token_ata:', lockedTokenAta.toBase58());
-      console.log('  10. locked_token_pda:', lockedTokenPda.toBase58());
-      console.log('  11. token_program:', TOKEN_PROGRAM_ID.toBase58());
-      console.log('  12. associated_token_program:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
-      console.log('  13. system_program:', SystemProgram.programId.toBase58());
+      console.log('  7. business_registry:', businessRegistryPDA.toBase58());
+      console.log('  8. authority:', publicKey.toBase58());
+      console.log('  9. locked_token_account:', lockedTokenAccountPda.toBase58());
+      console.log('  10. locked_token_ata:', lockedTokenAta.toBase58());
+      console.log('  11. locked_token_pda:', lockedTokenPda.toBase58());
+      console.log('  12. token_program:', TOKEN_PROGRAM_ID.toBase58());
+      console.log('  13. associated_token_program:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
+      console.log('  14. system_program:', SystemProgram.programId.toBase58());
       
       // Create and send transaction using wallet adapter's sendTransaction
       // This ensures proper signature handling and prevents AccountNotSigner errors
@@ -1643,6 +1871,35 @@ export default function MintPage() {
             </div>
           )}
 
+          {needsRepair && registered && (
+            <div className="max-w-2xl mx-auto mb-6">
+              <div className="bg-yellow-500/20 border border-yellow-500 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="text-4xl">⚠️</div>
+                  <div className="flex-1">
+                    <h3 className="text-yellow-100 font-bold text-lg mb-2">
+                      One-Time Setup Required
+                    </h3>
+                    <p className="text-yellow-200 mb-4">
+                      Your account needs a quick update to enable minting. This is a one-time setup for users who registered before our latest update.
+                    </p>
+                    <button
+                      onClick={handleRepairRegistration}
+                      disabled={isLoading}
+                      className={`font-bold py-3 px-6 rounded-xl transition-all ${
+                        isLoading
+                          ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
+                          : 'bg-yellow-600 hover:bg-yellow-700 text-white cursor-pointer'
+                      }`}
+                    >
+                      {isLoading ? '⏳ Setting up...' : '🔧 Complete Setup'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid md:grid-cols-2 gap-6">
             {!registered ? (
               <>
@@ -1694,10 +1951,10 @@ export default function MintPage() {
                     
                     <button
                       onClick={handleMint}
-                      disabled={isLoading || !canMint}
-                      style={{ pointerEvents: (isLoading || !canMint) ? 'none' : 'auto' }}
+                      disabled={isLoading || !canMint || needsRepair}
+                      style={{ pointerEvents: (isLoading || !canMint || needsRepair) ? 'none' : 'auto' }}
                       className={`w-full font-bold py-4 px-8 rounded-xl transition-all ${
-                        canMint && !isLoading
+                        canMint && !isLoading && !needsRepair
                           ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
                           : 'bg-gray-500/50 text-gray-300 cursor-not-allowed opacity-60'
                       }`}
@@ -1705,6 +1962,10 @@ export default function MintPage() {
                       {isLoading ? (
                         <span className="flex items-center justify-center gap-2">
                           <span>⏳ Minting...</span>
+                        </span>
+                      ) : needsRepair ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span>⚠️ Setup Required</span>
                         </span>
                       ) : canMint ? (
                         <span className="flex items-center justify-center gap-2">
@@ -1751,7 +2012,7 @@ export default function MintPage() {
             <p className="text-purple-300 text-sm">
               Program ID:{' '}
               <span className="text-purple-100 font-mono">
-                D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw
+                2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4
               </span>
             </p>
           </div>

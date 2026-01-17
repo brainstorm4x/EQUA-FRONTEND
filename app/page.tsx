@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { Logo } from '@/components/Logo';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
-import { fetchUserMetadata } from '@/utils/userMetadata';
+import { isUserRegistered } from '@/utils/registrationCheck';
 
 // Loading placeholder components
 const WalletButtonLoading = () => (
@@ -62,16 +62,8 @@ export default function HomePage() {
       }
       
       try {
-        const metadata = await fetchUserMetadata(connection, publicKey);
-        
-        if (metadata) {
-          // ✅ Just set state, don't redirect
-          console.log('✅ User is registered');
-          setIsRegistered(true);
-        } else {
-          console.log('💡 User not registered');
-          setIsRegistered(false);
-        }
+        const registered = await isUserRegistered(connection, publicKey);
+        setIsRegistered(registered);
       } catch (error) {
         console.error('❌ Error checking registration:', error);
         // On error, assume not registered (safe fallback)
@@ -155,7 +147,7 @@ export default function HomePage() {
               Read Whitepaper
             </Link>
             <a
-              href="https://explorer.solana.com/address/D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw?cluster=devnet"
+              href="https://explorer.solana.com/address/2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4?cluster=devnet"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg backdrop-blur-sm"
@@ -225,7 +217,7 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="text-purple-300 text-sm mb-2">Program ID</p>
-                <p className="text-white text-sm font-mono">GR1Xr...wok7C</p>
+                <p className="text-white text-sm font-mono">2oSti...fV7g4</p>
               </div>
             </div>
           </div>

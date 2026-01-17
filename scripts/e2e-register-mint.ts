@@ -205,7 +205,7 @@ async function main() {
     process.exit(1);
   }
   
-  // Step 6: Mint 1000 EQUA using new 14-account mint_tokens instruction
+  // Step 6: Mint 1000 EQUA using new 15-account mint_tokens instruction
   console.log('\n🔍 Step 6: Minting 1000 EQUA...');
   console.log('  User Metadata PDA:', userMetadataPDA.toBase58());
   
@@ -214,7 +214,7 @@ async function main() {
   const lockedTokenPda = getLockedTokenPda(payer.publicKey, PROGRAM_ID);
   const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
   
-  // Use new 14-account mint_tokens instruction (with all accounts)
+  // Use new 15-account mint_tokens instruction (with all accounts)
   const mintIx = createMintTokensInstruction(
     userAccountPDA,                // user_account (PDA)
     userMetadataPDA,               // user_metadata
@@ -223,6 +223,7 @@ async function main() {
     mintPDA,                       // mint
     mintAuthority,                 // mint_authority
     PublicKey.default,             // referrer_account (no referrer)
+    businessRegistryPDA,           // business_registry
     payer.publicKey,               // authority
     lockedTokenAccountPda,         // locked_token_account
     lockedTokenAta,                // locked_token_ata
@@ -231,7 +232,7 @@ async function main() {
     1000_000000                    // 1000 EQUA with 6 decimals
   );
   
-  console.log('\n🧪 Mint Instruction Metas (14-account mint_tokens):');
+  console.log('\n🧪 Mint Instruction Metas (15-account mint_tokens):');
   mintIx.keys.forEach((k, i) => {
     console.log(`  ${i}. ${k.pubkey.toBase58()}`);
     console.log(`     writable=${k.isWritable} signer=${k.isSigner}`);

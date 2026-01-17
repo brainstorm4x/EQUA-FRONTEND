@@ -1,6 +1,6 @@
 /**
  * Tests for initialize_user instruction builder
- * Verifies 11-account structure with user_metadata and referrer_metadata PDAs
+ * Verifies 12-account structure with user_metadata, referrer_metadata, and business_registry PDAs
  */
 
 import { PublicKey } from '@solana/web3.js';
@@ -17,6 +17,7 @@ describe('createInitializeUserInstruction', () => {
   const referrerMetadata = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
   const userTokenAccount = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
   const mint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+  const businessRegistry = new PublicKey('BizReg1111111111111111111111111111111111111');
   const associatedTokenProgram = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
   const referrer = new PublicKey('3YMv4QM4dd2gsBJJgKwG3oVpkNE2DezaMADR2m4FMQpZ');
 
@@ -33,6 +34,7 @@ describe('createInitializeUserInstruction', () => {
       referrerMetadata,
       userTokenAccount,
       mint,
+      businessRegistry,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
       now,
@@ -57,6 +59,7 @@ describe('createInitializeUserInstruction', () => {
       referrerMetadata,
       userTokenAccount,
       mint,
+      businessRegistry,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
       now,
@@ -81,6 +84,7 @@ describe('createInitializeUserInstruction', () => {
       referrerMetadata,
       userTokenAccount,
       mint,
+      businessRegistry,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
       now,
@@ -88,7 +92,7 @@ describe('createInitializeUserInstruction', () => {
       userType
     );
 
-    expect(instruction.keys).toHaveLength(11);
+    expect(instruction.keys).toHaveLength(12);
     
     // 0. user_account - writable, not signer
     expect(instruction.keys[0].pubkey).toEqual(userAccount);
@@ -130,20 +134,25 @@ describe('createInitializeUserInstruction', () => {
     expect(instruction.keys[7].isWritable).toBe(false);
     expect(instruction.keys[7].isSigner).toBe(false);
     
-    // 8. associated_token_program - not writable, not signer
-    expect(instruction.keys[8].pubkey).toEqual(associatedTokenProgram);
-    expect(instruction.keys[8].isWritable).toBe(false);
+    // 8. business_registry - writable, not signer (CRITICAL: must be writable per backend #[account(mut)])
+    expect(instruction.keys[8].pubkey).toEqual(businessRegistry);
+    expect(instruction.keys[8].isWritable).toBe(true);
     expect(instruction.keys[8].isSigner).toBe(false);
     
-    // 9. token_program - not writable, not signer
-    expect(instruction.keys[9].pubkey).toEqual(TOKEN_PROGRAM_ID);
+    // 9. associated_token_program - not writable, not signer
+    expect(instruction.keys[9].pubkey).toEqual(associatedTokenProgram);
     expect(instruction.keys[9].isWritable).toBe(false);
     expect(instruction.keys[9].isSigner).toBe(false);
     
-    // 10. system_program - not writable, not signer
-    // Note: We don't verify the exact pubkey since SystemProgram.programId is used
+    // 10. token_program - not writable, not signer
+    expect(instruction.keys[10].pubkey).toEqual(TOKEN_PROGRAM_ID);
     expect(instruction.keys[10].isWritable).toBe(false);
     expect(instruction.keys[10].isSigner).toBe(false);
+    
+    // 11. system_program - not writable, not signer
+    // Note: We don't verify the exact pubkey since SystemProgram.programId is used
+    expect(instruction.keys[11].isWritable).toBe(false);
+    expect(instruction.keys[11].isSigner).toBe(false);
   });
 
   it('should work with self-referral (referral_account = user_account)', () => {
@@ -158,6 +167,7 @@ describe('createInitializeUserInstruction', () => {
       userMetadata, // self-referral metadata
       userTokenAccount,
       mint,
+      businessRegistry,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
       now,
@@ -180,6 +190,7 @@ describe('createInitializeUserInstruction', () => {
       referrerMetadata,
       userTokenAccount,
       mint,
+      businessRegistry,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
       now,
@@ -223,6 +234,7 @@ describe('createInitializeUserInstruction', () => {
       referrerMetadata,
       userTokenAccount,
       mint,
+      businessRegistry,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
       now,
@@ -235,7 +247,7 @@ describe('createInitializeUserInstruction', () => {
     expect(userTypeByte).toBe(1);
   });
 
-  it('should use correct ASSOCIATED_TOKEN_PROGRAM_ID at index 8', () => {
+  it('should use correct ASSOCIATED_TOKEN_PROGRAM_ID at index 9', () => {
     const instruction = createInitializeUserInstruction(
       userAccount,
       userMetadata,
@@ -245,6 +257,7 @@ describe('createInitializeUserInstruction', () => {
       referrerMetadata,
       userTokenAccount,
       mint,
+      businessRegistry,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
       now,
@@ -252,12 +265,12 @@ describe('createInitializeUserInstruction', () => {
       userType
     );
 
-    // Index 8 must be ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+    // Index 9 must be ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
     const expectedAddress = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
-    expect(instruction.keys[8].pubkey.toBase58()).toBe(expectedAddress);
+    expect(instruction.keys[9].pubkey.toBase58()).toBe(expectedAddress);
   });
 
-  it('should use configured TOKEN_PROGRAM_ID at index 9', () => {
+  it('should use configured TOKEN_PROGRAM_ID at index 10', () => {
     const instruction = createInitializeUserInstruction(
       userAccount,
       userMetadata,
@@ -267,6 +280,7 @@ describe('createInitializeUserInstruction', () => {
       referrerMetadata,
       userTokenAccount,
       mint,
+      businessRegistry,
       associatedTokenProgram,
       TOKEN_PROGRAM_ID,
       now,
@@ -274,7 +288,32 @@ describe('createInitializeUserInstruction', () => {
       userType
     );
 
-    // Index 9 must match the TOKEN_PROGRAM_ID from constants (Token-2022 by default)
-    expect(instruction.keys[9].pubkey.toBase58()).toBe(TOKEN_PROGRAM_ID.toBase58());
+    // Index 10 must match the TOKEN_PROGRAM_ID from constants (Token-2022 by default)
+    expect(instruction.keys[10].pubkey.toBase58()).toBe(TOKEN_PROGRAM_ID.toBase58());
+  });
+
+  it('should have business_registry as writable per backend constraint', () => {
+    const instruction = createInitializeUserInstruction(
+      userAccount,
+      userMetadata,
+      authority,
+      globalState,
+      referralAccount,
+      referrerMetadata,
+      userTokenAccount,
+      mint,
+      businessRegistry,
+      associatedTokenProgram,
+      TOKEN_PROGRAM_ID,
+      now,
+      referrer,
+      userType
+    );
+
+    // According to backend Rust code, business_registry is marked #[account(mut)]
+    // This is CRITICAL - it must be writable because the program updates it during business user registration
+    expect(instruction.keys[8].pubkey).toEqual(businessRegistry);
+    expect(instruction.keys[8].isWritable).toBe(true);
+    expect(instruction.keys[8].isSigner).toBe(false);
   });
 });
