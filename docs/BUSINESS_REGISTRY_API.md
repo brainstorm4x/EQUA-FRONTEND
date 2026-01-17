@@ -56,7 +56,7 @@ cat admin-keypair.json  # This contains the byte array
 NEXT_PUBLIC_RPC_URL=https://api.devnet.solana.com
 
 # Program ID
-NEXT_PUBLIC_PROGRAM_ID=2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4
+NEXT_PUBLIC_PROGRAM_ID=D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw
 ```
 
 ### Netlify Configuration
@@ -312,7 +312,7 @@ anchor run initialize-business-registry
 ```bash
 ADMIN_PRIVATE_KEY=<your_devnet_admin_key>
 NEXT_PUBLIC_RPC_URL=https://api.devnet.solana.com
-NEXT_PUBLIC_PROGRAM_ID=2oStivMnhnCsiomYm73S9vzwmnGf7f6J2KCujnNfV7g4
+NEXT_PUBLIC_PROGRAM_ID=D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw
 ```
 
 #### Test Workflow
