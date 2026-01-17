@@ -137,7 +137,71 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
         Add touch-manipulation CSS class and custom wrapper for mobile touch handling.
         touch-manipulation disables double-tap-to-zoom which can cause delays.
       */}
-      <div className="wallet-button-wrapper touch-manipulation">
+      <div className="wallet-button-wrapper touch-manipulation" style={{ maxWidth: '100%' }}>
+        <style jsx global>{`
+          .wallet-adapter-button {
+            /* Base styles */
+            background-color: rgb(124, 58, 237) !important;
+            color: white !important;
+            font-weight: 600 !important;
+            padding: 0.75rem 1.5rem !important;
+            border-radius: 0.75rem !important;
+            transition: all 0.3s ease !important;
+            border: none !important;
+            cursor: pointer !important;
+            font-size: 1rem !important;
+            
+            /* Responsive fixes for text overflow */
+            min-width: 120px !important;
+            max-width: 100% !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            
+            /* Mobile optimizations */
+            @media (max-width: 640px) {
+              font-size: 0.875rem !important;
+              padding: 0.625rem 1rem !important;
+              min-width: 100px !important;
+            }
+            
+            /* Extra small screens */
+            @media (max-width: 380px) {
+              font-size: 0.75rem !important;
+              padding: 0.5rem 0.75rem !important;
+              min-width: 80px !important;
+            }
+          }
+
+          .wallet-adapter-button:hover {
+            background-color: rgb(109, 40, 217) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4) !important;
+          }
+
+          /* Ensure button text doesn't wrap */
+          .wallet-adapter-button-trigger {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+          }
+          
+          /* Truncate long wallet addresses */
+          .wallet-adapter-button-trigger > span {
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+          }
+
+          /* Connection timeout styles */
+          .wallet-adapter-button[disabled] {
+            background-color: rgb(107, 114, 128) !important;
+            cursor: not-allowed !important;
+            opacity: 0.6 !important;
+          }
+        `}</style>
         <WalletMultiButton 
           className="!bg-primary-600 hover:!bg-primary-700 !rounded-lg !px-6 !py-3 !text-white !font-semibold !transition-all !duration-200 touch-manipulation" 
         />
