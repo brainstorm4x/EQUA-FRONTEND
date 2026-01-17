@@ -465,7 +465,7 @@ export default function MintPage() {
 
     setIsCheckingRegistration(true);
     try {
-      const isReg = await checkRegistration(userAccountPDA);
+      const isReg = await checkRegistration(publicKey);
       setRegistered(isReg);
 
       if (isReg && publicKey) {
