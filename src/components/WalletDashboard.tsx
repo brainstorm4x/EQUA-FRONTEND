@@ -43,7 +43,7 @@ interface WalletDashboardProps {
 // Default to 6 decimals as per the on-chain mint configuration
 
 // Default EQUA price in USD per 1 EQUA token (used as fallback if price fetch fails)
-const DEFAULT_EQUA_PRICE_USD = 1.00;
+const DEFAULT_EQUA_PRICE_USD = 0.01;
 
 // Shared constants for referral messages
 const EQUA_SHARE_BASE_URL = 'https://equa.live/mint';
@@ -196,6 +196,12 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const handleClaimCredits = useCallback(async () => {
     if (!publicKey || !signTransaction) {
       setClaimError('Wallet not connected properly');
+      return;
+    }
+
+    // ✅ ADDED: Prevent duplicate submissions
+    if (isClaiming) {
+      console.warn('⚠️ Claim already in progress, ignoring duplicate request');
       return;
     }
 
@@ -821,6 +827,12 @@ const SendModal: FC<SendModalProps> = ({
   const handleSend = async () => {
     if (!recipientAddress || !amount || !signTransaction) return;
     
+    // ✅ ADDED: Prevent duplicate submissions
+    if (isLoading) {
+      console.warn('⚠️ Transaction already in progress, ignoring duplicate request');
+      return;
+    }
+    
     setIsLoading(true);
     setError('');
     setTxSignature('');
@@ -922,8 +934,17 @@ const SendModal: FC<SendModalProps> = ({
       transaction.recentBlockhash = blockhash;
 
       const signed = await signTransaction(transaction);
+
+      // ✅ CHANGED: Skip preflight only if creating recipient ATA in same tx
+      // This prevents false simulation failures when ATA creation is included
+      const shouldSkipPreflight = !recipientAccountInfo; // Skip if we're creating ATA
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔧 Send transaction: skipPreflight=${shouldSkipPreflight}, creatingATA=${!recipientAccountInfo}`);
+      }
+
       const signature = await connection.sendRawTransaction(signed.serialize(), {
-        skipPreflight: false,
+        skipPreflight: shouldSkipPreflight,
         maxRetries: 3
       });
 
