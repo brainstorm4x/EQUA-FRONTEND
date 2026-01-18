@@ -321,3 +321,104 @@ export function decodeUserAccount(
     return null;
   }
 }
+
+/**
+ * GlobalState structure offsets (from IDL):
+ * - discriminator: 0 (8 bytes)
+ * - user_count: 8 (4 bytes, u32)
+ * - total_transactions: 12 (8 bytes, u64)
+ * - current_epoch: 20 (8 bytes, u64)
+ * - compounding_complete: 28 (1 byte, bool)
+ * - last_epoch_update_time: 29 (8 bytes, i64)
+ * - token_mint: 37 (32 bytes, pubkey)
+ * Total size: 69 bytes
+ */
+export const GLOBAL_STATE_OFFSETS = {
+  DISCRIMINATOR: 0,
+  USER_COUNT: 8,
+  TOTAL_TRANSACTIONS: 12,
+  CURRENT_EPOCH: 20,
+  COMPOUNDING_COMPLETE: 28,
+  LAST_EPOCH_UPDATE_TIME: 29,
+  TOKEN_MINT: 37,
+} as const;
+
+export const GLOBAL_STATE_SIZE = 69;
+
+/**
+ * Decoded GlobalState data
+ */
+export interface DecodedGlobalState {
+  userCount: number;
+  totalTransactions: number;
+  currentEpoch: number;
+  compoundingComplete: boolean;
+  lastEpochUpdateTime: number;
+  tokenMint: string; // Base58 encoded public key
+}
+
+/**
+ * Decodes a GlobalState buffer into structured data
+ * 
+ * @param accountData - Raw account data buffer from GlobalState PDA
+ * @returns Decoded global state data or null if invalid
+ */
+export function decodeGlobalState(
+  accountData: Buffer | Uint8Array | null | undefined
+): DecodedGlobalState | null {
+  // Validate account data exists and has correct size
+  if (!accountData || accountData.length < GLOBAL_STATE_SIZE) {
+    console.warn(
+      `⚠️ Invalid GlobalState data: expected ${GLOBAL_STATE_SIZE} bytes, got ${accountData?.length || 0}`
+    );
+    return null;
+  }
+
+  try {
+    // Parse user_count (u32 at offset 8)
+    const userCount = safeParseUserCount(accountData, GLOBAL_STATE_OFFSETS.USER_COUNT, 4);
+
+    // Parse total_transactions (u64 at offset 12)
+    const totalTransactions = safeParseAmount(
+      accountData,
+      GLOBAL_STATE_OFFSETS.TOTAL_TRANSACTIONS,
+      8
+    );
+
+    // Parse current_epoch (u64 at offset 20)
+    const currentEpoch = safeParseAmount(
+      accountData,
+      GLOBAL_STATE_OFFSETS.CURRENT_EPOCH,
+      8
+    );
+
+    // Parse compounding_complete (bool at offset 28)
+    const compoundingComplete = accountData[GLOBAL_STATE_OFFSETS.COMPOUNDING_COMPLETE] !== 0;
+
+    // Parse last_epoch_update_time (i64 at offset 29)
+    const lastEpochUpdateTime = safeParseTimestamp(
+      accountData,
+      GLOBAL_STATE_OFFSETS.LAST_EPOCH_UPDATE_TIME,
+      8
+    );
+
+    // Parse token_mint (pubkey at offset 37)
+    const tokenMintBytes = accountData.slice(
+      GLOBAL_STATE_OFFSETS.TOKEN_MINT,
+      GLOBAL_STATE_OFFSETS.TOKEN_MINT + 32
+    );
+    const tokenMint = new anchor.web3.PublicKey(tokenMintBytes).toBase58();
+
+    return {
+      userCount,
+      totalTransactions,
+      currentEpoch,
+      compoundingComplete,
+      lastEpochUpdateTime,
+      tokenMint,
+    };
+  } catch (error) {
+    console.error('❌ Error decoding GlobalState:', error);
+    return null;
+  }
+}

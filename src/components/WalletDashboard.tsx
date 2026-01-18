@@ -31,6 +31,9 @@ import { useEquaBalance } from '@/hooks/useEquaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
 import { isUserRegistered } from '@/utils/registrationCheck';
 import { claimBonusMint, getReferralStats } from '@/utils/referralRewards';
+import { fetchUserMetadata } from '@/utils/userMetadata';
+import { decodeGlobalState } from '@/utils/safeAccountParsing';
+import { calculateTierLimit, describeTierCalculation } from '@/utils/tierLimits';
 
 interface WalletDashboardProps {
   className?: string;
@@ -206,20 +209,69 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     setClaimSuccess('');
 
     try {
-      // Get user account to verify registration
-      const [userAccountPDA] = getUserAccountPDA(publicKey);
-      const accountInfo = await connection.getAccountInfo(userAccountPDA);
+      // 1. Fetch UserMetadata to get user_index and elevated_mint_attempts_used
+      const userMetadata = await fetchUserMetadata(connection, publicKey);
       
-      if (!accountInfo) {
-        throw new Error('User account not found. Please register first.');
+      if (!userMetadata) {
+        throw new Error('User metadata not found. Please register first.');
       }
-
-      // Use conservative default amount (tier 4 limit for users 101-1000)
-      const DEFAULT_BONUS_MINT_AMOUNT_EQUA = 100;
-      const amountInBaseUnits = decimalToRaw(DEFAULT_BONUS_MINT_AMOUNT_EQUA);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📊 UserMetadata fetched:', {
+          userIndex: userMetadata.user_index,
+          elevatedAttemptsUsed: userMetadata.elevated_mint_attempts_used,
+        });
+      }
+      
+      // 2. Fetch GlobalState to get total user count
+      const [globalStatePDA] = getGlobalStatePDA();
+      const globalStateInfo = await connection.getAccountInfo(globalStatePDA);
+      
+      if (!globalStateInfo) {
+        throw new Error('Global state not found.');
+      }
+      
+      const globalState = decodeGlobalState(globalStateInfo.data);
+      
+      if (!globalState) {
+        throw new Error('Failed to decode global state.');
+      }
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📊 GlobalState fetched:', {
+          userCount: globalState.userCount,
+        });
+      }
+      
+      // 3. Calculate tier-based mint amount
+      const tierLimitBaseUnits = calculateTierLimit(
+        userMetadata.user_index,
+        userMetadata.elevated_mint_attempts_used,
+        globalState.userCount
+      );
+      
+      // Convert to number for transaction (safe for reasonable tier limits)
+      const amountInBaseUnits = Number(tierLimitBaseUnits);
+      const tierLimitEqua = rawToDecimal(amountInBaseUnits, 6);
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Claiming bonus mint: ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA (${amountInBaseUnits} base units)`);
+        // Get detailed tier calculation for logging
+        const tierDetails = describeTierCalculation(
+          userMetadata.user_index,
+          userMetadata.elevated_mint_attempts_used,
+          globalState.userCount
+        );
+        
+        console.log(`📊 Tier Calculation:
+  - User Index: ${userMetadata.user_index}
+  - Elevated Attempts Used: ${userMetadata.elevated_mint_attempts_used}
+  - Total Users: ${globalState.userCount}
+  - Tier: ${tierDetails.tierName}
+  - Is Elevated: ${tierDetails.isElevated}
+  - User Tier Rate: ${Number(tierDetails.userTierRate) / 1_000_000} EQUA
+  - Prevailing Rate: ${Number(tierDetails.prevailingRate) / 1_000_000} EQUA
+  - Limited By: ${tierDetails.limitedBy}
+  - Final Tier Limit: ${tierLimitEqua} EQUA (${amountInBaseUnits} base units)`);
       }
 
       // Call claimBonusMint utility
@@ -236,7 +288,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       // Show success message
       const creditsRemaining = referralCredits - 5;
       setClaimSuccess(
-        `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ` +
+        `✅ Successfully claimed ${tierLimitEqua} EQUA! ` +
         `${creditsRemaining} credits remaining. You can claim another bonus mint immediately if you have 5+ credits.`
       );
 
@@ -253,6 +305,30 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
 
     } catch (err: any) {
       console.error('Error claiming bonus mint:', err);
+      
+      // ✅ NEW: Check if transaction actually succeeded (credits deducted)
+      if (err.message?.includes('already been processed')) {
+        // Verify credits were deducted
+        const [userPDA] = getUserAccountPDA(publicKey);
+        const stats = await getReferralStats(connection, userPDA);
+        
+        if (stats && stats.credits < referralCredits) {
+          // Transaction succeeded on-chain despite error
+          setClaimSuccess(
+            `✅ Bonus mint claimed successfully! ` +
+            `${stats.credits} credits remaining.`
+          );
+          
+          // Refresh data
+          setReferralCredits(stats.credits);
+          setReferralCount(stats.referredCount);
+          
+          // Auto-dismiss success message
+          setTimeout(() => setClaimSuccess(''), 5000);
+          setIsClaiming(false);
+          return; // Exit early
+        }
+      }
       
       // Parse specific error messages
       let errorMessage = 'Failed to claim bonus mint. ';
