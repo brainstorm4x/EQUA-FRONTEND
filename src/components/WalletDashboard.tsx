@@ -895,6 +895,26 @@ const SendModal: FC<SendModalProps> = ({
       const [senderUserAccount] = getUserAccountPDA(publicKey);
       const [recipientUserAccount] = getUserAccountPDA(recipientPubkey);
 
+      // ✅ CRITICAL FIX: Verify recipient is a registered EQUA user
+      // The transfer_tokens instruction requires recipient_user_account to be a valid
+      // Account<'info, UserAccount> (see backend lib.rs line 1746-1749).
+      // If this account doesn't exist, Phantom's simulation will fail.
+      const recipientUserAccountInfo = await connection.getAccountInfo(recipientUserAccount);
+      if (!recipientUserAccountInfo) {
+        throw new Error(
+          'Recipient is not registered. ' +
+          'They must complete registration at /mint before receiving EQUA tokens.'
+        );
+      }
+
+      // Verify account is correctly initialized (has valid discriminator)
+      if (recipientUserAccountInfo.data.length < 8) {
+        throw new Error(
+          'Invalid recipient account: Account data corrupted. ' +
+          'Please contact support if this persists.'
+        );
+      }
+
       const transaction = new Transaction();
 
       // Check if recipient token account exists, if not create it
@@ -1146,7 +1166,18 @@ const SendModal: FC<SendModalProps> = ({
 
             {error && (
               <div className="bg-red-500/20 border border-red-500 rounded-xl p-3 mb-4">
-                <p className="text-red-200 text-sm">{error}</p>
+                <p className="text-red-400 text-sm font-semibold">⚠️ Send Failed</p>
+                <p className="text-red-200 text-sm mt-1 whitespace-pre-wrap">{error}</p>
+                
+                {/* User-friendly help for unregistered recipients */}
+                {error.includes('not registered') && (
+                  <div className="mt-3 bg-yellow-500/10 border border-yellow-500/30 rounded px-3 py-2">
+                    <p className="text-yellow-300 text-xs font-semibold">💡 How to fix:</p>
+                    <p className="text-yellow-200 text-xs mt-1">
+                      Ask the recipient to visit <span className="font-mono">equa.live/mint</span> and complete registration first.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
