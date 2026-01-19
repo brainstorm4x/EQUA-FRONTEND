@@ -6,14 +6,11 @@
 [build.environment]
   NODE_VERSION = "18"
 
-# Scheduled Functions
-[[functions]]
-  name = "update-eqx-price"
-  schedule = "0 * * * *"  # Hourly
+[functions."update-eqx-price"]
+schedule = "0 * * * *"
 
-[[functions]]
-  name = "update-fx-rates"
-  schedule = "0 * * * *"  # Hourly
+[functions."update-fx-rates"]
+schedule = "0 * * * *"
 
 [[redirects]]
   from = "/*"
