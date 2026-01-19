@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "NODE_ENV=development next dev -p 3000",
+    "prebuild": "rm -rf .next",
     "build": "bash scripts/check-app-directory.sh && next build",
     "start": "next start -p 3000",
     "lint": "next lint",
