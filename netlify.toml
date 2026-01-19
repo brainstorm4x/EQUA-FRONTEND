@@ -4,8 +4,8 @@
   functions = "netlify/functions"
 
 [build.environment]
-  NODE_VERSION = "18"
-
+  NODE_VERSION = "20.18.0"
+  
 [functions."update-eqx-price"]
 schedule = "0 * * * *"
 
