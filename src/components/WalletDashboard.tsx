@@ -360,7 +360,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     } finally {
       setIsClaiming(false);
     }
-  }, [publicKey, signTransaction, connection, referralCredits]);
+  }, [publicKey, signTransaction, connection, referralCredits, isClaiming]);
 
   if (!connected || !publicKey) {
     return null;
@@ -419,7 +419,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-white text-lg font-bold flex items-center gap-2">
             <span className="text-2xl">🎁</span>
-            Refer & Earn
+            Refer &amp; Earn
           </h3>
           {/* Referral Count Badge */}
           <div className="bg-purple-600/30 px-3 py-1 rounded-full">
