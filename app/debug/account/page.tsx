@@ -302,7 +302,7 @@ function AccountDebugPageContent() {
                     {userAccountPDA?.toBase58() || 'N/A'}
                   </div>
                   <div className="text-xs text-purple-400 mt-2">
-                    Seeds: ["user-account", wallet_address]
+                    Seeds: [&quot;user-account&quot;, wallet_address]
                   </div>
                 </div>
               </div>
@@ -328,7 +328,7 @@ function AccountDebugPageContent() {
                 <div className="bg-yellow-900/30 rounded-lg p-4 mb-4">
                   <h4 className="text-yellow-100 font-bold mb-2">How to Fix:</h4>
                   <ol className="list-decimal list-inside space-y-2 text-yellow-200 text-sm">
-                    <li>Use a different wallet that hasn't been registered yet, or</li>
+                    <li>Use a different wallet that hasn&apos;t been registered yet, or</li>
                     <li>Contact the EQUA team for account migration assistance</li>
                   </ol>
                 </div>
