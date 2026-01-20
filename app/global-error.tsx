@@ -44,56 +44,103 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body>
-        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600 flex items-center justify-center p-4">
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 max-w-lg w-full border border-purple-500/30">
-            <div className="text-center">
-              <div className="text-6xl mb-4">🚨</div>
-              <h2 className="text-3xl font-bold text-white mb-4">Critical Error</h2>
-              <p className="text-purple-200 mb-6">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Critical Error - EQUA</title>
+      </head>
+      <body style={{ margin: 0, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+        <div style={{
+          minHeight: '100vh',
+          background: 'linear-gradient(to bottom right, rgb(88 28 135), rgb(109 40 217), rgb(147 51 234))',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '1rem',
+            padding: '2rem',
+            maxWidth: '32rem',
+            width: '100%',
+            border: '1px solid rgba(168, 85, 247, 0.3)'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚨</div>
+              <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
+                Critical Error
+              </h2>
+              <p style={{ color: 'rgb(216 180 254)', marginBottom: '1.5rem' }}>
                 {error.message || 'A critical error occurred. Please refresh the page.'}
               </p>
               
               {process.env.NODE_ENV === 'development' && error.digest && (
-                <div className="mb-6 p-4 bg-red-900/30 rounded-lg border border-red-500/50">
-                  <p className="text-red-200 text-sm font-mono">
+                <div style={{
+                  marginBottom: '1.5rem',
+                  padding: '1rem',
+                  background: 'rgba(127, 29, 29, 0.3)',
+                  borderRadius: '0.5rem',
+                  border: '1px solid rgba(239, 68, 68, 0.5)'
+                }}>
+                  <p style={{
+                    color: 'rgb(254 202 202)',
+                    fontSize: '0.875rem',
+                    fontFamily: 'monospace'
+                  }}>
                     Error ID: {error.digest}
                   </p>
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+                justifyContent: 'center'
+              }}>
                 <button
                   onClick={() => reset()}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all"
+                  style={{
+                    background: 'rgb(147 51 234)',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '0.75rem',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
                 >
                   Try Again
                 </button>
                 <button
                   onClick={() => window.location.href = '/'}
-                  className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-xl transition-all backdrop-blur-sm"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(4px)',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '0.75rem',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
                 >
                   Reload Page
                 </button>
               </div>
 
-              <p className="text-purple-300 text-sm mt-6">
+              <p style={{
+                color: 'rgb(192 132 252)',
+                fontSize: '0.875rem',
+                marginTop: '1.5rem'
+              }}>
                 If this problem persists, please try clearing your browser cache.
               </p>
             </div>
           </div>
         </div>
-        
-        <style jsx global>{`
-          body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
-              'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
-              'Helvetica Neue', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-          }
-        `}</style>
       </body>
     </html>
   );
