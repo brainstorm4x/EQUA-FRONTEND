@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Logo } from '@/components/Logo';
+import { ClientOnly } from '@/components/ClientOnly';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
 import { isUserRegistered } from '@/utils/registrationCheck';
@@ -18,6 +19,36 @@ const ButtonLoading = () => (
   <div className="bg-purple-600 text-white font-bold py-4 px-8 rounded-xl animate-pulse">
     <span>Loading...</span>
   </div>
+);
+
+// Loading shell for server-side rendering
+const HomePageLoadingShell = () => (
+  <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
+    <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Logo size={40} />
+            <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+          </div>
+          <div className="md:hidden">
+            <WalletButtonLoading />
+          </div>
+        </div>
+      </div>
+    </header>
+    <div className="container mx-auto px-4 py-20">
+      <div className="max-w-4xl mx-auto text-center">
+        <div className="mb-8 animate-pulse">
+          <div className="inline-block p-6 bg-white/10 rounded-full mb-6">
+            <div className="w-[120px] h-[120px] bg-white/20 rounded-full" />
+          </div>
+        </div>
+        <div className="h-16 bg-white/10 rounded-lg mb-6 animate-pulse" />
+        <div className="h-8 bg-white/10 rounded-lg mb-8 animate-pulse w-3/4 mx-auto" />
+      </div>
+    </div>
+  </main>
 );
 
 // Dynamically import WalletButton and PriceDisplay with no SSR
@@ -47,8 +78,13 @@ const GetStartedButton = dynamic(
   }
 );
 
-
-export default function HomePage() {
+/**
+ * HomePageContent Component
+ * 
+ * This is the actual page content that uses context hooks.
+ * It's wrapped in ClientOnly to ensure hooks only run on client.
+ */
+function HomePageContent() {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
   const [isRegistered, setIsRegistered] = useState(false);
@@ -224,5 +260,20 @@ export default function HomePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+/**
+ * HomePage Component
+ * 
+ * This is the export that wraps the content in ClientOnly.
+ * During SSR, it shows a loading shell.
+ * On client, it renders HomePageContent with all context hooks.
+ */
+export default function HomePage() {
+  return (
+    <ClientOnly fallback={<HomePageLoadingShell />}>
+      <HomePageContent />
+    </ClientOnly>
   );
 }
