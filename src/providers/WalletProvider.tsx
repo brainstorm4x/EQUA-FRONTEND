@@ -110,19 +110,20 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   const [walletWarning, setWalletWarning] = useState<string | null>(null);
   
   const wallets = useMemo(() => {
-    const adapters: any[] = [];
+    const adapters: (PhantomWalletAdapter | SolflareWalletAdapter | SolanaMobileWalletAdapter)[] = [];
     
     // Add Solana Mobile Wallet Adapter for mobile deep-linking
     if (typeof window !== 'undefined') {
-      const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      
-      if (isMobile) {
+      if (isMobileDevice()) {
+        // Determine cluster based on RPC endpoint
+        const cluster = getExpectedNetwork() as 'devnet' | 'testnet' | 'mainnet-beta';
+        
         adapters.push(
           new SolanaMobileWalletAdapter({
             addressSelector: createDefaultAddressSelector(),
             appIdentity: { name: 'EQUA Token' },
             authorizationResultCache: createDefaultAuthorizationResultCache(),
-            cluster: 'devnet',
+            cluster,
             onWalletNotFound: createDefaultWalletNotFoundHandler(),
           })
         );
@@ -168,9 +169,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
     // Don't show errors during initialization or autoConnect attempts
     if (error.name === 'WalletNotReadyError') {
       // User clicked "Connect" but wallet is not installed/available
-      const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      
-      if (isMobile) {
+      if (isMobileDevice()) {
         setWalletWarning(
           'To connect your wallet, please open this page in the Phantom or Solflare mobile app. ' +
           'Alternatively, you can install the Phantom mobile app from your app store.'
