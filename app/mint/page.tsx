@@ -1825,8 +1825,10 @@ export default function MintPage() {
 
   // ... rest of your page code ...
 
-  // 🔍 Debug logging for registration state before render
-  console.log('[MintPage Render] registered:', registered, 'isCheckingRegistration:', isCheckingRegistration);
+  // 🔍 Debug logging for registration state before render (development only)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[MintPage Render] registered:', registered, 'isCheckingRegistration:', isCheckingRegistration);
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
