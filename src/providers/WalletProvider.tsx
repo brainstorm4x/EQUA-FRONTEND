@@ -10,6 +10,12 @@ import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
+import { 
+  SolanaMobileWalletAdapter,
+  createDefaultAuthorizationResultCache,
+  createDefaultAddressSelector,
+  createDefaultWalletNotFoundHandler,
+} from '@solana-mobile/wallet-adapter-mobile';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { RPC_ENDPOINT } from '@/lib/constants';
 
@@ -104,15 +110,27 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   const [walletWarning, setWalletWarning] = useState<string | null>(null);
   
   const wallets = useMemo(() => {
-    const adapters: (PhantomWalletAdapter | SolflareWalletAdapter)[] = [];
+    const adapters: any[] = [];
     
-    // Only add Phantom adapter if NOT injected (to avoid double registration)
-    // The injected provider will be auto-detected by wallet-adapter
-    if (!isPhantomInjected()) {
-      adapters.push(new PhantomWalletAdapter());
+    // Add Solana Mobile Wallet Adapter for mobile deep-linking
+    if (typeof window !== 'undefined') {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        adapters.push(
+          new SolanaMobileWalletAdapter({
+            addressSelector: createDefaultAddressSelector(),
+            appIdentity: { name: 'EQUA Token' },
+            authorizationResultCache: createDefaultAuthorizationResultCache(),
+            cluster: 'devnet',
+            onWalletNotFound: createDefaultWalletNotFoundHandler(),
+          })
+        );
+      }
     }
     
-    // Always include Solflare
+    // Add standard wallet adapters (works for both desktop extensions and mobile deep-links)
+    adapters.push(new PhantomWalletAdapter());
     adapters.push(new SolflareWalletAdapter());
     
     return adapters;
@@ -142,64 +160,48 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
 
   // Handle wallet errors
   const onError = useCallback((error: WalletError) => {
-    // Throttle error logging to avoid spam during Fast Refresh
     if (shouldLogError()) {
       console.error('[Wallet Error]:', error.name, error.message);
     }
     
-    // Handle specific error cases with user-friendly messages
+    // Only show user-facing errors for actual connection failures
+    // Don't show errors during initialization or autoConnect attempts
     if (error.name === 'WalletNotReadyError') {
-      const walletName = error.message?.toLowerCase() || '';
+      // User clicked "Connect" but wallet is not installed/available
+      const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
       
-      if (walletName.includes('phantom')) {
-        // Phantom not installed
-        if (isMobileDevice()) {
-          const shouldRedirect = window.confirm(
-            'Phantom wallet is not installed. Would you like to download it from the app store?'
-          );
-          if (shouldRedirect) {
-            window.location.href = getPhantomStoreUrl();
-          }
-        } else {
-          setWalletWarning(
-            'Phantom wallet not detected. Please install the Phantom browser extension from phantom.app'
-          );
-        }
-      }
-    } else if (error.name === 'WalletConnectionError') {
-      // Check for network mismatch
-      const expectedNetwork = getExpectedNetwork();
-      
-      if (shouldLogError()) {
-        console.warn(
-          `[Wallet Network] App configured for ${expectedNetwork}. ` +
-          'Ensure your wallet is connected to the same network.'
+      if (isMobile) {
+        setWalletWarning(
+          'To connect your wallet, please open this page in the Phantom or Solflare mobile app. ' +
+          'Alternatively, you can install the Phantom mobile app from your app store.'
+        );
+      } else {
+        setWalletWarning(
+          'No Solana wallet detected. Please install the Phantom browser extension from phantom.app ' +
+          'or use Solflare at solflare.com'
         );
       }
-      
+    } else if (error.name === 'WalletConnectionError') {
       setWalletWarning(
-        `Connection error. Please ensure your wallet is connected to ${expectedNetwork} network. ` +
-        'You can change the network in your wallet settings.'
+        'Failed to connect wallet. Please ensure your wallet is unlocked and try again.'
       );
-    } else if (error.name === 'WalletNotConnectedError') {
+    } else if (error.name === 'WalletSignTransactionError') {
       setWalletWarning(
-        'Wallet not connected. Please connect your wallet to continue.'
-      );
-    } else if (error.name === 'WalletAccountError') {
-      setWalletWarning(
-        'Wallet account error. Please refresh and try reconnecting your wallet.'
+        'Transaction signing failed. You may have rejected the transaction in your wallet.'
       );
     } else {
-      // Generic error
-      setWalletWarning(
-        `Wallet error: ${error.message || 'Unknown error occurred'}. Please try again.`
-      );
+      // Generic error - don't show for passive initialization failures
+      if (shouldLogError()) {
+        setWalletWarning(
+          `Wallet error: ${error.message || 'Unknown error occurred'}. Please try again.`
+        );
+      }
     }
   }, []);
 
   return (
     <ConnectionProvider endpoint={RPC_ENDPOINT}>
-      <SolanaWalletProvider wallets={wallets} autoConnect onError={onError}>
+      <SolanaWalletProvider wallets={wallets} autoConnect={false} onError={onError}>
         <WalletModalProvider>
           {walletWarning && (
             <div 

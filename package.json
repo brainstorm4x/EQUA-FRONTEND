@@ -24,6 +24,7 @@
     "@coral-xyz/anchor": "0.32.1",
     "@netlify/blobs": "^8.1.0",
     "@netlify/functions": "^2.8.2",
+    "@solana-mobile/wallet-adapter-mobile": "^2.2.5",
     "@solana/spl-token": "^0.4.14",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-react": "^0.15.35",
