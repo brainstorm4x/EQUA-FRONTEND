@@ -56,10 +56,17 @@ import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrat
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
 
-// Dynamically import WalletButton with no SSR
+// Dynamically import WalletButton with no SSR and explicit loading state
 const WalletButton = dynamic(
   () => import('@/components/ui/WalletButton').then((mod) => ({ default: mod.WalletButton })),
-  { ssr: false }
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg">
+        Loading...
+      </div>
+    )
+  }
 );
 
 // Constants for error handling
@@ -1818,6 +1825,9 @@ export default function MintPage() {
 
   // ... rest of your page code ...
 
+  // 🔍 Debug logging for registration state before render
+  console.log('[MintPage Render] registered:', registered, 'isCheckingRegistration:', isCheckingRegistration);
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
       <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
@@ -1911,16 +1921,21 @@ export default function MintPage() {
 
           <div className="grid md:grid-cols-2 gap-6">
             {!registered ? (
-              <>
-                <RegistrationForm
-                  totalUsers={totalUsers}
-                  walletBalance={walletBalance}
-                  onRegister={handleRegisterWithForm}
-                  isLoading={isLoading}
-                  validateReferrer={validateReferrer}
-                  userWalletAddress={publicKey?.toBase58()}
-                />
-              </>
+              <div className="md:col-span-2" data-testid="registration-section">
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
+                  <h3 className="text-2xl font-bold text-white mb-6 text-center">
+                    Register Your Account
+                  </h3>
+                  <RegistrationForm
+                    totalUsers={totalUsers}
+                    walletBalance={walletBalance}
+                    onRegister={handleRegisterWithForm}
+                    isLoading={isLoading}
+                    validateReferrer={validateReferrer}
+                    userWalletAddress={publicKey?.toBase58()}
+                  />
+                </div>
+              </div>
             ) : (
               <>
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
