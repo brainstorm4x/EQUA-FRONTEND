@@ -35,6 +35,16 @@ jest.mock('@/lib/program');
 jest.mock('@/utils/registration');
 jest.mock('@/utils/tokenFormat', () => ({
   decimalToRaw: jest.fn((amount) => amount * 1_000_000), // 6 decimals
+  rawToDecimal: jest.fn((amount) => amount / 1_000_000), // 6 decimals
+}));
+jest.mock('@/utils/userMetadata', () => ({
+  fetchUserMetadata: jest.fn(),
+}));
+jest.mock('@/utils/tierLimits', () => ({
+  calculateTierLimit: jest.fn(),
+}));
+jest.mock('@/utils/safeAccountParsing', () => ({
+  decodeGlobalState: jest.fn(),
 }));
 
 describe('ReferralRewards Component', () => {
@@ -244,6 +254,38 @@ describe('ReferralRewards Component', () => {
       jest.spyOn(referralRewardsUtils, 'claimBonusMint').mockImplementation(mockClaimBonusMint);
 
       (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
+      (programUtils.getGlobalStatePDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
+      
+      // Mock user account data
+      mockConnection.getAccountInfo.mockResolvedValue({
+        data: Buffer.from([1, 2, 3]),
+        lamports: 1000000,
+        owner: mockPublicKey,
+        executable: false,
+      });
+      
+      // Mock UserMetadata fetch
+      const { fetchUserMetadata } = require('@/utils/userMetadata');
+      fetchUserMetadata.mockResolvedValue({
+        user_index: 101,
+        elevated_mint_attempts_used: 0,
+      });
+      
+      // Mock GlobalState decode
+      const { decodeGlobalState } = require('@/utils/safeAccountParsing');
+      decodeGlobalState.mockReturnValue({
+        userCount: 101,
+        totalTransactions: 0,
+        currentEpoch: 0,
+        compoundingComplete: false,
+        lastEpochUpdateTime: 0,
+        tokenMint: mockPublicKey.toBase58(),
+      });
+      
+      // Mock tier calculation (returns 100 EQUA for user #101)
+      const { calculateTierLimit } = require('@/utils/tierLimits');
+      calculateTierLimit.mockReturnValue(100_000_000n); // 100 EQUA in base units
+      
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         credits: 10, // 10 credits = 2 possible bonus mints
         referredCount: 5,
