@@ -10,19 +10,15 @@ import {
   getReferredUsersDetails,
   claimBonusMint,
 } from '@/utils/referralRewards';
-import { getUserAccountPDA } from '@/lib/program';
-import { decimalToRaw } from '@/utils/tokenFormat';
+import { getUserAccountPDA, getGlobalStatePDA } from '@/lib/program';
+import { decimalToRaw, rawToDecimal } from '@/utils/tokenFormat';
+import { fetchUserMetadata } from '@/utils/userMetadata';
+import { calculateTierLimit } from '@/utils/tierLimits';
+import { decodeGlobalState } from '@/utils/safeAccountParsing';
 
 interface ReferralRewardsProps {
   className?: string;
 }
-
-// Default amount for bonus mint (tier 4 limit - safe for most users)
-// This is conservative to ensure the transaction succeeds for users
-// without needing to fetch their exact tier from UserMetadata.
-// Future enhancement: Implement tier-aware amount calculation by fetching
-// UserMetadata to get the user's actual tier limit.
-const DEFAULT_BONUS_MINT_AMOUNT_EQUA = 100;
 
 // Credits required to claim one bonus mint (from backend business rules)
 const CREDITS_REQUIRED_FOR_BONUS_MINT = 5;
@@ -98,7 +94,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
     setSuccessMessage('');
 
     try {
-      // Get user account to determine tier
+      // Get user account to verify registration
       const [userAccountPDA] = getUserAccountPDA(publicKey);
       const accountInfo = await connection.getAccountInfo(userAccountPDA);
       
@@ -106,16 +102,46 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
         throw new Error('User account not found. Please register first.');
       }
 
-      // Use conservative default amount (tier 4 limit for users 101-1000)
-      // This ensures the transaction succeeds for most users without fetching tier metadata.
-      // Future enhancement: Fetch UserMetadata.user_index and calculate exact tier limit.
-      const amountInBaseUnits = decimalToRaw(DEFAULT_BONUS_MINT_AMOUNT_EQUA);
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`Claiming bonus mint: ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA (${amountInBaseUnits} base units)`);
+      // Fetch UserMetadata to get user_index and elevated_mint_attempts_used
+      const userMetadata = await fetchUserMetadata(connection, publicKey);
+      if (!userMetadata) {
+        throw new Error('Unable to fetch user metadata. Please try again.');
       }
 
-      // Call claimBonusMint utility
+      // Fetch GlobalState to get total user count
+      const [globalStatePDA] = getGlobalStatePDA();
+      const globalStateAccount = await connection.getAccountInfo(globalStatePDA);
+      if (!globalStateAccount) {
+        throw new Error('Unable to fetch global state. Please try again.');
+      }
+
+      const globalState = decodeGlobalState(globalStateAccount.data);
+      if (!globalState) {
+        throw new Error('Unable to decode global state. Please try again.');
+      }
+
+      // Calculate tier-based mint limit
+      const tierLimitBaseUnits = calculateTierLimit(
+        userMetadata.user_index,
+        userMetadata.elevated_mint_attempts_used,
+        globalState.userCount
+      );
+
+      // Convert bigint to number for transaction (safe for reasonable values)
+      const amountInBaseUnits = Number(tierLimitBaseUnits);
+      const amountInEqua = rawToDecimal(amountInBaseUnits);
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✓ Tier calculation:', {
+          user_index: userMetadata.user_index,
+          elevated_attempts_used: userMetadata.elevated_mint_attempts_used,
+          total_users: globalState.userCount,
+          tier_limit_equa: amountInEqua,
+          tier_limit_base_units: amountInBaseUnits,
+        });
+      }
+
+      // Call claimBonusMint utility with calculated tier amount
       const signature = await claimBonusMint(
         connection,
         { signTransaction, publicKey },
@@ -126,11 +152,11 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
         console.log('✅ Bonus mint claimed. Signature:', signature);
       }
 
-      // Show success message
+      // Show success message with actual claimed amount
       // Note: credits is guaranteed non-null because button is only enabled when hasCredits is true
       const creditsRemaining = credits! - CREDITS_REQUIRED_FOR_BONUS_MINT;
       setSuccessMessage(
-        `✅ Successfully claimed ${DEFAULT_BONUS_MINT_AMOUNT_EQUA} EQUA! ` +
+        `✅ Successfully claimed ${amountInEqua} EQUA! ` +
         `${creditsRemaining} credits remaining. You can claim another bonus mint immediately if you have 5+ credits.`
       );
 
