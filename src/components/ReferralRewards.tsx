@@ -127,9 +127,12 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
         globalState.userCount
       );
 
-      // Convert bigint to number for transaction (safe for reasonable values)
+      // Convert bigint to number for transaction (safe for tier limits which are well below MAX_SAFE_INTEGER)
+      // Largest tier limit is 100,000 EQUA = 100_000_000_000 base units << Number.MAX_SAFE_INTEGER (2^53 - 1)
       const amountInBaseUnits = Number(tierLimitBaseUnits);
-      const amountInEqua = rawToDecimal(amountInBaseUnits);
+      
+      // Convert to decimal EQUA for display (rawToDecimal handles the conversion)
+      const amountInEqua = rawToDecimal(tierLimitBaseUnits);
 
       if (process.env.NODE_ENV === 'development') {
         console.log('✓ Tier calculation:', {
