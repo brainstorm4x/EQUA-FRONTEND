@@ -35,6 +35,16 @@ jest.mock('@/lib/program');
 jest.mock('@/utils/registration');
 jest.mock('@/utils/tokenFormat', () => ({
   decimalToRaw: jest.fn((amount) => amount * 1_000_000), // 6 decimals
+  rawToDecimal: jest.fn((amount) => amount / 1_000_000), // 6 decimals
+}));
+jest.mock('@/utils/userMetadata', () => ({
+  fetchUserMetadata: jest.fn(),
+}));
+jest.mock('@/utils/tierLimits', () => ({
+  calculateTierLimit: jest.fn(),
+}));
+jest.mock('@/utils/safeAccountParsing', () => ({
+  decodeGlobalState: jest.fn(),
 }));
 
 describe('ReferralRewards Component', () => {
@@ -244,6 +254,38 @@ describe('ReferralRewards Component', () => {
       jest.spyOn(referralRewardsUtils, 'claimBonusMint').mockImplementation(mockClaimBonusMint);
 
       (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
+      (programUtils.getGlobalStatePDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
+      
+      // Mock user account data
+      mockConnection.getAccountInfo.mockResolvedValue({
+        data: Buffer.from([1, 2, 3]),
+        lamports: 1000000,
+        owner: mockPublicKey,
+        executable: false,
+      });
+      
+      // Mock UserMetadata fetch
+      const { fetchUserMetadata } = require('@/utils/userMetadata');
+      fetchUserMetadata.mockResolvedValue({
+        user_index: 101,
+        elevated_mint_attempts_used: 0,
+      });
+      
+      // Mock GlobalState decode
+      const { decodeGlobalState } = require('@/utils/safeAccountParsing');
+      decodeGlobalState.mockReturnValue({
+        userCount: 101,
+        totalTransactions: 0,
+        currentEpoch: 0,
+        compoundingComplete: false,
+        lastEpochUpdateTime: 0,
+        tokenMint: mockPublicKey.toBase58(),
+      });
+      
+      // Mock tier calculation (returns 100 EQUA for user #101)
+      const { calculateTierLimit } = require('@/utils/tierLimits');
+      calculateTierLimit.mockReturnValue(100_000_000n); // 100 EQUA in base units
+      
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         credits: 10, // 10 credits = 2 possible bonus mints
         referredCount: 5,
@@ -293,6 +335,156 @@ describe('ReferralRewards Component', () => {
       await waitFor(() => {
         const claimButton = screen.getByText('⏳ Need 5 Credits');
         expect(claimButton).toBeDisabled();
+      });
+    });
+
+    it('should show error when fetchUserMetadata returns null during claim', async () => {
+      const mockSignTransaction = jest.fn();
+      
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
+      
+      // Mock user account exists
+      mockConnection.getAccountInfo.mockResolvedValue({
+        data: Buffer.from([1, 2, 3]),
+        lamports: 1000000,
+        owner: mockPublicKey,
+        executable: false,
+      });
+      
+      // Mock UserMetadata fetch returns null
+      const { fetchUserMetadata } = require('@/utils/userMetadata');
+      fetchUserMetadata.mockResolvedValue(null);
+      
+      (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
+        credits: 10,
+        referredCount: 5,
+        referredUsers: [],
+      });
+
+      mockUseWallet.mockReturnValue({
+        publicKey: mockPublicKey,
+        connected: true,
+        signTransaction: mockSignTransaction,
+      });
+
+      render(<ReferralRewards />);
+
+      await waitFor(() => {
+        const claimButton = screen.getByText('💰 Claim Credits');
+        expect(claimButton).not.toBeDisabled();
+      });
+
+      const claimButton = screen.getByText('💰 Claim Credits');
+      fireEvent.click(claimButton);
+
+      // Should show error message
+      await waitFor(() => {
+        expect(screen.getByText(/Unable to fetch user metadata/)).toBeInTheDocument();
+      });
+    });
+
+    it('should show error when GlobalState account info is null during claim', async () => {
+      const mockSignTransaction = jest.fn();
+      
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
+      (programUtils.getGlobalStatePDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
+      
+      // Mock user account exists
+      // First call for user account (exists), second call for global state (null)
+      mockConnection.getAccountInfo
+        .mockResolvedValueOnce({
+          data: Buffer.from([1, 2, 3]),
+          lamports: 1000000,
+          owner: mockPublicKey,
+          executable: false,
+        })
+        .mockResolvedValueOnce(null); // GlobalState account not found
+      
+      // Mock UserMetadata fetch
+      const { fetchUserMetadata } = require('@/utils/userMetadata');
+      fetchUserMetadata.mockResolvedValue({
+        user_index: 101,
+        elevated_mint_attempts_used: 0,
+      });
+      
+      (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
+        credits: 10,
+        referredCount: 5,
+        referredUsers: [],
+      });
+
+      mockUseWallet.mockReturnValue({
+        publicKey: mockPublicKey,
+        connected: true,
+        signTransaction: mockSignTransaction,
+      });
+
+      render(<ReferralRewards />);
+
+      await waitFor(() => {
+        const claimButton = screen.getByText('💰 Claim Credits');
+        expect(claimButton).not.toBeDisabled();
+      });
+
+      const claimButton = screen.getByText('💰 Claim Credits');
+      fireEvent.click(claimButton);
+
+      // Should show error message
+      await waitFor(() => {
+        expect(screen.getByText(/Unable to fetch global state/)).toBeInTheDocument();
+      });
+    });
+
+    it('should show error when decodeGlobalState returns null during claim', async () => {
+      const mockSignTransaction = jest.fn();
+      
+      (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
+      (programUtils.getGlobalStatePDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
+      
+      // Mock user account and global state account exist
+      mockConnection.getAccountInfo.mockResolvedValue({
+        data: Buffer.from([1, 2, 3]),
+        lamports: 1000000,
+        owner: mockPublicKey,
+        executable: false,
+      });
+      
+      // Mock UserMetadata fetch
+      const { fetchUserMetadata } = require('@/utils/userMetadata');
+      fetchUserMetadata.mockResolvedValue({
+        user_index: 101,
+        elevated_mint_attempts_used: 0,
+      });
+      
+      // Mock GlobalState decode returns null (invalid data)
+      const { decodeGlobalState } = require('@/utils/safeAccountParsing');
+      decodeGlobalState.mockReturnValue(null);
+      
+      (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
+        credits: 10,
+        referredCount: 5,
+        referredUsers: [],
+      });
+
+      mockUseWallet.mockReturnValue({
+        publicKey: mockPublicKey,
+        connected: true,
+        signTransaction: mockSignTransaction,
+      });
+
+      render(<ReferralRewards />);
+
+      await waitFor(() => {
+        const claimButton = screen.getByText('💰 Claim Credits');
+        expect(claimButton).not.toBeDisabled();
+      });
+
+      const claimButton = screen.getByText('💰 Claim Credits');
+      fireEvent.click(claimButton);
+
+      // Should show error message
+      await waitFor(() => {
+        expect(screen.getByText(/Unable to decode global state/)).toBeInTheDocument();
       });
     });
 
