@@ -10,10 +10,10 @@
 interface LogoProps {
   className?: string;
   size?: number;
-  priority?: boolean; // Kept for API compatibility, not used with <img>
+  priority?: boolean;
 }
 
-export function Logo({ className = '', size = 40 }: LogoProps) {
+export function Logo({ className = '', size = 40, priority = false }: LogoProps) {
   return (
     <img 
       src="/branding/equa-logo.svg"
@@ -24,7 +24,7 @@ export function Logo({ className = '', size = 40 }: LogoProps) {
         width: 'auto',
         display: 'block' // Prevents inline spacing issues
       }}
-      loading="lazy" // Native browser lazy loading
+      loading={priority ? 'eager' : 'lazy'} // Priority images load eagerly
       draggable="false" // Prevent accidental logo dragging
     />
   );

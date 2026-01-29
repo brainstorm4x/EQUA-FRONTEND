@@ -130,11 +130,18 @@ describe('Logo Component', () => {
   });
 
   describe('Performance', () => {
-    it('should use native lazy loading', () => {
+    it('should use native lazy loading by default', () => {
       render(<Logo />);
       
       const logo = screen.getByAltText('EQUA Logo');
       expect(logo).toHaveAttribute('loading', 'lazy');
+    });
+
+    it('should use eager loading when priority is true', () => {
+      render(<Logo priority={true} />);
+      
+      const logo = screen.getByAltText('EQUA Logo');
+      expect(logo).toHaveAttribute('loading', 'eager');
     });
 
     it('should maintain aspect ratio with width: auto', () => {
