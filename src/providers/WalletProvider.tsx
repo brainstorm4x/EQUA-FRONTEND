@@ -10,6 +10,12 @@ import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
+import { 
+  SolanaMobileWalletAdapter,
+  createDefaultAddressSelector,
+  createDefaultAuthorizationResultCache,
+  createDefaultWalletNotFoundHandler,
+} from '@solana-mobile/wallet-adapter-mobile';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { RPC_ENDPOINT } from '@/lib/constants';
 
@@ -104,18 +110,47 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   const [walletWarning, setWalletWarning] = useState<string | null>(null);
   
   const wallets = useMemo(() => {
-    const adapters: (PhantomWalletAdapter | SolflareWalletAdapter)[] = [];
+    const isMobile = isMobileDevice();
     
-    // Only add Phantom adapter if NOT injected (to avoid double registration)
-    // The injected provider will be auto-detected by wallet-adapter
-    if (!isPhantomInjected()) {
-      adapters.push(new PhantomWalletAdapter());
+    if (isMobile) {
+      // ========================================================================
+      // MOBILE BROWSERS: ONLY Mobile Wallet Adapter
+      // ========================================================================
+      // Mobile Wallet Adapter uses deep links to open native wallet apps
+      // (Phantom Mobile, Solflare Mobile, etc.)
+      // Desktop wallets (browser extensions) don't work on mobile browsers
+      return [
+        new SolanaMobileWalletAdapter({
+          addressSelector: createDefaultAddressSelector(),
+          appIdentity: {
+            name: 'EQUA Token',
+            uri: typeof window !== 'undefined' ? window.location.origin : 'https://equa-frontend.netlify.app',
+            icon: typeof window !== 'undefined' 
+              ? `${window.location.origin}/branding/equa-logo.svg`
+              : 'https://equa-frontend.netlify.app/branding/equa-logo.svg',
+          },
+          authorizationResultCache: createDefaultAuthorizationResultCache(),
+          cluster: getExpectedNetwork() as 'devnet' | 'testnet' | 'mainnet-beta',
+          onWalletNotFound: createDefaultWalletNotFoundHandler(),
+        }),
+      ];
+    } else {
+      // ========================================================================
+      // DESKTOP BROWSERS: Phantom + Solflare
+      // ========================================================================
+      const adapters: (PhantomWalletAdapter | SolflareWalletAdapter)[] = [];
+      
+      // Only add Phantom adapter if NOT injected (to avoid double registration)
+      // The injected provider will be auto-detected by wallet-adapter
+      if (!isPhantomInjected()) {
+        adapters.push(new PhantomWalletAdapter());
+      }
+      
+      // Always include Solflare
+      adapters.push(new SolflareWalletAdapter());
+      
+      return adapters;
     }
-    
-    // Always include Solflare
-    adapters.push(new SolflareWalletAdapter());
-    
-    return adapters;
   }, []);
 
   // Check wallet readiness on mount

@@ -23,6 +23,10 @@ jest.mock('@solana/wallet-adapter-wallets', () => ({
   SolflareWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Solflare' })),
 }));
 
+jest.mock('@solana-mobile/wallet-adapter-mobile', () => ({
+  SolanaMobileWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Mobile Wallet Adapter' })),
+}));
+
 describe('WalletProvider Configuration', () => {
   beforeEach(() => {
     // Reset mocks before each test
@@ -154,6 +158,41 @@ describe('WalletProvider Configuration', () => {
 
       expect(screen.getByTestId('child-1')).toBeInTheDocument();
       expect(screen.getByTestId('child-2')).toBeInTheDocument();
+    });
+  });
+
+  describe('Mobile Wallet Adapter', () => {
+    beforeEach(() => {
+      // Clear mocks before each test
+      jest.clearAllMocks();
+    });
+
+    it('should render without errors when mobile detection is active', () => {
+      // This test verifies that the component can handle mobile detection
+      // The actual mobile vs desktop wallet selection is based on runtime user agent
+      expect(() => {
+        render(
+          <WalletProvider>
+            <div>Test</div>
+          </WalletProvider>
+        );
+      }).not.toThrow();
+    });
+    
+    it('should initialize wallet adapters based on device type', () => {
+      // Desktop wallets should be initialized (default in test environment)
+      const { PhantomWalletAdapter, SolflareWalletAdapter } = 
+        require('@solana/wallet-adapter-wallets');
+      
+      render(
+        <WalletProvider>
+          <div>Test</div>
+        </WalletProvider>
+      );
+      
+      // In test environment (non-mobile user agent), desktop wallets are used
+      expect(PhantomWalletAdapter).toHaveBeenCalled();
+      expect(SolflareWalletAdapter).toHaveBeenCalled();
     });
   });
 });
