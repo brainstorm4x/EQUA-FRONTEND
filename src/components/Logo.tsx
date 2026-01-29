@@ -1,42 +1,31 @@
 /**
  * EQUA Logo Component
  * 
- * Displays the EQUA brand logo with optimized loading
- * Supports both PNG (default for faster load) and SVG formats
+ * Uses standard <img> for SVG logos following industry best practices.
+ * SVG logos don't benefit from Next.js Image optimization and can cause build failures.
+ * 
+ * @see https://nextjs.org/docs/pages/api-reference/components/image (when NOT to use Image)
  */
-
-import Image from 'next/image';
-import { useState } from 'react';
 
 interface LogoProps {
   className?: string;
   size?: number;
-  priority?: boolean;
-  format?: 'png' | 'svg';
+  priority?: boolean; // Kept for API compatibility, not used with <img>
 }
 
-export function Logo({ className = '', size = 40, priority = false, format = 'png' }: LogoProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const logoSrc = `/branding/equa-logo.${format}`;
-
+export function Logo({ className = '', size = 40 }: LogoProps) {
   return (
-    <div className="relative inline-block" style={{ width: size, height: size }}>
-      {isLoading && (
-        <div 
-          className="absolute inset-0 bg-purple-500/20 rounded-lg animate-pulse"
-          aria-hidden="true"
-        />
-      )}
-      <Image 
-        src={logoSrc}
-        alt="EQUA Logo" 
-        width={size} 
-        height={size}
-        className={className}
-        priority={priority}
-        loading={priority ? 'eager' : 'lazy'}
-        onLoad={() => setIsLoading(false)}
-      />
-    </div>
+    <img 
+      src="/branding/equa-logo.svg"
+      alt="EQUA Logo"
+      className={className}
+      style={{ 
+        height: `${size}px`, 
+        width: 'auto',
+        display: 'block' // Prevents inline spacing issues
+      }}
+      loading="lazy" // Native browser lazy loading
+      draggable="false" // Prevent accidental logo dragging
+    />
   );
 }
