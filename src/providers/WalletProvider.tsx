@@ -210,17 +210,19 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
         // - User rejected authorization
         // - Wallet app not responding
         // - Deep link failed
+        const expectedNetwork = getExpectedNetwork();
+        
         if (shouldLogError()) {
           console.warn('[Mobile Wallet] Connection failed. Common causes:');
           console.warn('  - User rejected authorization in wallet app');
           console.warn('  - Wallet app not responding');
-          console.warn('  - Network mismatch (check wallet app settings)');
+          console.warn(`  - Network mismatch (check wallet app is on ${expectedNetwork})`);
           console.warn('  - Deep link redirection failed');
         }
         
         setWalletWarning(
           'Failed to connect to wallet. Please ensure your wallet app is open and try again. ' +
-          'If the issue persists, check that your wallet is on the correct network (devnet).'
+          `If the issue persists, check that your wallet is on the correct network (${expectedNetwork}).`
         );
       } else {
         // Desktop wallet connection errors

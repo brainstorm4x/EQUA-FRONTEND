@@ -48,7 +48,7 @@ export const MobileWalletModal: FC<MobileWalletModalProps> = ({ visible, onClose
   
   return (
     <div 
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4 pb-safe"
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
