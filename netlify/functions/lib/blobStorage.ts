@@ -9,7 +9,49 @@
  * - Store: `fx-rates` - Latest FX rates (overwritten hourly)
  */
 
-import { getStore } from '@netlify/blobs';
+import { getStore as getNetlifyStore } from '@netlify/blobs';
+
+// ============================================================================
+// Store Configuration
+// ============================================================================
+
+/**
+ * Get Netlify Blobs store with hybrid configuration
+ * 
+ * Tries to use Netlify's auto-configuration first (when deployed).
+ * Falls back to manual configuration using environment variables.
+ * 
+ * @param storeName - Name of the blob store
+ * @returns Netlify Blobs store instance
+ */
+function getStore(storeName: string) {
+  try {
+    // Try auto-config first (works in Netlify environment)
+    return getNetlifyStore(storeName);
+  } catch (error) {
+    // Auto-config failed, try manual config
+    const siteID = process.env.NETLIFY_SITE_ID;
+    const token = process.env.NETLIFY_ACCESS_TOKEN;
+    
+    if (!siteID || !token) {
+      throw new Error(
+        'Netlify Blobs configuration missing. ' +
+        'Please set NETLIFY_SITE_ID and NETLIFY_ACCESS_TOKEN environment variables. ' +
+        'See docs/NETLIFY_DEPLOYMENT.md for setup instructions.'
+      );
+    }
+    
+    return getNetlifyStore({
+      name: storeName,
+      siteID,
+      token,
+    });
+  }
+}
+
+// Export store getters
+export const getEqxPriceStore = () => getStore('eqx-prices');
+export const getFxRateStore = () => getStore('fx-rates');
 
 // ============================================================================
 // Types
@@ -25,10 +67,10 @@ export interface EqxPriceSnapshot {
   slot: number;                // Solana slot number
   components: {
     USDUSD: number;
-    EURUSD: number;
-    CNHUSD: number;
-    JPYUSD: number;
-    GBPUSD: number;
+    USDEUR: number;
+    USDCNY: number;
+    USDJPY: number;
+    USDGBP: number;
     XAUUSD: number;
     OIL: number;
   };
@@ -61,7 +103,7 @@ export interface FxRateData {
  */
 export async function storeEqxPrice(data: EqxPriceSnapshot): Promise<void> {
   try {
-    const store = getStore('eqx-prices');
+    const store = getEqxPriceStore();
     
     // Generate key from timestamp
     const date = new Date(data.timestamp);
@@ -89,7 +131,7 @@ export async function getEqxHistory(
   to: Date
 ): Promise<EqxPriceSnapshot[]> {
   try {
-    const store = getStore('eqx-prices');
+    const store = getEqxPriceStore();
     
     // Generate all hourly keys in range
     const keys: string[] = [];
@@ -129,7 +171,7 @@ export async function getEqxHistory(
  */
 export async function getLatestEqxPrice(): Promise<EqxPriceSnapshot | null> {
   try {
-    const store = getStore('eqx-prices');
+    const store = getEqxPriceStore();
     
     // Get all keys (limited to last 24 hours for performance)
     const list = await store.list();
@@ -171,7 +213,7 @@ export async function getLatestEqxPrice(): Promise<EqxPriceSnapshot | null> {
  */
 export async function storeFxRates(data: FxRateData): Promise<void> {
   try {
-    const store = getStore('fx-rates');
+    const store = getFxRateStore();
     
     // Store as JSON with key 'latest'
     await store.set('latest', JSON.stringify(data));
@@ -190,7 +232,7 @@ export async function storeFxRates(data: FxRateData): Promise<void> {
  */
 export async function getLatestFxRates(): Promise<FxRateData | null> {
   try {
-    const store = getStore('fx-rates');
+    const store = getFxRateStore();
     
     const data = await store.get('latest');
     
@@ -201,6 +243,54 @@ export async function getLatestFxRates(): Promise<FxRateData | null> {
     return JSON.parse(data) as FxRateData;
   } catch (error) {
     console.error('Error fetching latest FX rates:', error);
+    return null;
+  }
+}
+
+// ============================================================================
+// Cleanup Functions
+// ============================================================================
+
+/**
+ * Clean up old EQX price snapshots
+ * Keeps hourly data for 30 days, then deletes to avoid quota issues
+ * 
+ * Call this periodically (e.g., daily via scheduled function)
+ */
+export async function cleanupOldEqxPrices(): Promise<void> {
+  const store = getEqxPriceStore();
+  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+  
+  try {
+    // List all blobs
+    const { blobs } = await store.list();
+    
+    // Delete blobs older than 30 days
+    let deletedCount = 0;
+    for (const blob of blobs) {
+      // Key format: YYYY-MM-DD-HH
+      const timestamp = parseKeyToTimestamp(blob.key);
+      if (timestamp && timestamp < thirtyDaysAgo) {
+        await store.delete(blob.key);
+        deletedCount++;
+      }
+    }
+    
+    console.log(`Cleaned up ${deletedCount} old EQX price snapshots`);
+  } catch (error) {
+    console.error('Error cleaning up old EQX prices:', error);
+  }
+}
+
+/**
+ * Parse blob key to timestamp
+ * Key format: YYYY-MM-DD-HH
+ */
+function parseKeyToTimestamp(key: string): number | null {
+  try {
+    const [year, month, day, hour] = key.split('-').map(Number);
+    return new Date(year, month - 1, day, hour).getTime();
+  } catch {
     return null;
   }
 }
