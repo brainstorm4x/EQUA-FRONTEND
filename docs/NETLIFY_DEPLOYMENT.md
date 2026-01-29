@@ -66,49 +66,63 @@ In **Netlify Dashboard → Site Settings → Environment Variables**, add:
 
 #### Required Variables
 
+| Variable | Description | Example | How to Get |
+|----------|-------------|---------|------------|
+| `SOLANA_RPC_ENDPOINT` | Solana RPC endpoint | `https://api.devnet.solana.com` | Use public endpoint or get from Helius/Alchemy |
+| `SOLANA_NETWORK` | Network name | `devnet` | `devnet`, `testnet`, or `mainnet-beta` |
+| `NEXT_PUBLIC_PROGRAM_ID` | EQUA program ID | `D158AFttmz...` | From `Anchor.toml` in backend repo |
+| `SOLANA_WALLET_PRIVATE_KEY` | Admin wallet private key (base58) | `5x7k9...` | See "Generate Admin Wallet" below |
+
+#### Optional Variables
+
+| Variable | Description | Default | When Needed |
+|----------|-------------|---------|-------------|
+| `EXCHANGERATE_API_KEY` | ExchangeRate API key | Free tier | For production (higher rate limits) |
+| `NETLIFY_SITE_ID` | Netlify site ID | Auto-detected | Only for manual blob config |
+| `NETLIFY_ACCESS_TOKEN` | Netlify access token | Auto-detected | Only for manual blob config |
+
+### 4. Generate Admin Wallet Private Key (Base58)
+
+**SECURITY WARNING**: This wallet has authority to update on-chain oracles. Never commit the private key to version control!
+
+#### Method 1: Using Solana CLI
+
 ```bash
-# Solana Configuration
-SOLANA_WALLET_PRIVATE_KEY=<Base58 encoded private key>
-SOLANA_RPC_ENDPOINT=https://api.devnet.solana.com
-SOLANA_NETWORK=devnet
-NEXT_PUBLIC_PROGRAM_ID=D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw
+# Generate new keypair
+solana-keygen new --no-bip39-passphrase --outfile admin-keypair.json
+
+# Encode to base58 for Netlify (requires jq and base58)
+cat admin-keypair.json | jq -r 'map(tostring) | join(",")' | base58
 ```
 
-#### Optional Variables (Have Defaults)
-
-```bash
-# API Keys
-EXCHANGERATE_API_KEY=ad6a5bbc282e885ec566493e  # Free tier available
-```
-
-### 4. Generate Solana Wallet Private Key (Base58)
-
-If you need to convert a Solana CLI wallet (`id.json`) to Base58:
-
-```bash
-# Using Python and base58
-cat ~/.config/solana/id.json | jq -r '.' | python3 -c "import sys, json, base58; print(base58.b58encode(bytes(json.load(sys.stdin))).decode())"
-```
-
-Or generate a new wallet:
+#### Method 2: Using Node.js
 
 ```bash
 # Install dependencies
 npm install --legacy-peer-deps
 
-# Generate new wallet (Node.js)
+# Generate new wallet
 node -e "const { Keypair } = require('@solana/web3.js'); const bs58 = require('bs58'); const wallet = Keypair.generate(); console.log('Public Key:', wallet.publicKey.toString()); console.log('Private Key (Base58):', bs58.encode(wallet.secretKey));"
 ```
 
-**⚠️ Security Warning:** Never commit private keys to version control!
+Copy the base58 output and add it to Netlify environment variables as `SOLANA_WALLET_PRIVATE_KEY`.
 
-### 5. Deploy
+### 5. Get ExchangeRate API Key (Optional)
+
+1. Visit https://www.exchangerate-api.com/
+2. Sign up for free account (1,500 requests/month)
+3. Copy API key from dashboard
+4. Add to Netlify as `EXCHANGERATE_API_KEY`
+
+If not provided, functions will use the free tier endpoint with lower rate limits.
+
+### 6. Deploy
 
 1. Click "Deploy site"
 2. Wait for build to complete (~2-5 minutes)
 3. Verify deployment in **Functions** tab
 
-### 6. Verify Function Deployment
+### 7. Verify Function Deployment
 
 Check the **Functions** tab in Netlify Dashboard:
 
@@ -117,7 +131,7 @@ Check the **Functions** tab in Netlify Dashboard:
 - ✅ `get-eqx-history` (on-demand)
 - ✅ `get-fx-rates` (on-demand)
 
-### 7. Monitor Function Logs
+### 8. Monitor Function Logs
 
 In **Netlify Dashboard → Functions → [function name]**:
 
@@ -189,6 +203,69 @@ In **Netlify Dashboard → Blobs**:
 
 ## Troubleshooting
 
+### Error: `MissingBlobsEnvironmentError`
+
+**Full Error:**
+```
+MissingBlobsEnvironmentError: The environment has not been configured to use Netlify Blobs.
+To use it manually, supply the following properties when creating a store: siteID, token
+```
+
+**Cause**: Netlify Blobs not configured. This should auto-configure in Netlify environment.
+
+**Solution**:
+1. Verify you're deploying to Netlify (not running locally)
+2. Check Netlify Dashboard → Site Settings → Environment Variables
+3. If deploying outside Netlify, add `NETLIFY_SITE_ID` and `NETLIFY_ACCESS_TOKEN`
+4. Redeploy the site after adding environment variables
+
+**Get Site ID and Token**:
+```bash
+# Site ID: Found in Netlify Dashboard → Site Settings → General
+# Access Token: Generate in Netlify Dashboard → User Settings → Applications → Personal Access Tokens
+```
+
+### Error: `Pyth Hermes API returned 404`
+
+**Full Error:**
+```
+Pyth Hermes API failed, using fallback prices: Error: Hermes API returned 404
+```
+
+**Cause**: Incorrect or missing Pyth feed IDs, or network connectivity issues.
+
+**Solution**:
+1. This PR includes the correct feed IDs with proper 0x prefixes
+2. Check network connectivity to `hermes.pyth.network`
+3. Verify feed IDs are still valid at https://pyth.network/developers/price-feed-ids
+4. Functions will automatically fall back to hardcoded prices
+
+**Expected Behavior**: After fix, you should see "Source: hermes" in logs, not "Source: fallback"
+
+### Error: `Wallet private key not set`
+
+**Full Error:**
+```
+SOLANA_WALLET_PRIVATE_KEY environment variable not set
+```
+
+**Cause**: Missing or invalid `SOLANA_WALLET_PRIVATE_KEY`.
+
+**Solution**:
+1. Verify environment variable is set in Netlify Dashboard
+2. Ensure key is base58 encoded (not JSON array)
+3. Regenerate wallet if needed (see "Generate Admin Wallet" above)
+4. Redeploy after setting the variable
+
+### Error: `Failed to decode wallet private key`
+
+**Cause**: Private key is not properly base58 encoded.
+
+**Solution**:
+1. Verify you used base58 encoding (not hex or JSON)
+2. Use the commands provided in "Generate Admin Wallet" section
+3. Test the key locally before adding to Netlify
+
 ### Function Fails to Deploy
 
 **Error:** `Module not found`
@@ -204,18 +281,29 @@ npm install --legacy-peer-deps @netlify/functions @netlify/blobs bs58
 **Check:**
 
 1. Verify `netlify.toml` has correct schedule syntax
-2. Check function logs for errors
-3. Ensure environment variables are set
+2. Check function logs for errors in Netlify Dashboard
+3. Ensure all required environment variables are set
+4. Manually invoke function to test: `netlify functions:invoke update-eqx-price`
 
 ### On-Chain Oracle Update Fails
 
 **Error:** `update_eqx_oracle instruction not found`
 
-**Solution:** This is expected if the Solana program doesn't have the `update_eqx_oracle` instruction. The function will continue and store data to blobs only.
+**Solution:** This is expected if the Solana program doesn't have the `update_eqx_oracle` instruction yet. The function will continue and store data to blobs only.
 
-### Pyth Hermes API Fails
+### Pyth Hermes API Fails (General)
 
 **Fallback:** The function automatically falls back to hardcoded prices if Pyth API is unavailable.
+
+**Check Logs**: Look for "Source: hermes" (success) vs "Source: fallback" (API failed)
+
+### ExchangeRate API Fails
+
+**Fallback:** The function tries paid tier first (if `EXCHANGERATE_API_KEY` is set), then falls back to free tier.
+
+**Check Rate Limits**: 
+- Paid tier: Check your plan limits
+- Free tier: 1,500 requests/month (≈50 requests/day)
 
 ## API Response Formats
 

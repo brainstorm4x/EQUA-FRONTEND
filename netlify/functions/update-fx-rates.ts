@@ -35,11 +35,17 @@ validateEnvironment();
 // ============================================================================
 
 /**
- * ExchangeRate-API endpoint
- * Free tier: 1,500 requests/month, updates daily
+ * ExchangeRate-API configuration
+ * Uses environment variable if available, falls back to free tier
  */
-const EXCHANGERATE_API_KEY = process.env.EXCHANGERATE_API_KEY || 'ad6a5bbc282e885ec566493e';
-const EXCHANGERATE_API_URL = `https://v6.exchangerate-api.com/v6/${EXCHANGERATE_API_KEY}/latest/USD`;
+const EXCHANGERATE_API_KEY = process.env.EXCHANGERATE_API_KEY || '';
+
+/**
+ * ExchangeRate-API endpoint (paid tier with API key)
+ */
+const EXCHANGERATE_API_URL = EXCHANGERATE_API_KEY
+  ? `https://v6.exchangerate-api.com/v6/${EXCHANGERATE_API_KEY}/latest/USD`
+  : '';
 
 /**
  * Fallback URL (free version, no key required)
@@ -57,17 +63,30 @@ async function fetchFxRatesFromAPI(): Promise<FxRateData | null> {
   try {
     const startTime = Date.now();
     
-    // Try primary API with key first
-    let response = await fetch(EXCHANGERATE_API_URL, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-    
-    // If primary fails, try fallback
-    if (!response.ok) {
-      console.warn(`Primary API failed (${response.status}), trying fallback...`);
+    // Try primary API with key first (if available)
+    let response;
+    if (EXCHANGERATE_API_KEY) {
+      console.log('Fetching FX rates from paid tier...');
+      response = await fetch(EXCHANGERATE_API_URL, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
+      // If primary fails, try fallback
+      if (!response.ok) {
+        console.warn(`Paid tier API failed (${response.status}), trying free tier...`);
+        response = await fetch(FALLBACK_URL, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+      }
+    } else {
+      // No API key, use free tier
+      console.log('Fetching FX rates from free tier...');
       response = await fetch(FALLBACK_URL, {
         method: 'GET',
         headers: {
