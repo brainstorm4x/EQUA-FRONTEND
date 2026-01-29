@@ -48,14 +48,14 @@ export const MobileWalletModal: FC<MobileWalletModalProps> = ({ visible, onClose
   
   return (
     <div 
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="mobile-wallet-modal-title"
     >
       <div 
-        className="bg-purple-900 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 shadow-2xl"
+        className="bg-purple-900 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 shadow-2xl max-h-[90vh] overflow-y-auto mb-4 sm:mb-0"
         onClick={(e) => e.stopPropagation()} // Prevent close when clicking modal content
       >
         {/* Header */}

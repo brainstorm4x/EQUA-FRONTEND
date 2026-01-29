@@ -202,20 +202,44 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
         }
       }
     } else if (error.name === 'WalletConnectionError') {
-      // Check for network mismatch
-      const expectedNetwork = getExpectedNetwork();
+      // For mobile wallet adapter, connection errors are usually authorization-related, not network
+      const isMobile = isMobileDevice();
       
-      if (shouldLogError()) {
-        console.warn(
-          `[Wallet Network] App configured for ${expectedNetwork}. ` +
-          'Ensure your wallet is connected to the same network.'
+      if (isMobile) {
+        // Mobile Wallet Adapter errors are typically:
+        // - User rejected authorization
+        // - Wallet app not responding
+        // - Deep link failed
+        const expectedNetwork = getExpectedNetwork();
+        
+        if (shouldLogError()) {
+          console.warn('[Mobile Wallet] Connection failed. Common causes:');
+          console.warn('  - User rejected authorization in wallet app');
+          console.warn('  - Wallet app not responding');
+          console.warn(`  - Network mismatch (check wallet app is on ${expectedNetwork})`);
+          console.warn('  - Deep link redirection failed');
+        }
+        
+        setWalletWarning(
+          'Failed to connect to wallet. Please ensure your wallet app is open and try again. ' +
+          `If the issue persists, check that your wallet is on the correct network (${expectedNetwork}).`
+        );
+      } else {
+        // Desktop wallet connection errors
+        const expectedNetwork = getExpectedNetwork();
+        
+        if (shouldLogError()) {
+          console.warn(
+            `[Wallet Network] App configured for ${expectedNetwork}. ` +
+            'Ensure your wallet is connected to the same network.'
+          );
+        }
+        
+        setWalletWarning(
+          `Connection error. Please ensure your wallet is connected to ${expectedNetwork} network. ` +
+          'You can change the network in your wallet settings.'
         );
       }
-      
-      setWalletWarning(
-        `Connection error. Please ensure your wallet is connected to ${expectedNetwork} network. ` +
-        'You can change the network in your wallet settings.'
-      );
     } else if (error.name === 'WalletNotConnectedError') {
       setWalletWarning(
         'Wallet not connected. Please connect your wallet to continue.'
