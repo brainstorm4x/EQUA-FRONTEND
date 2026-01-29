@@ -121,8 +121,11 @@ describe('Home/Landing Page', () => {
       render(<HomePage />);
       
       const logos = screen.getAllByAltText('EQUA Logo');
-      // Header logo should be 40px
-      const headerLogo = logos.find(logo => logo.getAttribute('width') === '40');
+      // Header logo should be 40px (check by style)
+      const headerLogo = logos.find(logo => 
+        logo.style.height === '40px' || 
+        (logo as HTMLElement).style.getPropertyValue('height') === '40px'
+      );
       expect(headerLogo).toBeInTheDocument();
     });
 
@@ -130,8 +133,11 @@ describe('Home/Landing Page', () => {
       render(<HomePage />);
       
       const logos = screen.getAllByAltText('EQUA Logo');
-      // Hero logo should be 120px (larger to cover the outer circle)
-      const heroLogo = logos.find(logo => logo.getAttribute('width') === '120');
+      // Hero logo should be 120px (check by style)
+      const heroLogo = logos.find(logo => 
+        logo.style.height === '120px' ||
+        (logo as HTMLElement).style.getPropertyValue('height') === '120px'
+      );
       expect(heroLogo).toBeInTheDocument();
     });
 
@@ -143,12 +149,21 @@ describe('Home/Landing Page', () => {
       expect(heroSection?.textContent).not.toContain('🪙');
     });
 
-    it('should use PNG format for logo by default', () => {
+    it('should use SVG format for all logos', () => {
       render(<HomePage />);
       
       const logos = screen.getAllByAltText('EQUA Logo');
       logos.forEach(logo => {
-        expect(logo).toHaveAttribute('src', '/branding/equa-logo.png');
+        expect(logo).toHaveAttribute('src', '/branding/equa-logo.svg');
+      });
+    });
+
+    it('should use standard img tags for logos', () => {
+      render(<HomePage />);
+      
+      const logos = screen.getAllByAltText('EQUA Logo');
+      logos.forEach(logo => {
+        expect(logo.tagName).toBe('IMG');
       });
     });
   });

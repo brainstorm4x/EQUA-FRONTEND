@@ -8,14 +8,6 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { Logo } from '@/components/Logo';
 
-// Mock Next.js Image component
-jest.mock('next/image', () => {
-  return function MockImage(props: any) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} />;
-  };
-});
-
 describe('Logo Component', () => {
   describe('Basic Rendering', () => {
     it('should render the EQUA logo image', () => {
@@ -25,18 +17,18 @@ describe('Logo Component', () => {
       expect(logo).toBeInTheDocument();
     });
 
-    it('should use PNG format by default', () => {
+    it('should always use SVG format', () => {
       render(<Logo />);
       
       const logo = screen.getByAltText('EQUA Logo');
-      expect(logo).toHaveAttribute('src', '/branding/equa-logo.png');
+      expect(logo).toHaveAttribute('src', '/branding/equa-logo.svg');
     });
 
-    it('should use SVG format when specified', () => {
-      render(<Logo format="svg" />);
+    it('should use standard img tag, not Next.js Image', () => {
+      render(<Logo />);
       
       const logo = screen.getByAltText('EQUA Logo');
-      expect(logo).toHaveAttribute('src', '/branding/equa-logo.svg');
+      expect(logo.tagName).toBe('IMG');
     });
 
     it('should have accessible alt text', () => {
@@ -48,36 +40,33 @@ describe('Logo Component', () => {
   });
 
   describe('Size Prop', () => {
-    it('should render with default size of 40', () => {
+    it('should render with default size of 40px', () => {
       render(<Logo />);
       
       const logo = screen.getByAltText('EQUA Logo');
-      expect(logo).toHaveAttribute('width', '40');
-      expect(logo).toHaveAttribute('height', '40');
+      expect(logo).toHaveStyle('height: 40px');
+      expect(logo).toHaveStyle('width: auto');
     });
 
     it('should render with custom size', () => {
       render(<Logo size={80} />);
       
       const logo = screen.getByAltText('EQUA Logo');
-      expect(logo).toHaveAttribute('width', '80');
-      expect(logo).toHaveAttribute('height', '80');
+      expect(logo).toHaveStyle('height: 80px');
     });
 
     it('should render with small size', () => {
       render(<Logo size={24} />);
       
       const logo = screen.getByAltText('EQUA Logo');
-      expect(logo).toHaveAttribute('width', '24');
-      expect(logo).toHaveAttribute('height', '24');
+      expect(logo).toHaveStyle('height: 24px');
     });
 
-    it('should render with large size', () => {
+    it('should render with large size for hero', () => {
       render(<Logo size={120} />);
       
       const logo = screen.getByAltText('EQUA Logo');
-      expect(logo).toHaveAttribute('width', '120');
-      expect(logo).toHaveAttribute('height', '120');
+      expect(logo).toHaveStyle('height: 120px');
     });
   });
 
@@ -110,15 +99,15 @@ describe('Logo Component', () => {
       render(<Logo size={60} className="rounded-full shadow-lg" />);
       
       const logo = screen.getByAltText('EQUA Logo');
-      expect(logo).toHaveAttribute('width', '60');
-      expect(logo).toHaveAttribute('height', '60');
+      expect(logo).toHaveStyle('height: 60px');
+      expect(logo).toHaveStyle('width: auto');
       expect(logo).toHaveClass('rounded-full');
       expect(logo).toHaveClass('shadow-lg');
     });
   });
 
   describe('Accessibility', () => {
-    it('should be accessible via role img', () => {
+    it('should be keyboard accessible as an image', () => {
       render(<Logo />);
       
       const logo = screen.getByRole('img');
@@ -131,17 +120,35 @@ describe('Logo Component', () => {
       const logo = screen.getByRole('img', { name: 'EQUA Logo' });
       expect(logo).toBeInTheDocument();
     });
+
+    it('should not be draggable', () => {
+      render(<Logo />);
+      
+      const logo = screen.getByAltText('EQUA Logo');
+      expect(logo).toHaveAttribute('draggable', 'false');
+    });
   });
 
-  describe('Image Dimensions', () => {
-    it('should maintain square aspect ratio', () => {
+  describe('Performance', () => {
+    it('should use native lazy loading by default', () => {
+      render(<Logo />);
+      
+      const logo = screen.getByAltText('EQUA Logo');
+      expect(logo).toHaveAttribute('loading', 'lazy');
+    });
+
+    it('should use eager loading when priority is true', () => {
+      render(<Logo priority={true} />);
+      
+      const logo = screen.getByAltText('EQUA Logo');
+      expect(logo).toHaveAttribute('loading', 'eager');
+    });
+
+    it('should maintain aspect ratio with width: auto', () => {
       render(<Logo size={50} />);
       
       const logo = screen.getByAltText('EQUA Logo');
-      const width = logo.getAttribute('width');
-      const height = logo.getAttribute('height');
-      
-      expect(width).toBe(height);
+      expect(logo).toHaveStyle('width: auto');
     });
   });
 });
