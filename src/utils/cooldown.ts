@@ -17,6 +17,13 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 import { safeParseTimestamp } from './safeAccountParsing';
 
+/**
+ * Mint type for cooldown differentiation
+ * - regular: Standard minting (enforces 24-hour cooldown)
+ * - bonus: Bonus mint from referral credits (NO cooldown, only monthly cap)
+ */
+export type MintType = 'regular' | 'bonus';
+
 // Constants
 const LAST_MINT_TIME_OFFSET = 136; // Offset in UserAccount for last_mint_time (i64)
 const MIN_USER_ACCOUNT_SIZE = LAST_MINT_TIME_OFFSET + 8; // Minimum size to read last_mint_time (i64 = 8 bytes)
@@ -225,19 +232,29 @@ export async function getOnchainLastMintTime(
  * Check if user can mint now (not on cooldown and no in-flight transaction)
  * 
  * @param walletAddress - Wallet address to check
+ * @param mintType - Type of mint ('regular' or 'bonus')
  * @returns true if user can mint, false if on cooldown or transaction in-flight
  */
-export function canMintNow(walletAddress: string): boolean {
+export function canMintNow(
+  walletAddress: string,
+  mintType: MintType = 'regular' // Default to safe behavior (enforce cooldown)
+): boolean {
   const now = Math.floor(Date.now() / 1000);
   
-  // Check in-flight lock first
+  // Check in-flight lock first (applies to ALL mint types)
   const inFlightLock = getInFlightLock(walletAddress);
   if (inFlightLock) {
     console.log('🔒 Mint blocked: Transaction in-flight');
     return false;
   }
   
-  // Check cooldown state
+  // ✅ BONUS MINTS: Bypass cooldown check (only monthly cap applies on-chain)
+  if (mintType === 'bonus') {
+    console.log('✅ Bonus mint - bypassing cooldown check (only monthly cap applies)');
+    return true; // No cooldown for bonus mints!
+  }
+  
+  // REGULAR MINTS: Check cooldown
   const cooldownState = getCooldownState(walletAddress);
   if (!cooldownState) {
     // No cooldown state, user can mint
@@ -259,22 +276,30 @@ export function canMintNow(walletAddress: string): boolean {
  * Call this immediately when user clicks mint button
  * 
  * @param walletAddress - Wallet address
+ * @param mintType - Type of mint ('regular' or 'bonus')
  */
-export function startMint(walletAddress: string): void {
+export function startMint(
+  walletAddress: string,
+  mintType: MintType = 'regular'
+): void {
   const now = Math.floor(Date.now() / 1000);
   
-  // Set optimistic cooldown
-  const cooldownState: CooldownState = {
-    lastMintTime: now,
-    cooldownUntil: now + MINT_COOLDOWN_SECONDS,
-    isOptimistic: true,
-  };
-  setCooldownState(walletAddress, cooldownState);
-  
-  // Set in-flight lock
+  // Set in-flight lock for ALL mint types (prevents double-clicks)
   setInFlightLock(walletAddress);
   
-  console.log(`🚀 Mint started - optimistic cooldown set until ${new Date(cooldownState.cooldownUntil * 1000).toLocaleString()}`);
+  // Only set optimistic cooldown for REGULAR mints
+  if (mintType === 'regular') {
+    const cooldownState: CooldownState = {
+      lastMintTime: now,
+      cooldownUntil: now + MINT_COOLDOWN_SECONDS,
+      isOptimistic: true,
+    };
+    setCooldownState(walletAddress, cooldownState);
+    
+    console.log(`🚀 Regular mint started - optimistic cooldown set until ${new Date(cooldownState.cooldownUntil * 1000).toLocaleString()}`);
+  } else {
+    console.log(`🚀 Bonus mint started - no cooldown applied`);
+  }
 }
 
 /**

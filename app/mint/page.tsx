@@ -1228,14 +1228,14 @@ export default function MintPage() {
     
     // ✅ COOLDOWN GUARD: Check cooldown with CooldownGuard (prevents race conditions)
     const walletAddress = publicKey.toBase58();
-    if (!CooldownGuard.canMintNow(walletAddress)) {
+    if (!CooldownGuard.canMintNow(walletAddress, 'regular')) {
       const remaining = CooldownGuard.timeRemaining(walletAddress);
       setError(`⏰ Please wait ${formatTimeRemaining(remaining)} before minting again`);
       return;
     }
     
     // ✅ COOLDOWN GUARD: Start mint - set optimistic cooldown and in-flight lock
-    CooldownGuard.startMint(walletAddress);
+    CooldownGuard.startMint(walletAddress, 'regular');
     
     // Update UI state immediately
     setIsLoading(true);
@@ -1659,6 +1659,33 @@ export default function MintPage() {
     }
   };
 
+
+  // TODO: Implement bonus mint handler with:
+  // - CooldownGuard.canMintNow(walletAddress, 'bonus')
+  // - CooldownGuard.startMint(walletAddress, 'bonus')
+  // - CooldownGuard.endMint(walletAddress, false) after completion (clears in-flight lock without setting cooldown)
+  // Example:
+  // const handleBonusMint = async () => {
+  //   if (!publicKey || !wallet.sendTransaction) {
+  //     setError('Wallet not connected');
+  //     return;
+  //   }
+  //
+  //   const walletAddress = publicKey.toBase58();
+  //   if (!CooldownGuard.canMintNow(walletAddress, 'bonus')) {
+  //     setError('A transaction is already in progress');
+  //     return;
+  //   }
+  //
+  //   CooldownGuard.startMint(walletAddress, 'bonus');
+  //   try {
+  //     // ... bonus mint logic using claim_bonus_mint instruction
+  //     // ... on success or error: CooldownGuard.endMint(walletAddress, false);
+  //   } catch (err) {
+  //     CooldownGuard.endMint(walletAddress, false);
+  //     throw err;
+  //   }
+  // };
 
 
 // ... existing code ...
