@@ -73,7 +73,7 @@ describe('MobileWalletModal', () => {
       expect(mockOnClose).toHaveBeenCalled();
     });
     
-    it('should show empty state when no wallets available', () => {
+    it('should show enhanced empty state with download buttons when no wallets available', () => {
       mockUseWallet.mockReturnValue({
         wallets: [],
         select: mockSelect,
@@ -83,8 +83,21 @@ describe('MobileWalletModal', () => {
         <MobileWalletModal visible={true} onClose={mockOnClose} />
       );
       
-      expect(screen.getByText('No wallets available')).toBeInTheDocument();
-      expect(screen.getByText('Please install a Solana wallet app')).toBeInTheDocument();
+      // Check for enhanced messaging
+      expect(screen.getByText('No Wallet App Detected')).toBeInTheDocument();
+      expect(screen.getByText('You need a Solana wallet app to connect')).toBeInTheDocument();
+      expect(screen.getByText('After installing, return here and try again')).toBeInTheDocument();
+      
+      // Check for download buttons
+      const phantomLink = screen.getByText('📥 Get Phantom Wallet').closest('a');
+      expect(phantomLink).toHaveAttribute('href', 'https://phantom.app/download');
+      expect(phantomLink).toHaveAttribute('target', '_blank');
+      expect(phantomLink).toHaveAttribute('rel', 'noopener noreferrer');
+      
+      const solflareLink = screen.getByText('📥 Get Solflare Wallet').closest('a');
+      expect(solflareLink).toHaveAttribute('href', 'https://solflare.com/download');
+      expect(solflareLink).toHaveAttribute('target', '_blank');
+      expect(solflareLink).toHaveAttribute('rel', 'noopener noreferrer');
     });
   });
   

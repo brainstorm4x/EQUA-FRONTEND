@@ -4,6 +4,7 @@ import { FC, ReactNode, useMemo, useCallback, useEffect, useState } from 'react'
 import {
   ConnectionProvider,
   WalletProvider as SolanaWalletProvider,
+  useWallet,
 } from '@solana/wallet-adapter-react';
 import { WalletError } from '@solana/wallet-adapter-base';
 import {
@@ -93,6 +94,25 @@ const getExpectedNetwork = (): string => {
   return 'devnet'; // default
 };
 
+/**
+ * Detects if any Solana wallet extension is actually available
+ * Used to show proactive installation guidance on desktop
+ */
+const isWalletDetected = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  // Check for Phantom
+  const hasPhantom = !!(
+    (window as any).solana?.isPhantom || 
+    (window as any).phantom?.solana?.isPhantom
+  );
+  
+  // Check for Solflare
+  const hasSolflare = !!((window as any).solflare);
+  
+  return hasPhantom || hasSolflare;
+};
+
 // Throttle error logging to avoid console spam during Fast Refresh
 let lastErrorTime = 0;
 const ERROR_THROTTLE_MS = 5000; // 5 seconds
@@ -104,6 +124,66 @@ const shouldLogError = (): boolean => {
     return true;
   }
   return false;
+};
+
+/**
+ * Internal component that shows no-wallet banner
+ * Must be inside WalletModalProvider to use useWallet hook
+ */
+const NoWalletBanner: FC = () => {
+  const walletContext = useWallet();
+  
+  // Guard against undefined context (can happen in tests or SSR)
+  if (!walletContext) return null;
+  
+  const { connected, wallets: availableWallets } = walletContext;
+  
+  // Only show banner on desktop when:
+  // - Not connected
+  // - Wallet adapters are available (desktop mode)
+  // - No actual wallet extension detected
+  const shouldShowBanner = 
+    !connected && 
+    !isMobileDevice() && 
+    availableWallets.length > 0 && 
+    !isWalletDetected();
+  
+  if (!shouldShowBanner) return null;
+  
+  return (
+    <div 
+      className="bg-yellow-500/20 border border-yellow-500/50 text-yellow-200 px-4 py-3 rounded-lg mb-4"
+      role="alert"
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-xl">⚠️</span>
+        <div className="flex-1">
+          <p className="font-semibold">No Wallet Extension Detected</p>
+          <p className="text-sm mt-1">
+            Install{' '}
+            <a 
+              href="https://phantom.app/download" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="underline hover:text-yellow-100 font-medium"
+            >
+              Phantom
+            </a>
+            {' '}or{' '}
+            <a 
+              href="https://www.solflare.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="underline hover:text-yellow-100 font-medium"
+            >
+              Solflare
+            </a>
+            {' '}browser extension to connect your wallet
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
@@ -186,20 +266,47 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
     if (error.name === 'WalletNotReadyError') {
       const walletName = error.message?.toLowerCase() || '';
       
-      if (walletName.includes('phantom')) {
-        // Phantom not installed
-        if (isMobileDevice()) {
-          const shouldRedirect = window.confirm(
-            'Phantom wallet is not installed. Would you like to download it from the app store?'
-          );
-          if (shouldRedirect) {
-            window.location.href = getPhantomStoreUrl();
-          }
-        } else {
-          setWalletWarning(
-            'Phantom wallet not detected. Please install the Phantom browser extension from phantom.app'
-          );
+      // Detect which wallet from error message
+      const isPhantom = walletName.includes('phantom');
+      const isSolflare = walletName.includes('solflare');
+      const isMobile = isMobileDevice();
+      
+      if (isMobile) {
+        // Mobile: Offer to redirect to app store
+        const walletDisplayName = isPhantom 
+          ? 'Phantom' 
+          : isSolflare 
+          ? 'Solflare' 
+          : 'Solana wallet';
+        
+        const downloadUrl = isPhantom 
+          ? getPhantomStoreUrl() 
+          : 'https://solflare.com/download';
+        
+        const shouldRedirect = window.confirm(
+          `${walletDisplayName} is not installed. Would you like to download it from the app store?`
+        );
+        
+        if (shouldRedirect) {
+          window.location.href = downloadUrl;
         }
+      } else {
+        // Desktop: Show helpful message with installation link
+        const walletDisplayName = isPhantom 
+          ? 'Phantom' 
+          : isSolflare 
+          ? 'Solflare' 
+          : 'This wallet';
+        
+        const downloadUrl = isPhantom 
+          ? 'https://phantom.app/download' 
+          : isSolflare 
+          ? 'https://www.solflare.com'
+          : 'https://solana.com/ecosystem/explore?categories=wallet';
+        
+        setWalletWarning(
+          `${walletDisplayName} extension not detected. Install it from ${downloadUrl} and refresh this page.`
+        );
       }
     } else if (error.name === 'WalletConnectionError') {
       // For mobile wallet adapter, connection errors are usually authorization-related, not network
@@ -277,6 +384,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
               </div>
             </div>
           )}
+          <NoWalletBanner />
           <ProgramIdMigration />
           {children}
         </WalletModalProvider>
