@@ -78,9 +78,34 @@ export const MobileWalletModal: FC<MobileWalletModalProps> = ({ visible, onClose
         {/* Wallet List */}
         {wallets.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-purple-300">No wallets available</p>
-            <p className="text-purple-400 text-sm mt-2">
-              Please install a Solana wallet app
+            <div className="text-5xl mb-4">📱</div>
+            <p className="text-purple-300 font-semibold mb-2">No Wallet App Detected</p>
+            <p className="text-purple-400 text-sm mb-6">
+              You need a Solana wallet app to connect
+            </p>
+            
+            {/* Installation Buttons */}
+            <div className="space-y-3 mb-4">
+              <a
+                href="https://phantom.app/download"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-purple-700 hover:bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+              >
+                📥 Get Phantom Wallet
+              </a>
+              <a
+                href="https://solflare.com/download"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-purple-700 hover:bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+              >
+                📥 Get Solflare Wallet
+              </a>
+            </div>
+            
+            <p className="text-purple-500 text-xs">
+              After installing, return here and try again
             </p>
           </div>
         ) : (
