@@ -55,13 +55,19 @@ export default function WhitepaperPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Executive Summary</h2>
               <p className="text-purple-200 leading-relaxed">
-                EQUA represents a fundamental shift in how digital economies function. Unlike traditional economic systems built on speculation, EQUA is designed as a <strong className="text-white">utility-first token</strong> where value appreciation flows naturally from real use—not manipulation. It&apos;s a system where everyone benefits from participation, not just early speculators.
+                EQUA is different.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                In traditional financial systems, people watch their savings lose purchasing power to inflation. With EQUA, the opposite happens: as the ecosystem grows through genuine transactions, token value appreciates. Every action you take—every purchase, every transfer—strengthens the system and rewards those who believe in it.
+                Most digital economies reward speculation. EQUA rewards use.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                This whitepaper explains how EQUA creates a fair economic layer on Solana where transparent rules replace hidden incentives, where speculation cannot exploit long-term believers, and where ordinary people can experience real, measurable wealth appreciation from daily participation.
+                In traditional systems, your savings lose value over time. With EQUA, the opposite happens: as more people use it, its value grows. Every transaction strengthens the network. Every person who holds benefits.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                This isn&apos;t about trading. It&apos;s about building an economy where participation matters more than timing, where transparency replaces manipulation, and where ordinary people can see their purchasing power grow simply by being part of something real.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                This whitepaper explains how EQUA works, why it&apos;s fair, and how you can be part of it.
               </p>
             </section>
 
@@ -69,29 +75,24 @@ export default function WhitepaperPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part I: The Problem with Traditional Systems</h2>
               
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Traditional Value Preservation Struggles</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Saving Money Feels Like Losing</h3>
               <p className="text-purple-200 leading-relaxed">
-                In established economies, savers face a persistent challenge: the purchasing power of stored wealth erodes over time. This isn&apos;t a personal failure—it&apos;s a structural reality. Inflation reduces what each unit of currency can buy, regardless of how carefully you manage it.
+                You work. You save. Years pass. And somehow, your money buys less.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                For individuals in emerging markets, this challenge intensifies. Wealth stored in local currencies often experiences even sharper erosion, especially during periods of economic uncertainty. The result: people are forced into risky investment strategies simply to preserve what they&apos;ve already earned.
+                This isn&apos;t your fault. It&apos;s how the system works. Inflation erodes purchasing power. For people in emerging markets, it&apos;s even worse—currencies can collapse, savings can vanish, and there&apos;s nothing you can do.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">The Core Issue</strong>: Traditional systems separate transactions from reward mechanisms. You perform economic activities—buying, selling, exchanging value—but receive no direct benefit for the volume and health of the economic network you&apos;re building.
+                <strong className="text-white">The core issue:</strong> You perform economic activities—buying, selling, working—but the system doesn&apos;t reward you for making the economy stronger. Your participation builds value for others, not for you.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Speculation Problem</h3>
               <p className="text-purple-200 leading-relaxed">
-                Modern digital assets introduced a troubling pattern: <strong className="text-white">speculation detached from utility</strong>. On centralized exchanges, large holders can manipulate price movements without any corresponding change in the underlying value generated by actual users.
+                Crypto was supposed to fix this. Instead, it created new problems.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                This creates three interconnected problems:
+                On exchanges, large holders manipulate prices. Early speculators profit massively. New users enter at unpredictable prices, with no way to know if they&apos;re being taken advantage of. Long-term believers watch their holdings crash because of speculation, even when the platform itself is improving.
               </p>
-              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
-                <li><strong className="text-white">Unfair Distribution</strong>: Early speculators profit disproportionately, not through building the system, but through timing and capital allocation</li>
-                <li><strong className="text-white">Volatility Traps</strong>: New users enter at unpredictable prices, lacking mechanisms to understand whether they&apos;re joining at a fair valuation</li>
-                <li><strong className="text-white">Expectation Mismatch</strong>: Long-term believers suffer price crashes caused by speculative cycles, despite the platform itself improving steadily</li>
-              </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
                 <strong className="text-white">EQUA changes this equation entirely.</strong>
               </p>
@@ -99,34 +100,140 @@ export default function WhitepaperPage() {
 
             {/* Part II */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part II: How EQUA Works—A System Built on Use, Not Manipulation</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part II: How EQUA Works—Real Use, Real Growth</h2>
               
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Core Principle: Appreciation Flows from Real Activity</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Core Principle: Value Grows from Activity, Not Manipulation</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA&apos;s fundamental design principle is elegant: <strong className="text-white">token value appreciation is directly linked to genuine economic activity</strong>. Not speculation. Not manipulation. Real transactions.
+                EQUA&apos;s design is simple: <strong className="text-white">token value rises when people use it</strong>. Not when people trade it. Not when influencers hype it. When real people exchange real value.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                Every time someone uses EQUA to buy something, sell something, or transfer value, three things happen simultaneously:
+                Every time someone uses EQUA—to buy something, pay someone, transfer value—three things happen:
               </p>
               <ol className="list-decimal list-inside text-purple-200 space-y-2 mt-2">
-                <li><strong className="text-white">Measurable value is created</strong> in the network</li>
-                <li><strong className="text-white">Existing token holders benefit</strong> from this activity through appreciation</li>
-                <li><strong className="text-white">Future users have clearer price signals</strong> based on actual ecosystem health</li>
+                <li><strong className="text-white">The network becomes stronger</strong></li>
+                <li><strong className="text-white">All token holders benefit</strong> through appreciation</li>
+                <li><strong className="text-white">Future users see clearer price signals</strong> based on actual health, not speculation</li>
               </ol>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Transaction-Driven Appreciation</h3>
               <p className="text-purple-200 leading-relaxed">
-                <strong className="text-white">Transactions are the heartbeat of any economy.</strong> They represent real economic activity—people exchanging goods and services. Traditional systems never reward the actors who create this activity. EQUA does.
+                Transactions are the heartbeat of any economy. They represent real activity—goods changing hands, services rendered, value flowing between people.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Traditional systems never reward the people who create this activity. EQUA does.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 When you make a transaction using EQUA:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
-                <li>You&apos;re not just trading; you&apos;re contributing to the network&apos;s health</li>
-                <li>Your action increases the ecosystem&apos;s transaction volume</li>
-                <li>This volume triggers the appreciation mechanism that benefits all holders</li>
-                <li>Long-term believers who hold through your transaction benefit directly</li>
+                <li>You&apos;re contributing to the network&apos;s health</li>
+                <li>Your action increases ecosystem volume</li>
+                <li>This volume triggers appreciation that benefits all holders</li>
+                <li>People who believed early and held benefit directly from your participation</li>
               </ul>
+            </section>
+
+            {/* Part II.5 - The Power of One Daily Action */}
+            <section className="mb-12">
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part II.5: The Power of One Daily Action</h2>
+              
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">You Don&apos;t Need to Become a Trader</h3>
+              <p className="text-purple-200 leading-relaxed">
+                EQUA is designed so ordinary people can strengthen the system without changing their lifestyle, watching charts, or learning complex trading strategies.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                You don&apos;t need to buy, flip, or speculate on EQUA for it to matter.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                All that&apos;s required is <strong className="text-white">one simple action: accept EQUA once a day when someone sends it to you.</strong>
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">One Small Action, Once a Day</h3>
+              <p className="text-purple-200 leading-relaxed">
+                You don&apos;t need to:
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
+                <li>Trade on exchanges</li>
+                <li>Watch charts or react to price moves</li>
+                <li>Stay online all the time</li>
+                <li>Convince others or run campaigns</li>
+              </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                You only need to do this:
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
+                <li><strong className="text-white">When someone sends you EQUA, receive it</strong></li>
+                <li>Let that transfer be recorded on-chain as real use between real people</li>
+                <li>The protocol counts this as genuine participation, not speculation</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why This Matters So Much</h3>
+              <p className="text-purple-200 leading-relaxed">
+                One person accepting EQUA once a day is a tiny event on its own.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                But scaled even a little, the picture changes:
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
+                <li><strong className="text-white">1 person × 1 acceptance per day</strong> → very small</li>
+                <li><strong className="text-white">10,000 people × 1 acceptance per day</strong> → system-level signal</li>
+                <li><strong className="text-white">1,000,000 people × 1 acceptance per day</strong> → impossible to ignore</li>
+              </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Every time EQUA moves from one person to another, the network becomes stronger. The price appreciation logic <strong className="text-white">only considers peer-to-peer transfers</strong>, not registrations, minting, or rewards. The system grows not because someone bought EQUA, but because someone <strong className="text-white">used</strong> it.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">No Pressure, No Rush</h3>
+              <p className="text-purple-200 leading-relaxed">
+                EQUA is intentionally built to avoid urgency and hype.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                You don&apos;t need to:
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
+                <li>Accept EQUA multiple times a day. <strong className="text-white">Once is enough.</strong></li>
+                <li>Force use cases that don&apos;t feel natural</li>
+                <li>Participate when it doesn&apos;t make sense</li>
+              </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Simply accept EQUA when it fits your normal life—paying someone back, settling a small bill, sending value to a friend.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                This keeps the system simple and fair. Growth remains organic, not forced.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">How Small Actions Add Up</h3>
+              <p className="text-purple-200 leading-relaxed">
+                Trust, reputation, and real economic networks all grow the same way: through <strong className="text-white">small, repeated actions over time</strong>.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                When many people:
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
+                <li>Perform one small action each day</li>
+                <li>Let value flow peer-to-peer</li>
+                <li>Do this consistently</li>
+              </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                ...the value of the entire system moves forward—slowly at first, then steadily, without relying on hype cycles or a handful of large players.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                EQUA&apos;s price appreciation model is already tied directly to transaction counts across structured tiers and epochs. This daily rhythm of small actions is exactly what that model is designed to reward.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why EQUA Is Different</h3>
+              <p className="text-purple-200 leading-relaxed">
+                Most systems depend on: <strong className="text-white">A small number of users doing a lot</strong> (heavy trading, large capital, constant activity).
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                EQUA is built around the opposite idea: <strong className="text-white">Many users doing a little.</strong>
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                One acceptance. Once a day. From each person.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Because price appreciation only considers genuine peer-to-peer transfers, the protocol directly aligns value growth with real usage instead of pure buying pressure. That&apos;s enough to create a durable, user-driven network where participation is simple, low-pressure, and meaningful.
+              </p>
             </section>
 
             {/* Part III */}
@@ -135,15 +242,18 @@ export default function WhitepaperPage() {
               
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Utility Prevents Exploitation</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA is <strong className="text-white">fundamentally designed for buying and selling</strong>—for creating your own ecosystem of commerce and exchange. This utility-first design serves a critical purpose: it makes the token extremely difficult to manipulate.
+                EQUA is <strong className="text-white">fundamentally designed for buying and selling</strong>—for creating your own ecosystem of commerce and exchange. This isn&apos;t a side feature. It&apos;s the point.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Speculative Attack Vector Closed</strong>: In pure speculative systems, large holders can flash-crash prices by dumping tokens. In EQUA, this doesn&apos;t have the same devastating effect because:
+                This utility-first design makes EQUA extremely difficult to manipulate.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">Speculative attack vectors are closed:</strong> In pure speculative systems, large holders can crash prices by dumping tokens. In EQUA, this doesn&apos;t have the same devastating effect because:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
                 <li>Users need EQUA to transact, not to speculate</li>
-                <li>The utility basis means price crashes create buying opportunities for actual users</li>
-                <li>There&apos;s no &quot;escape hatch&quot; for speculators—the token&apos;s purpose is always the same</li>
+                <li>Price drops create buying opportunities for actual users</li>
+                <li>The token&apos;s purpose is always the same—there&apos;s no &quot;escape hatch&quot; for speculators</li>
               </ul>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Fair Economy Framework: The Technical Foundation</h3>
@@ -156,7 +266,7 @@ export default function WhitepaperPage() {
                 Traditional tokens rely on team discretion for minting decisions. EQUA eliminates this entirely. No team can decide to print more tokens. No admin wallet can suddenly mint billions of units to dump on the market.
               </p>
               <p className="text-purple-200 leading-relaxed mt-2">
-                <strong className="text-white">Why This Matters</strong>: You don&apos;t have to trust people; you trust code. This trust is verifiable, transparent, and immune to secret changes.
+                <strong className="text-white">Why this matters:</strong> You don&apos;t have to trust people; you trust code. This trust is verifiable, transparent, and immune to secret changes.
               </p>
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">2. User-Growth-Linked Issuance</h4>
@@ -167,6 +277,112 @@ export default function WhitepaperPage() {
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">3. Referral Merit System (Not Recruitment)</h4>
               <p className="text-purple-200 leading-relaxed">
                 EQUA&apos;s referral system is fundamentally different: <strong className="text-white">rewards come only when real value is created.</strong> When someone you refer becomes active and contributes to the network, you receive 1% of their minted allocation—not as tokens handed to you, but as recognition of your contribution to bringing them into the ecosystem.
+              </p>
+            </section>
+
+            {/* Part III.5 - Simple to Use, Anywhere in the World */}
+            <section className="mb-12">
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part III.5: Simple to Use, Anywhere in the World</h2>
+              
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">No Complex Conversions. No Math. Just Scan and Send.</h3>
+              <p className="text-purple-200 leading-relaxed">
+                EQUA is designed to work the way you already think about money—in your local currency, at current prices, without forcing you to do mental gymnastics.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Here&apos;s how simple it is:
+              </p>
+              
+              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
+                <h4 className="text-lg font-semibold text-white mb-3">When you want to buy something:</h4>
+                <ol className="list-decimal list-inside text-purple-200 space-y-2">
+                  <li>Check the price in your local currency</li>
+                  <li>Open the send modal</li>
+                  <li>The system automatically converts it to EQUA for you</li>
+                  <li>Scan the seller&apos;s QR code</li>
+                  <li>Send</li>
+                </ol>
+              </div>
+
+              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
+                <h4 className="text-lg font-semibold text-white mb-3">When you want to receive payment:</h4>
+                <ol className="list-decimal list-inside text-purple-200 space-y-2">
+                  <li>Tell someone the price in your local currency</li>
+                  <li>Open the receive modal</li>
+                  <li>The system shows the equivalent in EQUA</li>
+                  <li>They scan your QR code</li>
+                  <li>You receive</li>
+                </ol>
+              </div>
+
+              <p className="text-purple-200 leading-relaxed mt-4">
+                That&apos;s it. No spreadsheets. No calculators. No guessing.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Your Currency, Your Convenience</h3>
+              <p className="text-purple-200 leading-relaxed">
+                You don&apos;t need to think in EQUA if you don&apos;t want to. The interface does the work for you.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Whether you&apos;re in India thinking in rupees, Nigeria thinking in naira, or the Philippines thinking in pesos—<strong className="text-white">EQUA meets you where you are</strong>. The conversion happens instantly, transparently, based on current exchange rates pulled from live oracle feeds.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                You see the number that makes sense to you. The blockchain handles the rest.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why This Matters for Real People</h3>
+              <p className="text-purple-200 leading-relaxed">
+                In traditional crypto, using tokens for everyday purchases feels like learning a new language. You have to:
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
+                <li>Calculate exchange rates manually</li>
+                <li>Worry about slippage and fees</li>
+                <li>Double-check if you&apos;re sending the right amount</li>
+                <li>Hope the other person understands what they&apos;re receiving</li>
+              </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">EQUA removes all of this friction.</strong>
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                When a shopkeeper wants to charge you ₹500 for groceries, you don&apos;t need to know that&apos;s 0.27 EQUA or 6.03 USD or any other conversion. You just see ₹500, confirm, scan, send.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                When a friend owes you ₦10,000, they don&apos;t need to stress about token prices. They see ₦10,000, confirm, scan, send.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                The system handles the complexity. You handle your life.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Confidence in Every Transaction</h3>
+              <p className="text-purple-200 leading-relaxed">
+                Because exchange rates update in real-time from Hermes/Pyth oracle feeds (every 4 hours for EQX components, continuously for local currencies), you always know you&apos;re getting fair value.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                No hidden markups. No surprise conversions. No &quot;platform fees&quot; that quietly drain your balance.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                The price you see in your currency is the price you pay. The amount you request is the amount you receive. Simple. Fair. Transparent.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">QR Codes: Universal, Fast, Foolproof</h3>
+              <p className="text-purple-200 leading-relaxed">
+                You don&apos;t need to type long wallet addresses. You don&apos;t need to copy-paste strings of random characters. You don&apos;t risk sending funds to the wrong person.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Just scan. The QR code contains everything needed for the transaction. The interface shows you exactly what you&apos;re sending or receiving, in your currency, before you confirm.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                One tap. One scan. Done.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">This Is What Adoption Looks Like</h3>
+              <p className="text-purple-200 leading-relaxed">
+                Crypto has struggled with real-world adoption because it asks people to change how they think about money. EQUA takes the opposite approach: <strong className="text-white">we change the interface, not the user</strong>.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                You think in your currency. You transact the way you always have—scan, confirm, send. The difference is that the money you&apos;re using appreciates with the network, protects against inflation through EQX diversification, and rewards genuine use instead of speculation.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                That&apos;s the promise: <strong className="text-white">cryptocurrency that feels like money, not like gambling</strong>.
               </p>
             </section>
 
@@ -514,7 +730,7 @@ export default function WhitepaperPage() {
               <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V: EQX—The True Pricing Foundation</h2>
               
               <p className="text-purple-200 leading-relaxed">
-                EQUA&apos;s value is not denominated in US dollars. Instead, it is measured in <strong className="text-white">EQX (EQUA Index)</strong>—a diversified basket of major currencies, gold, and essential commodities. USD is shown only as a <strong className="text-white">display convenience</strong>, not as the underlying pricing anchor.
+                EQUA&apos;s value is not measured in US dollars. It&apos;s measured in <strong className="text-white">EQX (EQUA Index)</strong>—a diversified basket of major currencies, gold, and essential commodities. USD is shown only as a <strong className="text-white">display convenience</strong>, not as the underlying pricing anchor.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 This fundamental design choice means EQUA holders are not forced to trust the fate of any one government, central bank, or market. Your value is spread across the real world economy.
@@ -522,10 +738,10 @@ export default function WhitepaperPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why EQX Matters</h3>
               <p className="text-purple-200 leading-relaxed">
-                People don&apos;t live in abstract charts; they live in rent, groceries, school fees, and medicines. When a single currency weakens, it quietly steals from all of those things at once. If EQUA&apos;s value were tied only to USD, anyone saving in EQUA would still be exposed to the long, slow erosion of that one currency&apos;s purchasing power.
+                People don&apos;t live in abstract charts. They live in rent, groceries, school fees, and medicines. When a single currency weakens, it quietly steals from all of those things at once. If EQUA&apos;s value were tied only to USD, anyone saving in EQUA would still be exposed to the long, slow erosion of that one currency&apos;s purchasing power.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">EQX changes that</strong>: it spreads risk across multiple real-world anchors so that your effort today still means something tomorrow, even if one nation&apos;s money stumbles.
+                <strong className="text-white">EQX changes that:</strong> it spreads risk across multiple real-world anchors so that your effort today still means something tomorrow, even if one nation&apos;s money stumbles.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">What EQX Is</h3>
@@ -599,24 +815,6 @@ export default function WhitepaperPage() {
                 Because EQX includes both money (currencies) and things people ultimately care about (gold and key commodities), EQUA stays more aligned with the cost of real life—food, energy, safety—rather than just financial market noise. <strong className="text-white">EQUA is not designed for speculative trading.</strong> It is designed for people who want their daily participation to protect and grow their purchasing power.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">How EQX Works with EQUA&apos;s Transaction-Based Appreciation</h3>
-              <p className="text-purple-200 leading-relaxed">
-                EQX does not replace EQUA&apos;s transaction-based appreciation; <strong className="text-white">it anchors it</strong>.
-              </p>
-              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li>The price growth rules (driven by number of transactions and epochs) still determine how EQUA appreciates as the network is used.</li>
-                <li>EQX acts as an underlying &quot;reality check&quot;: if a single currency in the basket is inflating away, the other components help keep EQUA&apos;s reference tied to a more honest picture of global value.</li>
-                <li>You see USD values for convenience, but the actual appreciation happens in EQX terms.</li>
-              </ul>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">For users, this means:</strong>
-              </p>
-              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
-                <li>The more EQUA is used, the more it appreciates in EQX terms.</li>
-                <li>The more the world changes, the more EQX helps EQUA stay connected to what actually matters—what your money can buy.</li>
-                <li>USD is just one component of many, and you are never at the mercy of USD alone.</li>
-              </ul>
-
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">What This Means for Ordinary People</h3>
               <div className="space-y-4 mt-4">
                 <div className="bg-white/5 rounded-xl p-4 border border-purple-500/20">
@@ -635,10 +833,6 @@ export default function WhitepaperPage() {
                   </p>
                 </div>
               </div>
-
-              <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
-                EQUA was always designed to reward real participation and protect believers from speculation. EQX extends that same protection to the world beyond crypto: it recognizes that people don&apos;t just need a fair system inside the chain—they need protection from the unfairness outside it too.
-              </p>
             </section>
 
             {/* Part V.5 - Social Purpose Accounts */}
