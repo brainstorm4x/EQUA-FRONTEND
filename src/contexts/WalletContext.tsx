@@ -138,17 +138,18 @@ export function WalletProvider({ children }: WalletProviderProps) {
         const adapter = getWalletAdapter(session.walletName);
         setWallet(adapter);
         
-        // Try to auto-connect
-        adapter.connect()
-          .then(() => {
+        // Try to auto-connect in the background
+        (async () => {
+          try {
+            await adapter.connect();
             setPublicKey(adapter.publicKey);
             setConnected(true);
-          })
-          .catch((error) => {
+          } catch (error) {
             console.log('Auto-connect failed:', error);
             // Clear invalid session
-            adapter.disconnect();
-          });
+            adapter.disconnect().catch(() => {});
+          }
+        })();
       } catch (error) {
         console.error('Failed to restore wallet session:', error);
       }

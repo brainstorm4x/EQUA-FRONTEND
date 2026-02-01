@@ -142,7 +142,7 @@ export function getAvailableWallets(): WalletInfo[] {
  */
 export function generateMobileDeeplink(
   walletName: string,
-  appUrl: string,
+  returnUrl: string,
   cluster: string = 'devnet'
 ): string {
   const wallet = getAvailableWallets().find(w => w.name === walletName);
@@ -152,8 +152,8 @@ export function generateMobileDeeplink(
   
   const params = new URLSearchParams({
     cluster,
-    app_url: appUrl,
-    redirect: appUrl,
+    app_url: returnUrl,
+    redirect: returnUrl,
   });
   
   return `${wallet.mobileDeeplink}v1/connect?${params.toString()}`;

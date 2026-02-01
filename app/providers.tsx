@@ -10,8 +10,17 @@ import dynamic from 'next/dynamic';
 import '@/lib/clientProcessShim';
 
 // Dynamically import custom WalletProvider with no SSR to prevent hydration issues
-const WalletProvider = dynamic(
+const CustomWalletProvider = dynamic(
   () => import('@/contexts/WalletContext').then((mod) => mod.WalletProvider),
+  { 
+    ssr: false,
+    loading: () => null // No loading UI since it wraps children
+  }
+);
+
+// Import the old WalletProvider for backward compatibility during migration
+const LegacyWalletProvider = dynamic(
+  () => import('@/providers/WalletProvider').then((mod) => mod.WalletProvider),
   { 
     ssr: false,
     loading: () => <div className="min-h-screen bg-gray-900" />
@@ -67,10 +76,14 @@ export function Providers({ children }: ProvidersProps) {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <Suspense fallback={<div className="min-h-screen bg-gray-900" />}>
-          <WalletProvider>
-            {children}
-            <WebVitalsClient />
-          </WalletProvider>
+          {/* Legacy WalletProvider for backward compatibility with existing components */}
+          <LegacyWalletProvider>
+            {/* Custom WalletProvider for new wallet button and modal */}
+            <CustomWalletProvider>
+              {children}
+              <WebVitalsClient />
+            </CustomWalletProvider>
+          </LegacyWalletProvider>
         </Suspense>
         {/* Development-only diagnostics overlay - outside Suspense for independent loading */}
         {process.env.NODE_ENV === 'development' && <DiagnosticsOverlay />}
