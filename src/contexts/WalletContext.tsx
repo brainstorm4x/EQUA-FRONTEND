@@ -11,7 +11,7 @@ import React, { createContext, useContext, useCallback, useEffect, useState, Rea
 import { Connection, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { BaseWalletAdapter, getWalletAdapter } from '@/lib/wallet/UnifiedWalletAdapter';
 import { WalletInfo, WalletNotConnectedError } from '@/lib/wallet/types';
-import { getAvailableWallets, loadWalletSession } from '@/lib/wallet/utils';
+import { getAvailableWallets, loadWalletSession, recheckWalletAvailability } from '@/lib/wallet/utils';
 import { RPC_ENDPOINT } from '@/lib/constants';
 
 interface WalletContextValue {
@@ -27,6 +27,7 @@ interface WalletContextValue {
   
   // Available wallets
   wallets: WalletInfo[];
+  refreshWallets: () => void;
   
   // Methods
   select: (walletName: string) => void;
@@ -54,9 +55,14 @@ export function WalletProvider({ children }: WalletProviderProps) {
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
-  const [wallets] = useState<WalletInfo[]>(getAvailableWallets());
+  const [wallets, setWallets] = useState<WalletInfo[]>(getAvailableWallets());
   const [modalVisible, setModalVisible] = useState(false);
   const [autoConnectAttempted, setAutoConnectAttempted] = useState(false);
+  
+  // Function to refresh wallet detection
+  const refreshWallets = useCallback(() => {
+    setWallets(recheckWalletAvailability());
+  }, []);
   
   // Select a wallet
   const select = useCallback((walletName: string) => {
@@ -77,6 +83,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
       await wallet.connect();
       setPublicKey(wallet.publicKey);
       setConnected(true);
+      
+      // Small delay to allow state to propagate before closing modal
+      await new Promise(resolve => setTimeout(resolve, 300));
       setModalVisible(false);
     } catch (error: any) {
       console.error('Failed to connect wallet:', error);
@@ -128,7 +137,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     return wallet.signMessage(message);
   }, [wallet, connected]);
   
-  // Auto-reconnect on mount
+  // Auto-reconnect on mount and delayed wallet detection
   useEffect(() => {
     if (autoConnectAttempted) return;
     
@@ -155,8 +164,25 @@ export function WalletProvider({ children }: WalletProviderProps) {
       }
     }
     
+    // Re-check wallet availability after window fully loads
+    // This helps detect wallets that inject themselves after initial load
+    const handleLoad = () => {
+      refreshWallets();
+    };
+    
+    if (document.readyState === 'loading') {
+      window.addEventListener('load', handleLoad);
+    } else {
+      // If already loaded, re-check after a short delay
+      setTimeout(refreshWallets, 500);
+    }
+    
     setAutoConnectAttempted(true);
-  }, [autoConnectAttempted]);
+    
+    return () => {
+      window.removeEventListener('load', handleLoad);
+    };
+  }, [autoConnectAttempted, refreshWallets]);
   
   // Update state when wallet changes
   useEffect(() => {
@@ -180,6 +206,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     connecting,
     disconnecting,
     wallets,
+    refreshWallets,
     select,
     connect,
     disconnect,
