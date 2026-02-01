@@ -114,7 +114,7 @@ export function getAvailableWallets(): WalletInfo[] {
     },
     {
       name: 'Backpack',
-      icon: 'https://backpack.app/favicon.ico',
+      icon: '/icons/backpack.svg',
       url: 'https://backpack.app',
       installUrl: {
         desktop: 'https://backpack.app/downloads',
@@ -125,7 +125,7 @@ export function getAvailableWallets(): WalletInfo[] {
     },
     {
       name: 'Coinbase Wallet',
-      icon: 'https://www.coinbase.com/favicon.ico',
+      icon: '/icons/coinbase.svg',
       url: 'https://www.coinbase.com/wallet',
       installUrl: {
         desktop: 'https://www.coinbase.com/wallet/downloads',

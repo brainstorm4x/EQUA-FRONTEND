@@ -19,13 +19,15 @@ const CustomWalletProvider = dynamic(
 );
 
 // Import the old WalletProvider for backward compatibility during migration
-const LegacyWalletProvider = dynamic(
-  () => import('@/providers/WalletProvider').then((mod) => mod.WalletProvider),
-  { 
-    ssr: false,
-    loading: () => <div className="min-h-screen bg-gray-900" />
-  }
-);
+// LEGACY PROVIDER COMMENTED OUT - Kept for potential rollback
+// Uncomment if critical issues arise with custom provider
+// const LegacyWalletProvider = dynamic(
+//   () => import('@/providers/WalletProvider').then((mod) => mod.WalletProvider),
+//   { 
+//     ssr: false,
+//     loading: () => <div className="min-h-screen bg-gray-900" />
+//   }
+// );
 
 // DiagnosticsOverlay - only in development, with safe loading
 const DiagnosticsOverlay = dynamic(
@@ -76,14 +78,14 @@ export function Providers({ children }: ProvidersProps) {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <Suspense fallback={<div className="min-h-screen bg-gray-900" />}>
-          {/* Legacy WalletProvider for backward compatibility with existing components */}
-          <LegacyWalletProvider>
-            {/* Custom WalletProvider for new wallet button and modal */}
+          {/* LEGACY PROVIDER DISABLED - Using custom wallet adapter only */}
+          {/* Rollback plan: Uncomment the lines below if needed */}
+          {/* <LegacyWalletProvider> */}
             <CustomWalletProvider>
               {children}
               <WebVitalsClient />
             </CustomWalletProvider>
-          </LegacyWalletProvider>
+          {/* </LegacyWalletProvider> */}
         </Suspense>
         {/* Development-only diagnostics overlay - outside Suspense for independent loading */}
         {process.env.NODE_ENV === 'development' && <DiagnosticsOverlay />}

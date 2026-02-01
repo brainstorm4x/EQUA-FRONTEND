@@ -11,7 +11,7 @@ import React, { createContext, useContext, useCallback, useEffect, useState, Rea
 import { Connection, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { BaseWalletAdapter, getWalletAdapter } from '@/lib/wallet/UnifiedWalletAdapter';
 import { WalletInfo, WalletNotConnectedError } from '@/lib/wallet/types';
-import { getAvailableWallets, loadWalletSession, recheckWalletAvailability } from '@/lib/wallet/utils';
+import { getAvailableWallets, loadWalletSession, recheckWalletAvailability, saveWalletSession } from '@/lib/wallet/utils';
 import { RPC_ENDPOINT } from '@/lib/constants';
 
 interface WalletContextValue {
@@ -80,7 +80,15 @@ export function WalletProvider({ children }: WalletProviderProps) {
     
     try {
       setConnecting(true);
-      await wallet.connect();
+      
+      // Add 30-second timeout protection to prevent infinite waiting
+      const connectPromise = wallet.connect();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Wallet connection timeout. Please try again.')), 30000)
+      );
+      
+      await Promise.race([connectPromise, timeoutPromise]);
+      
       setPublicKey(wallet.publicKey);
       setConnected(true);
       
@@ -89,10 +97,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
       setModalVisible(false);
     } catch (error: any) {
       console.error('Failed to connect wallet:', error);
-      setConnecting(false);
-      throw error;
+      throw error; // Re-throw for UI error handling
     } finally {
-      setConnecting(false);
+      setConnecting(false); // ✅ ALWAYS runs, even after throw
     }
   }, [wallet, connecting, connected]);
   
@@ -194,6 +201,56 @@ export function WalletProvider({ children }: WalletProviderProps) {
       window.removeEventListener('load', handleLoad);
     };
   }, [autoConnectAttempted, refreshWallets]);
+  
+  // Handle mobile wallet connection callbacks
+  useEffect(() => {
+    // Check if returning from wallet app (URL params present)
+    const urlParams = new URLSearchParams(window.location.search);
+    const phantomPubkey = urlParams.get('phantom_encryption_public_key');
+    const solflarePubkey = urlParams.get('solflare_public_key');
+    const backpackPubkey = urlParams.get('backpack_public_key');
+    
+    const publicKeyString = phantomPubkey || solflarePubkey || backpackPubkey;
+    
+    if (publicKeyString) {
+      const walletName = sessionStorage.getItem('wallet_connecting');
+      
+      if (walletName) {
+        try {
+          console.log(`🔗 Mobile wallet callback detected for ${walletName}`);
+          
+          const adapter = getWalletAdapter(walletName);
+          setWallet(adapter);
+          
+          // Manually set connected state (mobile flow)
+          adapter.publicKey = new PublicKey(publicKeyString);
+          adapter.connected = true;
+          adapter.connecting = false;
+          
+          setPublicKey(adapter.publicKey);
+          setConnected(true);
+          setConnecting(false);
+          
+          // Save session
+          saveWalletSession(walletName, publicKeyString);
+          
+          // Clean up
+          sessionStorage.removeItem('wallet_connecting');
+          sessionStorage.removeItem('wallet_connect_time');
+          
+          // Remove URL params without triggering navigation
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, '', cleanUrl);
+          
+          console.log('✅ Mobile wallet connected:', publicKeyString);
+        } catch (error) {
+          console.error('Failed to complete mobile wallet connection:', error);
+          sessionStorage.removeItem('wallet_connecting');
+          sessionStorage.removeItem('wallet_connect_time');
+        }
+      }
+    }
+  }, []); // Run once on mount
   
   // Update state when wallet changes
   useEffect(() => {

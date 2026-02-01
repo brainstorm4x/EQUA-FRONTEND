@@ -50,7 +50,7 @@ export abstract class BaseWalletAdapter implements WalletAdapter {
 export class PhantomWalletAdapter extends BaseWalletAdapter {
   name = 'Phantom';
   url = 'https://phantom.app';
-  icon = 'https://phantom.app/img/logo.png';
+  icon = '/icons/phantom.svg';
   
   private get _provider() {
     if (typeof window === 'undefined') return null;
@@ -69,9 +69,29 @@ export class PhantomWalletAdapter extends BaseWalletAdapter {
     if (this.connecting || this.connected) return;
     
     const provider = this._provider;
+    const isMobile = isMobileDevice();
+    
+    if (!provider && isMobile) {
+      // Mobile device without wallet extension → Use deep link
+      const appUrl = window.location.origin;
+      const deeplink = generateMobileDeeplink(this.name, appUrl);
+      
+      // Store connection state for callback handling
+      sessionStorage.setItem('wallet_connecting', this.name);
+      sessionStorage.setItem('wallet_connect_time', Date.now().toString());
+      
+      console.log(`📱 Opening ${this.name} mobile app via deep link...`);
+      
+      // Open wallet app via deep link
+      window.location.href = deeplink;
+      
+      // Connection will be completed when wallet app redirects back
+      // See WalletContext.tsx for callback handler
+      return;
+    }
     
     if (!provider) {
-      if (isMobileDevice()) {
+      if (isMobile) {
         // On mobile, provide clear guidance instead of cryptic errors
         throw new WalletConnectionError(
           `Phantom browser extension is not available on mobile devices.\n\n` +
@@ -189,7 +209,7 @@ export class PhantomWalletAdapter extends BaseWalletAdapter {
 export class SolflareWalletAdapter extends BaseWalletAdapter {
   name = 'Solflare';
   url = 'https://solflare.com';
-  icon = 'https://solflare.com/assets/logo.svg';
+  icon = '/icons/solflare.svg';
   
   private get _provider() {
     if (typeof window === 'undefined') return null;
@@ -200,9 +220,29 @@ export class SolflareWalletAdapter extends BaseWalletAdapter {
     if (this.connecting || this.connected) return;
     
     const provider = this._provider;
+    const isMobile = isMobileDevice();
+    
+    if (!provider && isMobile) {
+      // Mobile device without wallet extension → Use deep link
+      const appUrl = window.location.origin;
+      const deeplink = generateMobileDeeplink(this.name, appUrl);
+      
+      // Store connection state for callback handling
+      sessionStorage.setItem('wallet_connecting', this.name);
+      sessionStorage.setItem('wallet_connect_time', Date.now().toString());
+      
+      console.log(`📱 Opening ${this.name} mobile app via deep link...`);
+      
+      // Open wallet app via deep link
+      window.location.href = deeplink;
+      
+      // Connection will be completed when wallet app redirects back
+      // See WalletContext.tsx for callback handler
+      return;
+    }
     
     if (!provider) {
-      if (isMobileDevice()) {
+      if (isMobile) {
         // On mobile, provide clear guidance instead of cryptic errors
         throw new WalletConnectionError(
           `Solflare browser extension is not available on mobile devices.\n\n` +
@@ -317,7 +357,7 @@ export class SolflareWalletAdapter extends BaseWalletAdapter {
 export class BackpackWalletAdapter extends BaseWalletAdapter {
   name = 'Backpack';
   url = 'https://backpack.app';
-  icon = 'https://backpack.app/favicon.ico';
+  icon = '/icons/backpack.svg';
   
   private get _provider() {
     if (typeof window === 'undefined') return null;
@@ -328,9 +368,29 @@ export class BackpackWalletAdapter extends BaseWalletAdapter {
     if (this.connecting || this.connected) return;
     
     const provider = this._provider;
+    const isMobile = isMobileDevice();
+    
+    if (!provider && isMobile) {
+      // Mobile device without wallet extension → Use deep link
+      const appUrl = window.location.origin;
+      const deeplink = generateMobileDeeplink(this.name, appUrl);
+      
+      // Store connection state for callback handling
+      sessionStorage.setItem('wallet_connecting', this.name);
+      sessionStorage.setItem('wallet_connect_time', Date.now().toString());
+      
+      console.log(`📱 Opening ${this.name} mobile app via deep link...`);
+      
+      // Open wallet app via deep link
+      window.location.href = deeplink;
+      
+      // Connection will be completed when wallet app redirects back
+      // See WalletContext.tsx for callback handler
+      return;
+    }
     
     if (!provider?.isBackpack) {
-      if (isMobileDevice()) {
+      if (isMobile) {
         // On mobile, provide clear guidance
         throw new WalletConnectionError(
           `Backpack browser extension is not available on mobile devices.\n\n` +
@@ -435,7 +495,7 @@ export class BackpackWalletAdapter extends BaseWalletAdapter {
 export class CoinbaseWalletAdapter extends BaseWalletAdapter {
   name = 'Coinbase Wallet';
   url = 'https://www.coinbase.com/wallet';
-  icon = 'https://www.coinbase.com/favicon.ico';
+  icon = '/icons/coinbase.svg';
   
   private get _provider() {
     if (typeof window === 'undefined') return null;

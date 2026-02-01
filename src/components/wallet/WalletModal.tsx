@@ -104,25 +104,42 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
           </button>
         </div>
         
-        {/* Mobile Browser Warning */}
+        {/* Mobile: Show all wallets with deep link support */}
         {isMobile && installedWallets.length === 0 && (
-          <div className="mb-6 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">📱</span>
-              <div>
-                <p className="text-yellow-100 font-semibold mb-2">
-                  Browser Extensions Don&apos;t Work on Mobile
-                </p>
-                <p className="text-yellow-200 text-sm mb-3">
-                  To connect your wallet on mobile:
-                </p>
-                <ol className="text-yellow-200 text-sm space-y-1 list-decimal list-inside">
-                  <li>Open your wallet app (Phantom, Solflare, etc.)</li>
-                  <li>Use the app&apos;s built-in browser (dApp browser)</li>
-                  <li>Navigate to this website</li>
-                  <li>Connect from within the wallet app</li>
-                </ol>
-              </div>
+          <div>
+            <h4 className="text-purple-200 text-sm font-semibold mb-3">Available Wallets</h4>
+            <div className="space-y-3">
+              {wallets.map((wallet) => (
+                <button
+                  key={wallet.name}
+                  onClick={() => handleWalletSelect(wallet)}
+                  className="w-full flex items-center gap-4 p-4 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
+                >
+                  <img 
+                    src={wallet.icon} 
+                    alt={wallet.name} 
+                    className="w-10 h-10 rounded"
+                    onError={(e) => {
+                      e.currentTarget.src = WALLET_ICON_FALLBACK;
+                    }}
+                  />
+                  <div className="flex-1 text-left">
+                    <span className="text-white font-semibold block">{wallet.name}</span>
+                    <span className="text-purple-300 text-sm">Tap to connect</span>
+                  </div>
+                  <svg className="w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+            
+            {/* Help text for mobile users */}
+            <div className="mt-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/30">
+              <p className="text-purple-200 text-sm">
+                💡 <strong>New to Solana wallets?</strong><br/>
+                Download a wallet app (Phantom or Solflare recommended) from your app store first.
+              </p>
             </div>
           </div>
         )}
