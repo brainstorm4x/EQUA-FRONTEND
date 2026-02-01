@@ -1175,9 +1175,22 @@ interface ReceiveModalProps {
 }
 
 const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
+  const { connection } = useConnection();
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [isGeneratingQR, setIsGeneratingQR] = useState(true);
+  
+  // Amount state (Phase 1.5)
+  const [localCurrencyAmount, setLocalCurrencyAmount] = useState('');
+  const [equaAmount, setEquaAmount] = useState('');
+  const [localCurrency, setLocalCurrency] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return getUserLocaleCurrency();
+    }
+    return 'USD'; // SSR fallback
+  });
+  const [equaPrice, setEquaPrice] = useState<number>(0.01); // Fallback price
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
 
   // Generate QR code for wallet address only
   useEffect(() => {
@@ -1209,6 +1222,57 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
     
     generateQR();
   }, [publicKey]);
+  
+  // Fetch EQUA price on modal open (Phase 1.5)
+  useEffect(() => {
+    const fetchPrice = async () => {
+      setIsLoadingPrice(true);
+      try {
+        // Use same price fetching logic as SendModal
+        const multiPrice = await getEquaPriceMultiFormat(
+          DEFAULT_EQUA_PRICE_USD,
+          localCurrency,
+          connection
+        );
+        setEquaPrice(multiPrice.localCurrency / multiPrice.eqx); // Price per 1 EQUA in local currency
+      } catch (error) {
+        console.error('Failed to fetch EQUA price:', error);
+        setEquaPrice(0.01); // Fallback
+      } finally {
+        setIsLoadingPrice(false);
+      }
+    };
+
+    fetchPrice();
+  }, [localCurrency, connection]);
+  
+  // Handle local currency amount change (Phase 1.5)
+  const handleLocalCurrencyChange = (value: string) => {
+    setLocalCurrencyAmount(value);
+    
+    // Convert to EQUA
+    if (value && !isNaN(parseFloat(value)) && equaPrice > 0) {
+      const localAmount = parseFloat(value);
+      const equaAmountValue = localAmount / equaPrice;
+      setEquaAmount(equaAmountValue.toFixed(6));
+    } else {
+      setEquaAmount('');
+    }
+  };
+
+  // Handle EQUA amount change (Phase 1.5)
+  const handleEquaAmountChange = (value: string) => {
+    setEquaAmount(value);
+    
+    // Convert to local currency
+    if (value && !isNaN(parseFloat(value)) && equaPrice > 0) {
+      const equaValue = parseFloat(value);
+      const localAmount = equaValue * equaPrice;
+      setLocalCurrencyAmount(localAmount.toFixed(2));
+    } else {
+      setLocalCurrencyAmount('');
+    }
+  };
 
   const copyAddress = async () => {
     await navigator.clipboard.writeText(publicKey.toBase58());
@@ -1258,6 +1322,64 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
           <p className="text-purple-200 text-sm mb-4">
             Scan the QR code or copy your wallet address to receive EQUA tokens
           </p>
+
+          {/* Local Currency Input (Phase 1.5) */}
+          <div className="mb-4 text-left">
+            <label className="block text-purple-200 text-sm mb-2">
+              Amount to Receive (Optional)
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-300 text-sm">
+                {DEFAULT_RATES[localCurrency]?.symbol || '$'}
+              </span>
+              <input
+                type="number"
+                value={localCurrencyAmount}
+                onChange={(e) => handleLocalCurrencyChange(e.target.value)}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                className="w-full bg-white/10 border-2 border-purple-500/30 rounded-xl pl-8 pr-16 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:border-purple-500"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 text-sm">
+                {localCurrency}
+              </span>
+            </div>
+            {isLoadingPrice && (
+              <p className="text-purple-400 text-xs mt-1">Loading price...</p>
+            )}
+          </div>
+
+          {/* EQUA Amount Display (Phase 1.5) */}
+          <div className="mb-4 text-left">
+            <label className="block text-purple-300 text-sm mb-2">
+              ⇅ Equivalent in EQUA
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                value={equaAmount}
+                onChange={(e) => handleEquaAmountChange(e.target.value)}
+                placeholder="0.000000"
+                min="0"
+                step="0.000001"
+                className="w-full bg-white/5 border border-purple-500/20 rounded-xl px-3 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:border-purple-500"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 text-sm">
+                EQUA
+              </span>
+            </div>
+          </div>
+
+          {/* Help Text (Phase 1.5) */}
+          {localCurrencyAmount && equaAmount && (
+            <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl p-3 mb-4 text-left">
+              <p className="text-blue-200 text-xs">
+                💡 Share this EQUA amount ({equaAmount} EQUA) with the sender. 
+                They can enter it in their Send modal.
+              </p>
+            </div>
+          )}
 
           {/* Copy Address Button */}
           <button
