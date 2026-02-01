@@ -167,14 +167,25 @@ export function WalletProvider({ children }: WalletProviderProps) {
     // Re-check wallet availability after window fully loads
     // This helps detect wallets that inject themselves after initial load
     const handleLoad = () => {
-      refreshWallets();
+      const updatedWallets = recheckWalletAvailability();
+      setWallets(updatedWallets);
+      
+      // Log wallet detection in development mode only
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Wallet detection updated:', {
+          phantom: updatedWallets.find(w => w.name === 'Phantom')?.detected,
+          solflare: updatedWallets.find(w => w.name === 'Solflare')?.detected,
+          backpack: updatedWallets.find(w => w.name === 'Backpack')?.detected,
+          coinbase: updatedWallets.find(w => w.name === 'Coinbase Wallet')?.detected,
+        });
+      }
     };
     
     if (document.readyState === 'loading') {
       window.addEventListener('load', handleLoad);
     } else {
       // If already loaded, re-check after a short delay
-      setTimeout(refreshWallets, 500);
+      setTimeout(handleLoad, 500);
     }
     
     setAutoConnectAttempted(true);
