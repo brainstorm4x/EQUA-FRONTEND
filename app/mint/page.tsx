@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useProgram } from '@/hooks/useProgram';
 import { Logo } from '@/components/Logo';
-import { PublicKey, Transaction, Connection, SystemProgram, ComputeBudgetProgram } from '@solana/web3.js';
+import { PublicKey, Transaction, TransactionInstruction, Connection, SystemProgram, ComputeBudgetProgram } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
@@ -783,126 +783,23 @@ export default function MintPage() {
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
-      // Check if token account exists, create it first if needed
-      console.log('🔍 Checking if token account exists...');
-      const accountInfo = await connection.getAccountInfo(userTokenAccount);
+      // ============================================================================
+      // BUNDLE ATA CREATIONS WITH REGISTRATION
+      // Create both user ATA and locked token ATA in the same transaction as registration
+      // This fixes mobile wallet signature issues by avoiding separate transactions
+      // Uses idempotent instructions - they're no-ops if accounts already exist
+      // ============================================================================
       
-      if (!accountInfo) {
-        console.log('⚠️  Token account does not exist, creating it before registration...');
-        
-        if (!wallet.signTransaction) {
-          throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
-        }
-        
-        try {
-          const createAtaIx = createAssociatedTokenAccountInstruction(
-            publicKey,           // payer
-            userTokenAccount,    // ata
-            publicKey,           // owner
-            mintPDA,             // mint
-            mintTokenProgram,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-          );
-          
-          const transaction = new Transaction().add(createAtaIx);
-          transaction.feePayer = publicKey;
-          
-          // Fetch blockhash with confirmed commitment level
-          const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-          transaction.recentBlockhash = blockhash;
-          
-          console.log('📝 Blockhash:', blockhash, 'lastValidBlockHeight:', lastValidBlockHeight);
-          
-          // Sign and send the transaction
-          const signed = await wallet.signTransaction(transaction);
-          const signature = await connection.sendRawTransaction(signed.serialize(), {
-            skipPreflight: true,
-            maxRetries: 5
-          });
-          
-          console.log('📤 Token account creation transaction sent:', signature);
-          
-          // Confirm with proper blockhash context
-          await connection.confirmTransaction({
-            signature,
-            blockhash,
-            lastValidBlockHeight
-          }, 'confirmed');
-          
-          console.log('✅ Token account created:', signature);
-        } catch (ataError: unknown) {
-          throw handleAtaCreationError(ataError, 'registration');
-        }
-      } else {
-        console.log('✅ Token account already exists');
-      }
-
-      // ============================================================================
-      // PRE-CREATE LOCKED TOKEN ATA
-      // Create locked token ATA during registration to reduce mint transaction size
-      // Note: locked_token_account PDA is still created by the program during first mint
-      // ============================================================================
+      console.log('📝 Preparing bundled transaction: ATAs + Registration');
       
       // Derive locked token PDAs
       const [lockedTokenAccountPda] = getLockedTokenAccountPda(publicKey, PROGRAM_ID);
       const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
       const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
       
-      console.log('🔍 Checking locked token ATA...');
+      console.log('- User Token Account (ATA):', userTokenAccount.toBase58());
       console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
       console.log('- Locked Token ATA:', lockedTokenAta.toBase58());
-      
-      // Create locked token ATA (if needed)
-      // This reduces mint transaction size by pre-creating the ATA
-      const lockedTokenAtaInfo = await connection.getAccountInfo(lockedTokenAta);
-      if (!lockedTokenAtaInfo) {
-        console.log('📝 Pre-creating locked token ATA...');
-        
-        if (!wallet.signTransaction) {
-          throw new Error('Wallet does not support transaction signing. Please use a compatible wallet like Phantom or Solflare.');
-        }
-        
-        try {
-          const createLockedAtaIx = createAssociatedTokenAccountInstruction(
-            publicKey,           // payer
-            lockedTokenAta,      // ata
-            lockedTokenPda,      // owner (PDA)
-            mintPDA,             // mint
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-          );
-          
-          const lockedAtaTx = new Transaction().add(createLockedAtaIx);
-          lockedAtaTx.feePayer = publicKey;
-          
-          const { blockhash: ataBlockhash, lastValidBlockHeight: ataLastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-          lockedAtaTx.recentBlockhash = ataBlockhash;
-          
-          console.log('📝 Blockhash (locked ATA):', ataBlockhash);
-          
-          const signedLockedAtaTx = await wallet.signTransaction(lockedAtaTx);
-          const lockedAtaSig = await connection.sendRawTransaction(signedLockedAtaTx.serialize(), {
-            skipPreflight: true,
-            maxRetries: 5
-          });
-          
-          console.log('📤 Locked token ATA creation transaction sent:', lockedAtaSig);
-          
-          await connection.confirmTransaction({
-            signature: lockedAtaSig,
-            blockhash: ataBlockhash,
-            lastValidBlockHeight: ataLastValidBlockHeight
-          }, 'confirmed');
-          
-          console.log('✅ Locked token ATA created:', lockedAtaSig);
-        } catch (lockedAtaError: unknown) {
-          throw handleAtaCreationError(lockedAtaError, 'registration');
-        }
-      } else {
-        console.log('✅ Locked token ATA already exists');
-      }
-      
-      console.log('✅ Locked token ATA ready for first mint');
 
       const now = Math.floor(Date.now() / 1000);
 
@@ -960,7 +857,45 @@ export default function MintPage() {
       const [businessRegistryPDA] = getBusinessRegistryPDA();
       console.log('- Business Registry (PDA):', businessRegistryPDA.toBase58());
 
-      const instruction = createInitializeUserInstruction(
+      // ============================================================================
+      // BUILD BUNDLED TRANSACTION
+      // Bundle ATA creations + registration in a single atomic transaction
+      // ============================================================================
+      
+      const instructions: TransactionInstruction[] = [];
+      
+      // Add compute budget instruction to prevent preflight warnings
+      const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
+        units: 400_000  // Sufficient for registration + account creations
+      });
+      instructions.push(computeBudgetIx);
+      
+      // 1. Create user's ATA (idempotent - no-op if exists)
+      const createUserAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+        publicKey,           // payer
+        userTokenAccount,    // ata
+        publicKey,           // owner
+        mintPDA,             // mint
+        mintTokenProgram,    // Token-2022
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+      instructions.push(createUserAtaIx);
+      console.log('📝 Added idempotent user ATA creation instruction');
+      
+      // 2. Create locked token ATA (idempotent - no-op if exists)
+      const createLockedAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+        publicKey,           // payer
+        lockedTokenAta,      // ata
+        lockedTokenPda,      // owner (PDA)
+        mintPDA,             // mint
+        TOKEN_PROGRAM_ID,    // Standard Token Program
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+      instructions.push(createLockedAtaIx);
+      console.log('📝 Added idempotent locked token ATA creation instruction');
+      
+      // 3. Add registration instruction
+      const registerIx = createInitializeUserInstruction(
         userAccountPDA,
         userMetadataPDA,
         publicKey,
@@ -976,21 +911,16 @@ export default function MintPage() {
         referrerPubkey,
         userType
       );
+      instructions.push(registerIx);
 
       // Log instruction metas for debugging
       console.log('🧪 InitializeUser instruction metas:');
-      instruction.keys.forEach((k, i) => {
+      registerIx.keys.forEach((k, i) => {
         console.log(`${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`);
       });
 
-      // Add compute budget instruction to prevent preflight warnings
-      const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
-        units: 400_000  // Sufficient for registration + account creations
-      });
-
-      const transaction = new Transaction()
-        .add(computeBudgetIx)
-        .add(instruction);
+      // Build single transaction with all instructions
+      const transaction = new Transaction().add(...instructions);
       transaction.feePayer = publicKey;
 
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
