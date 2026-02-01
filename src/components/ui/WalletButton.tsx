@@ -3,47 +3,37 @@
 import { FC, useEffect, useState, useCallback, useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { MobileWalletModal } from '@/components/MobileWalletModal';
 
 interface WalletButtonProps {
   testId?: string;
 }
 
 // Connection timeout in milliseconds
-const CONNECTION_TIMEOUT_MS = 30000; // 30 seconds
-
-// Delay before blurring active element after touch (allows click to register)
-const TOUCH_BLUR_DELAY_MS = 100;
-
-/**
- * Detects if the current device is a touch device using CSS media query
- * More reliable than User-Agent detection
- */
-function isTouchDevice(): boolean {
-  if (typeof window === 'undefined') return false;
-  // Use matchMedia to check for touch capability
-  return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-}
+const CONNECTION_TIMEOUT_MS = 30_000; // 30 seconds
 
 export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
-  const { wallet, connected, connecting, disconnect } = useWallet();
+  const { connected, connecting, disconnect } = useWallet();
+
   const [mounted, setMounted] = useState(false);
   const [connectionTimedOut, setConnectionTimedOut] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [showCustomModal, setShowCustomModal] = useState(false);
-  const buttonWrapperRef = useRef<HTMLDivElement>(null);
-  
-  // Use ref to track connecting state to avoid stale closure issues
+
+  // Track connecting state safely across renders
   const connectingRef = useRef(connecting);
   connectingRef.current = connecting;
 
-  // Only render on client side and detect touch device
+  /**
+   * Ensure this component only renders on the client.
+   * This avoids hydration mismatches and mobile Safari quirks.
+   */
   useEffect(() => {
     setMounted(true);
-    setIsMobile(isTouchDevice());
   }, []);
 
-  // Handle connection timeout
+  /**
+   * Connection timeout guard.
+   * Protects users from being stuck indefinitely if a mobile deep-link
+   * is aborted or the wallet never returns.
+   */
   useEffect(() => {
     if (!connecting) {
       setConnectionTimedOut(false);
@@ -51,9 +41,12 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
     }
 
     const timeoutId = setTimeout(() => {
-      // Use ref to get current connecting state, avoiding stale closure
       if (connectingRef.current) {
-        console.warn('Wallet connection timed out after', CONNECTION_TIMEOUT_MS, 'ms');
+        console.warn(
+          '[WalletButton] Wallet connection timed out after',
+          CONNECTION_TIMEOUT_MS,
+          'ms'
+        );
         setConnectionTimedOut(true);
       }
     }, CONNECTION_TIMEOUT_MS);
@@ -61,53 +54,26 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
     return () => clearTimeout(timeoutId);
   }, [connecting]);
 
-  // Fix for mobile touch events getting stuck
-  // This handles the case where :active CSS state doesn't release properly on touch
-  useEffect(() => {
-    if (!mounted || !isMobile || !buttonWrapperRef.current) return;
-
-    const wrapper = buttonWrapperRef.current;
-    
-    // Force blur on touchend to prevent stuck active states
-    // Uses a small delay to ensure the click event registers before blur
-    const handleTouchEnd = () => {
-      setTimeout(() => {
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
-        }
-      }, TOUCH_BLUR_DELAY_MS);
-    };
-
-    // Blur on touchmove to avoid scroll-triggered stuck states
-    const handleTouchMove = () => {
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
-      }
-    };
-
-    wrapper.addEventListener('touchend', handleTouchEnd, { passive: true });
-    wrapper.addEventListener('touchmove', handleTouchMove, { passive: true });
-
-    return () => {
-      wrapper.removeEventListener('touchend', handleTouchEnd);
-      wrapper.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [mounted, isMobile]);
-
-  // Handle disconnect when connection times out
+  /**
+   * Reset wallet state cleanly after timeout.
+   */
   const handleTimeoutDisconnect = useCallback(async () => {
     try {
       await disconnect();
       setConnectionTimedOut(false);
     } catch (error) {
-      console.error('Error disconnecting:', error);
+      console.error('[WalletButton] Error during timeout disconnect:', error);
     }
   }, [disconnect]);
 
+  /**
+   * Prevent rendering anything wallet-related until mounted.
+   * This avoids SSR/CSR mismatches and mobile viewport glitches.
+   */
   if (!mounted) {
     return (
-      <div 
-        className="bg-primary-600 rounded-lg px-6 py-3"
+      <div
+        className="bg-purple-600 rounded-lg px-6 py-3"
         data-testid={testId}
       >
         <span className="text-white font-semibold">Loading...</span>
@@ -115,118 +81,48 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
     );
   }
 
-  // Show timeout message if connection is stuck
-  if (connectionTimedOut) {
+  /**
+   * Show a clear retry path if the wallet connection got stuck.
+   * This is especially important on mobile when users dismiss
+   * the OS “Open with” chooser.
+   */
+  if (connectionTimedOut && !connected) {
     return (
       <div className="flex items-center gap-2" data-testid={testId}>
         <button
           onClick={handleTimeoutDisconnect}
           className="bg-red-500 hover:bg-red-600 rounded-lg px-4 py-2 text-white font-semibold transition-all touch-manipulation"
         >
-          Connection Failed - Retry
+          Connection Failed — Retry
         </button>
       </div>
     );
   }
 
+  /**
+   * Single source of truth:
+   * WalletMultiButton is used for BOTH desktop and mobile.
+   * The Solana wallet adapter handles:
+   * - extensions on desktop
+   * - deep links on mobile
+   */
   return (
-    <div 
-      ref={buttonWrapperRef}
-      className="flex items-center gap-4" 
+    <div
+      className="wallet-button-wrapper flex items-center gap-4 touch-manipulation"
       data-testid={testId}
+      style={{ maxWidth: '100%' }}
     >
-      {/* Mobile: Custom Modal + Simple Button */}
-      {isMobile && !connected ? (
-        <>
-          <button
-            onClick={() => setShowCustomModal(true)}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 rounded-lg transition-all touch-manipulation"
-          >
-            Select Wallet
-          </button>
-          <MobileWalletModal 
-            visible={showCustomModal} 
-            onClose={() => setShowCustomModal(false)} 
-          />
-        </>
-      ) : (
-        /* Desktop: Default WalletMultiButton */
-        <div className="wallet-button-wrapper touch-manipulation" style={{ maxWidth: '100%' }}>
-          <style jsx global>{`
-            .wallet-adapter-button {
-              /* Base styles */
-              background-color: rgb(124, 58, 237) !important;
-              color: white !important;
-              font-weight: 600 !important;
-              padding: 0.75rem 1.5rem !important;
-              border-radius: 0.75rem !important;
-              transition: all 0.3s ease !important;
-              border: none !important;
-              cursor: pointer !important;
-              font-size: 1rem !important;
-              
-              /* Responsive fixes for text overflow */
-              min-width: 120px !important;
-              max-width: 100% !important;
-              white-space: nowrap !important;
-              overflow: hidden !important;
-              text-overflow: ellipsis !important;
-              
-              /* Mobile optimizations */
-              @media (max-width: 640px) {
-                font-size: 0.875rem !important;
-                padding: 0.625rem 1rem !important;
-                min-width: 100px !important;
-              }
-              
-              /* Extra small screens */
-              @media (max-width: 380px) {
-                font-size: 0.75rem !important;
-                padding: 0.5rem 0.75rem !important;
-                min-width: 80px !important;
-              }
-            }
+      <WalletMultiButton
+        className="!bg-purple-600 hover:!bg-purple-700 !rounded-lg !px-6 !py-3 !text-white !font-semibold !transition-all !duration-200"
+      />
 
-            .wallet-adapter-button:hover {
-              background-color: rgb(109, 40, 217) !important;
-              transform: translateY(-1px) !important;
-              box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4) !important;
-            }
-
-            /* Ensure button text doesn't wrap */
-            .wallet-adapter-button-trigger {
-              display: inline-flex !important;
-              align-items: center !important;
-              gap: 0.5rem !important;
-              max-width: 100% !important;
-              overflow: hidden !important;
-            }
-            
-            /* Truncate long wallet addresses */
-            .wallet-adapter-button-trigger > span {
-              overflow: hidden !important;
-              text-overflow: ellipsis !important;
-              white-space: nowrap !important;
-            }
-
-            /* Connection timeout styles */
-            .wallet-adapter-button[disabled] {
-              background-color: rgb(107, 114, 128) !important;
-              cursor: not-allowed !important;
-              opacity: 0.6 !important;
-            }
-          `}</style>
-          <WalletMultiButton 
-            className="!bg-primary-600 hover:!bg-primary-700 !rounded-lg !px-6 !py-3 !text-white !font-semibold !transition-all !duration-200 touch-manipulation" 
-          />
-        </div>
-      )}
-      
-      {/* Connection Indicator (Desktop Only) */}
-      {connected && wallet && !isMobile && (
-        <div className="hidden md:flex items-center gap-2 bg-primary-100 px-4 py-2 rounded-lg">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-primary-800 font-medium text-sm">Connected</span>
+      {/* Optional connection indicator (desktop-friendly, harmless on mobile) */}
+      {connected && (
+        <div className="hidden md:flex items-center gap-2 bg-purple-100 px-4 py-2 rounded-lg">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          <span className="text-purple-800 font-medium text-sm">
+            Connected
+          </span>
         </div>
       )}
     </div>
