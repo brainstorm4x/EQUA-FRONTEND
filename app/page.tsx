@@ -77,34 +77,40 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
       {/* Header */}
-      <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
-              <Logo size={40} />
-              <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
-            </Link>
-            <nav className="hidden md:flex items-center gap-6">
-              <Link href="/whitepaper" className="text-purple-200 hover:text-white transition-colors">
-                Whitepaper
+      <header className="border-b border-purple-700">
+        {/* Visual layer ONLY */}
+        <div className="bg-purple-900/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-3">
+                <Logo size={40} />
+                <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
               </Link>
-              <Link href="/merchants" className="text-purple-200 hover:text-white transition-colors">
-                For Merchants
-              </Link>
-              <Link href="/about" className="text-purple-200 hover:text-white transition-colors">
-                About
-              </Link>
-              <Link href="/privacy" className="text-purple-200 hover:text-white transition-colors">
-                Privacy
-              </Link>
-              <WalletButton />
-            </nav>
-            <div className="md:hidden">
-              <WalletButton />
+
+              <nav className="hidden md:flex items-center gap-6">
+                <Link href="/whitepaper" className="text-purple-200 hover:text-white transition-colors">
+                  Whitepaper
+                </Link>
+                <Link href="/merchants" className="text-purple-200 hover:text-white transition-colors">
+                  For Merchants
+                </Link>
+                <Link href="/about" className="text-purple-200 hover:text-white transition-colors">
+                  About
+                </Link>
+                <Link href="/privacy" className="text-purple-200 hover:text-white transition-colors">
+                  Privacy
+                </Link>
+                <WalletButton />
+              </nav>
+
+              <div className="md:hidden">
+                <WalletButton />
+              </div>
             </div>
           </div>
         </div>
       </header>
+
 
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-20">
