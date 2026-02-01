@@ -38,7 +38,11 @@ describe('sendTransactionWithSign', () => {
     it('should use signTransaction when available', async () => {
       const signedTransaction = new Transaction();
       signedTransaction.signatures = [
-        { publicKey: MOCK_PUBLIC_KEY, signature: Buffer.from('sig') }
+        { 
+          publicKey: MOCK_PUBLIC_KEY, 
+          signature: Buffer.from('sig'),
+          // Ensure the mock matches the actual structure
+        }
       ];
       signedTransaction.serialize = jest.fn().mockReturnValue(Buffer.from('serialized'));
       

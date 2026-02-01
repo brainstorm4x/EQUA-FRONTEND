@@ -65,10 +65,11 @@ export async function sendTransactionWithSign(
   }
   
   // Log transaction state before signing (public keys only, no sensitive data)
-  console.log('📝 Transaction prepared for signing:');
-  console.log('  - Fee payer:', transaction.feePayer.toBase58());
-  console.log('  - Recent blockhash:', transaction.recentBlockhash);
-  console.log('  - Instructions:', transaction.instructions.length);
+  console.log('📝 Transaction prepared for signing:', {
+    feePayer: transaction.feePayer.toBase58(),
+    recentBlockhash: transaction.recentBlockhash,
+    instructionCount: transaction.instructions.length,
+  });
   
   // Default options
   const sendOptions: SendOptions = {
@@ -86,9 +87,11 @@ export async function sendTransactionWithSign(
       const signed = await wallet.signTransaction(transaction);
       
       // Log signatures after signing (public keys only)
-      console.log('✅ Transaction signed. Signatures:', 
-        signed.signatures.map(sig => sig.publicKey.toBase58()).join(', ')
-      );
+      const signatureKeys = signed.signatures
+        .filter(sig => sig?.publicKey)
+        .map(sig => sig.publicKey.toBase58())
+        .join(', ');
+      console.log('✅ Transaction signed. Signatures:', signatureKeys || 'none');
       
       // Submit the signed transaction
       const signature = await connection.sendRawTransaction(
