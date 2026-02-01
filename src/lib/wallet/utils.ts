@@ -83,12 +83,14 @@ export function isCoinbaseInstalled(): boolean {
 
 /**
  * Get available wallet information
+ * NOTE: Detection may return false positives early in page load
+ * Use recheckWalletAvailability() after window load for accurate detection
  */
 export function getAvailableWallets(): WalletInfo[] {
   const wallets: WalletInfo[] = [
     {
       name: 'Phantom',
-      icon: 'https://phantom.app/img/logo.png',
+      icon: '/icons/phantom.svg',
       url: 'https://phantom.app',
       mobileDeeplink: 'phantom://',
       installUrl: {
@@ -100,7 +102,7 @@ export function getAvailableWallets(): WalletInfo[] {
     },
     {
       name: 'Solflare',
-      icon: 'https://solflare.com/assets/logo.svg',
+      icon: '/icons/solflare.svg',
       url: 'https://solflare.com',
       mobileDeeplink: 'solflare://',
       installUrl: {

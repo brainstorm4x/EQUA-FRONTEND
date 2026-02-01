@@ -101,6 +101,29 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
           </button>
         </div>
         
+        {/* Mobile Browser Warning */}
+        {isMobile && installedWallets.length === 0 && (
+          <div className="mb-6 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">📱</span>
+              <div>
+                <p className="text-yellow-100 font-semibold mb-2">
+                  Browser Extensions Don&apos;t Work on Mobile
+                </p>
+                <p className="text-yellow-200 text-sm mb-3">
+                  To connect your wallet on mobile:
+                </p>
+                <ol className="text-yellow-200 text-sm space-y-1 list-decimal list-inside">
+                  <li>Open your wallet app (Phantom, Solflare, etc.)</li>
+                  <li>Use the app&apos;s built-in browser (dApp browser)</li>
+                  <li>Navigate to this website</li>
+                  <li>Connect from within the wallet app</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Installed Wallets */}
         {installedWallets.length > 0 && (
           <div className="mb-6">
@@ -117,8 +140,7 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
                     alt={`${wallet.name} icon`}
                     className="w-10 h-10 rounded"
                     onError={(e) => {
-                      // Fallback to a placeholder if image fails to load
-                      e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%23a855f7" width="40" height="40"/%3E%3C/svg%3E';
+                      e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%23a855f7" width="40" height="40"/%3E%3Ctext x="20" y="25" text-anchor="middle" fill="white" font-size="20"%3E💼%3C/text%3E%3C/svg%3E';
                     }}
                   />
                   <div className="flex-1 text-left">
@@ -139,8 +161,8 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
           </div>
         )}
         
-        {/* Not Installed Wallets */}
-        {notInstalledWallets.length > 0 && (
+        {/* Not Installed Wallets - Only show on desktop or if no mobile warning */}
+        {!isMobile && notInstalledWallets.length > 0 && (
           <div>
             <h4 className="text-purple-200 text-sm font-semibold mb-3">
               {installedWallets.length > 0 ? 'More Wallets' : 'Available Wallets'}
@@ -164,7 +186,7 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
                       alt={`${wallet.name} icon`}
                       className="w-10 h-10 rounded opacity-60"
                       onError={(e) => {
-                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%23a855f7" width="40" height="40"/%3E%3C/svg%3E';
+                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%23a855f7" width="40" height="40"/%3E%3Ctext x="20" y="25" text-anchor="middle" fill="white" font-size="20"%3E💼%3C/text%3E%3C/svg%3E';
                       }}
                     />
                     <div className="flex-1 text-left">
