@@ -55,6 +55,7 @@ import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
 import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrationCheck';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
+import { sendTransactionWithSign } from '@/utils/transactionSender';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -996,18 +997,21 @@ export default function MintPage() {
       transaction.recentBlockhash = blockhash;
 
       console.log('📝 Sending registration transaction via wallet adapter...');
-      if (!wallet.sendTransaction) {
-        throw new Error('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
-      }
       
       try {
-        // Use wallet.sendTransaction to ensure proper signing by the wallet adapter
-        const tx = await wallet.sendTransaction(transaction, connection, {
-          skipPreflight: false,
-          maxRetries: 3
-        });
+        // Use sendTransactionWithSign helper for mobile-compatible transaction sending
+        // Prefers wallet.signTransaction (mobile-compatible) with fallback to wallet.sendTransaction
+        const { signature: tx, method } = await sendTransactionWithSign(
+          wallet,
+          transaction,
+          connection,
+          {
+            skipPreflight: false,
+            maxRetries: 3
+          }
+        );
         
-        console.log('📤 Registration transaction sent:', tx);
+        console.log(`📤 Registration transaction sent via ${method}:`, tx);
         console.log('⏳ Confirming transaction...');
         
         await connection.confirmTransaction({
