@@ -4,6 +4,7 @@ import { ReactNode, Suspense, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { WebVitalsClient } from '@/components/WebVitalsClient';
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import dynamic from 'next/dynamic';
 
 // Import process shim to execute it
@@ -67,13 +68,17 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <Suspense fallback={<div className="min-h-screen bg-gray-900" />}>
-          <WalletProvider>
-            {children}
-            <WebVitalsClient />
-          </WalletProvider>
-        </Suspense>
-        {/* Development-only diagnostics overlay - outside Suspense for independent loading */}
+        {/* Wallet providers MUST be outside Suspense */}
+        <WalletProvider>
+          <WalletModalProvider>
+            <Suspense fallback={<div className="min-h-screen bg-gray-900" />}>
+              {children}
+              <WebVitalsClient />
+            </Suspense>
+          </WalletModalProvider>
+        </WalletProvider>
+
+        {/* Dev-only overlay must NOT wrap wallet providers */}
         {process.env.NODE_ENV === 'development' && <DiagnosticsOverlay />}
       </QueryClientProvider>
     </ErrorBoundary>
