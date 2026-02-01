@@ -138,6 +138,14 @@ export function getAvailableWallets(): WalletInfo[] {
 }
 
 /**
+ * Re-check wallet availability
+ * Useful for detecting wallets that may have loaded after initial page load
+ */
+export function recheckWalletAvailability(): WalletInfo[] {
+  return getAvailableWallets();
+}
+
+/**
  * Generate deeplink for mobile wallet connection
  */
 export function generateMobileDeeplink(

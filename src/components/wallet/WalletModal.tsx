@@ -7,7 +7,7 @@
 
 'use client';
 
-import { FC, useCallback } from 'react';
+import { FC, useCallback, useEffect } from 'react';
 import { useWallet } from '@/contexts/WalletContext';
 import { WalletInfo } from '@/lib/wallet/types';
 import { detectDeviceType } from '@/lib/wallet/utils';
@@ -18,9 +18,16 @@ interface WalletModalProps {
 }
 
 export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
-  const { wallets, select, connect } = useWallet();
+  const { wallets, select, connect, refreshWallets } = useWallet();
   const deviceType = detectDeviceType();
   const isMobile = deviceType !== 'desktop';
+  
+  // Refresh wallet detection when modal opens
+  useEffect(() => {
+    if (visible) {
+      refreshWallets();
+    }
+  }, [visible, refreshWallets]);
   
   const handleWalletSelect = useCallback(async (wallet: WalletInfo) => {
     try {
@@ -67,14 +74,14 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
   
   return (
     <div 
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="wallet-modal-title"
     >
       <div 
-        className="bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 shadow-2xl max-h-[90vh] overflow-y-auto mb-4 sm:mb-0"
+        className="bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 shadow-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

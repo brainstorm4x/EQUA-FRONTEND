@@ -72,14 +72,14 @@ export class PhantomWalletAdapter extends BaseWalletAdapter {
     
     if (!provider) {
       if (isMobileDevice()) {
-        // On mobile, try to open the Phantom app via deeplink
-        const appUrl = window.location.origin;
-        const deeplink = generateMobileDeeplink('Phantom', appUrl);
-        window.location.href = deeplink;
-        
-        // Wait for the app to redirect back
+        // On mobile, provide clear guidance instead of cryptic errors
         throw new WalletConnectionError(
-          'Opening Phantom app. Please approve the connection and return to this page.'
+          `Phantom browser extension is not available on mobile devices.\n\n` +
+          `To connect your wallet:\n` +
+          `1. Open the Phantom app on your phone\n` +
+          `2. Use the built-in browser (dApp browser)\n` +
+          `3. Navigate to ${window.location.origin}\n\n` +
+          `Alternatively, use a desktop browser with the Phantom extension installed.`
         );
       } else {
         throw new WalletNotInstalledError('Phantom');
@@ -203,12 +203,14 @@ export class SolflareWalletAdapter extends BaseWalletAdapter {
     
     if (!provider) {
       if (isMobileDevice()) {
-        const appUrl = window.location.origin;
-        const deeplink = generateMobileDeeplink('Solflare', appUrl);
-        window.location.href = deeplink;
-        
+        // On mobile, provide clear guidance instead of cryptic errors
         throw new WalletConnectionError(
-          'Opening Solflare app. Please approve the connection and return to this page.'
+          `Solflare browser extension is not available on mobile devices.\n\n` +
+          `To connect your wallet:\n` +
+          `1. Open the Solflare app on your phone\n` +
+          `2. Use the built-in browser (dApp browser)\n` +
+          `3. Navigate to ${window.location.origin}\n\n` +
+          `Alternatively, use a desktop browser with the Solflare extension installed.`
         );
       } else {
         throw new WalletNotInstalledError('Solflare');
@@ -328,6 +330,17 @@ export class BackpackWalletAdapter extends BaseWalletAdapter {
     const provider = this._provider;
     
     if (!provider?.isBackpack) {
+      if (isMobileDevice()) {
+        // On mobile, provide clear guidance
+        throw new WalletConnectionError(
+          `Backpack browser extension is not available on mobile devices.\n\n` +
+          `To connect your wallet:\n` +
+          `1. Open the Backpack app on your phone\n` +
+          `2. Use the built-in browser (dApp browser)\n` +
+          `3. Navigate to ${window.location.origin}\n\n` +
+          `Alternatively, use a desktop browser with the Backpack extension installed.`
+        );
+      }
       throw new WalletNotInstalledError('Backpack');
     }
     
@@ -435,6 +448,17 @@ export class CoinbaseWalletAdapter extends BaseWalletAdapter {
     const provider = this._provider;
     
     if (!provider?.isCoinbaseWallet) {
+      if (isMobileDevice()) {
+        // On mobile, provide clear guidance
+        throw new WalletConnectionError(
+          `Coinbase Wallet browser extension is not available on mobile devices.\n\n` +
+          `To connect your wallet:\n` +
+          `1. Open the Coinbase Wallet app on your phone\n` +
+          `2. Use the built-in browser (dApp browser)\n` +
+          `3. Navigate to ${window.location.origin}\n\n` +
+          `Alternatively, use a desktop browser with the Coinbase Wallet extension installed.`
+        );
+      }
       throw new WalletNotInstalledError('Coinbase Wallet');
     }
     
