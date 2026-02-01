@@ -771,7 +771,7 @@ export default function MintPage() {
 
       // First, verify that the mint account exists and owner matches TOKEN_PROGRAM_ID
       console.log('🔍 Verifying mint account exists and owner matches...');
-      await verifyMintOwner(connection, mintPDA);
+      const mintTokenProgram = await verifyMintOwner(connection, mintPDA);
       console.log('✅ Mint account verified with correct owner');
 
       const userTokenAccount = getAssociatedTokenAddressSync(
@@ -799,7 +799,7 @@ export default function MintPage() {
             userTokenAccount,    // ata
             publicKey,           // owner
             mintPDA,             // mint
-            TOKEN_PROGRAM_ID,
+            mintTokenProgram,
             ASSOCIATED_TOKEN_PROGRAM_ID
           );
           
@@ -1264,6 +1264,10 @@ export default function MintPage() {
       }
       console.log('✅ Mint account verified');
       
+      // Verify mint owner matches TOKEN_PROGRAM_ID
+      const mintTokenProgram = await verifyMintOwner(connection, mintPDA);
+      console.log('✅ Mint account verified with correct owner');
+      
       // Verify global state exists
       console.log('🔍 Verifying global state...');
       const globalStateInfo = await connection.getAccountInfo(globalStatePDA);
@@ -1307,7 +1311,7 @@ export default function MintPage() {
         mintPDA,
         publicKey,
         false,
-        TOKEN_PROGRAM_ID,
+        mintTokenProgram,
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
@@ -1335,7 +1339,7 @@ export default function MintPage() {
             userTokenAccount,    // ata
             publicKey,           // owner
             mintPDA,             // mint
-            TOKEN_PROGRAM_ID,
+            mintTokenProgram,
             ASSOCIATED_TOKEN_PROGRAM_ID
           );
           

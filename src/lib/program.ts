@@ -463,52 +463,44 @@ export function getOrCreateKeypair(): Keypair {
 export async function verifyMintOwner(
   connection: Connection,
   mintPubkey: PublicKey
-): Promise<boolean> {
-  try {
-    const mintAccountInfo = await connection.getAccountInfo(mintPubkey);
-    
-    if (!mintAccountInfo) {
-      throw new Error(
-        `Mint account ${mintPubkey.toBase58()} does not exist. ` +
-        'The EQUA token mint needs to be created first.'
-      );
-    }
-    
-    const mintOwner = mintAccountInfo.owner.toBase58();
-    const expectedOwner = TOKEN_2022_PROGRAM_ADDRESS;
-    
-    if (mintOwner !== expectedOwner) {
-      // Identify which program the mint is using
-      const mintProgramType = mintOwner === TOKEN_2022_PROGRAM_ADDRESS 
-        ? 'Token-2022' 
-        : mintOwner === STANDARD_TOKEN_PROGRAM_ADDRESS 
-          ? 'Standard SPL Token'
-          : 'Unknown token program';
-      
-      const errorMsg = 
-        `❌ Mint owner mismatch - EQUA requires Token-2022!\n` +
-        `  Mint address: ${mintPubkey.toBase58()}\n` +
-        `  Mint owner: ${mintOwner} (${mintProgramType})\n` +
-        `  Expected: ${expectedOwner} (Token-2022)\n` +
-        `  \n` +
-        `  EQUA only supports Token-2022. The mint was created with the wrong token program.\n` +
-        `  \n` +
-        `  Fix: Recreate the mint with Token-2022 program, or use the correct mint address.`;
-      
-      console.error(errorMsg);
-      throw new Error(`Mint owner mismatch: expected Token-2022 (${expectedOwner}), got ${mintOwner}`);
-    }
-    
-    console.log(`✅ Mint owner verified: ${mintOwner} (Token-2022)`);
-    return true;
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('Mint owner mismatch')) {
-      throw error;
-    }
-    console.error('Error verifying mint owner:', error);
-    throw new Error(`Failed to verify mint owner: ${error instanceof Error ? error.message : 'Unknown error'}`);
+): Promise<PublicKey> {
+  const mintAccountInfo = await connection.getAccountInfo(mintPubkey);
+
+  if (!mintAccountInfo) {
+    throw new Error(
+      `Mint account ${mintPubkey.toBase58()} does not exist. ` +
+      'The EQUA token mint needs to be created first.'
+    );
   }
+
+  const mintOwner = mintAccountInfo.owner;
+
+  const token2022PubKey = new PublicKey(TOKEN_2022_PROGRAM_ADDRESS);
+  const standardTokenPubKey = new PublicKey(STANDARD_TOKEN_PROGRAM_ADDRESS);
+
+  if (
+    !mintOwner.equals(token2022PubKey) &&
+    !mintOwner.equals(standardTokenPubKey)
+  ) {
+    throw new Error(
+      `Unsupported token program for mint ${mintPubkey.toBase58()}: ${mintOwner.toBase58()}`
+    );
+  }
+
+  if (!mintOwner.equals(token2022PubKey)) {
+    throw new Error(
+      `❌ Mint owner mismatch.\n` +
+      `EQUA requires Token-2022.\n` +
+      `Found: ${mintOwner.toBase58()}`
+    );
+  }
+
+  console.log(`✅ Mint owner verified: ${mintOwner.toBase58()} (Token-2022)`);
+
+  // ✅ CRITICAL: return the actual token program to use
+  return mintOwner;
 }
+
 
 // ✅ Create initialize_user instruction (UPDATED for 12 accounts + user_type)
 // Note: locked_until field removed per EQUA Whitepaper 2025
