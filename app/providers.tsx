@@ -9,10 +9,9 @@ import dynamic from 'next/dynamic';
 // Import process shim to execute it
 import '@/lib/clientProcessShim';
 
-// Dynamically import WalletProvider with no SSR to prevent hydration issues
-// Simplified import pattern without module transformation
+// Dynamically import custom WalletProvider with no SSR to prevent hydration issues
 const WalletProvider = dynamic(
-  () => import('@/providers/WalletProvider').then((mod) => mod.WalletProvider),
+  () => import('@/contexts/WalletContext').then((mod) => mod.WalletProvider),
   { 
     ssr: false,
     loading: () => <div className="min-h-screen bg-gray-900" />

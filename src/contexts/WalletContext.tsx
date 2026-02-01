@@ -8,9 +8,9 @@
 'use client';
 
 import React, { createContext, useContext, useCallback, useEffect, useState, ReactNode } from 'react';
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { BaseWalletAdapter, getWalletAdapter } from '@/lib/wallet/UnifiedWalletAdapter';
-import { WalletInfo } from '@/lib/wallet/types';
+import { WalletInfo, WalletNotConnectedError } from '@/lib/wallet/types';
 import { getAvailableWallets, loadWalletSession } from '@/lib/wallet/utils';
 import { RPC_ENDPOINT } from '@/lib/constants';
 
@@ -32,6 +32,9 @@ interface WalletContextValue {
   select: (walletName: string) => void;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
+  signTransaction<T extends Transaction | VersionedTransaction>(transaction: T): Promise<T>;
+  signAllTransactions<T extends Transaction | VersionedTransaction>(transactions: T[]): Promise<T[]>;
+  signMessage(message: Uint8Array): Promise<Uint8Array>;
   
   // UI state
   modalVisible: boolean;
@@ -101,6 +104,30 @@ export function WalletProvider({ children }: WalletProviderProps) {
     }
   }, [wallet, disconnecting]);
   
+  // Sign transaction
+  const signTransaction = useCallback(async <T extends Transaction | VersionedTransaction>(transaction: T): Promise<T> => {
+    if (!wallet || !connected) {
+      throw new WalletNotConnectedError();
+    }
+    return wallet.signTransaction(transaction);
+  }, [wallet, connected]);
+  
+  // Sign all transactions
+  const signAllTransactions = useCallback(async <T extends Transaction | VersionedTransaction>(transactions: T[]): Promise<T[]> => {
+    if (!wallet || !connected) {
+      throw new WalletNotConnectedError();
+    }
+    return wallet.signAllTransactions(transactions);
+  }, [wallet, connected]);
+  
+  // Sign message
+  const signMessage = useCallback(async (message: Uint8Array): Promise<Uint8Array> => {
+    if (!wallet || !connected) {
+      throw new WalletNotConnectedError();
+    }
+    return wallet.signMessage(message);
+  }, [wallet, connected]);
+  
   // Auto-reconnect on mount
   useEffect(() => {
     if (autoConnectAttempted) return;
@@ -155,6 +182,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
     select,
     connect,
     disconnect,
+    signTransaction,
+    signAllTransactions,
+    signMessage,
     modalVisible,
     setModalVisible,
   };
