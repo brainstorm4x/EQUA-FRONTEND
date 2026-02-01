@@ -1234,7 +1234,12 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
           localCurrency,
           connection
         );
-        setEquaPrice(multiPrice.localCurrency / multiPrice.eqx); // Price per 1 EQUA in local currency
+        // Guard against division by zero
+        if (multiPrice.eqx > 0) {
+          setEquaPrice(multiPrice.localCurrency / multiPrice.eqx); // Price per 1 EQUA in local currency
+        } else {
+          setEquaPrice(0.01); // Fallback if eqx is zero
+        }
       } catch (error) {
         console.error('Failed to fetch EQUA price:', error);
         setEquaPrice(0.01); // Fallback
@@ -1375,7 +1380,10 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
           {localCurrencyAmount && equaAmount && (
             <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl p-3 mb-4 text-left">
               <p className="text-blue-200 text-xs">
-                💡 Share this EQUA amount ({equaAmount} EQUA) with the sender. 
+                💡 Share this EQUA amount ({parseFloat(equaAmount).toLocaleString(undefined, { 
+                  minimumFractionDigits: 0, 
+                  maximumFractionDigits: 6 
+                })} EQUA) with the sender. 
                 They can enter it in their Send modal.
               </p>
             </div>
