@@ -105,7 +105,7 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
         </div>
         
         {/* Mobile: Show all wallets with deep link support */}
-        {isMobile && installedWallets.length === 0 && (
+        {isMobile && (
           <div>
             <h4 className="text-purple-200 text-sm font-semibold mb-3">Available Wallets</h4>
             <div className="space-y-3">
@@ -113,11 +113,11 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
                 <button
                   key={wallet.name}
                   onClick={() => handleWalletSelect(wallet)}
-                  className="w-full flex items-center gap-4 p-4 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
+                  className="w-full flex items-center gap-4 p-4 bg-white/10 hover:bg-white/20 rounded-lg transition-all border border-purple-500/30 hover:border-purple-400/50 touch-manipulation"
                 >
                   <img 
                     src={wallet.icon} 
-                    alt={wallet.name} 
+                    alt={`${wallet.name} icon`}
                     className="w-10 h-10 rounded"
                     onError={(e) => {
                       e.currentTarget.src = WALLET_ICON_FALLBACK;
@@ -127,7 +127,12 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
                     <span className="text-white font-semibold block">{wallet.name}</span>
                     <span className="text-purple-300 text-sm">Tap to connect</span>
                   </div>
-                  <svg className="w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg 
+                    className="w-5 h-5 text-purple-300" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
@@ -144,45 +149,48 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
           </div>
         )}
         
-        {/* Installed Wallets */}
-        {installedWallets.length > 0 && (
-          <div className="mb-6">
-            <h4 className="text-purple-200 text-sm font-semibold mb-3">Installed Wallets</h4>
-            <div className="space-y-3">
-              {installedWallets.map((wallet) => (
-                <button
-                  key={wallet.name}
-                  onClick={() => handleWalletSelect(wallet)}
-                  className="w-full flex items-center gap-4 p-4 bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-lg transition-all border border-purple-500/30 hover:border-purple-400/50 touch-manipulation"
-                >
-                  <img 
-                    src={wallet.icon} 
-                    alt={`${wallet.name} icon`}
-                    className="w-10 h-10 rounded"
-                    onError={(e) => {
-                      e.currentTarget.src = WALLET_ICON_FALLBACK;
-                    }}
-                  />
-                  <div className="flex-1 text-left">
-                    <span className="text-white font-semibold block">{wallet.name}</span>
-                    <span className="text-purple-300 text-sm">Ready to connect</span>
-                  </div>
-                  <svg 
-                    className="w-5 h-5 text-purple-300" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Not Installed Wallets - Only show on desktop or if no mobile warning */}
-        {!isMobile && notInstalledWallets.length > 0 && (
+        {/* Desktop: Show installed vs not installed */}
+        {!isMobile && (
+          <>
+            {/* Installed Wallets */}
+            {installedWallets.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-purple-200 text-sm font-semibold mb-3">Installed Wallets</h4>
+                <div className="space-y-3">
+                  {installedWallets.map((wallet) => (
+                    <button
+                      key={wallet.name}
+                      onClick={() => handleWalletSelect(wallet)}
+                      className="w-full flex items-center gap-4 p-4 bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-lg transition-all border border-purple-500/30 hover:border-purple-400/50 touch-manipulation"
+                    >
+                      <img 
+                        src={wallet.icon} 
+                        alt={`${wallet.name} icon`}
+                        className="w-10 h-10 rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = WALLET_ICON_FALLBACK;
+                        }}
+                      />
+                      <div className="flex-1 text-left">
+                        <span className="text-white font-semibold block">{wallet.name}</span>
+                        <span className="text-purple-300 text-sm">Ready to connect</span>
+                      </div>
+                      <svg 
+                        className="w-5 h-5 text-purple-300" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Not Installed Wallets */}
+            {notInstalledWallets.length > 0 && (
           <div>
             <h4 className="text-purple-200 text-sm font-semibold mb-3">
               {installedWallets.length > 0 ? 'More Wallets' : 'Available Wallets'}
@@ -226,6 +234,8 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
               })}
             </div>
           </div>
+        )}
+          </>
         )}
         
         {/* Help Text */}

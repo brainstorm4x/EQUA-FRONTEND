@@ -89,6 +89,11 @@ export function WalletProvider({ children }: WalletProviderProps) {
       
       await Promise.race([connectPromise, timeoutPromise]);
       
+      // Add null check before setting publicKey
+      if (!wallet.publicKey) {
+        throw new Error('Wallet connected but public key not available');
+      }
+      
       setPublicKey(wallet.publicKey);
       setConnected(true);
       
