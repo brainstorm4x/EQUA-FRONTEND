@@ -169,12 +169,16 @@ export function WalletProvider({ children }: WalletProviderProps) {
     const handleLoad = () => {
       const updatedWallets = recheckWalletAvailability();
       setWallets(updatedWallets);
-      console.log('🔍 Wallet detection updated:', {
-        phantom: updatedWallets.find(w => w.name === 'Phantom')?.detected,
-        solflare: updatedWallets.find(w => w.name === 'Solflare')?.detected,
-        backpack: updatedWallets.find(w => w.name === 'Backpack')?.detected,
-        coinbase: updatedWallets.find(w => w.name === 'Coinbase Wallet')?.detected,
-      });
+      
+      // Log wallet detection in development mode only
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Wallet detection updated:', {
+          phantom: updatedWallets.find(w => w.name === 'Phantom')?.detected,
+          solflare: updatedWallets.find(w => w.name === 'Solflare')?.detected,
+          backpack: updatedWallets.find(w => w.name === 'Backpack')?.detected,
+          coinbase: updatedWallets.find(w => w.name === 'Coinbase Wallet')?.detected,
+        });
+      }
     };
     
     if (document.readyState === 'loading') {

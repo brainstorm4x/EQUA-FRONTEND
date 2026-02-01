@@ -12,6 +12,9 @@ import { useWallet } from '@/contexts/WalletContext';
 import { WalletInfo } from '@/lib/wallet/types';
 import { detectDeviceType } from '@/lib/wallet/utils';
 
+// Fallback wallet icon with purple background and wallet emoji
+const WALLET_ICON_FALLBACK = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%23a855f7" width="40" height="40"/%3E%3Ctext x="20" y="25" text-anchor="middle" fill="white" font-size="20"%3E💼%3C/text%3E%3C/svg%3E';
+
 interface WalletModalProps {
   visible: boolean;
   onClose: () => void;
@@ -140,7 +143,7 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
                     alt={`${wallet.name} icon`}
                     className="w-10 h-10 rounded"
                     onError={(e) => {
-                      e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%23a855f7" width="40" height="40"/%3E%3Ctext x="20" y="25" text-anchor="middle" fill="white" font-size="20"%3E💼%3C/text%3E%3C/svg%3E';
+                      e.currentTarget.src = WALLET_ICON_FALLBACK;
                     }}
                   />
                   <div className="flex-1 text-left">
@@ -186,7 +189,7 @@ export const WalletModal: FC<WalletModalProps> = ({ visible, onClose }) => {
                       alt={`${wallet.name} icon`}
                       className="w-10 h-10 rounded opacity-60"
                       onError={(e) => {
-                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%23a855f7" width="40" height="40"/%3E%3Ctext x="20" y="25" text-anchor="middle" fill="white" font-size="20"%3E💼%3C/text%3E%3C/svg%3E';
+                        e.currentTarget.src = WALLET_ICON_FALLBACK;
                       }}
                     />
                     <div className="flex-1 text-left">
