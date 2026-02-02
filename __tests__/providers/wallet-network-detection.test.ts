@@ -8,14 +8,6 @@
 
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
-// Mock RPC_ENDPOINT to test different network scenarios
-const mockRpcEndpoint = (endpoint: string) => {
-  jest.resetModules();
-  jest.doMock('@/lib/constants', () => ({
-    RPC_ENDPOINT: endpoint,
-  }));
-};
-
 /**
  * Network detection function (extracted from WalletProvider.tsx for testing)
  * This should match the implementation exactly
@@ -149,11 +141,13 @@ describe('WalletProvider Network Detection', () => {
       expect(result).toBe('devnet'); // Default
     });
 
-    it('should handle endpoint with multiple network keywords', () => {
-      // Real-world case: custom RPC with network in subdomain
-      const result = getExpectedNetwork('https://devnet-testnet.custom.com');
-      // Should match first occurrence (mainnet > testnet > devnet in code)
-      expect(result).toBe('testnet');
+    it('should handle endpoint with multiple network keywords - priority order', () => {
+      // Priority order: mainnet > testnet > devnet
+      expect(getExpectedNetwork('https://mainnet-devnet.custom.com')).toBe('mainnet-beta');
+      expect(getExpectedNetwork('https://mainnet-testnet.custom.com')).toBe('mainnet-beta');
+      expect(getExpectedNetwork('https://testnet-devnet.custom.com')).toBe('testnet');
+      // Only devnet keyword:
+      expect(getExpectedNetwork('https://devnet-only.custom.com')).toBe('devnet');
     });
 
     it('should handle endpoints with network in path', () => {
