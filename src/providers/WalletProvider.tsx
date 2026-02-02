@@ -31,13 +31,28 @@ interface WalletProviderProps {
 }
 
 /**
- * Detects expected Solana network from RPC endpoint
+ * Detects network from RPC endpoint and returns string for Mobile Wallet Adapter
+ * Returns: 'devnet' | 'testnet' | 'mainnet-beta' (string literal - NOT enum)
+ * 
+ * CRITICAL: Mobile Wallet Adapter requires string literals, not enum values.
+ * This ensures proper network validation during wallet connection.
  */
-const getExpectedNetwork = (): WalletAdapterNetwork => {
-  if (RPC_ENDPOINT.includes('devnet')) return WalletAdapterNetwork.Devnet;
-  if (RPC_ENDPOINT.includes('testnet')) return WalletAdapterNetwork.Testnet;
-  if (RPC_ENDPOINT.includes('mainnet')) return WalletAdapterNetwork.Mainnet;
-  return WalletAdapterNetwork.Devnet;
+const getExpectedNetwork = (): 'devnet' | 'testnet' | 'mainnet-beta' => {
+  const endpoint = RPC_ENDPOINT.toLowerCase();
+  if (endpoint.includes('mainnet')) return 'mainnet-beta';
+  if (endpoint.includes('testnet')) return 'testnet';
+  if (endpoint.includes('devnet')) return 'devnet';
+  return 'devnet'; // Safe default
+};
+
+/**
+ * Converts network string to WalletAdapterNetwork enum for adapters that require it
+ * (e.g., SolflareWalletAdapter)
+ */
+const networkStringToEnum = (network: 'devnet' | 'testnet' | 'mainnet-beta'): WalletAdapterNetwork => {
+  return network === 'mainnet-beta' ? WalletAdapterNetwork.Mainnet
+    : network === 'testnet' ? WalletAdapterNetwork.Testnet
+    : WalletAdapterNetwork.Devnet;
 };
 
 /**
@@ -152,7 +167,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
               : `${FALLBACK_APP_URL}/branding/equa-logo.svg`,
         },
       }),
-      new SolflareWalletAdapter({ network }),
+      new SolflareWalletAdapter({ network: networkStringToEnum(network) }),
     ];
   }, []);
 
