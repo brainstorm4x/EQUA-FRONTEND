@@ -1229,20 +1229,25 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
       setIsLoadingPrice(true);
       try {
         // Use same price fetching logic as SendModal
-        const multiPrice = await getEquaPriceMultiFormat(
+        const priceData = await getEquaPriceMultiFormat(
           DEFAULT_EQUA_PRICE_USD,
           localCurrency,
           connection
         );
-        // Guard against division by zero
-        if (multiPrice.eqx > 0) {
-          setEquaPrice(multiPrice.localCurrency / multiPrice.eqx); // Price per 1 EQUA in local currency
-        } else {
-          setEquaPrice(0.01); // Fallback if eqx is zero
+        // Use the same calculation as SendModal: priceData.localCurrency already represents
+        // the price per 1 EQUA in local currency (e.g., 0.01 USD/EQUA or 0.0092 EUR/EQUA)
+        setEquaPrice(priceData.localCurrency);
+        
+        // Log FX metadata for debugging (same as SendModal)
+        console.log(`ReceiveModal FX Rate Info: ${localCurrency} = ${priceData.fxRate} (source: ${priceData.fxSource}, age: ${Math.floor((priceData.fxAge || 0) / 3600000)}h)`);
+        
+        // Warn if stale
+        if (priceData.fxIsStale) {
+          console.warn(`⚠️ ReceiveModal FX rate for ${localCurrency} is stale (${Math.floor((priceData.fxAge || 0) / 3600000)} hours old)`);
         }
       } catch (error) {
         console.error('Failed to fetch EQUA price:', error);
-        setEquaPrice(0.01); // Fallback
+        setEquaPrice(DEFAULT_EQUA_PRICE_USD); // Fallback to USD price
       } finally {
         setIsLoadingPrice(false);
       }
