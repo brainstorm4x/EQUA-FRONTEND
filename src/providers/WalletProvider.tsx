@@ -46,6 +46,11 @@ const getExpectedNetwork = (): WalletAdapterNetwork => {
 let lastErrorTime = 0;
 const ERROR_THROTTLE_MS = 5000;
 
+/**
+ * Fallback URL for app identity when window is undefined (SSR)
+ */
+const FALLBACK_APP_URL = 'https://equa-frontend.netlify.app';
+
 const shouldLogError = (): boolean => {
   const now = Date.now();
   if (now - lastErrorTime > ERROR_THROTTLE_MS) {
@@ -123,11 +128,11 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
           uri:
             typeof window !== 'undefined'
               ? window.location.origin
-              : 'https://equa-frontend.netlify.app',
+              : FALLBACK_APP_URL,
           icon:
             typeof window !== 'undefined'
               ? `${window.location.origin}/branding/equa-logo.svg`
-              : 'https://equa-frontend.netlify.app/branding/equa-logo.svg',
+              : `${FALLBACK_APP_URL}/branding/equa-logo.svg`,
         },
         authorizationResultCache: createDefaultAuthorizationResultCache(),
         cluster: network,
@@ -140,11 +145,11 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
           uri:
             typeof window !== 'undefined'
               ? window.location.origin
-              : 'https://equa-frontend.netlify.app',
+              : FALLBACK_APP_URL,
           icon:
             typeof window !== 'undefined'
               ? `${window.location.origin}/branding/equa-logo.svg`
-              : 'https://equa-frontend.netlify.app/branding/equa-logo.svg',
+              : `${FALLBACK_APP_URL}/branding/equa-logo.svg`,
         },
       }),
       new SolflareWalletAdapter({ network }),

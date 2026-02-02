@@ -137,6 +137,7 @@ describe('WalletProvider Configuration', () => {
       expect(SolanaMobileWalletAdapter).toHaveBeenCalled();
       
       // Verify it was called with the right structure (has required fields)
+      expect(SolanaMobileWalletAdapter).toHaveBeenCalledTimes(1);
       const callArgs = SolanaMobileWalletAdapter.mock.calls[0][0];
       expect(callArgs).toHaveProperty('appIdentity');
       expect(callArgs).toHaveProperty('addressSelector');
