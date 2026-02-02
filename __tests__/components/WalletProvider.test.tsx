@@ -28,6 +28,13 @@ jest.mock('@solana/wallet-adapter-wallets', () => ({
 
 jest.mock('@solana-mobile/wallet-adapter-mobile', () => ({
   SolanaMobileWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Mobile Wallet Adapter' })),
+  createDefaultAddressSelector: jest.fn(() => ({ select: jest.fn() })),
+  createDefaultAuthorizationResultCache: jest.fn(() => ({ 
+    set: jest.fn(),
+    get: jest.fn(),
+    clear: jest.fn(),
+  })),
+  createDefaultWalletNotFoundHandler: jest.fn(() => jest.fn()),
 }));
 
 describe('WalletProvider Configuration', () => {
@@ -89,9 +96,11 @@ describe('WalletProvider Configuration', () => {
   });
 
   describe('Wallet Adapters', () => {
-    it('should initialize with multiple wallet adapters', () => {
+    it('should initialize with multiple wallet adapters including mobile', () => {
       const { PhantomWalletAdapter, SolflareWalletAdapter } = 
         require('@solana/wallet-adapter-wallets');
+      const { SolanaMobileWalletAdapter } = 
+        require('@solana-mobile/wallet-adapter-mobile');
 
       render(
         <WalletProvider>
@@ -100,8 +109,40 @@ describe('WalletProvider Configuration', () => {
       );
 
       // Verify that wallet adapters were instantiated
+      expect(SolanaMobileWalletAdapter).toHaveBeenCalled();
       expect(PhantomWalletAdapter).toHaveBeenCalled();
       expect(SolflareWalletAdapter).toHaveBeenCalled();
+    });
+
+    it('should initialize SolanaMobileWalletAdapter with correct configuration', () => {
+      const { 
+        SolanaMobileWalletAdapter,
+        createDefaultAddressSelector,
+        createDefaultAuthorizationResultCache,
+        createDefaultWalletNotFoundHandler,
+      } = require('@solana-mobile/wallet-adapter-mobile');
+
+      render(
+        <WalletProvider>
+          <div>Test</div>
+        </WalletProvider>
+      );
+
+      // Verify that helper functions were called
+      expect(createDefaultAddressSelector).toHaveBeenCalled();
+      expect(createDefaultAuthorizationResultCache).toHaveBeenCalled();
+      expect(createDefaultWalletNotFoundHandler).toHaveBeenCalled();
+
+      // Verify SolanaMobileWalletAdapter was initialized
+      expect(SolanaMobileWalletAdapter).toHaveBeenCalled();
+      
+      // Verify it was called with the right structure (has required fields)
+      const callArgs = SolanaMobileWalletAdapter.mock.calls[0][0];
+      expect(callArgs).toHaveProperty('appIdentity');
+      expect(callArgs).toHaveProperty('addressSelector');
+      expect(callArgs).toHaveProperty('authorizationResultCache');
+      expect(callArgs).toHaveProperty('cluster');
+      expect(callArgs).toHaveProperty('onWalletNotFound');
     });
   });
 
