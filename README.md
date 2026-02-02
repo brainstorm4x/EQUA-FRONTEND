@@ -148,8 +148,7 @@ EQUA-FRONTEND/
 ├── app/                    # Next.js App Router pages
 ├── src/
 │   ├── components/         # React components
-│   │   ├── ui/            # UI components (WalletButton, etc.)
-│   │   └── MobileWalletModal.tsx  # Custom mobile wallet modal
+│   │   └── ui/            # UI components (WalletButton, etc.)
 │   ├── providers/         # React context providers
 │   │   └── WalletProvider.tsx     # Wallet adapter configuration
 │   ├── lib/               # Core blockchain logic
@@ -166,9 +165,8 @@ EQUA-FRONTEND/
 
 ### Key Files
 
-- **`src/providers/WalletProvider.tsx`**: Configures wallet adapters (mobile vs desktop)
-- **`src/components/MobileWalletModal.tsx`**: Custom modal for mobile wallet selection
-- **`src/components/ui/WalletButton.tsx`**: Wallet connection button with mobile support
+- **`src/providers/WalletProvider.tsx`**: Configures wallet adapters for both desktop and mobile
+- **`src/components/ui/WalletButton.tsx`**: Wallet connection button with timeout handling
 - **`src/lib/program.ts`**: Solana program interaction (PDAs, instructions)
 - **`src/utils/tokenFormat.ts`**: EQUA token amount formatting (6 decimals)
 
@@ -179,7 +177,7 @@ EQUA-FRONTEND/
 npm test
 
 # Run specific test file
-npm test -- MobileWalletModal.test.tsx
+npm test -- WalletButton.test.tsx
 
 # Run tests in watch mode
 npm test:watch
