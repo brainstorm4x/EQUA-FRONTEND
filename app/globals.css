@@ -151,6 +151,20 @@ body {
   user-select: none;
 }
 
+/* Custom theming for WalletMultiButton */
+.wallet-adapter-button-trigger {
+  background-color: rgb(147 51 234) !important; /* purple-600 */
+  border-radius: 0.5rem !important; /* rounded-lg */
+  padding: 0.75rem 1.5rem !important; /* px-6 py-3 */
+  color: white !important;
+  font-weight: 600 !important;
+  transition: all 0.2s !important;
+}
+
+.wallet-adapter-button-trigger:hover:not(:disabled) {
+  background-color: rgb(126 34 206) !important; /* purple-700 */
+}
+
 /* Remove stuck :active states on touch devices */
 @media (hover: none) and (pointer: coarse) {
   .wallet-button-wrapper button:active,

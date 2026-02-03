@@ -25,7 +25,7 @@ interface WalletButtonProps {
 export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
   return (
     <div data-testid={testId} className="wallet-button-wrapper">
-      <WalletMultiButton className="!bg-purple-600 hover:!bg-purple-700 !rounded-lg !px-6 !py-3 !text-white !font-semibold !transition-all !duration-200" />
+      <WalletMultiButton />
     </div>
   );
 };
