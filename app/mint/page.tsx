@@ -55,7 +55,6 @@ import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
 import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrationCheck';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
-import { sendTransactionWithSign } from '@/utils/transactionSender';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -851,17 +850,19 @@ export default function MintPage() {
       console.log('- Business Registry (PDA):', businessRegistryPDA.toBase58());
 
       // ============================================================================
-      // BUILD BUNDLED TRANSACTION
+      // BUILD BUNDLED TRANSACTION USING ANCHOR .rpc()
       // Bundle ATA creations + registration in a single atomic transaction
+      // Uses Anchor's .preInstructions() + .rpc() for mobile wallet compatibility
       // ============================================================================
       
-      const instructions: TransactionInstruction[] = [];
+      const preInstructions: TransactionInstruction[] = [];
       
       // Add compute budget instruction to prevent preflight warnings
       const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
         units: 400_000  // Sufficient for registration + account creations
       });
-      instructions.push(computeBudgetIx);
+      preInstructions.push(computeBudgetIx);
+      console.log('Added compute budget instruction');
       
       // 1. Create user's ATA (idempotent - no-op if exists)
       // Derive locked token PDAs
@@ -891,8 +892,6 @@ export default function MintPage() {
       console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
       console.log('- Locked Token ATA (wallet-owned):', lockedTokenAta.toBase58());
 
-      // ...
-
       // 1. Create user's ATA (idempotent - no-op if exists)
       const createUserAtaIx = createAssociatedTokenAccountIdempotentInstruction(
         publicKey,                  // payer
@@ -902,8 +901,8 @@ export default function MintPage() {
         mintTokenProgram,           // TOKEN_2022 or standard
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
-      instructions.push(createUserAtaIx);
-      console.log('Added idempotent user ATA creation instruction');
+      preInstructions.push(createUserAtaIx);
+      console.log('Added user token ATA creation instruction');
 
       // 2. Create locked token ATA (idempotent - no-op if exists)
       // NOTE: owner is also the wallet here; the PDA is a separate account
@@ -916,82 +915,36 @@ export default function MintPage() {
         TOKEN_PROGRAM_ID,           // standard token program
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
-      instructions.push(createLockedAtaIx);
-      console.log('Added idempotent locked token ATA creation instruction');
+      preInstructions.push(createLockedAtaIx);
+      console.log('Added locked token ATA creation instruction');
 
-      
-  // 3. Add registration instruction
-  const registerIx = await program.methods
-    .initializeUser(
-      referrerPubkey ?? PublicKey.default,
-      new anchor.BN(now),
-      userType
-    )
-    .accounts({
-      authority: publicKey,
-      userAccount: userAccountPDA,
-      userMetadata: userMetadataPDA,
-      globalState: globalStatePDA,
-      referralAccount: referralAccountPubkey,
-      referrerMetadata: referrerMetadataPubkey,
-      userTokenAccount,
-      mint: mintPDA,
-      businessRegistry: businessRegistryPDA,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
-    })
-    .instruction();
-
-  instructions.push(registerIx);
-  console.log('📝 Added registration instruction');
-
-  // Log instruction metas for debugging
-  console.log('🧪 InitializeUser instruction metas:');
-  registerIx.keys.forEach((k, i) => {
-    console.log(`${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`);
-  });
-
-      // Build single transaction with all instructions
-      const transaction = new Transaction().add(...instructions);
-      transaction.feePayer = publicKey;
-
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-      transaction.recentBlockhash = blockhash;
-
-      console.log('📝 Sending registration transaction via wallet adapter...');
-
-      transaction.instructions.forEach((ix, ixIndex) => {
-        console.log(`\n🔍 Instruction ${ixIndex}`);
-        ix.keys.forEach((k, i) => {
-          console.log(
-            `  ${i}. ${k.pubkey.toBase58()} signer=${k.isSigner} writable=${k.isWritable}`
-          );
-        });
-      });
+      // 3. Use Anchor's .rpc() for registration (mobile-compatible)
+      console.log('📝 Sending registration transaction via Anchor .rpc()...');
 
       try {
-        // Use sendTransactionWithSign helper for mobile-compatible transaction sending
-        // Prefers wallet.signTransaction (mobile-compatible) with fallback to wallet.sendTransaction
-        const { signature: tx, method } = await sendTransactionWithSign(
-          wallet,
-          transaction,
-          connection,
-          {
-            skipPreflight: false,
-            maxRetries: 3
-          }
-        );
+        const tx = await program.methods
+          .initializeUser(
+            referrerPubkey ?? PublicKey.default,
+            new anchor.BN(now),
+            userType
+          )
+          .accounts({
+            authority: publicKey,
+            userAccount: userAccountPDA,
+            userMetadata: userMetadataPDA,
+            globalState: globalStatePDA,
+            referralAccount: referralAccountPubkey,
+            referrerMetadata: referrerMetadataPubkey,
+            userTokenAccount,
+            mint: mintPDA,
+            businessRegistry: businessRegistryPDA,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          })
+          .preInstructions(preInstructions)  // Add ATA creation as pre-instructions
+          .rpc();  // Use .rpc() instead of manual transaction building
         
-        console.log(`📤 Registration transaction sent via ${method}:`, tx);
-        console.log('⏳ Confirming transaction...');
-        
-        await connection.confirmTransaction({
-          signature: tx,
-          blockhash,
-          lastValidBlockHeight
-        }, 'confirmed');
-
         console.log('✅ Registration successful!', tx);
         setTxSignature(tx);
         setRegistered(true);
@@ -1029,8 +982,8 @@ export default function MintPage() {
 
         await checkUserRegistration();
       } catch (sendTxErr: any) {
-        // Enhanced error logging for wallet adapter sendTransaction failures
-        console.error('❌ wallet.sendTransaction failed during registration:', sendTxErr);
+        // Enhanced error logging for Anchor .rpc() failures
+        console.error('❌ Anchor .rpc() failed during registration:', sendTxErr);
         console.error('Error details:', {
           message: sendTxErr?.message,
           name: sendTxErr?.name,
