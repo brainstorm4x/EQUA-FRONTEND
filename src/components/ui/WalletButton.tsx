@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useEffect, useState, useCallback, useRef } from 'react';
+import { FC, useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
@@ -12,7 +12,7 @@ interface WalletButtonProps {
 const CONNECTION_TIMEOUT_MS = 30_000; // 30 seconds
 
 export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
-  const { wallet, connected, connecting, disconnect, publicKey } = useWallet();
+  const { connected, connecting, disconnect, publicKey } = useWallet();
   const { setVisible } = useWalletModal();
 
   const [mounted, setMounted] = useState(false);
@@ -80,6 +80,14 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
   }, [connected, disconnect, setVisible]);
 
   /**
+   * Memoize the wallet address string to avoid redundant toBase58() calls
+   */
+  const walletAddress = useMemo(
+    () => (publicKey ? publicKey.toBase58() : null),
+    [publicKey]
+  );
+
+  /**
    * Prevent rendering anything wallet-related until mounted.
    * This avoids SSR/CSR mismatches and mobile viewport glitches.
    */
@@ -137,8 +145,7 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
   }
 
   // Connected state
-  if (connected && publicKey) {
-    const address = publicKey.toBase58();
+  if (connected && walletAddress) {
     return (
       <div
         className="wallet-button-wrapper flex items-center gap-4 touch-manipulation"
@@ -151,7 +158,7 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
         >
           <div className="w-2 h-2 bg-green-400 rounded-full" />
           <span>
-            {address.slice(0, 4)}...{address.slice(-4)}
+            {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
           </span>
         </button>
 
