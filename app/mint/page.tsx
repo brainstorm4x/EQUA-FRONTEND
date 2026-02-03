@@ -892,7 +892,7 @@ export default function MintPage() {
       console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
       console.log('- Locked Token ATA (wallet-owned):', lockedTokenAta.toBase58());
 
-      // 1. Create user's ATA (idempotent - no-op if exists)
+      // Create user's token account ATA instruction
       const createUserAtaIx = createAssociatedTokenAccountIdempotentInstruction(
         publicKey,                  // payer
         userTokenAccount,           // ata
