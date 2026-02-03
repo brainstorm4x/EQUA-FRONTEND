@@ -138,6 +138,7 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
 
   // Connected state
   if (connected && publicKey) {
+    const address = publicKey.toBase58();
     return (
       <div
         className="wallet-button-wrapper flex items-center gap-4 touch-manipulation"
@@ -150,7 +151,7 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
         >
           <div className="w-2 h-2 bg-green-400 rounded-full" />
           <span>
-            {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+            {address.slice(0, 4)}...{address.slice(-4)}
           </span>
         </button>
 
