@@ -125,7 +125,7 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
    * Custom button implementation with explicit modal control.
    * Using setVisible(true) prevents auto-connection on mobile devices.
    */
-  
+
   // Connecting state
   if (connecting) {
     return (
