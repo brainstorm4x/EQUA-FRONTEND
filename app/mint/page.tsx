@@ -888,36 +888,43 @@ export default function MintPage() {
         lockedTokenAta,      // ata
         lockedTokenPda,      // owner (PDA)
         mintPDA,             // mint
-        TOKEN_PROGRAM_ID,    // Standard Token Program
+        TOKEN_PROGRAM_ID,    // Token-2022
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
       instructions.push(createLockedAtaIx);
       console.log('📝 Added idempotent locked token ATA creation instruction');
       
-      // 3. Add registration instruction
-      const registerIx = createInitializeUserInstruction(
-        userAccountPDA,
-        userMetadataPDA,
-        publicKey,
-        globalStatePDA,
-        referralAccountPubkey,
-        referrerMetadataPubkey,
-        userTokenAccount,
-        mintPDA,
-        businessRegistryPDA,
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
-        now,
-        referrerPubkey,
-        userType
-      );
-      instructions.push(registerIx);
+  // 3. Add registration instruction
+  const registerIx = await program.methods
+    .initializeUser(
+      referrerPubkey ?? PublicKey.default,
+      new anchor.BN(now),
+      userType
+    )
+    .accounts({
+      authority: publicKey,
+      userAccount: userAccountPDA,
+      userMetadata: userMetadataPDA,
+      globalState: globalStatePDA,
+      referralAccount: referralAccountPubkey,
+      referrerMetadata: referrerMetadataPubkey,
+      userTokenAccount,
+      mint: mintPDA,
+      businessRegistry: businessRegistryPDA,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
 
-      // Log instruction metas for debugging
-      console.log('🧪 InitializeUser instruction metas:');
-      registerIx.keys.forEach((k, i) => {
-        console.log(`${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`);
-      });
+  instructions.push(registerIx);
+  console.log('📝 Added registration instruction');
+
+  // Log instruction metas for debugging
+  console.log('🧪 InitializeUser instruction metas:');
+  registerIx.keys.forEach((k, i) => {
+    console.log(`${i}. ${k.pubkey.toBase58()} writable=${k.isWritable} signer=${k.isSigner}`);
+  });
 
       // Build single transaction with all instructions
       const transaction = new Transaction().add(...instructions);
