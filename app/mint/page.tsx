@@ -947,18 +947,32 @@ export default function MintPage() {
           .preInstructions(preInstructions)  // Add ATA creation as pre-instructions
           .transaction();  // Get transaction object instead of sending via .rpc()
         
-        // Get latest blockhash
-        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+        // Get latest blockhash (use 'finalized' for mobile wallet compatibility)
+        // Mobile wallet deep linking may introduce delays, so use a more durable blockhash
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = publicKey;
 
         console.log('📝 Sending registration transaction via wallet.sendTransaction()...');
 
         // Use wallet adapter's sendTransaction (mobile-compatible)
-        const signature = await wallet.sendTransaction(transaction, connection, {
-          skipPreflight: false,
-          maxRetries: 3,
-        });
+        let signature: string;
+        try {
+          signature = await wallet.sendTransaction(transaction, connection, {
+            skipPreflight: false,
+            maxRetries: 3,
+          });
+        } catch (sendErr: any) {
+          // Provide helpful error messages for mobile wallet issues
+          if (sendErr?.message?.includes('User rejected') || sendErr?.message?.includes('user rejected')) {
+            throw new Error('Transaction cancelled: You rejected the transaction in your wallet.');
+          }
+          if (sendErr?.message?.includes('timeout') || sendErr?.message?.includes('Timeout')) {
+            throw new Error('Transaction timeout: Please ensure your wallet app is open and try again.');
+          }
+          // Re-throw original error if not a known mobile wallet issue
+          throw sendErr;
+        }
 
         console.log('📤 Transaction sent:', signature);
         console.log('⏳ Confirming transaction...');
