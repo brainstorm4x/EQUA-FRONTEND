@@ -77,7 +77,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">
       {/* Header */}
-      <header className="border-b border-purple-700">
+      <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm sticky top-0 z-10">
         {/* Visual layer ONLY */}
         <div className="bg-purple-900/50 backdrop-blur-sm">
           <div className="container mx-auto px-4 py-4">
