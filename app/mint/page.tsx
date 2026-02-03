@@ -793,13 +793,6 @@ export default function MintPage() {
       console.log('📝 Preparing bundled transaction: ATAs + Registration');
       
       // Derive locked token PDAs
-      const [lockedTokenAccountPda] = getLockedTokenAccountPda(publicKey, PROGRAM_ID);
-      const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
-      const lockedTokenAta = getLockedTokenAta(lockedTokenPda, mintPDA, TOKEN_PROGRAM_ID);
-      
-      console.log('- User Token Account (ATA):', userTokenAccount.toBase58());
-      console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
-      console.log('- Locked Token ATA:', lockedTokenAta.toBase58());
 
       const now = Math.floor(Date.now() / 1000);
 
@@ -871,28 +864,61 @@ export default function MintPage() {
       instructions.push(computeBudgetIx);
       
       // 1. Create user's ATA (idempotent - no-op if exists)
+      // Derive locked token PDAs
+      const lockedTokenAccountPda = getLockedTokenAccountPda(publicKey, PROGRAM_ID);
+      const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
+
+      /**
+       * IMPORTANT:
+       * The owner of any SPL token ATA must be a real keypair (the wallet),
+       * not a PDA. The PDA (lockedTokenPda) is your program's account that
+       * will *hold* the tokens, but the ATA's "owner" must still be the wallet.
+       *
+       * So:
+       * - ATA address: derived using (owner = publicKey, mint = mintPDA)
+       * - Program PDAs (lockedTokenPda, lockedTokenAccountPda) are passed
+       *   to the instruction as normal accounts, but NEVER as ATA owners.
+       */
+      const lockedTokenAta = getAssociatedTokenAddressSync(
+        mintPDA,            // mint
+        publicKey,          // owner (wallet, NOT lockedTokenPda)
+        false,              // allowOwnerOffCurve = false
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+
+      console.log('- User Token Account ATA:', userTokenAccount.toBase58());
+      console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
+      console.log('- Locked Token ATA (wallet-owned):', lockedTokenAta.toBase58());
+
+      // ...
+
+      // 1. Create user's ATA (idempotent - no-op if exists)
       const createUserAtaIx = createAssociatedTokenAccountIdempotentInstruction(
-        publicKey,           // payer
-        userTokenAccount,    // ata
-        publicKey,           // owner
-        mintPDA,             // mint
-        mintTokenProgram,    // Token-2022
+        publicKey,                  // payer
+        userTokenAccount,           // ata
+        publicKey,                  // owner (wallet)
+        mintPDA,                    // mint
+        mintTokenProgram,           // TOKEN_2022 or standard
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
       instructions.push(createUserAtaIx);
-      console.log('📝 Added idempotent user ATA creation instruction');
-      
+      console.log('Added idempotent user ATA creation instruction');
+
       // 2. Create locked token ATA (idempotent - no-op if exists)
+      // NOTE: owner is also the wallet here; the PDA is a separate account
+      // for your program logic, not the ATA owner.
       const createLockedAtaIx = createAssociatedTokenAccountIdempotentInstruction(
-        publicKey,           // payer
-        lockedTokenAta,      // ata
-        lockedTokenPda,      // owner (PDA)
-        mintPDA,             // mint
-        TOKEN_PROGRAM_ID,    // Token-2022
+        publicKey,                  // payer
+        lockedTokenAta,             // ata
+        publicKey,                  // owner (wallet, FIXED)
+        mintPDA,                    // mint
+        TOKEN_PROGRAM_ID,           // standard token program
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
       instructions.push(createLockedAtaIx);
-      console.log('📝 Added idempotent locked token ATA creation instruction');
+      console.log('Added idempotent locked token ATA creation instruction');
+
       
   // 3. Add registration instruction
   const registerIx = await program.methods
@@ -934,7 +960,16 @@ export default function MintPage() {
       transaction.recentBlockhash = blockhash;
 
       console.log('📝 Sending registration transaction via wallet adapter...');
-      
+
+      transaction.instructions.forEach((ix, ixIndex) => {
+        console.log(`\n🔍 Instruction ${ixIndex}`);
+        ix.keys.forEach((k, i) => {
+          console.log(
+            `  ${i}. ${k.pubkey.toBase58()} signer=${k.isSigner} writable=${k.isWritable}`
+          );
+        });
+      });
+
       try {
         // Use sendTransactionWithSign helper for mobile-compatible transaction sending
         // Prefers wallet.signTransaction (mobile-compatible) with fallback to wallet.sendTransaction
