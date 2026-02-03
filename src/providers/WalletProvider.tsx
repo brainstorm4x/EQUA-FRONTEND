@@ -34,7 +34,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   if (isMobile === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white">Loading wallet...</div>
+        <div className="text-white" role="status" aria-live="polite">Loading wallet...</div>
       </div>
     );
   }

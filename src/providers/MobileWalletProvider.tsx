@@ -66,7 +66,7 @@ export const MobileWalletProvider: FC<MobileWalletProviderProps> = ({ children }
         `Failed to connect to wallet. Please ensure your wallet app is open and set to ${expectedNetwork}.`
       );
     } else if (error.name === 'WalletNotReadyError') {
-      setWalletWarning('No wallet app detected. Please install Phantom or Solflare mobile app.');
+      setWalletWarning('Wallet not ready. Please ensure Phantom or Solflare mobile app is installed and unlocked.');
     } else {
       setWalletWarning(error.message || 'Unexpected wallet error. Please try again.');
     }
