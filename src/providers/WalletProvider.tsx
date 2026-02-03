@@ -202,7 +202,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
     <ConnectionProvider endpoint={RPC_ENDPOINT}>
       <SolanaWalletProvider
         wallets={wallets}
-        autoConnect={false}
+        autoConnect={true}
         onError={onError}
       >
         <WalletModalProvider>
