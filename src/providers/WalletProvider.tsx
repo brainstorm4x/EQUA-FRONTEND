@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, ReactNode, useMemo, useCallback, useEffect, useState } from 'react';
+import { FC, ReactNode, useMemo, useCallback, useState } from 'react';
 import {
   ConnectionProvider,
   WalletProvider as SolanaWalletProvider,
@@ -24,7 +24,6 @@ import { ProgramIdMigration } from '@/components/ProgramIdMigration';
 
 import '@solana/wallet-adapter-react-ui/styles.css';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-
 
 interface WalletProviderProps {
   children: ReactNode;
@@ -125,51 +124,91 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   const [walletWarning, setWalletWarning] = useState<string | null>(null);
 
   /**
-   * IMPORTANT:
-   * - Phantom & Solflare adapters work on desktop extensions and wallet in-app browsers
-   * - SolanaMobileWalletAdapter handles Android Chrome (deep links) and iOS detection
-   * - This configuration follows official Solana best practices
-   * - Used by all major Solana dApps (Jupiter, Marinade, Raydium, etc.)
+   * Get exact current URL for app identity
+   * 
+   * CRITICAL: This must match EXACTLY the URL the user is accessing.
+   * Netlify preview URLs like deploy-preview-246--equa-frontend.netlify.app
+   * are different from production equa-frontend.netlify.app
+   * 
+   * Phantom uses this URI to return after authorization.
+   * If it doesn't match, the connection session is lost.
+   */
+  const getAppIdentityUri = (): string => {
+    if (typeof window === 'undefined') {
+      return FALLBACK_APP_URL;
+    }
+    return window.location.origin;
+  };
+
+  /**
+   * Get app icon URL
+   * Tries multiple common locations
+   */
+  const getAppIconUri = (): string => {
+    if (typeof window === 'undefined') {
+      return `${FALLBACK_APP_URL}/branding/equa-logo.svg`;
+    }
+    return `${window.location.origin}/branding/equa-logo.svg`;
+  };
+
+  /**
+   * CRITICAL FIX: Platform-specific wallet configuration
+   * 
+   * Mobile browsers:
+   * - ONLY show Mobile Wallet Adapter
+   * - Desktop wallet adapters (Phantom/Solflare) rely on browser extensions
+   * - These extensions don't exist on mobile → silent failures
+   * 
+   * Desktop browsers:
+   * - Show Phantom + Solflare (browser extensions)
+   * - Mobile Wallet Adapter not needed (no deep linking on desktop)
+   * 
+   * In-app browsers (Phantom/Solflare app built-in browsers):
+   * - window.solana or window.solflare automatically injected
+   * - Desktop adapters work correctly
    */
   const wallets = useMemo(() => {
     const network = getExpectedNetwork();
+    
+    // Detect platform
+    const isMobile = typeof window !== 'undefined' && 
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    // Check if running in wallet's in-app browser
+    const isInAppBrowser = typeof window !== 'undefined' &&
+      !!((window as any).solana?.isPhantom || (window as any).solflare);
 
+    // Mobile browser (Chrome, Safari, etc.) - NOT in-app browser
+    if (isMobile && !isInAppBrowser) {
+      console.log('[WalletProvider] Mobile browser detected - using Mobile Wallet Adapter only');
+      return [
+        new SolanaMobileWalletAdapter({
+          addressSelector: createDefaultAddressSelector(),
+          appIdentity: {
+            name: 'EQUA Token',
+            uri: getAppIdentityUri(),
+            icon: getAppIconUri(),
+          },
+          authorizationResultCache: createDefaultAuthorizationResultCache(),
+          cluster: network, // String literal: 'devnet' | 'testnet' | 'mainnet-beta'
+          onWalletNotFound: createDefaultWalletNotFoundHandler(),
+        }),
+      ];
+    }
+
+    // Desktop browser OR in-app browser - use extension-based adapters
+    console.log('[WalletProvider] Desktop/in-app browser detected - using extension adapters');
     return [
-      // Mobile Wallet Adapter (handles Android Chrome + iOS in-app browsers)
-      new SolanaMobileWalletAdapter({
-        addressSelector: createDefaultAddressSelector(),
-        appIdentity: {
-          name: 'EQUA Token',
-          uri:
-            typeof window !== 'undefined'
-              ? window.location.origin
-              : FALLBACK_APP_URL,
-          icon:
-            typeof window !== 'undefined'
-              ? `${window.location.origin}/branding/equa-logo.svg`
-              : `${FALLBACK_APP_URL}/branding/equa-logo.svg`,
-        },
-        authorizationResultCache: createDefaultAuthorizationResultCache(),
-        cluster: network,
-        onWalletNotFound: createDefaultWalletNotFoundHandler(),
-      }),
-      // Desktop wallets (existing)
       new PhantomWalletAdapter({
         appIdentity: {
           name: 'EQUA Token',
-          uri:
-            typeof window !== 'undefined'
-              ? window.location.origin
-              : FALLBACK_APP_URL,
-          icon:
-            typeof window !== 'undefined'
-              ? `${window.location.origin}/branding/equa-logo.svg`
-              : `${FALLBACK_APP_URL}/branding/equa-logo.svg`,
+          uri: getAppIdentityUri(),
+          icon: getAppIconUri(),
         },
       }),
       new SolflareWalletAdapter({ network: networkStringToEnum(network) }),
     ];
-  }, []);
+  }, []); // Empty deps - only runs once on mount
 
   /**
    * Centralized wallet error handling
