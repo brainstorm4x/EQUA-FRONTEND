@@ -78,20 +78,56 @@ export async function sendTransactionWithSign(
     preflightCommitment: options.preflightCommitment,
   };
   
+  /**
+   * Wrap wallet.signTransaction with timeout protection to detect if wallet app doesn't return
+   */
+  const signWithTimeout = async (wallet: any, transaction: Transaction, timeoutMs = 120000) => {
+    return Promise.race([
+      wallet.signTransaction(transaction),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error(
+          'Wallet signature timeout. The wallet app did not respond within 2 minutes. ' +
+          'Please ensure the wallet app is open and try again.'
+        )), timeoutMs)
+      )
+    ]);
+  };
+
   // Path 1: Prefer signTransaction (mobile-compatible, more reliable)
   if (wallet.signTransaction) {
     console.log('🔐 Using wallet.signTransaction (preferred method for mobile compatibility)');
     
     try {
-      // Sign the transaction
-      const signed = await wallet.signTransaction(transaction);
+      // Sign the transaction with timeout protection
+      const signed = await signWithTimeout(wallet, transaction) as Transaction;
       
-      // Log signatures after signing (public keys only)
-      const signatureKeys = signed.signatures
-        .filter(sig => sig?.publicKey)
-        .map(sig => sig.publicKey.toBase58())
-        .join(', ');
-      console.log('✅ Transaction signed. Signatures:', signatureKeys || 'none');
+      // ✅ CRITICAL: Verify signature was actually attached
+      console.log('🔍 Verifying signatures after wallet.signTransaction...');
+      const hasValidSignatures = signed.signatures.every(sig => {
+        if (!sig.signature || sig.signature.length === 0) {
+          console.error('❌ Missing signature for:', sig.publicKey.toBase58());
+          return false;
+        }
+        // Check if signature is not just zeros
+        const isNonZero = sig.signature.some(byte => byte !== 0);
+        if (!isNonZero) {
+          console.error('❌ Zero signature for:', sig.publicKey.toBase58());
+          return false;
+        }
+        return true;
+      });
+
+      if (!hasValidSignatures) {
+        throw new Error(
+          'Signature verification failed after wallet.signTransaction. ' +
+          'This may be due to the wallet app closing before completing the signature. ' +
+          'Please keep the wallet app open until you return to the browser.'
+        );
+      }
+
+      console.log('✅ All signatures verified:', 
+        signed.signatures.map(s => s.publicKey.toBase58()).join(', ')
+      );
       
       // Submit the signed transaction
       const signature = await connection.sendRawTransaction(

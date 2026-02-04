@@ -721,6 +721,13 @@ export default function MintPage() {
     setTxSignature('');
 
     try {
+      console.log('📝 Starting registration...');
+      console.log('- Wallet connected:', wallet.connected);
+      console.log('- Public key:', publicKey.toBase58());
+      console.log('- Account type:', accountType);
+      console.log('- Referrer:', referrer || 'None');
+      console.log('- User Account PDA:', userAccountPDA.toBase58());
+      
       console.log('Creating registration transaction...');
       console.log('Wallet connected:', wallet.connected);
       console.log('Public key:', publicKey.toBase58());
@@ -949,6 +956,12 @@ export default function MintPage() {
           .preInstructions(preInstructions)  // Add ATA creation as pre-instructions
           .transaction();  // Get transaction object instead of sending via .rpc()
         
+        console.log('📝 Transaction built successfully');
+        console.log('- Fee payer:', transaction.feePayer?.toBase58());
+        console.log('- Recent blockhash:', transaction.recentBlockhash);
+        console.log('- Instructions count:', transaction.instructions.length);
+        console.log('- Compute budget instruction:', preInstructions.length > 0 ? 'Added' : 'Not added');
+        
         // Get latest blockhash (use 'finalized' for mobile wallet compatibility)
         // Mobile wallet deep linking may introduce delays, so use a more durable blockhash
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
@@ -957,6 +970,10 @@ export default function MintPage() {
 
         console.log('📝 Sending registration transaction via sendTransactionWithSign...');
         console.log('   This utility handles mobile wallet signing correctly');
+        
+        console.log('📝 Calling sendTransactionWithSign...');
+        console.log('- Wallet has signTransaction:', !!wallet.signTransaction);
+        console.log('- Wallet has sendTransaction:', !!wallet.sendTransaction);
 
         // Use sendTransactionWithSign utility (mobile-compatible)
         // This signs the transaction first, then sends it - fixing mobile wallet signature issues
@@ -997,6 +1014,10 @@ export default function MintPage() {
         }, 'confirmed');
 
         console.log('✅ Registration successful!', signature);
+        console.log('🎉 Registration completed successfully');
+        console.log('- Signature:', signature);
+        console.log('- Method used:', method);
+        console.log('- Explorer URL:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
         setTxSignature(signature);
         setRegistered(true);
 
@@ -1075,6 +1096,17 @@ export default function MintPage() {
       // ✅ Provide specific error messages based on error type
       if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
         errorMessage = '❌ Insufficient SOL balance. You need at least 0.1 SOL for registration fees. Please add SOL to your wallet and try again.';
+      } else if (errorMessage.includes('Signature verification failed') || errorMessage.includes('Missing signature')) {
+        errorMessage = 
+          '❌ Signature Failed: The wallet app did not complete the signature.\n\n' +
+          '📱 For mobile users:\n' +
+          '1. Keep the wallet app OPEN after approving\n' +
+          '2. Wait for automatic return to browser\n' +
+          '3. Do NOT manually close the wallet app\n\n' +
+          'If issue persists, try:\n' +
+          '• Restart the wallet app\n' +
+          '• Clear browser cache\n' +
+          '• Use a different browser';
       } else if (errorMessage.includes('User rejected') || errorMessage.includes('User denied')) {
         errorMessage = '❌ Transaction rejected. Please approve the transaction in your wallet to continue.';
       } else if (errorMessage.includes('0x0') || errorMessage.includes('already in use')) {
