@@ -975,22 +975,14 @@ export default function MintPage() {
         console.log('  - Signature:', signature);
         console.log('  - Explorer:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
 
-        // Verify signature was returned
-        if (!signature || signature.length === 0) {
-          throw new Error('Transaction sent but no signature returned');
-        }
-
         console.log('⏳ Confirming transaction...');
 
-        // Get latest blockhash for confirmation
-        const { blockhash: confirmBlockhash, lastValidBlockHeight: confirmLastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-
-        // Wait for confirmation
+        // Wait for confirmation using the same blockhash from transaction
         await connection.confirmTransaction(
           {
             signature,
-            blockhash: confirmBlockhash,
-            lastValidBlockHeight: confirmLastValidBlockHeight,
+            blockhash,
+            lastValidBlockHeight,
           },
           'confirmed'
         );
