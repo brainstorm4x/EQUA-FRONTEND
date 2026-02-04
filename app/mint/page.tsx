@@ -55,6 +55,7 @@ import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
 import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrationCheck';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
+import { sendTransactionWithSign } from '@/utils/transactionSender';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -962,16 +963,22 @@ export default function MintPage() {
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = publicKey;
 
-        console.log('📝 Sending transaction via wallet.sendTransaction()...');
-        console.log('  - This will open Phantom app for approval on mobile');
+        console.log('📝 Sending registration transaction via sendTransactionWithSign...');
+        console.log('  - This will open wallet app for approval on mobile');
 
-        // Use SAME method as minting (see handleMint function below)
-        const signature = await wallet.sendTransaction(transaction, connection, {
-          skipPreflight: false,
-          maxRetries: 3,
-        });
+        // Use sendTransactionWithSign for mobile wallet compatibility
+        // Prefers wallet.signTransaction (mobile-compatible) with fallback to wallet.sendTransaction
+        const { signature, method } = await sendTransactionWithSign(
+          wallet,
+          transaction,
+          connection,
+          {
+            skipPreflight: false,
+            maxRetries: 3,
+          }
+        );
 
-        console.log('✅ Transaction sent successfully');
+        console.log(`✅ Transaction sent successfully via ${method}`);
         console.log('  - Signature:', signature);
         console.log('  - Explorer:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
 
