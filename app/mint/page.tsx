@@ -55,6 +55,7 @@ import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
 import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrationCheck';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
+import { sendTransactionWithSign } from '@/utils/transactionSender';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -852,8 +853,9 @@ export default function MintPage() {
       // ============================================================================
       // BUILD BUNDLED TRANSACTION USING WALLET ADAPTER
       // Bundle ATA creations + registration in a single atomic transaction
-      // Uses Anchor's .preInstructions() + wallet.sendTransaction() for mobile wallet compatibility
-      // wallet.sendTransaction() properly handles Mobile Wallet Adapter's deep linking flow
+      // Uses Anchor's .preInstructions() + sendTransactionWithSign() for mobile wallet compatibility
+      // sendTransactionWithSign() properly handles Mobile Wallet Adapter's deep linking flow
+      // by explicitly signing first, then sending the signed transaction
       // ============================================================================
       
       const preInstructions: TransactionInstruction[] = [];
@@ -953,15 +955,25 @@ export default function MintPage() {
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = publicKey;
 
-        console.log('📝 Sending registration transaction via wallet.sendTransaction()...');
+        console.log('📝 Sending registration transaction via sendTransactionWithSign...');
+        console.log('   This utility handles mobile wallet signing correctly');
 
-        // Use wallet adapter's sendTransaction (mobile-compatible)
+        // Use sendTransactionWithSign utility (mobile-compatible)
+        // This signs the transaction first, then sends it - fixing mobile wallet signature issues
         let signature: string;
+        let method: 'sign' | 'send';
         try {
-          signature = await wallet.sendTransaction(transaction, connection, {
-            skipPreflight: false,
-            maxRetries: 3,
-          });
+          const result = await sendTransactionWithSign(
+            wallet,
+            transaction,
+            connection,
+            {
+              skipPreflight: false,
+              maxRetries: 3,
+            }
+          );
+          signature = result.signature;
+          method = result.method;
         } catch (sendErr: any) {
           // Provide helpful error messages for mobile wallet issues
           if (sendErr?.message?.includes('User rejected') || sendErr?.message?.includes('user rejected')) {
@@ -974,7 +986,7 @@ export default function MintPage() {
           throw sendErr;
         }
 
-        console.log('📤 Transaction sent:', signature);
+        console.log(`✅ Transaction sent via ${method} method:`, signature);
         console.log('⏳ Confirming transaction...');
 
         // Confirm the transaction
@@ -1021,8 +1033,8 @@ export default function MintPage() {
 
         await checkUserRegistration();
       } catch (sendTxErr: any) {
-        // Enhanced error logging for wallet.sendTransaction() failures
-        console.error('❌ wallet.sendTransaction() failed during registration:', sendTxErr);
+        // Enhanced error logging for sendTransactionWithSign() failures
+        console.error('❌ sendTransactionWithSign() failed during registration:', sendTxErr);
         console.error('Error details:', {
           message: sendTxErr?.message,
           name: sendTxErr?.name,
