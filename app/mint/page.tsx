@@ -850,9 +850,10 @@ export default function MintPage() {
       console.log('- Business Registry (PDA):', businessRegistryPDA.toBase58());
 
       // ============================================================================
-      // BUILD BUNDLED TRANSACTION USING ANCHOR .rpc()
+      // BUILD BUNDLED TRANSACTION USING WALLET ADAPTER
       // Bundle ATA creations + registration in a single atomic transaction
-      // Uses Anchor's .preInstructions() + .rpc() for mobile wallet compatibility
+      // Uses Anchor's .preInstructions() + wallet.sendTransaction() for mobile wallet compatibility
+      // wallet.sendTransaction() properly handles Mobile Wallet Adapter's deep linking flow
       // ============================================================================
       
       const preInstructions: TransactionInstruction[] = [];
@@ -918,11 +919,12 @@ export default function MintPage() {
       preInstructions.push(createLockedAtaIx);
       console.log('Added locked token ATA creation instruction');
 
-      // 3. Use Anchor's .rpc() for registration (mobile-compatible)
-      console.log('📝 Sending registration transaction via Anchor .rpc()...');
+      // 3. Build transaction using Anchor's .transaction() (mobile-compatible)
+      console.log('📝 Building registration transaction...');
 
       try {
-        const tx = await program.methods
+        // Build the transaction using Anchor
+        const transaction = await program.methods
           .initializeUser(
             referrerPubkey ?? PublicKey.default,
             new anchor.BN(now),
@@ -943,10 +945,47 @@ export default function MintPage() {
             systemProgram: SystemProgram.programId,
           })
           .preInstructions(preInstructions)  // Add ATA creation as pre-instructions
-          .rpc();  // Use .rpc() instead of manual transaction building
+          .transaction();  // Get transaction object instead of sending via .rpc()
         
-        console.log('✅ Registration successful!', tx);
-        setTxSignature(tx);
+        // Get latest blockhash (use 'finalized' for mobile wallet compatibility)
+        // Mobile wallet deep linking may introduce delays, so use a more durable blockhash
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = publicKey;
+
+        console.log('📝 Sending registration transaction via wallet.sendTransaction()...');
+
+        // Use wallet adapter's sendTransaction (mobile-compatible)
+        let signature: string;
+        try {
+          signature = await wallet.sendTransaction(transaction, connection, {
+            skipPreflight: false,
+            maxRetries: 3,
+          });
+        } catch (sendErr: any) {
+          // Provide helpful error messages for mobile wallet issues
+          if (sendErr?.message?.includes('User rejected') || sendErr?.message?.includes('user rejected')) {
+            throw new Error('Transaction cancelled: You rejected the transaction in your wallet.');
+          }
+          if (sendErr?.message?.includes('timeout') || sendErr?.message?.includes('Timeout')) {
+            throw new Error('Transaction timeout: Please ensure your wallet app is open and try again.');
+          }
+          // Re-throw original error if not a known mobile wallet issue
+          throw sendErr;
+        }
+
+        console.log('📤 Transaction sent:', signature);
+        console.log('⏳ Confirming transaction...');
+
+        // Confirm the transaction
+        await connection.confirmTransaction({
+          signature,
+          blockhash,
+          lastValidBlockHeight,
+        }, 'confirmed');
+
+        console.log('✅ Registration successful!', signature);
+        setTxSignature(signature);
         setRegistered(true);
 
         // Note: Registration is now persisted on-chain only. No database storage needed.
@@ -982,8 +1021,8 @@ export default function MintPage() {
 
         await checkUserRegistration();
       } catch (sendTxErr: any) {
-        // Enhanced error logging for Anchor .rpc() failures
-        console.error('❌ Anchor .rpc() failed during registration:', sendTxErr);
+        // Enhanced error logging for wallet.sendTransaction() failures
+        console.error('❌ wallet.sendTransaction() failed during registration:', sendTxErr);
         console.error('Error details:', {
           message: sendTxErr?.message,
           name: sendTxErr?.name,
