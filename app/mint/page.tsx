@@ -55,7 +55,6 @@ import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
 import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrationCheck';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
-import { sendTransactionWithSign } from '@/utils/transactionSender';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -722,17 +721,13 @@ export default function MintPage() {
 
     try {
       console.log('📝 Starting registration...');
-      console.log('- Wallet connected:', wallet.connected);
-      console.log('- Public key:', publicKey.toBase58());
-      console.log('- Account type:', accountType);
-      console.log('- Referrer:', referrer || 'None');
-      console.log('- User Account PDA:', userAccountPDA.toBase58());
-      
-      console.log('Creating registration transaction...');
-      console.log('Wallet connected:', wallet.connected);
-      console.log('Public key:', publicKey.toBase58());
-      console.log('Account type:', accountType);
-      console.log('Referrer:', referrer || 'None');
+      console.log('  - Wallet connected:', wallet.connected);
+      console.log('  - Public key:', publicKey.toBase58());
+      console.log('  - Account type:', accountType);
+      console.log('  - Referrer:', referrer || 'None');
+      console.log('  - Wallet adapter name:', wallet.adapter?.name || 'Unknown');
+      console.log('  - Wallet has signTransaction:', !!wallet.signTransaction);
+      console.log('  - Wallet has sendTransaction:', !!wallet.sendTransaction);
       
       // Check if public key has already been registered (prevent duplicate registrations)
       // Use onchain check as source of truth, with localStorage for fast client-side validation
@@ -860,9 +855,9 @@ export default function MintPage() {
       // ============================================================================
       // BUILD BUNDLED TRANSACTION USING WALLET ADAPTER
       // Bundle ATA creations + registration in a single atomic transaction
-      // Uses Anchor's .preInstructions() + sendTransactionWithSign() for mobile wallet compatibility
-      // sendTransactionWithSign() properly handles Mobile Wallet Adapter's deep linking flow
-      // by explicitly signing first, then sending the signed transaction
+      // Uses Anchor's .preInstructions() + wallet.sendTransaction() for mobile wallet compatibility
+      // wallet.sendTransaction() properly handles Mobile Wallet Adapter's deep linking flow
+      // by internally calling transact() which triggers the deep link to open wallet app
       // ============================================================================
       
       const preInstructions: TransactionInstruction[] = [];
@@ -968,56 +963,46 @@ export default function MintPage() {
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = publicKey;
 
-        console.log('📝 Sending registration transaction via sendTransactionWithSign...');
-        console.log('   This utility handles mobile wallet signing correctly');
-        
-        console.log('📝 Calling sendTransactionWithSign...');
-        console.log('- Wallet has signTransaction:', !!wallet.signTransaction);
-        console.log('- Wallet has sendTransaction:', !!wallet.sendTransaction);
+        console.log('📝 Sending transaction via wallet.sendTransaction()...');
+        console.log('  - This will open Phantom app for approval on mobile');
+        console.log('  - Wallet adapter:', wallet.adapter?.name || 'Unknown');
 
-        // Use sendTransactionWithSign utility (mobile-compatible)
-        // This signs the transaction first, then sends it - fixing mobile wallet signature issues
-        let signature: string;
-        let method: 'sign' | 'send';
-        try {
-          const result = await sendTransactionWithSign(
-            wallet,
-            transaction,
-            connection,
-            {
-              skipPreflight: false,
-              maxRetries: 3,
-            }
-          );
-          signature = result.signature;
-          method = result.method;
-        } catch (sendErr: any) {
-          // Provide helpful error messages for mobile wallet issues
-          if (sendErr?.message?.includes('User rejected') || sendErr?.message?.includes('user rejected')) {
-            throw new Error('Transaction cancelled: You rejected the transaction in your wallet.');
-          }
-          if (sendErr?.message?.includes('timeout') || sendErr?.message?.includes('Timeout')) {
-            throw new Error('Transaction timeout: Please ensure your wallet app is open and try again.');
-          }
-          // Re-throw original error if not a known mobile wallet issue
-          throw sendErr;
+        // Use SAME method as minting (lines 1551-1580)
+        const signature = await wallet.sendTransaction(transaction, connection, {
+          skipPreflight: false,
+          maxRetries: 3,
+        });
+
+        console.log('✅ Transaction sent successfully');
+        console.log('  - Signature:', signature);
+        console.log('  - Explorer:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
+
+        // Verify signature was returned
+        if (!signature || signature.length === 0) {
+          throw new Error('Transaction sent but no signature returned');
         }
 
-        console.log(`✅ Transaction sent via ${method} method:`, signature);
         console.log('⏳ Confirming transaction...');
 
-        // Confirm the transaction
-        await connection.confirmTransaction({
-          signature,
-          blockhash,
-          lastValidBlockHeight,
-        }, 'confirmed');
+        // Get latest blockhash for confirmation
+        const { blockhash: confirmBlockhash, lastValidBlockHeight: confirmLastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+
+        // Wait for confirmation
+        await connection.confirmTransaction(
+          {
+            signature,
+            blockhash: confirmBlockhash,
+            lastValidBlockHeight: confirmLastValidBlockHeight,
+          },
+          'confirmed'
+        );
+
+        console.log('✅ Transaction confirmed on-chain');
 
         console.log('✅ Registration successful!', signature);
         console.log('🎉 Registration completed successfully');
-        console.log('- Signature:', signature);
-        console.log('- Method used:', method);
-        console.log('- Explorer URL:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
+        console.log('  - Signature:', signature);
+        console.log('  - Explorer URL:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
         setTxSignature(signature);
         setRegistered(true);
 
@@ -1053,19 +1038,15 @@ export default function MintPage() {
         }
 
         await checkUserRegistration();
-      } catch (sendTxErr: any) {
-        // Enhanced error logging for sendTransactionWithSign() failures
-        console.error('❌ sendTransactionWithSign() failed during registration:', sendTxErr);
-        console.error('Error details:', {
-          message: sendTxErr?.message,
-          name: sendTxErr?.name,
-          code: sendTxErr?.code,
-          logs: sendTxErr?.logs,
-        });
-        throw sendTxErr; // Re-throw to be caught by outer catch block
+      } catch (txErr: any) {
+        // Transaction building or sending failed
+        console.error('❌ Transaction failed:', txErr);
+        throw txErr; // Re-throw to be caught by outer catch block
       }
     } catch (err: unknown) {
-      console.error('Registration error:', err);
+      console.error('❌ Registration failed:', err);
+      console.error('  - Error name:', (err as any)?.name);
+      console.error('  - Error message:', (err as any)?.message);
       
       // Try to extract Anchor log if it's a SendTransactionError
       let errorMessage = err instanceof Error ? err.message : 'Registration failed';
@@ -1094,36 +1075,67 @@ export default function MintPage() {
       }
       
       // ✅ Provide specific error messages based on error type
-      if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
-        errorMessage = '❌ Insufficient SOL balance. You need at least 0.1 SOL for registration fees. Please add SOL to your wallet and try again.';
-      } else if (errorMessage.includes('Signature verification failed') || errorMessage.includes('Missing signature')) {
+      // User cancelled in wallet app
+      if (errorMessage.includes('User rejected') || 
+          errorMessage.includes('rejected the request') ||
+          errorMessage.includes('cancelled')) {
         errorMessage = 
-          '❌ Signature Failed: The wallet app did not complete the signature.\n\n' +
-          '📱 For mobile users:\n' +
-          '1. Keep the wallet app OPEN after approving\n' +
-          '2. Wait for automatic return to browser\n' +
-          '3. Do NOT manually close the wallet app\n\n' +
-          'If issue persists, try:\n' +
-          '• Restart the wallet app\n' +
-          '• Clear browser cache\n' +
-          '• Use a different browser';
-      } else if (errorMessage.includes('User rejected') || errorMessage.includes('User denied')) {
-        errorMessage = '❌ Transaction rejected. Please approve the transaction in your wallet to continue.';
-      } else if (errorMessage.includes('0x0') || errorMessage.includes('already in use')) {
+          '❌ Transaction Cancelled\n\n' +
+          'You rejected the transaction in your wallet app.\n\n' +
+          'Please try again and approve the transaction to complete registration.';
+      }
+      // Network or confirmation errors
+      else if (errorMessage.includes('blockhash not found') || 
+               errorMessage.includes('Transaction expired')) {
+        errorMessage = 
+          '❌ Transaction Expired\n\n' +
+          'The transaction took too long to confirm.\n\n' +
+          'This usually happens due to network congestion.\n' +
+          'Please try again.';
+      }
+      // Wallet connection issues
+      else if (errorMessage.includes('Wallet not connected') ||
+               errorMessage.includes('wallet is not ready')) {
+        errorMessage = 
+          '❌ Wallet Disconnected\n\n' +
+          'Your wallet connection was lost.\n\n' +
+          'Please reconnect your wallet and try again.';
+      }
+      // Insufficient funds
+      else if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
+        errorMessage = '❌ Insufficient SOL balance. You need at least 0.1 SOL for registration fees. Please add SOL to your wallet and try again.';
+      }
+      // Account already exists
+      else if (errorMessage.includes('0x0') || errorMessage.includes('already in use')) {
         errorMessage = '❌ Account already exists. You may already be registered. Try refreshing the page.';
-      } else if (errorMessage.includes('blockhash') || errorMessage.includes('timeout')) {
-        errorMessage = '❌ Network timeout. Please check your connection and try again.';
-      } else if (errorMessage.includes('Simulation failed') || errorMessage.includes('simulation failed')) {
+      }
+      // Simulation failures
+      else if (errorMessage.includes('Simulation failed') || errorMessage.includes('simulation failed')) {
         errorMessage = '❌ Transaction simulation failed. This may be due to insufficient SOL or invalid referral code. Please check and try again.';
-      } else if (errorMessage.includes('ConstraintMut') || errorMessage.includes('2000')) {
+      }
+      // Constraint violations
+      else if (errorMessage.includes('ConstraintMut') || errorMessage.includes('2000')) {
         errorMessage = '❌ Account constraint violation. Please ensure you have the latest app version and try again.';
-      } else if (errorMessage.includes('0x66') || errorMessage.includes('InstructionDidNotDeserialize')) {
+      }
+      // Instruction deserialization
+      else if (errorMessage.includes('0x66') || errorMessage.includes('InstructionDidNotDeserialize')) {
         errorMessage = '❌ Instruction format mismatch. Please refresh the page and try again.';
-      } else if (totalUsers >= REFERRAL_FREE_LIMIT && !referrer) {
+      }
+      // Referral required
+      else if (totalUsers >= REFERRAL_FREE_LIMIT && !referrer) {
         errorMessage = `❌ A referral code is required after the first ${REFERRAL_FREE_LIMIT} users. Please enter a valid referral code.`;
-      } else if (!errorMessage.startsWith('❌')) {
-        // Add generic error prefix if not already present
-        errorMessage = `❌ Registration failed: ${errorMessage}. Please try again or contact support if the issue persists.`;
+      }
+      // Generic error with technical details
+      else if (!errorMessage.startsWith('❌')) {
+        errorMessage = 
+          `❌ Registration Failed: ${errorMessage}\n\n` +
+          'If this issue persists, please try:\n' +
+          '• Restart your wallet app\n' +
+          '• Clear browser cache\n' +
+          '• Use a different browser\n\n' +
+          'Technical details:\n' +
+          `Error: ${(err as any)?.name || 'Error'}\n` +
+          `Message: ${errorMessage}`;
       }
       
       setError(errorMessage);
