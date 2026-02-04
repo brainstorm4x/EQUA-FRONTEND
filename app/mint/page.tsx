@@ -725,7 +725,6 @@ export default function MintPage() {
       console.log('  - Public key:', publicKey.toBase58());
       console.log('  - Account type:', accountType);
       console.log('  - Referrer:', referrer || 'None');
-      console.log('  - Wallet adapter name:', wallet.adapter?.name || 'Unknown');
       console.log('  - Wallet has signTransaction:', !!wallet.signTransaction);
       console.log('  - Wallet has sendTransaction:', !!wallet.sendTransaction);
       
@@ -965,7 +964,6 @@ export default function MintPage() {
 
         console.log('📝 Sending transaction via wallet.sendTransaction()...');
         console.log('  - This will open Phantom app for approval on mobile');
-        console.log('  - Wallet adapter:', wallet.adapter?.name || 'Unknown');
 
         // Use SAME method as minting (lines 1551-1580)
         const signature = await wallet.sendTransaction(transaction, connection, {
