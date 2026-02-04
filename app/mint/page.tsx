@@ -965,7 +965,7 @@ export default function MintPage() {
         console.log('📝 Sending transaction via wallet.sendTransaction()...');
         console.log('  - This will open Phantom app for approval on mobile');
 
-        // Use SAME method as minting (lines 1551-1580)
+        // Use SAME method as minting (see handleMint function below)
         const signature = await wallet.sendTransaction(transaction, connection, {
           skipPreflight: false,
           maxRetries: 3,
