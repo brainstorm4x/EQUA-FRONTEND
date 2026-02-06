@@ -30,8 +30,8 @@ export function isMobileBrowser(): boolean {
     return false;
   }
   
-  // Check 1: User agent string
-  const userAgentIsMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  // Check 1: User agent string (includes common mobile platforms)
+  const userAgentIsMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Windows Phone|KaiOS/i.test(navigator.userAgent);
   
   // Check 2: Touch points (mobile devices typically have > 0)
   const hasTouchPoints = navigator.maxTouchPoints > 0;
@@ -161,8 +161,9 @@ export async function sendTransactionWithSign(
   // If mobile but sendTransaction not available, throw error (don't fall through to signTransaction)
   if (isMobile && !wallet.sendTransaction) {
     throw new Error(
-      'Mobile wallet does not support sendTransaction. ' +
-      'Please use a wallet with Mobile Wallet Adapter support (e.g., Phantom, Solflare).'
+      'Your mobile wallet does not support the required sendTransaction method. ' +
+      'Please use a wallet with full Mobile Wallet Adapter support (e.g., Phantom, Solflare) ' +
+      'or try accessing from a desktop browser.'
     );
   }
   
