@@ -2,11 +2,27 @@
  * Transaction Sender Utility
  * 
  * Provides robust transaction sending for mobile and desktop wallets.
- * Implements a sign-first approach that is compatible with Phantom mobile
- * and other wallet adapters that may have issues with sendTransaction.
+ * - Mobile browsers: Prefers wallet.sendTransaction() for atomic Mobile Wallet Adapter flow
+ * - Desktop browsers: Prefers wallet.signTransaction() + connection.sendRawTransaction()
+ * 
+ * This routing prevents signature verification failures on mobile caused by browser
+ * context loss during wallet app deep-linking.
  */
 
 import { Connection, Transaction, TransactionSignature } from '@solana/web3.js';
+
+/**
+ * Detects if the current environment is a mobile browser.
+ * Used to determine the optimal transaction sending method.
+ * 
+ * @returns true if running in a mobile browser (Android, iOS, etc.)
+ */
+export function isMobileBrowser(): boolean {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return false;
+  }
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
 
 /**
  * Wallet interface representing the minimal wallet adapter methods needed
@@ -35,12 +51,19 @@ export interface SendTransactionResult {
 }
 
 /**
- * Sends a transaction using the most reliable method available:
- * 1. Prefer wallet.signTransaction (mobile-compatible)
- * 2. Fallback to wallet.sendTransaction (for wallets without signTransaction)
+ * Sends a transaction using the optimal method for the current browser environment:
  * 
- * This approach ensures compatibility with Phantom mobile deep-link signing
- * while maintaining backward compatibility with desktop wallets.
+ * **Mobile browsers:**
+ * 1. Prefer wallet.sendTransaction() - uses Mobile Wallet Adapter's atomic transact() flow
+ *    (sign + submit happen inside wallet app, avoiding browser context loss)
+ * 2. NO fallback to signTransaction (would fail with same deep-link issues)
+ * 
+ * **Desktop browsers:**
+ * 1. Prefer wallet.signTransaction() + connection.sendRawTransaction()
+ * 2. Fallback to wallet.sendTransaction() (for wallets without signTransaction)
+ * 
+ * This routing prevents "Signature verification failed" errors on mobile caused by
+ * browser suspension/reload during wallet app deep-linking.
  * 
  * @param wallet - Wallet adapter instance
  * @param transaction - Prepared transaction (must have feePayer and recentBlockhash set)
@@ -78,6 +101,51 @@ export async function sendTransactionWithSign(
     preflightCommitment: options.preflightCommitment,
   };
   
+  const isMobile = isMobileBrowser();
+  
+  // MOBILE PATH: Prefer sendTransaction for atomic Mobile Wallet Adapter flow
+  // On mobile, wallet.sendTransaction() uses transact() which handles sign + submit
+  // atomically inside the wallet app, avoiding browser context loss during deep-linking
+  if (isMobile && wallet.sendTransaction) {
+    console.log('📱 Mobile browser detected — using wallet.sendTransaction (Mobile Wallet Adapter atomic flow)');
+    
+    try {
+      const signature = await wallet.sendTransaction(
+        transaction,
+        connection,
+        sendOptions
+      );
+      
+      console.log('✅ Transaction submitted via sendTransaction (mobile):', signature);
+      
+      return {
+        signature,
+        method: 'send',
+      };
+    } catch (sendError: any) {
+      console.error('❌ sendTransaction failed on mobile:', sendError);
+      console.error('Error details:', {
+        message: sendError?.message,
+        name: sendError?.name,
+        code: sendError?.code,
+        logs: sendError?.logs,
+      });
+      
+      // Re-throw the error with context
+      throw new Error(
+        `Failed to send transaction on mobile: ${sendError?.message || 'Unknown error'}`
+      );
+    }
+  }
+  
+  // If mobile but sendTransaction not available, throw error (don't fall through to signTransaction)
+  if (isMobile && !wallet.sendTransaction) {
+    throw new Error(
+      'Mobile wallet does not support sendTransaction. ' +
+      'Please use a wallet with Mobile Wallet Adapter support (e.g., Phantom, Solflare).'
+    );
+  }
+  
   /**
    * Wrap wallet.signTransaction with timeout protection to detect if wallet app doesn't return
    */
@@ -93,9 +161,9 @@ export async function sendTransactionWithSign(
     ]);
   };
 
-  // Path 1: Prefer signTransaction (mobile-compatible, more reliable)
+  // DESKTOP PATH: Prefer signTransaction + sendRawTransaction (existing behavior)
   if (wallet.signTransaction) {
-    console.log('🔐 Using wallet.signTransaction (preferred method for mobile compatibility)');
+    console.log('🖥️  Desktop browser — using wallet.signTransaction + connection.sendRawTransaction');
     
     try {
       // Sign the transaction with timeout protection
@@ -139,7 +207,7 @@ export async function sendTransactionWithSign(
         }
       );
       
-      console.log('📤 Transaction submitted via signTransaction:', signature);
+      console.log('✅ Transaction submitted via signTransaction (desktop):', signature);
       
       return {
         signature,
@@ -160,9 +228,9 @@ export async function sendTransactionWithSign(
     }
   }
   
-  // Path 2: Fallback to sendTransaction (for wallets without signTransaction)
+  // DESKTOP FALLBACK: Use sendTransaction (for wallets without signTransaction)
   if (wallet.sendTransaction) {
-    console.log('📤 Using wallet.sendTransaction (fallback method)');
+    console.log('🖥️  Desktop browser — using wallet.sendTransaction (fallback)');
     
     try {
       const signature = await wallet.sendTransaction(
@@ -171,7 +239,7 @@ export async function sendTransactionWithSign(
         sendOptions
       );
       
-      console.log('📤 Transaction submitted via sendTransaction:', signature);
+      console.log('✅ Transaction submitted via sendTransaction (desktop fallback):', signature);
       
       return {
         signature,
