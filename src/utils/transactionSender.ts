@@ -15,13 +15,32 @@ import { Connection, Transaction, TransactionSignature } from '@solana/web3.js';
  * Detects if the current environment is a mobile browser.
  * Used to determine the optimal transaction sending method.
  * 
+ * Uses multiple detection strategies for reliability:
+ * - User agent string (can be spoofed but widely supported)
+ * - Touch points (reliable indicator of mobile devices)
+ * - Pointer type (coarse = touch, fine = mouse)
+ * 
  * @returns true if running in a mobile browser (Android, iOS, etc.)
  */
 export function isMobileBrowser(): boolean {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return false;
   }
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  // Check 1: User agent string
+  const userAgentIsMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  // Check 2: Touch points (mobile devices typically have > 0)
+  const hasTouchPoints = navigator.maxTouchPoints > 0;
+  
+  // Check 3: Pointer type (coarse = touch-based, typically mobile)
+  const hasCoarsePointer = typeof window !== 'undefined' && 
+    window.matchMedia && 
+    window.matchMedia('(pointer: coarse)').matches;
+  
+  // Return true if any mobile indicator is present
+  // This is more inclusive but reduces false negatives on actual mobile devices
+  return userAgentIsMobile || (hasTouchPoints && hasCoarsePointer);
 }
 
 /**

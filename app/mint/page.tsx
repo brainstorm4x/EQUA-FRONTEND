@@ -959,12 +959,13 @@ export default function MintPage() {
         
         // Use 'confirmed' on mobile for a fresher blockhash that survives the deep-link round-trip
         // 'finalized' is already ~32 slots old and can expire during the mobile app-switch delay
-        const commitmentLevel = isMobileBrowser() ? 'confirmed' : 'finalized';
+        const isMobile = isMobileBrowser();
+        const commitmentLevel = isMobile ? 'confirmed' : 'finalized';
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(commitmentLevel);
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = publicKey;
 
-        console.log(`📝 Blockhash fetched with '${commitmentLevel}' commitment (mobile: ${isMobileBrowser() ? 'yes' : 'no'})`);
+        console.log(`📝 Blockhash fetched with '${commitmentLevel}' commitment (mobile: ${isMobile ? 'yes' : 'no'})`);
         console.log('📝 Sending registration transaction via sendTransactionWithSign...');
         console.log('  - This will open wallet app for approval on mobile');
 
