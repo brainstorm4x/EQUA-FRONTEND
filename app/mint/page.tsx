@@ -923,14 +923,12 @@ export default function MintPage() {
       preInstructions.push(createLockedAtaIx);
       console.log('Added locked token ATA creation instruction');
 
-      // 3. Build transaction manually using Anchor's .instruction() (mobile-compatible)
-      // Manual transaction building ensures feePayer is properly initialized in the signatures array
+      // 3. Build transaction using Anchor's .transaction() (mobile-compatible)
       console.log('📝 Building registration transaction...');
 
       try {
-        // Get the Anchor instruction (not the full transaction)
-        // This allows us to build the transaction manually with proper feePayer initialization
-        const initializeUserInstruction = await program.methods
+        // Build the transaction using Anchor
+        const transaction = await program.methods
           .initializeUser(
             referrerPubkey ?? PublicKey.default,
             new anchor.BN(now),
@@ -950,14 +948,14 @@ export default function MintPage() {
             tokenProgram: TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
           })
-          .instruction();  // Get instruction only, not transaction
+          .preInstructions(preInstructions)  // Add ATA creation as pre-instructions
+          .transaction();  // Get transaction object instead of sending via .rpc()
         
-        // Build transaction manually with proper initialization
-        const transaction = new Transaction();
-        
-        // Add all instructions in order
-        transaction.add(...preInstructions);
-        transaction.add(initializeUserInstruction);
+        console.log('📝 Transaction built successfully');
+        console.log('- Fee payer:', transaction.feePayer?.toBase58());
+        console.log('- Recent blockhash:', transaction.recentBlockhash);
+        console.log('- Instructions count:', transaction.instructions.length);
+        console.log('- Compute budget instruction:', preInstructions.length > 0 ? 'Added' : 'Not added');
         
         // Use 'confirmed' on mobile for a fresher blockhash that survives the deep-link round-trip
         // 'finalized' blockhashes are confirmed ~32 slots behind the current tip, which combined
@@ -965,18 +963,8 @@ export default function MintPage() {
         const isMobile = isMobileBrowser();
         const commitmentLevel = isMobile ? 'confirmed' : 'finalized';
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(commitmentLevel);
-        
-        // Set transaction properties for signing
-        // Manual transaction building ensures proper initialization (vs Anchor's .transaction())
-        transaction.feePayer = publicKey;
         transaction.recentBlockhash = blockhash;
-        
-        console.log('📝 Transaction built successfully');
-        console.log('- Fee payer:', transaction.feePayer?.toBase58());
-        console.log('- Recent blockhash:', transaction.recentBlockhash);
-        console.log('- Instructions count:', transaction.instructions.length);
-        console.log('- Signers count:', transaction.signatures.length);
-        console.log('- Compute budget instruction:', preInstructions.length > 0 ? 'Added' : 'Not added');
+        transaction.feePayer = publicKey;
 
         console.log(`📝 Blockhash fetched with '${commitmentLevel}' commitment (mobile: ${isMobile ? 'yes' : 'no'})`);
         console.log('📝 Sending registration transaction via sendTransactionWithSign...');
