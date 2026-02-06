@@ -55,7 +55,7 @@ import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
 import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrationCheck';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
-import { sendTransactionWithSign } from '@/utils/transactionSender';
+import { sendTransactionWithSign, isMobileBrowser } from '@/utils/transactionSender';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -957,12 +957,16 @@ export default function MintPage() {
         console.log('- Instructions count:', transaction.instructions.length);
         console.log('- Compute budget instruction:', preInstructions.length > 0 ? 'Added' : 'Not added');
         
-        // Get latest blockhash (use 'finalized' for mobile wallet compatibility)
-        // Mobile wallet deep linking may introduce delays, so use a more durable blockhash
-        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+        // Use 'confirmed' on mobile for a fresher blockhash that survives the deep-link round-trip
+        // 'finalized' blockhashes are confirmed ~32 slots behind the current tip, which combined
+        // with mobile app-switch delays can cause expiration before the transaction is processed
+        const isMobile = isMobileBrowser();
+        const commitmentLevel = isMobile ? 'confirmed' : 'finalized';
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(commitmentLevel);
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = publicKey;
 
+        console.log(`📝 Blockhash fetched with '${commitmentLevel}' commitment (mobile: ${isMobile ? 'yes' : 'no'})`);
         console.log('📝 Sending registration transaction via sendTransactionWithSign...');
         console.log('  - This will open wallet app for approval on mobile');
 
