@@ -966,10 +966,9 @@ export default function MintPage() {
         const commitmentLevel = isMobile ? 'confirmed' : 'finalized';
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(commitmentLevel);
         
-        // Set feePayer FIRST - this properly initializes the signatures array
+        // Set transaction properties for signing
+        // Manual transaction building ensures proper initialization (vs Anchor's .transaction())
         transaction.feePayer = publicKey;
-        
-        // Then set blockhash
         transaction.recentBlockhash = blockhash;
         
         console.log('📝 Transaction built successfully');
