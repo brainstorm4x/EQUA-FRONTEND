@@ -958,7 +958,8 @@ export default function MintPage() {
         console.log('- Compute budget instruction:', preInstructions.length > 0 ? 'Added' : 'Not added');
         
         // Use 'confirmed' on mobile for a fresher blockhash that survives the deep-link round-trip
-        // 'finalized' is already ~32 slots old and can expire during the mobile app-switch delay
+        // 'finalized' blockhashes are confirmed ~32 slots behind the current tip, which combined
+        // with mobile app-switch delays can cause expiration before the transaction is processed
         const isMobile = isMobileBrowser();
         const commitmentLevel = isMobile ? 'confirmed' : 'finalized';
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(commitmentLevel);

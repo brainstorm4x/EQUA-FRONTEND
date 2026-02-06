@@ -161,9 +161,9 @@ export async function sendTransactionWithSign(
   // If mobile but sendTransaction not available, throw error (don't fall through to signTransaction)
   if (isMobile && !wallet.sendTransaction) {
     throw new Error(
-      'Your mobile wallet does not support the required sendTransaction method. ' +
-      'Please use a wallet with full Mobile Wallet Adapter support (e.g., Phantom, Solflare) ' +
-      'or try accessing from a desktop browser.'
+      'Your mobile wallet does not support sendTransaction, which is required for mobile browsers. ' +
+      'Please use a wallet with Mobile Wallet Adapter support (e.g., Phantom, Solflare) ' +
+      'or access from a desktop browser where alternative methods are available.'
     );
   }
   
