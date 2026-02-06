@@ -927,35 +927,52 @@ export default function MintPage() {
       console.log('📝 Building registration transaction...');
 
       try {
-        // Build the transaction using Anchor
-        const transaction = await program.methods
-          .initializeUser(
-            referrerPubkey ?? PublicKey.default,
-            new anchor.BN(now),
-            userType
-          )
-          .accounts({
-            authority: publicKey,
-            userAccount: userAccountPDA,
-            userMetadata: userMetadataPDA,
-            globalState: globalStatePDA,
-            referralAccount: referralAccountPubkey,
-            referrerMetadata: referrerMetadataPubkey,
-            userTokenAccount,
-            mint: mintPDA,
-            businessRegistry: businessRegistryPDA,
-            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId,
-          })
-          .preInstructions(preInstructions)  // Add ATA creation as pre-instructions
-          .transaction();  // Get transaction object instead of sending via .rpc()
+        // ============================================================================
+        // MANUAL INSTRUCTION BUILDING (bypasses Anchor's broken .transaction() method)
+        // This ensures transaction.signatures array is properly initialized
+        // ============================================================================
+        
+        console.log('📝 Building registration instruction manually...');
+        
+        const registerIx = createInitializeUserInstruction(
+          userAccountPDA,
+          userMetadataPDA,
+          publicKey,
+          globalStatePDA,
+          referralAccountPubkey,
+          referrerMetadataPubkey,
+          userTokenAccount,
+          mintPDA,
+          businessRegistryPDA,
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+          TOKEN_PROGRAM_ID,
+          now,
+          referrerPubkey ?? PublicKey.default,
+          accountTypeToUserType(accountType)
+        );
+        
+        // Log instruction metas for debugging (helps identify account order issues)
+        console.log('🧪 InitializeUser instruction metas (12 accounts):');
+        registerIx.keys.forEach((k: { pubkey: PublicKey; isWritable: boolean; isSigner: boolean }, i: number) => {
+          console.log(`  ${i}. ${k.pubkey.toBase58().slice(0, 8)}... writable=${k.isWritable} signer=${k.isSigner}`);
+        });
+        
+        // Build complete transaction with all instructions
+        const transaction = new Transaction();
+        transaction.add(...preInstructions);  // Compute budget + ATA creations
+        transaction.add(registerIx);          // Registration instruction
+        
+        // ⚠️ CRITICAL: Set feePayer BEFORE fetching blockhash
+        // This initializes transaction.signatures array with proper slots
+        transaction.feePayer = publicKey;
         
         console.log('📝 Transaction built successfully');
-        console.log('- Fee payer:', transaction.feePayer?.toBase58());
-        console.log('- Recent blockhash:', transaction.recentBlockhash);
+        console.log('- Fee payer:', transaction.feePayer.toBase58());
         console.log('- Instructions count:', transaction.instructions.length);
-        console.log('- Compute budget instruction:', preInstructions.length > 0 ? 'Added' : 'Not added');
+        console.log('  → Compute budget: 1');
+        console.log('  → User ATA creation: 1');
+        console.log('  → Locked ATA creation: 1');
+        console.log('  → Registration (initializeUser): 1');
         
         // Use 'confirmed' on mobile for a fresher blockhash that survives the deep-link round-trip
         // 'finalized' blockhashes are confirmed ~32 slots behind the current tip, which combined
@@ -964,7 +981,6 @@ export default function MintPage() {
         const commitmentLevel = isMobile ? 'confirmed' : 'finalized';
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(commitmentLevel);
         transaction.recentBlockhash = blockhash;
-        transaction.feePayer = publicKey;
 
         console.log(`📝 Blockhash fetched with '${commitmentLevel}' commitment (mobile: ${isMobile ? 'yes' : 'no'})`);
         console.log('📝 Sending registration transaction via sendTransactionWithSign...');
