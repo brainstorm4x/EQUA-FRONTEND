@@ -17,8 +17,11 @@ import { Connection, Transaction, TransactionSignature } from '@solana/web3.js';
  * 
  * Uses multiple detection strategies for reliability:
  * - User agent string (can be spoofed but widely supported)
- * - Touch points (reliable indicator of mobile devices)
- * - Pointer type (coarse = touch, fine = mouse)
+ * - Touch points + pointer type (reliable feature detection)
+ * 
+ * Returns true if EITHER:
+ * 1. User agent indicates mobile, OR
+ * 2. Device has touch points AND coarse pointer (feature-based detection)
  * 
  * @returns true if running in a mobile browser (Android, iOS, etc.)
  */
@@ -34,12 +37,10 @@ export function isMobileBrowser(): boolean {
   const hasTouchPoints = navigator.maxTouchPoints > 0;
   
   // Check 3: Pointer type (coarse = touch-based, typically mobile)
-  const hasCoarsePointer = typeof window !== 'undefined' && 
-    window.matchMedia && 
-    window.matchMedia('(pointer: coarse)').matches;
+  const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
   
-  // Return true if any mobile indicator is present
-  // This is more inclusive but reduces false negatives on actual mobile devices
+  // Return true if user agent indicates mobile OR if device has touch + coarse pointer
+  // This approach minimizes false negatives while being reasonably accurate
   return userAgentIsMobile || (hasTouchPoints && hasCoarsePointer);
 }
 
