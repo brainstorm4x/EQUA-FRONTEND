@@ -20,7 +20,6 @@ import {
   TOKEN_2022_PROGRAM_ADDRESS,
 } from '@/lib/constants';
 import { 
-  createInitializeUserInstruction,
   createMintEquaInstruction,
   createMintTokensInstruction,
   getUserMetadataPDA,
@@ -935,28 +934,35 @@ export default function MintPage() {
 
       try {
         // ============================================================================
-        // MANUAL INSTRUCTION BUILDING (bypasses Anchor's broken .transaction() method)
-        // This ensures transaction.signatures array is properly initialized
+        // BUILD REGISTRATION INSTRUCTION USING ANCHOR (mobile-compatible)
+        // This ensures correct signer flags and account ordering
         // ============================================================================
         
-        console.log('📝 Building registration instruction manually...');
+        console.log('📝 Building registration instruction via Anchor...');
         
-        const registerIx = createInitializeUserInstruction(
-          userAccountPDA,
-          userMetadataPDA,
-          publicKey,
-          globalStatePDA,
-          referralAccountPubkey,
-          referrerMetadataPubkey,
-          userTokenAccount,
-          mintPDA,
-          businessRegistryPDA,
-          ASSOCIATED_TOKEN_PROGRAM_ID,
-          TOKEN_PROGRAM_ID,
-          now,
-          referrerPubkey ?? PublicKey.default,
-          accountTypeToUserType(accountType)
-        );
+        const registerIx = await program!.methods
+          .initializeUser(
+            referrerPubkey ?? PublicKey.default,  // referral: PublicKey
+            new anchor.BN(now),                   // mint_start: i64
+            accountTypeToUserType(accountType)    // user_type: u8
+          )
+          .accounts({
+            userAccount: userAccountPDA,
+            userMetadata: userMetadataPDA,
+            authority: publicKey,
+            globalState: globalStatePDA,
+            referralAccount: referralAccountPubkey,
+            referrerMetadata: referrerMetadataPubkey,
+            userTokenAccount: userTokenAccount,
+            mint: mintPDA,
+            businessRegistry: businessRegistryPDA,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          })
+          .instruction();
+        
+        console.log('✅ Registration instruction built via Anchor (signer flags guaranteed correct)');
         
         // Log instruction metas for debugging (helps identify account order issues)
         console.log('🧪 InitializeUser instruction metas (12 accounts):');
