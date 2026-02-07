@@ -163,11 +163,10 @@ export async function sendTransactionWithSign(
     return await sendTransaction();
   } catch (error: any) {
     const message = error?.message ?? '';
-    const normalizedMessage = message.toLowerCase();
     const shouldFallback =
-      normalizedMessage.includes('missing signature') ||
-      normalizedMessage.includes('signature verification failed') ||
-      normalizedMessage.includes('wallet does not support sendtransaction');
+      message.includes('missing signature') ||
+      message.includes('Signature verification failed') ||
+      message.includes('Wallet does not support sendTransaction');
 
     if (shouldFallback && wallet.signTransaction) {
       try {
