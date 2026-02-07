@@ -1,6 +1,6 @@
 /**
  * Tests for Transaction Sender Utility
- * 
+ *
  * Validates the mobile-compatible transaction sending logic using wallet.sendTransaction().
  */
 
@@ -18,7 +18,7 @@ describe('sendTransactionWithSign', () => {
   let mockTransaction: Transaction;
   
   beforeEach(() => {
-    // Mock connection (sendRawTransaction not used in new implementation)
+    // Mock connection (sendRawTransaction used in fallback path)
     mockConnection = {} as any;
     
     // Create a valid transaction
@@ -33,7 +33,7 @@ describe('sendTransactionWithSign', () => {
   });
   
   describe('sendTransaction path (mobile-compatible)', () => {
-    it('should use sendTransaction exclusively', async () => {
+    it('should use sendTransaction by default', async () => {
       mockWallet = {
         connected: true,
         publicKey: MOCK_PUBLIC_KEY,
@@ -141,6 +141,71 @@ describe('sendTransactionWithSign', () => {
       ).rejects.toThrow('Network timeout');
     });
   });
+
+  describe('signTransaction fallback', () => {
+    it('should fall back to signTransaction when sendTransaction throws missing signature', async () => {
+      const mockSignedTx = new Transaction();
+      mockSignedTx.feePayer = MOCK_PUBLIC_KEY;
+      mockSignedTx.recentBlockhash = MOCK_BLOCKHASH;
+
+      mockWallet = {
+        connected: true,
+        publicKey: MOCK_PUBLIC_KEY,
+        sendTransaction: jest.fn().mockRejectedValue(new Error('missing signature for public key')),
+        signTransaction: jest.fn().mockResolvedValue(mockSignedTx),
+      };
+
+      mockConnection = {
+        sendRawTransaction: jest.fn().mockResolvedValue(MOCK_SIGNATURE),
+      } as any;
+
+      const result = await sendTransactionWithSign(
+        mockWallet,
+        mockTransaction,
+        mockConnection
+      );
+
+      expect(mockWallet.sendTransaction).toHaveBeenCalled();
+      expect(mockWallet.signTransaction).toHaveBeenCalledWith(mockTransaction);
+      expect(mockConnection.sendRawTransaction).toHaveBeenCalledWith(
+        mockSignedTx.serialize(),
+        expect.objectContaining({
+          skipPreflight: false,
+          preflightCommitment: 'confirmed',
+          maxRetries: 3,
+        })
+      );
+      expect(result.method).toBe('signTransaction');
+      expect(result.signature).toBe(MOCK_SIGNATURE);
+    });
+
+    it('should prefer signTransaction when preferSendTransaction is false', async () => {
+      const mockSignedTx = new Transaction();
+      mockSignedTx.feePayer = MOCK_PUBLIC_KEY;
+      mockSignedTx.recentBlockhash = MOCK_BLOCKHASH;
+
+      mockWallet = {
+        connected: true,
+        publicKey: MOCK_PUBLIC_KEY,
+        signTransaction: jest.fn().mockResolvedValue(mockSignedTx),
+      };
+
+      mockConnection = {
+        sendRawTransaction: jest.fn().mockResolvedValue(MOCK_SIGNATURE),
+      } as any;
+
+      const result = await sendTransactionWithSign(
+        mockWallet,
+        mockTransaction,
+        mockConnection,
+        { preferSendTransaction: false }
+      );
+
+      expect(mockWallet.signTransaction).toHaveBeenCalledWith(mockTransaction);
+      expect(mockConnection.sendRawTransaction).toHaveBeenCalled();
+      expect(result.method).toBe('signTransaction');
+    });
+  });
   
   describe('validation', () => {
     it('should throw error if wallet is not connected', async () => {
@@ -155,7 +220,7 @@ describe('sendTransactionWithSign', () => {
       ).rejects.toThrow('Wallet not connected');
     });
     
-    it('should throw error if wallet does not support sendTransaction', async () => {
+    it('should throw error if wallet does not support sendTransaction and no fallback', async () => {
       mockWallet = {
         connected: true,
         publicKey: MOCK_PUBLIC_KEY,
