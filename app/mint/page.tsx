@@ -978,6 +978,7 @@ export default function MintPage() {
         // ⚠️ CRITICAL: Set feePayer BEFORE fetching blockhash
         // This initializes transaction.signatures array with proper slots
         transaction.feePayer = publicKey;
+        transaction.setSigners(publicKey);
         
         console.log('📝 Transaction built successfully');
         console.log('- Fee payer:', transaction.feePayer.toBase58());
@@ -1000,7 +1001,7 @@ export default function MintPage() {
         console.log('  - This will open wallet app for approval on mobile');
 
         // Use sendTransactionWithSign for mobile wallet compatibility
-        // Prefers wallet.signTransaction (mobile-compatible) with fallback to wallet.sendTransaction
+        // Prefer signTransaction on mobile when available to avoid missing-signature errors
         const { signature, method } = await sendTransactionWithSign(
           wallet,
           transaction,
@@ -1008,6 +1009,7 @@ export default function MintPage() {
           {
             skipPreflight: false,
             maxRetries: 3,
+            preferSendTransaction: !(isMobile && !!wallet.signTransaction),
           }
         );
 
