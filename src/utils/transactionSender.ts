@@ -116,19 +116,59 @@ export async function sendTransactionWithSign(
   };
   
   // ============================================================================
-  // CRITICAL: Compile message to initialize signature slots
-  // Without this, transaction.signatures array is empty and signing fails
+  // CRITICAL: Compile message AND populate signatures array
+  // web3.js compileMessage() doesn't mutate transaction.signatures by default
+  // We must manually populate it from the compiled message
   // ============================================================================
   try {
-    transaction.compileMessage();
+    const message = transaction.compileMessage();
+    
     console.log('✅ Transaction message compiled');
-    console.log('  - Signature slots initialized:', transaction.signatures.length);
-    console.log('  - Required signers:', transaction.signatures.map((sig, i) => 
-      `${i}. ${sig.publicKey?.toBase58() || 'unknown'}`
-    ).join('\n    '));
+    console.log('  - Message header:', {
+      numRequiredSignatures: message.header.numRequiredSignatures,
+      numReadonlySignedAccounts: message.header.numReadonlySignedAccounts,
+      numReadonlyUnsignedAccounts: message.header.numReadonlyUnsignedAccounts,
+    });
+    
+    // Extract signers from the compiled message
+    const signerPublicKeys = message.accountKeys.slice(
+      0,
+      message.header.numRequiredSignatures
+    );
+    
+    console.log('  - Signers extracted from message:', signerPublicKeys.map(pk => pk.toBase58()));
+    
+    // Populate signatures array with null signatures for each required signer
+    transaction.signatures = signerPublicKeys.map(publicKey => ({
+      signature: null,
+      publicKey,
+    }));
+    
+    console.log('✅ Signature slots initialized:', transaction.signatures.length);
+    console.log('  - Required signers:');
+    transaction.signatures.forEach((sig, i) => {
+      console.log(`    ${i}. ${sig.publicKey.toBase58()} - ${sig.signature ? '✅ Signed' : '⏳ Awaiting signature'}`);
+    });
+    
+    // Validation: Ensure fee payer is in signatures array
+    const feePayerInSignatures = transaction.signatures.some(
+      sig => sig.publicKey.equals(transaction.feePayer!)
+    );
+    
+    if (!feePayerInSignatures) {
+      throw new Error(
+        `Fee payer ${transaction.feePayer!.toBase58()} is not in signatures array. ` +
+        `This indicates a transaction construction error.`
+      );
+    }
+    
+    console.log('✅ Fee payer verified in signatures array');
+    
   } catch (compileError) {
     console.error('❌ Failed to compile transaction message:', compileError);
-    throw new Error(`Transaction compilation failed: ${compileError instanceof Error ? compileError.message : 'Unknown error'}`);
+    throw new Error(
+      `Transaction compilation failed: ${compileError instanceof Error ? compileError.message : 'Unknown error'}`
+    );
   }
   
   // ============================================================================
