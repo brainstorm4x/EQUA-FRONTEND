@@ -40,7 +40,7 @@ describe('sendTransactionWithSign', () => {
       signedTransaction.signatures = [
         { 
           publicKey: MOCK_PUBLIC_KEY, 
-          signature: Buffer.from('sig'),
+          signature: Buffer.from([1, 2, 3, 4, 5]), // Non-zero signature
           // Ensure the mock matches the actual structure
         }
       ];
@@ -66,6 +66,12 @@ describe('sendTransactionWithSign', () => {
     
     it('should pass correct options to sendRawTransaction', async () => {
       const signedTransaction = new Transaction();
+      signedTransaction.signatures = [
+        { 
+          publicKey: MOCK_PUBLIC_KEY, 
+          signature: Buffer.from([1, 2, 3, 4, 5]), // Non-zero signature
+        }
+      ];
       signedTransaction.serialize = jest.fn().mockReturnValue(Buffer.from('serialized'));
       
       mockWallet = {
