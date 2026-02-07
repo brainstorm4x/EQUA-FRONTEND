@@ -700,6 +700,13 @@ export default function MintPage() {
   }, [publicKey, connection, mintPDA]);
 
   const handleRegisterWithForm = async (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => {
+    console.log('🚀🚀🚀 [MintPage] handleRegisterWithForm ENTRY POINT 🚀🚀🚀');
+    console.log('  - accountType:', accountType);
+    console.log('  - referrer:', referrer);
+    console.log('  - metadata:', metadata);
+    console.log('  - wallet.connected:', wallet.connected);
+    console.log('  - publicKey:', publicKey?.toBase58());
+
     if (!wallet.connected || !publicKey || !userAccountPDA) {
       setError('Wallet not connected');
       return;
