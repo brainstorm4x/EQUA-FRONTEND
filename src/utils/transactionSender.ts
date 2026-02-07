@@ -1,39 +1,25 @@
 /**
- * Transaction Sender Utility (Rewritten)
+ * Transaction Sender Utility
  * 
  * Provides universal transaction sending for mobile and desktop wallets.
- * Uses a sign-first approach that is compatible with all Solana wallet adapters.
+ * Uses wallet.sendTransaction() exclusively for mobile compatibility.
  * 
- * Key Principle: Always prefer signTransaction() for maximum compatibility.
+ * CRITICAL: Always uses wallet.sendTransaction() for mobile compatibility
+ * Mobile wallets (Phantom, Solflare) require full control over signing + submission
  */
 
 import { Connection, Transaction, TransactionSignature } from '@solana/web3.js';
+import type { WalletContextState } from '@solana/wallet-adapter-react';
 
 /**
- * Detects if the current environment is a mobile browser.
- * 
- * NOTE: This function is kept for backward compatibility with existing code that uses it
- * for non-transaction purposes (e.g., selecting blockhash commitment levels).
- * It is NO LONGER used for transaction routing - all wallets now use the same sign-first approach.
- * 
- * @returns true if running in a mobile browser (Android, iOS, etc.)
+ * Detect if running in mobile browser
+ * Used for mobile-specific optimizations and logging
  */
 export function isMobileBrowser(): boolean {
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
-    return false;
-  }
+  if (typeof window === 'undefined') return false;
   
-  // Check 1: User agent string (includes common mobile platforms)
-  const userAgentIsMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Windows Phone|KaiOS/i.test(navigator.userAgent);
-  
-  // Check 2: Touch points (mobile devices typically have > 0)
-  const hasTouchPoints = navigator.maxTouchPoints > 0;
-  
-  // Check 3: Pointer type (coarse = touch-based, typically mobile)
-  const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-  
-  // Return true if user agent indicates mobile OR if device has touch + coarse pointer
-  return userAgentIsMobile || (hasTouchPoints && hasCoarsePointer);
+  const ua = window.navigator.userAgent.toLowerCase();
+  return /android|iphone|ipad|ipod|mobile/i.test(ua);
 }
 
 /**
@@ -42,6 +28,8 @@ export function isMobileBrowser(): boolean {
  * @solana/wallet-adapter-react.
  */
 export interface WalletAdapter {
+  connected?: boolean;
+  publicKey?: { toBase58(): string } | null;
   signTransaction?: (transaction: Transaction) => Promise<Transaction>;
   sendTransaction?: (
     transaction: Transaction,
@@ -54,35 +42,26 @@ export interface SendOptions {
   skipPreflight?: boolean;
   maxRetries?: number;
   preflightCommitment?: 'processed' | 'confirmed' | 'finalized';
+  preferSendTransaction?: boolean;
 }
 
 export interface SendTransactionResult {
   signature: TransactionSignature;
-  /** Indicates which method was used: 'sign' or 'send' */
-  method: 'sign' | 'send';
+  /** Indicates which method was used: always 'sendTransaction' */
+  method: 'sendTransaction';
 }
 
 /**
- * Sends a transaction using the most reliable method available:
+ * Universal transaction sender for mobile and desktop wallets
  * 
- * **Preferred Method (99% of wallets):**
- * 1. wallet.signTransaction() - Sign in wallet app/extension
- * 2. connection.sendRawTransaction() - Submit signed transaction
+ * CRITICAL: Always uses wallet.sendTransaction() for mobile compatibility
+ * Mobile wallets (Phantom, Solflare) require full control over signing + submission
  * 
- * **Fallback Method (legacy wallets only):**
- * 1. wallet.sendTransaction() - Wallet handles sign + submit internally
- * 
- * This approach ensures compatibility with:
- * - Mobile wallets (Phantom Mobile, Solflare Mobile via deep-link signing)
- * - Desktop wallets (Phantom Extension, Solflare Extension)
- * - All Solana Mobile Wallet Adapter compatible wallets
- * 
- * @param wallet - Wallet adapter instance
+ * @param wallet - Wallet adapter context
  * @param transaction - Prepared transaction (must have feePayer and recentBlockhash set)
- * @param connection - Solana connection instance
- * @param options - Transaction send options
- * @returns Promise with signature and method used
- * @throws Error if wallet doesn't support either method or if validation fails
+ * @param connection - Solana connection
+ * @param options - Send options (skipPreflight, commitment, etc.)
+ * @returns Transaction signature
  */
 export async function sendTransactionWithSign(
   wallet: WalletAdapter,
@@ -90,197 +69,70 @@ export async function sendTransactionWithSign(
   connection: Connection,
   options: SendOptions = {}
 ): Promise<SendTransactionResult> {
-  // ============================================================================
-  // VALIDATION: Ensure transaction is properly prepared
-  // ============================================================================
+  console.log('📤 [TransactionSender] Starting transaction send...');
+  
+  // Validation
+  if (!wallet.connected || !wallet.publicKey) {
+    throw new Error('Wallet not connected');
+  }
+  
+  if (!wallet.sendTransaction) {
+    throw new Error('Wallet does not support sendTransaction');
+  }
+  
   if (!transaction.feePayer) {
-    throw new Error('Transaction validation failed: feePayer not set');
+    throw new Error('Transaction fee payer not set');
   }
   
   if (!transaction.recentBlockhash) {
-    throw new Error('Transaction validation failed: recentBlockhash not set');
+    throw new Error('Transaction recent blockhash not set');
   }
   
-  // Log transaction state (public keys only, no sensitive data)
-  console.log('📝 Transaction prepared for signing:', {
+  console.log('📝 Transaction prepared:', {
     feePayer: transaction.feePayer.toBase58(),
     recentBlockhash: transaction.recentBlockhash,
     instructionCount: transaction.instructions.length,
   });
   
-  // Default options
-  const sendOptions: SendOptions = {
-    skipPreflight: options.skipPreflight ?? false,
-    maxRetries: options.maxRetries ?? 3,
-    preflightCommitment: options.preflightCommitment,
-  };
+  // Use wallet.sendTransaction() exclusively for mobile + desktop compatibility
+  console.log('🔐 Using wallet.sendTransaction() (mobile-compatible)');
+  console.log('  - Wallet will sign, verify, and submit internally');
   
-  // ============================================================================
-  // CRITICAL: Compile message AND populate signatures array
-  // web3.js compileMessage() doesn't mutate transaction.signatures by default
-  // We must manually populate it from the compiled message
-  // ============================================================================
   try {
-    const message = transaction.compileMessage();
-    
-    console.log('✅ Transaction message compiled');
-    console.log('  - Message header:', {
-      numRequiredSignatures: message.header.numRequiredSignatures,
-      numReadonlySignedAccounts: message.header.numReadonlySignedAccounts,
-      numReadonlyUnsignedAccounts: message.header.numReadonlyUnsignedAccounts,
+    const signature = await wallet.sendTransaction(transaction, connection, {
+      skipPreflight: options.skipPreflight ?? false,
+      preflightCommitment: 'confirmed',
+      maxRetries: options.maxRetries ?? 3,
     });
     
-    // Extract signers from the compiled message
-    const signerPublicKeys = message.accountKeys.slice(
-      0,
-      message.header.numRequiredSignatures
-    );
+    console.log('✅ Transaction submitted successfully:', signature);
+    console.log('  - Method: wallet.sendTransaction()');
+    console.log('  - Signature:', signature);
     
-    console.log('  - Signers extracted from message:', signerPublicKeys.map(pk => pk.toBase58()));
+    return { signature, method: 'sendTransaction' };
     
-    // Populate signatures array with null signatures for each required signer
-    transaction.signatures = signerPublicKeys.map(publicKey => ({
-      signature: null,
-      publicKey,
-    }));
-    
-    console.log('✅ Signature slots initialized:', transaction.signatures.length);
-    console.log('  - Required signers:');
-    transaction.signatures.forEach((sig, i) => {
-      console.log(`    ${i}. ${sig.publicKey.toBase58()} - ${sig.signature ? '✅ Signed' : '⏳ Awaiting signature'}`);
+  } catch (error: any) {
+    console.error('❌ wallet.sendTransaction() failed:', error);
+    console.error('Error details:', {
+      message: error?.message,
+      name: error?.name,
+      logs: error?.logs,
     });
     
-    // Validation: Ensure fee payer is in signatures array
-    const feePayerInSignatures = transaction.signatures.some(
-      sig => sig.publicKey.equals(transaction.feePayer!)
-    );
-    
-    if (!feePayerInSignatures) {
-      throw new Error(
-        `Fee payer ${transaction.feePayer!.toBase58()} is not in signatures array. ` +
-        `This indicates a transaction construction error.`
-      );
+    // Enhanced error messages for common mobile wallet issues
+    if (error?.message?.includes('User rejected')) {
+      throw new Error('Transaction rejected by user in wallet');
     }
     
-    console.log('✅ Fee payer verified in signatures array');
-    
-  } catch (compileError) {
-    console.error('❌ Failed to compile transaction message:', compileError);
-    throw new Error(
-      `Transaction compilation failed: ${compileError instanceof Error ? compileError.message : 'Unknown error'}`
-    );
-  }
-  
-  // ============================================================================
-  // PATH 1 (PREFERRED): Use wallet.signTransaction() + connection.sendRawTransaction()
-  // This works for ALL modern wallets (mobile + desktop)
-  // ============================================================================
-  if (wallet.signTransaction) {
-    console.log('🔐 Using wallet.signTransaction() (universal method - mobile & desktop compatible)');
-    
-    try {
-      // Sign the transaction in the wallet (opens wallet app on mobile)
-      console.log('  - Requesting signature from wallet...');
-      const signedTransaction = await wallet.signTransaction(transaction);
-      
-      console.log('  - ✅ Transaction signed successfully');
-      console.log('🔍 Verifying signatures after wallet.signTransaction...');
-      console.log('  - Total signature slots:', signedTransaction.signatures.length);
-      
-      // Verify that the transaction was actually signed
-      let allSigned = true;
-      for (let i = 0; i < signedTransaction.signatures.length; i++) {
-        const sig = signedTransaction.signatures[i];
-        const hasSig = sig.signature !== null && sig.signature.length > 0 && sig.signature.some((byte: number) => byte !== 0);
-        console.log(`  - Signature ${i}: ${sig.publicKey?.toBase58()} - ${hasSig ? '✅ Signed' : '❌ Missing'}`);
-        if (!hasSig) {
-          allSigned = false;
-        }
-      }
-
-      if (!allSigned) {
-        throw new Error(
-          'Signature verification failed after wallet.signTransaction. ' +
-          'This may be due to the wallet app closing before completing the signature. ' +
-          'Please try again and ensure you approve the transaction in your wallet.'
-        );
-      }
-
-      console.log('✅ All signatures verified');
-      console.log('  - Submitting signed transaction to Solana network...');
-      
-      // Submit the signed transaction to the network
-      const signature = await connection.sendRawTransaction(
-        signedTransaction.serialize(),
-        {
-          skipPreflight: sendOptions.skipPreflight,
-          maxRetries: sendOptions.maxRetries,
-          preflightCommitment: sendOptions.preflightCommitment,
-        }
-      );
-      
-      console.log('✅ Transaction submitted successfully:', signature);
-      
-      return {
-        signature,
-        method: 'sign',
-      };
-    } catch (signError: any) {
-      console.error('❌ signTransaction() failed:', signError);
-      console.error('Error details:', {
-        message: signError?.message,
-        name: signError?.name,
-        code: signError?.code,
-      });
-      
-      // Re-throw with context
-      throw new Error(
-        `Failed to sign and send transaction: ${signError?.message || 'Unknown error'}`
-      );
+    if (error?.message?.includes('insufficient funds')) {
+      throw new Error('Insufficient SOL balance for transaction fees');
     }
-  }
-  
-  // ============================================================================
-  // PATH 2 (FALLBACK): Use wallet.sendTransaction()
-  // Only for legacy wallets that don't support signTransaction
-  // ============================================================================
-  if (wallet.sendTransaction) {
-    console.log('📤 Using wallet.sendTransaction() (fallback for legacy wallets)');
     
-    try {
-      const signature = await wallet.sendTransaction(
-        transaction,
-        connection,
-        sendOptions
-      );
-      
-      console.log('✅ Transaction submitted via sendTransaction():', signature);
-      
-      return {
-        signature,
-        method: 'send',
-      };
-    } catch (sendError: any) {
-      console.error('❌ sendTransaction() failed:', sendError);
-      console.error('Error details:', {
-        message: sendError?.message,
-        name: sendError?.name,
-        code: sendError?.code,
-        logs: sendError?.logs,
-      });
-      
-      // Re-throw with context
-      throw new Error(
-        `Failed to send transaction: ${sendError?.message || 'Unknown error'}`
-      );
+    if (error?.message?.includes('blockhash')) {
+      throw new Error('Transaction expired - please try again');
     }
+    
+    // Re-throw with original error for other cases
+    throw error;
   }
-  
-  // ============================================================================
-  // ERROR: Neither method is available
-  // ============================================================================
-  throw new Error(
-    'Wallet does not support transaction signing. ' +
-    'Please use a compatible wallet like Phantom or Solflare.'
-  );
 }
