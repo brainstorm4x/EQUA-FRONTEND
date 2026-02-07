@@ -35,6 +35,34 @@ describe('sendTransactionWithSign', () => {
   });
   
   describe('signTransaction path (preferred)', () => {
+    it('should compile transaction message before signing', async () => {
+      const signedTransaction = new Transaction();
+      signedTransaction.signatures = [
+        { 
+          publicKey: MOCK_PUBLIC_KEY, 
+          signature: Buffer.from([1, 2, 3, 4, 5]), // Non-zero signature
+        }
+      ];
+      signedTransaction.serialize = jest.fn().mockReturnValue(Buffer.from('serialized'));
+      
+      mockWallet = {
+        signTransaction: jest.fn().mockResolvedValue(signedTransaction),
+      };
+      
+      // Spy on compileMessage to verify it's called
+      const compileMessageSpy = jest.spyOn(mockTransaction, 'compileMessage');
+      
+      await sendTransactionWithSign(
+        mockWallet,
+        mockTransaction,
+        mockConnection
+      );
+      
+      // Verify compileMessage was called before signTransaction
+      expect(compileMessageSpy).toHaveBeenCalled();
+      expect(mockWallet.signTransaction).toHaveBeenCalledWith(mockTransaction);
+    });
+    
     it('should use signTransaction when available', async () => {
       const signedTransaction = new Transaction();
       signedTransaction.signatures = [
@@ -196,6 +224,17 @@ describe('sendTransactionWithSign', () => {
       await expect(
         sendTransactionWithSign(mockWallet, mockTransaction, mockConnection)
       ).rejects.toThrow('Transaction validation failed: recentBlockhash not set');
+    });
+    
+    it('should throw error if transaction compilation fails', async () => {
+      const compileError = new Error('Invalid transaction structure');
+      jest.spyOn(mockTransaction, 'compileMessage').mockImplementation(() => {
+        throw compileError;
+      });
+      
+      await expect(
+        sendTransactionWithSign(mockWallet, mockTransaction, mockConnection)
+      ).rejects.toThrow('Transaction compilation failed: Invalid transaction structure');
     });
     
     it('should throw error if wallet supports neither method', async () => {

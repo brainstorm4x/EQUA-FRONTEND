@@ -116,6 +116,22 @@ export async function sendTransactionWithSign(
   };
   
   // ============================================================================
+  // CRITICAL: Compile message to initialize signature slots
+  // Without this, transaction.signatures array is empty and signing fails
+  // ============================================================================
+  try {
+    transaction.compileMessage();
+    console.log('✅ Transaction message compiled');
+    console.log('  - Signature slots initialized:', transaction.signatures.length);
+    console.log('  - Required signers:', transaction.signatures.map((sig, i) => 
+      `${i}. ${sig.publicKey?.toBase58() || 'unknown'}`
+    ).join('\n    '));
+  } catch (compileError) {
+    console.error('❌ Failed to compile transaction message:', compileError);
+    throw new Error(`Transaction compilation failed: ${compileError instanceof Error ? compileError.message : 'Unknown error'}`);
+  }
+  
+  // ============================================================================
   // PATH 1 (PREFERRED): Use wallet.signTransaction() + connection.sendRawTransaction()
   // This works for ALL modern wallets (mobile + desktop)
   // ============================================================================
@@ -128,32 +144,29 @@ export async function sendTransactionWithSign(
       const signedTransaction = await wallet.signTransaction(transaction);
       
       console.log('  - ✅ Transaction signed successfully');
-      console.log('  - Verifying signature integrity...');
+      console.log('🔍 Verifying signatures after wallet.signTransaction...');
+      console.log('  - Total signature slots:', signedTransaction.signatures.length);
       
       // Verify that the transaction was actually signed
-      const hasValidSignature = signedTransaction.signatures.every((sig) => {
-        if (!sig.signature || sig.signature.length === 0) {
-          console.error('    ❌ Missing signature for:', sig.publicKey.toBase58());
-          return false;
+      let allSigned = true;
+      for (let i = 0; i < signedTransaction.signatures.length; i++) {
+        const sig = signedTransaction.signatures[i];
+        const hasSig = sig.signature !== null && sig.signature.length > 0 && sig.signature.some((byte: number) => byte !== 0);
+        console.log(`  - Signature ${i}: ${sig.publicKey?.toBase58()} - ${hasSig ? '✅ Signed' : '❌ Missing'}`);
+        if (!hasSig) {
+          allSigned = false;
         }
-        // Check if signature is not just zeros
-        const isNonZero = sig.signature.some(byte => byte !== 0);
-        if (!isNonZero) {
-          console.error('    ❌ Zero signature for:', sig.publicKey.toBase58());
-          return false;
-        }
-        return true;
-      });
+      }
 
-      if (!hasValidSignature) {
+      if (!allSigned) {
         throw new Error(
-          'Signature verification failed after wallet.signTransaction(). ' +
-          'The wallet may have been closed before completing the signature. ' +
-          'Please keep the wallet app open until you return to the browser.'
+          'Signature verification failed after wallet.signTransaction. ' +
+          'This may be due to the wallet app closing before completing the signature. ' +
+          'Please try again and ensure you approve the transaction in your wallet.'
         );
       }
 
-      console.log('  - ✅ All signatures verified');
+      console.log('✅ All signatures verified');
       console.log('  - Submitting signed transaction to Solana network...');
       
       // Submit the signed transaction to the network
