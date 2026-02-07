@@ -77,12 +77,13 @@ describe('sendTransactionWithSign', () => {
         }
       );
       
+      // Note: preflightCommitment is always overridden to 'confirmed' for reliability
       expect(mockWallet.sendTransaction).toHaveBeenCalledWith(
         mockTransaction,
         mockConnection,
         {
           skipPreflight: true,
-          preflightCommitment: 'confirmed', // Always uses confirmed
+          preflightCommitment: 'confirmed',
           maxRetries: 5,
         }
       );

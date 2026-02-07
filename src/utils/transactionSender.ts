@@ -9,7 +9,6 @@
  */
 
 import { Connection, Transaction, TransactionSignature } from '@solana/web3.js';
-import type { WalletContextState } from '@solana/wallet-adapter-react';
 
 /**
  * Detect if running in mobile browser
