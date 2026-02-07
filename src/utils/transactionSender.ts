@@ -2,9 +2,10 @@
  * Transaction Sender Utility
  * 
  * Provides universal transaction sending for mobile and desktop wallets.
- * Uses wallet.sendTransaction() exclusively for mobile compatibility.
- * 
- * CRITICAL: Always uses wallet.sendTransaction() for mobile compatibility
+ * Prefers wallet.sendTransaction() for mobile compatibility, with a fallback
+ * to signTransaction() + sendRawTransaction() when missing-signature errors occur.
+ *
+ * CRITICAL: Default path uses wallet.sendTransaction() for mobile compatibility
  * Mobile wallets (Phantom, Solflare) require full control over signing + submission
  */
 
@@ -46,14 +47,14 @@ export interface SendOptions {
 
 export interface SendTransactionResult {
   signature: TransactionSignature;
-  /** Indicates which method was used: always 'sendTransaction' */
-  method: 'sendTransaction';
+  /** Indicates which method was used */
+  method: 'sendTransaction' | 'signTransaction';
 }
 
 /**
  * Universal transaction sender for mobile and desktop wallets
  * 
- * CRITICAL: Always uses wallet.sendTransaction() for mobile compatibility
+ * CRITICAL: Uses wallet.sendTransaction() by default for mobile compatibility
  * Mobile wallets (Phantom, Solflare) require full control over signing + submission
  * 
  * @param wallet - Wallet adapter context
@@ -75,10 +76,6 @@ export async function sendTransactionWithSign(
     throw new Error('Wallet not connected');
   }
   
-  if (!wallet.sendTransaction) {
-    throw new Error('Wallet does not support sendTransaction');
-  }
-  
   if (!transaction.feePayer) {
     throw new Error('Transaction fee payer not set');
   }
@@ -93,45 +90,93 @@ export async function sendTransactionWithSign(
     instructionCount: transaction.instructions.length,
   });
   
-  // Use wallet.sendTransaction() exclusively for mobile + desktop compatibility
-  console.log('🔐 Using wallet.sendTransaction() (mobile-compatible)');
-  console.log('  - Wallet will sign, verify, and submit internally');
-  
-  try {
+  const sendTransaction = async (): Promise<SendTransactionResult> => {
+    if (!wallet.sendTransaction) {
+      throw new Error('Wallet does not support sendTransaction');
+    }
+
+    console.log('🔐 Using wallet.sendTransaction() (mobile-compatible)');
+    console.log('  - Wallet will sign, verify, and submit internally');
+
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: options.skipPreflight ?? false,
       preflightCommitment: 'confirmed',
       maxRetries: options.maxRetries ?? 3,
     });
-    
+
     console.log('✅ Transaction submitted successfully:', signature);
     console.log('  - Method: wallet.sendTransaction()');
     console.log('  - Signature:', signature);
-    
+
     return { signature, method: 'sendTransaction' };
-    
-  } catch (error: any) {
-    console.error('❌ wallet.sendTransaction() failed:', error);
+  };
+
+  const signAndSendRaw = async (): Promise<SendTransactionResult> => {
+    if (!wallet.signTransaction) {
+      throw new Error('Wallet does not support signTransaction');
+    }
+
+    console.log('🔐 Using wallet.signTransaction() + connection.sendRawTransaction()');
+
+    const signed = await wallet.signTransaction(transaction);
+    const signature = await connection.sendRawTransaction(signed.serialize(), {
+      skipPreflight: options.skipPreflight ?? false,
+      preflightCommitment: 'confirmed',
+      maxRetries: options.maxRetries ?? 3,
+    });
+
+    console.log('✅ Transaction submitted successfully:', signature);
+    console.log('  - Method: wallet.signTransaction()');
+    console.log('  - Signature:', signature);
+
+    return { signature, method: 'signTransaction' };
+  };
+
+  const enhanceAndThrow = (error: any): never => {
+    console.error('❌ Transaction send failed:', error);
     console.error('Error details:', {
       message: error?.message,
       name: error?.name,
       logs: error?.logs,
     });
-    
-    // Enhanced error messages for common mobile wallet issues
+
     if (error?.message?.includes('User rejected')) {
       throw new Error('Transaction rejected by user in wallet');
     }
-    
+
     if (error?.message?.includes('insufficient funds')) {
       throw new Error('Insufficient SOL balance for transaction fees');
     }
-    
+
     if (error?.message?.includes('blockhash')) {
       throw new Error('Transaction expired - please try again');
     }
-    
-    // Re-throw with original error for other cases
+
     throw error;
+  };
+
+  try {
+    if (options.preferSendTransaction === false) {
+      return await signAndSendRaw();
+    }
+
+    return await sendTransaction();
+  } catch (error: any) {
+    const message = error?.message ?? '';
+    const normalizedMessage = message.toLowerCase();
+    const shouldFallback =
+      normalizedMessage.includes('missing signature') ||
+      normalizedMessage.includes('signature verification failed') ||
+      normalizedMessage.includes('wallet does not support sendtransaction');
+
+    if (shouldFallback && wallet.signTransaction) {
+      try {
+        return await signAndSendRaw();
+      } catch (fallbackError: any) {
+        enhanceAndThrow(fallbackError);
+      }
+    }
+
+    enhanceAndThrow(error);
   }
 }
