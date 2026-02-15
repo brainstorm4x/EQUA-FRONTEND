@@ -42,7 +42,7 @@ export const MobileWalletProvider: FC<Props> = ({ children }) => {
         },
         authorizationResultCache:
           createDefaultAuthorizationResultCache(),
-        cluster: network,
+        chain: network,
         onWalletNotFound:
           createDefaultWalletNotFoundHandler(),
       }),

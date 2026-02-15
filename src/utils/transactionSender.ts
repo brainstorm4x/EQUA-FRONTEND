@@ -172,10 +172,10 @@ export async function sendTransactionWithSign(
       try {
         return await signAndSendRaw();
       } catch (fallbackError: any) {
-        enhanceAndThrow(fallbackError);
+        return enhanceAndThrow(fallbackError);
       }
     }
 
-    enhanceAndThrow(error);
+    return enhanceAndThrow(error);
   }
 }

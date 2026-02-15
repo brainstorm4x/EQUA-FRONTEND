@@ -218,7 +218,7 @@ describe('Wallet Provider Separation', () => {
       
       // Simulate mobile provider initialization
       const mobileAdapter = new SolanaMobileWalletAdapter({
-        cluster: 'devnet',
+        chain: 'devnet',
         appIdentity: {
           name: 'EQUA Token',
           uri: 'https://equa-frontend.netlify.app',
