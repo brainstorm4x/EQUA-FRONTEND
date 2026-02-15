@@ -188,7 +188,7 @@ export async function sendTransactionWithSign(
     throw error;
   };
 
-  // Track which transaction method we're using to prevent duplicate retries
+  // Track whether sendTransaction() was attempted to prevent duplicate retries
   let usedSendTransaction = false;
 
   try {
@@ -223,9 +223,9 @@ export async function sendTransactionWithSign(
     const message = error?.message ?? '';
     
     // ENHANCED FIX: Only fallback to signTransaction if:
-    // 1. sendTransaction() was actually attempted (usedSendTransaction = true)
-    // 2. The error is a signature verification failure
-    // 3. The wallet supports signTransaction as an alternative
+    // - sendTransaction() was actually attempted (usedSendTransaction = true)
+    // - The error is a signature verification failure
+    // - The wallet supports signTransaction as an alternative
     //
     // This prevents duplicate retries when signAndSendRaw() was the original failing method
     const shouldFallback =
