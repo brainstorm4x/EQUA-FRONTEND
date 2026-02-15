@@ -1,7 +1,10 @@
 /**
  * Tests for Transaction Sender Utility
  *
- * Validates the mobile-compatible transaction sending logic using wallet.sendTransaction().
+ * Validates the mobile-first transaction sending logic:
+ * - Mobile browsers: Use signTransaction() + sendRawTransaction()
+ * - Desktop browsers: Use sendTransaction() for convenience
+ * - Desktop fallback: signTransaction() on signature errors
  */
 
 import { Connection, Transaction, PublicKey } from '@solana/web3.js';
@@ -260,6 +263,213 @@ describe('sendTransactionWithSign', () => {
           maxRetries: 3,
         }
       );
+    });
+  });
+
+  describe('mobile browser detection', () => {
+    let originalNavigator: Navigator;
+    
+    beforeEach(() => {
+      // Save original navigator
+      originalNavigator = global.navigator;
+    });
+    
+    afterEach(() => {
+      // Restore original navigator
+      Object.defineProperty(global, 'navigator', {
+        value: originalNavigator,
+        writable: true,
+      });
+    });
+    
+    it('should use signTransaction on mobile browsers', async () => {
+      // Mock mobile user agent (complete iOS Safari user agent)
+      Object.defineProperty(global, 'navigator', {
+        value: { 
+          userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+        },
+        writable: true,
+      });
+      
+      const mockSignedTx = new Transaction();
+      mockSignedTx.feePayer = MOCK_PUBLIC_KEY;
+      mockSignedTx.recentBlockhash = MOCK_BLOCKHASH;
+      mockSignedTx.add({
+        keys: [],
+        programId: MOCK_PUBLIC_KEY,
+        data: Buffer.from([]),
+      });
+      
+      const mockSerializedTx = Buffer.from('mock-serialized-transaction');
+      mockSignedTx.serialize = jest.fn().mockReturnValue(mockSerializedTx);
+      
+      mockWallet = {
+        connected: true,
+        publicKey: MOCK_PUBLIC_KEY,
+        sendTransaction: jest.fn().mockResolvedValue(MOCK_SIGNATURE),
+        signTransaction: jest.fn().mockResolvedValue(mockSignedTx),
+      };
+      
+      mockConnection = {
+        sendRawTransaction: jest.fn().mockResolvedValue(MOCK_SIGNATURE),
+      } as any;
+      
+      const result = await sendTransactionWithSign(
+        mockWallet,
+        mockTransaction,
+        mockConnection
+      );
+      
+      // On mobile, should use signTransaction even though sendTransaction is available
+      expect(mockWallet.signTransaction).toHaveBeenCalledWith(mockTransaction);
+      expect(mockConnection.sendRawTransaction).toHaveBeenCalled();
+      expect(mockWallet.sendTransaction).not.toHaveBeenCalled();
+      expect(result.method).toBe('signTransaction');
+    });
+    
+    it('should use sendTransaction on desktop browsers', async () => {
+      // Mock desktop user agent
+      Object.defineProperty(global, 'navigator', {
+        value: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        writable: true,
+      });
+      
+      mockWallet = {
+        connected: true,
+        publicKey: MOCK_PUBLIC_KEY,
+        sendTransaction: jest.fn().mockResolvedValue(MOCK_SIGNATURE),
+        signTransaction: jest.fn(),
+      };
+      
+      const result = await sendTransactionWithSign(
+        mockWallet,
+        mockTransaction,
+        mockConnection
+      );
+      
+      // On desktop, should use sendTransaction
+      expect(mockWallet.sendTransaction).toHaveBeenCalled();
+      expect(mockWallet.signTransaction).not.toHaveBeenCalled();
+      expect(result.method).toBe('sendTransaction');
+    });
+    
+    it('should handle Android mobile browsers', async () => {
+      // Mock Android user agent (complete Chrome on Android user agent)
+      Object.defineProperty(global, 'navigator', {
+        value: { 
+          userAgent: 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36'
+        },
+        writable: true,
+      });
+      
+      const mockSignedTx = new Transaction();
+      mockSignedTx.feePayer = MOCK_PUBLIC_KEY;
+      mockSignedTx.recentBlockhash = MOCK_BLOCKHASH;
+      mockSignedTx.add({
+        keys: [],
+        programId: MOCK_PUBLIC_KEY,
+        data: Buffer.from([]),
+      });
+      
+      const mockSerializedTx = Buffer.from('mock-serialized-transaction');
+      mockSignedTx.serialize = jest.fn().mockReturnValue(mockSerializedTx);
+      
+      mockWallet = {
+        connected: true,
+        publicKey: MOCK_PUBLIC_KEY,
+        sendTransaction: jest.fn().mockResolvedValue(MOCK_SIGNATURE),
+        signTransaction: jest.fn().mockResolvedValue(mockSignedTx),
+      };
+      
+      mockConnection = {
+        sendRawTransaction: jest.fn().mockResolvedValue(MOCK_SIGNATURE),
+      } as any;
+      
+      const result = await sendTransactionWithSign(
+        mockWallet,
+        mockTransaction,
+        mockConnection
+      );
+      
+      // On Android mobile, should use signTransaction
+      expect(mockWallet.signTransaction).toHaveBeenCalled();
+      expect(result.method).toBe('signTransaction');
+    });
+    
+    it('should fallback to signTransaction on desktop signature errors', async () => {
+      // Mock desktop user agent
+      Object.defineProperty(global, 'navigator', {
+        value: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        writable: true,
+      });
+      
+      const signatureError = new Error('Signature verification failed');
+      
+      const mockSignedTx = new Transaction();
+      mockSignedTx.feePayer = MOCK_PUBLIC_KEY;
+      mockSignedTx.recentBlockhash = MOCK_BLOCKHASH;
+      mockSignedTx.add({
+        keys: [],
+        programId: MOCK_PUBLIC_KEY,
+        data: Buffer.from([]),
+      });
+      
+      const mockSerializedTx = Buffer.from('mock-serialized-transaction');
+      mockSignedTx.serialize = jest.fn().mockReturnValue(mockSerializedTx);
+      
+      mockWallet = {
+        connected: true,
+        publicKey: MOCK_PUBLIC_KEY,
+        sendTransaction: jest.fn().mockRejectedValue(signatureError),
+        signTransaction: jest.fn().mockResolvedValue(mockSignedTx),
+      };
+      
+      mockConnection = {
+        sendRawTransaction: jest.fn().mockResolvedValue(MOCK_SIGNATURE),
+      } as any;
+      
+      const result = await sendTransactionWithSign(
+        mockWallet,
+        mockTransaction,
+        mockConnection
+      );
+      
+      // Should try sendTransaction first, then fallback to signTransaction on error
+      expect(mockWallet.sendTransaction).toHaveBeenCalled();
+      expect(mockWallet.signTransaction).toHaveBeenCalled();
+      expect(result.method).toBe('signTransaction');
+    });
+    
+    it('should not fallback on mobile signature errors (avoid infinite loop)', async () => {
+      // Mock mobile user agent (complete iOS Safari user agent)
+      Object.defineProperty(global, 'navigator', {
+        value: { 
+          userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+        },
+        writable: true,
+      });
+      
+      const signatureError = new Error('Signature verification failed');
+      
+      mockWallet = {
+        connected: true,
+        publicKey: MOCK_PUBLIC_KEY,
+        sendTransaction: jest.fn(),
+        signTransaction: jest.fn().mockRejectedValue(signatureError),
+      };
+      
+      mockConnection = {
+        sendRawTransaction: jest.fn(),
+      } as any;
+      
+      // Should throw error instead of falling back (already using signTransaction on mobile)
+      await expect(
+        sendTransactionWithSign(mockWallet, mockTransaction, mockConnection)
+      ).rejects.toThrow('Signature verification failed');
+      
+      // Should only call signTransaction once (no fallback attempt)
+      expect(mockWallet.signTransaction).toHaveBeenCalledTimes(1);
+      expect(mockWallet.sendTransaction).not.toHaveBeenCalled();
     });
   });
 });
