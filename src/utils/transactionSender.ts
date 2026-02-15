@@ -42,7 +42,6 @@ export interface SendOptions {
   skipPreflight?: boolean;
   maxRetries?: number;
   preflightCommitment?: 'processed' | 'confirmed' | 'finalized';
-  preferSendTransaction?: boolean;
 }
 
 export interface SendTransactionResult {
@@ -181,26 +180,26 @@ export async function sendTransactionWithSign(
   };
 
   try {
-    if (options.preferSendTransaction === false) {
+    // CRITICAL: ALWAYS use sendTransaction() when available (mobile-safe)
+    // Mobile wallets REQUIRE full control over signing + submission
+    // Desktop wallets also support this method - it's the universal standard
+    if (wallet.sendTransaction) {
+      console.log('📤 [TransactionSender] Using wallet.sendTransaction() (mobile & desktop compatible)');
+      return await sendTransaction();
+    }
+
+    // Fallback to signTransaction only if sendTransaction is unavailable
+    // This should only happen with legacy or limited wallet adapters
+    if (wallet.signTransaction) {
+      console.warn('⚠️  [TransactionSender] Fallback: Using wallet.signTransaction() (desktop only)');
+      console.warn('   This wallet does not support sendTransaction()');
       return await signAndSendRaw();
     }
 
-    return await sendTransaction();
+    // No signing method available - fail with clear error
+    console.error('❌ [TransactionSender] Wallet does not support signing');
+    throw new Error('Wallet does not support transaction signing');
   } catch (error: any) {
-    const message = error?.message ?? '';
-    const shouldFallback =
-      message.includes('missing signature') ||
-      message.includes('Signature verification failed') ||
-      message.includes('Wallet does not support sendTransaction');
-
-    if (shouldFallback && wallet.signTransaction) {
-      try {
-        return await signAndSendRaw();
-      } catch (fallbackError: any) {
-        return enhanceAndThrow(fallbackError);
-      }
-    }
-
     return enhanceAndThrow(error);
   }
 }
