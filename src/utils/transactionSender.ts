@@ -2,11 +2,14 @@
  * Transaction Sender Utility
  * 
  * Provides universal transaction sending for mobile and desktop wallets.
- * Prefers wallet.sendTransaction() for mobile compatibility, with a fallback
- * to signTransaction() + sendRawTransaction() when missing-signature errors occur.
+ * 
+ * CRITICAL FIX: Mobile browsers (Phantom Mobile, Solflare Mobile) use signTransaction()
+ * path because their sendTransaction() does NOT properly sign before submitting,
+ * causing "Missing signature" errors. Desktop browsers use sendTransaction() for convenience.
  *
- * CRITICAL: Default path uses wallet.sendTransaction() for mobile compatibility
- * Mobile wallets (Phantom, Solflare) require full control over signing + submission
+ * Mobile Detection: Uses isMobileBrowser() to detect mobile user agents
+ * Mobile Path: wallet.signTransaction() + connection.sendRawTransaction()
+ * Desktop Path: wallet.sendTransaction() (more convenient, handles signing internally)
  */
 
 import { Connection, Transaction, TransactionSignature } from '@solana/web3.js';
@@ -53,8 +56,14 @@ export interface SendTransactionResult {
 /**
  * Universal transaction sender for mobile and desktop wallets
  * 
- * CRITICAL: Uses wallet.sendTransaction() by default for mobile compatibility
- * Mobile wallets (Phantom, Solflare) require full control over signing + submission
+ * MOBILE BROWSERS: Uses signTransaction() + sendRawTransaction() path
+ * - Phantom Mobile, Solflare Mobile require explicit signing
+ * - Their sendTransaction() does NOT sign properly
+ * - Detects mobile via isMobileBrowser() user agent check
+ * 
+ * DESKTOP BROWSERS: Uses sendTransaction() for convenience
+ * - Desktop wallets handle signing internally
+ * - Falls back to signTransaction() on signature errors
  * 
  * @param wallet - Wallet adapter context
  * @param transaction - Prepared transaction (must have feePayer and recentBlockhash set)

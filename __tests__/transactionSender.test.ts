@@ -1,7 +1,10 @@
 /**
  * Tests for Transaction Sender Utility
  *
- * Validates the mobile-compatible transaction sending logic using wallet.sendTransaction().
+ * Validates the mobile-first transaction sending logic:
+ * - Mobile browsers: Use signTransaction() + sendRawTransaction()
+ * - Desktop browsers: Use sendTransaction() for convenience
+ * - Desktop fallback: signTransaction() on signature errors
  */
 
 import { Connection, Transaction, PublicKey } from '@solana/web3.js';
