@@ -69,18 +69,31 @@ export async function sendTransactionWithSign(
   connection: Connection,
   options: SendOptions = {}
 ): Promise<SendTransactionResult> {
-  console.log('📤 [TransactionSender] Starting transaction send...');
+  console.log('📡 [TransactionSender] Starting transaction send...');
+  console.log('  📍 Wallet:', wallet.publicKey?.toBase58() || 'Unknown');
+  console.log('  📍 Has sendTransaction:', !!wallet.sendTransaction);
+  console.log('  📍 Has signTransaction:', !!wallet.signTransaction);
+  console.log('  📍 Fee payer:', transaction.feePayer?.toBase58());
+  console.log('  📍 Recent blockhash:', transaction.recentBlockhash);
+  console.log('  📍 Instructions count:', transaction.instructions.length);
+  
+  // Check if mobile browser
+  const isMobile = isMobileBrowser();
+  console.log('  📍 Is mobile browser:', isMobile);
   
   // Validation
   if (!wallet.connected || !wallet.publicKey) {
+    console.error('❌ [TransactionSender] Wallet not connected');
     throw new Error('Wallet not connected');
   }
   
   if (!transaction.feePayer) {
+    console.error('❌ [TransactionSender] Transaction fee payer not set');
     throw new Error('Transaction fee payer not set');
   }
   
   if (!transaction.recentBlockhash) {
+    console.error('❌ [TransactionSender] Transaction recent blockhash not set');
     throw new Error('Transaction recent blockhash not set');
   }
   
@@ -92,9 +105,12 @@ export async function sendTransactionWithSign(
   
   const sendTransaction = async (): Promise<SendTransactionResult> => {
     if (!wallet.sendTransaction) {
+      console.error('❌ [TransactionSender] Wallet does not support sendTransaction');
       throw new Error('Wallet does not support sendTransaction');
     }
 
+    console.log('📤 [TransactionSender] Calling wallet.sendTransaction()...');
+    console.log('  📍 Options:', options);
     console.log('🔐 Using wallet.sendTransaction() (mobile-compatible)');
     console.log('  - Wallet will sign, verify, and submit internally');
 
@@ -104,9 +120,9 @@ export async function sendTransactionWithSign(
       maxRetries: options.maxRetries ?? 3,
     });
 
-    console.log('✅ Transaction submitted successfully:', signature);
-    console.log('  - Method: wallet.sendTransaction()');
-    console.log('  - Signature:', signature);
+    console.log('✅ [TransactionSender] Transaction sent successfully!');
+    console.log('  📍 Signature:', signature);
+    console.log('  📍 Method: sendTransaction');
 
     return { signature, method: 'sendTransaction' };
   };
@@ -133,15 +149,24 @@ export async function sendTransactionWithSign(
   };
 
   const enhanceAndThrow = (error: any): never => {
-    console.error('❌ Transaction send failed:', error);
-    console.error('Error details:', {
-      message: error?.message,
+    console.error('❌ [TransactionSender] Transaction send failed:', {
       name: error?.name,
+      message: error?.message,
+      code: error?.code,
       logs: error?.logs,
+      error: error,
     });
 
+    // Log specific error types
+    if (error?.message?.includes('Signature verification failed')) {
+      console.error('🔴 [TransactionSender] SIGNATURE VERIFICATION FAILURE');
+      console.error('  This indicates the wallet returned an unsigned transaction');
+      console.error('  Wallet:', wallet.publicKey?.toBase58());
+      console.error('  Is Mobile:', isMobileBrowser());
+    }
+
     if (error?.message?.includes('User rejected')) {
-      throw new Error('Transaction rejected by user in wallet');
+      console.error('🔴 [TransactionSender] USER REJECTED TRANSACTION');
     }
 
     if (error?.message?.includes('insufficient funds')) {

@@ -699,12 +699,13 @@ export default function MintPage() {
   }, [publicKey, connection, mintPDA]);
 
   const handleRegisterWithForm = async (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => {
-    console.log('🚀🚀🚀 [MintPage] handleRegisterWithForm ENTRY POINT 🚀🚀🚀');
-    console.log('  - accountType:', accountType);
-    console.log('  - referrer:', referrer);
-    console.log('  - metadata:', metadata);
-    console.log('  - wallet.connected:', wallet.connected);
-    console.log('  - publicKey:', publicKey?.toBase58());
+    console.log('🚀 [Registration] Starting registration process...');
+    console.log('  📍 Account type:', accountType);
+    console.log('  📍 Referrer:', referrer || 'None');
+    console.log('  📍 Wallet connected:', wallet.connected);
+    console.log('  📍 Wallet name:', wallet.wallet?.adapter?.name || 'Unknown');
+    console.log('  📍 Public key:', publicKey?.toBase58() || 'None');
+    console.log('  📍 Metadata:', metadata);
 
     if (!wallet.connected || !publicKey || !userAccountPDA) {
       setError('Wallet not connected');
@@ -727,7 +728,7 @@ export default function MintPage() {
     setTxSignature('');
 
     try {
-      console.log('📝 Starting registration...');
+      console.log('📝 [Registration] Wallet info:');
       console.log('  - Wallet connected:', wallet.connected);
       console.log('  - Public key:', publicKey.toBase58());
       console.log('  - Account type:', accountType);
@@ -779,9 +780,9 @@ export default function MintPage() {
       }
 
       // First, verify that the mint account exists and owner matches TOKEN_PROGRAM_ID
-      console.log('🔍 Verifying mint account exists and owner matches...');
+      console.log('🔍 [Registration] Verifying mint account exists and owner matches...');
       const mintTokenProgram = await verifyMintOwner(connection, mintPDA);
-      console.log('✅ Mint account verified with correct owner');
+      console.log('✅ [Registration] Mint account verified with correct owner');
 
       const userTokenAccount = getAssociatedTokenAddressSync(
         mintPDA,
@@ -798,13 +799,29 @@ export default function MintPage() {
       // Uses idempotent instructions - they're no-ops if accounts already exist
       // ============================================================================
       
-      console.log('📝 Preparing bundled transaction: ATAs + Registration');
+      console.log('🔨 [Registration] Preparing bundled transaction: ATAs + Registration');
       
       // Derive locked token PDAs
+      console.log('🔑 [Registration] Deriving PDAs...');
+      const [lockedTokenAccountPda] = getLockedTokenAccountPda(publicKey, PROGRAM_ID);
+      console.log('  ✅ Locked token account PDA:', lockedTokenAccountPda.toBase58());
+      
+      const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
+      console.log('  ✅ Locked token PDA:', lockedTokenPda.toBase58());
+      
+      const lockedTokenAta = getAssociatedTokenAddressSync(
+        mintPDA,
+        publicKey,
+        false,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+      console.log('  ✅ Locked token ATA:', lockedTokenAta.toBase58());
 
       const now = Math.floor(Date.now() / 1000);
+      console.log('  ✅ Timestamp:', now);
 
-      console.log('Accounts:');
+      console.log('📋 [Registration] Transaction accounts:');
       console.log('- User Account (PDA):', userAccountPDA.toBase58());
       console.log('- Authority:', publicKey.toBase58());
       console.log('- Global State:', globalStatePDA.toBase58());
@@ -833,7 +850,7 @@ export default function MintPage() {
           console.log('- Referral Account (PDA):', referralAccountPubkey.toBase58());
           console.log('- Referrer Metadata (PDA):', referrerMetadataPubkey.toBase58());
         } catch {
-          console.log('Invalid referrer address, using self-referral');
+          console.log('- Invalid referrer address, using self-referral');
           // Invalid referrer: use user's own PDAs to avoid ConstraintMut error
           // Anchor program won't mutate when referrer param is PublicKey.default
           referrerPubkey = PublicKey.default;
@@ -866,6 +883,7 @@ export default function MintPage() {
       // by internally calling transact() which triggers the deep link to open wallet app
       // ============================================================================
       
+      console.log('📝 [Registration] Building instructions...');
       const preInstructions: TransactionInstruction[] = [];
       
       // Add compute budget instruction to prevent preflight warnings
@@ -873,31 +891,9 @@ export default function MintPage() {
         units: 400_000  // Sufficient for registration + account creations
       });
       preInstructions.push(computeBudgetIx);
-      console.log('Added compute budget instruction');
+      console.log('  ✅ Added compute budget instruction');
       
       // 1. Create user's ATA (idempotent - no-op if exists)
-      // Derive locked token PDAs
-      const lockedTokenAccountPda = getLockedTokenAccountPda(publicKey, PROGRAM_ID);
-      const lockedTokenPda = getLockedTokenPda(publicKey, PROGRAM_ID);
-
-      /**
-       * IMPORTANT:
-       * The owner of any SPL token ATA must be a real keypair (the wallet),
-       * not a PDA. The PDA (lockedTokenPda) is your program's account that
-       * will *hold* the tokens, but the ATA's "owner" must still be the wallet.
-       *
-       * So:
-       * - ATA address: derived using (owner = publicKey, mint = mintPDA)
-       * - Program PDAs (lockedTokenPda, lockedTokenAccountPda) are passed
-       *   to the instruction as normal accounts, but NEVER as ATA owners.
-       */
-      const lockedTokenAta = getAssociatedTokenAddressSync(
-        mintPDA,            // mint
-        publicKey,          // owner (wallet, NOT lockedTokenPda)
-        false,              // allowOwnerOffCurve = false
-        TOKEN_PROGRAM_ID,
-        ASSOCIATED_TOKEN_PROGRAM_ID
-      );
 
       console.log('- User Token Account ATA:', userTokenAccount.toBase58());
       console.log('- Locked Token PDA:', lockedTokenPda.toBase58());
@@ -913,7 +909,7 @@ export default function MintPage() {
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
       preInstructions.push(createUserAtaIx);
-      console.log('Added user token ATA creation instruction');
+      console.log('  ✅ Added user token ATA creation instruction');
 
       // 2. Create locked token ATA (idempotent - no-op if exists)
       // NOTE: owner is also the wallet here; the PDA is a separate account
@@ -927,10 +923,10 @@ export default function MintPage() {
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
       preInstructions.push(createLockedAtaIx);
-      console.log('Added locked token ATA creation instruction');
+      console.log('  ✅ Added locked token ATA creation instruction');
 
       // 3. Build transaction using Anchor's .transaction() (mobile-compatible)
-      console.log('📝 Building registration transaction...');
+      console.log('🔨 [Registration] Building registration transaction...');
 
       try {
         // ============================================================================
@@ -938,7 +934,7 @@ export default function MintPage() {
         // This ensures correct signer flags and account ordering
         // ============================================================================
         
-        console.log('📝 Building registration instruction via Anchor...');
+        console.log('📝 [Registration] Building registration instruction via Anchor...');
         
         const registerIx = await program!.methods
           .initializeUser(
@@ -962,12 +958,20 @@ export default function MintPage() {
           })
           .instruction();
         
-        console.log('✅ Registration instruction built via Anchor (signer flags guaranteed correct)');
+        console.log('✅ [Registration] Registration instruction built via Anchor');
+        console.log('  ✅ Added registration instruction');
         
         // Log instruction metas for debugging (helps identify account order issues)
-        console.log('🧪 InitializeUser instruction metas (12 accounts):');
-        registerIx.keys.forEach((k: { pubkey: PublicKey; isWritable: boolean; isSigner: boolean }, i: number) => {
-          console.log(`  ${i}. ${k.pubkey.toBase58().slice(0, 8)}... writable=${k.isWritable} signer=${k.isSigner}`);
+        console.log('🔍 [Registration] Registration instruction details:');
+        console.log('  Program ID:', registerIx.programId.toBase58());
+        console.log('  Data length:', registerIx.data.length);
+        console.log('  Keys count:', registerIx.keys.length);
+        registerIx.keys.forEach((meta: { pubkey: PublicKey; isWritable: boolean; isSigner: boolean }, idx: number) => {
+          console.log(`  Key ${idx}:`, {
+            pubkey: meta.pubkey.toBase58(),
+            isSigner: meta.isSigner,
+            isWritable: meta.isWritable,
+          });
         });
         
         // Build complete transaction with all instructions
@@ -980,7 +984,7 @@ export default function MintPage() {
         transaction.feePayer = publicKey;
         transaction.setSigners(publicKey);
         
-        console.log('📝 Transaction built successfully');
+        console.log('🔨 [Registration] Transaction built successfully');
         console.log('- Fee payer:', transaction.feePayer.toBase58());
         console.log('- Instructions count:', transaction.instructions.length);
         console.log('  → Compute budget: 1');
@@ -993,11 +997,29 @@ export default function MintPage() {
         // with mobile app-switch delays can cause expiration before the transaction is processed
         const isMobile = isMobileBrowser();
         const commitmentLevel = isMobile ? 'confirmed' : 'finalized';
+        console.log('⛓️ [Registration] Getting blockhash...');
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(commitmentLevel);
         transaction.recentBlockhash = blockhash;
+        console.log('  ✅ Blockhash:', blockhash);
+        console.log('  ✅ Last valid block height:', lastValidBlockHeight);
+        console.log(`  ✅ Commitment level: ${commitmentLevel} (mobile: ${isMobile ? 'yes' : 'no'})`);
 
-        console.log(`📝 Blockhash fetched with '${commitmentLevel}' commitment (mobile: ${isMobile ? 'yes' : 'no'})`);
-        console.log('📝 Sending registration transaction via sendTransactionWithSign...');
+        // Compile and log message
+        const message = transaction.compileMessage();
+        console.log('📦 [Registration] Compiled transaction message:', {
+          numRequiredSignatures: message.header.numRequiredSignatures,
+          numReadonlySignedAccounts: message.header.numReadonlySignedAccounts,
+          numReadonlyUnsignedAccounts: message.header.numReadonlyUnsignedAccounts,
+          accountKeys: message.accountKeys.map(k => k.toBase58()),
+          recentBlockhash: message.recentBlockhash,
+        });
+
+        console.log('📤 [Registration] Sending transaction...');
+        console.log('  📍 Wallet method check:', {
+          hasSignTransaction: !!wallet.signTransaction,
+          hasSendTransaction: !!wallet.sendTransaction,
+          walletName: wallet.wallet?.adapter?.name,
+        });
         console.log('  - This will open wallet app for approval on mobile');
 
         // Use sendTransactionWithSign for mobile wallet compatibility
@@ -1013,11 +1035,12 @@ export default function MintPage() {
           }
         );
 
-        console.log(`✅ Transaction sent successfully via ${method}`);
-        console.log('  - Signature:', signature);
-        console.log('  - Explorer:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
+        console.log('✅ [Registration] Transaction sent successfully!');
+        console.log('  📍 Method used:', method);
+        console.log('  📍 Signature:', signature);
+        console.log('  📍 Explorer:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
 
-        console.log('⏳ Confirming transaction...');
+        console.log('⏳ [Registration] Confirming transaction...');
 
         // Wait for confirmation using the same blockhash from transaction
         await connection.confirmTransaction(
@@ -1029,12 +1052,11 @@ export default function MintPage() {
           'confirmed'
         );
 
-        console.log('✅ Transaction confirmed on-chain');
+        console.log('✅ [Registration] Transaction confirmed on-chain');
+        console.log('  📍 Signature:', signature);
+        console.log('  📍 Explorer URL:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
 
-        console.log('✅ Registration successful!', signature);
-        console.log('🎉 Registration completed successfully');
-        console.log('  - Signature:', signature);
-        console.log('  - Explorer URL:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
+        console.log('🎉 [Registration] Registration completed successfully!');
         setTxSignature(signature);
         setRegistered(true);
 
@@ -1072,13 +1094,22 @@ export default function MintPage() {
         await checkUserRegistration();
       } catch (txErr: any) {
         // Transaction building or sending failed
-        console.error('❌ Transaction failed:', txErr);
+        console.error('❌ [Registration] Transaction send failed:', {
+          name: txErr?.name,
+          message: txErr?.message,
+          code: txErr?.code,
+          logs: txErr?.logs,
+          error: txErr,
+        });
         throw txErr; // Re-throw to be caught by outer catch block
       }
     } catch (err: unknown) {
-      console.error('❌ Registration failed:', err);
-      console.error('  - Error name:', (err as any)?.name);
-      console.error('  - Error message:', (err as any)?.message);
+      console.error('❌ [Registration] Registration failed:', {
+        error: err,
+        errorType: err?.constructor?.name,
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+      });
       
       // Try to extract Anchor log if it's a SendTransactionError
       let errorMessage = err instanceof Error ? err.message : 'Registration failed';
