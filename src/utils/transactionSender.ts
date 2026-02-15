@@ -180,26 +180,54 @@ export async function sendTransactionWithSign(
   };
 
   try {
-    // CRITICAL: ALWAYS use sendTransaction() when available (mobile-safe)
-    // Mobile wallets REQUIRE full control over signing + submission
-    // Desktop wallets also support this method - it's the universal standard
-    if (wallet.sendTransaction) {
-      console.log('📤 [TransactionSender] Using wallet.sendTransaction() (mobile & desktop compatible)');
-      return await sendTransaction();
-    }
-
-    // Fallback to signTransaction only if sendTransaction is unavailable
-    // This should only happen with legacy or limited wallet adapters
-    if (wallet.signTransaction) {
-      console.warn('⚠️  [TransactionSender] Fallback: Using wallet.signTransaction() (desktop only)');
-      console.warn('   This wallet does not support sendTransaction()');
+    // CRITICAL FIX: Mobile wallets (Phantom Mobile, Solflare Mobile) require signTransaction()
+    // because their sendTransaction() does not properly sign before submitting
+    const isMobile = isMobileBrowser();
+    
+    // MOBILE PATH: Always prefer signTransaction on mobile if available
+    if (isMobile && wallet.signTransaction) {
+      console.log('📱 [TransactionSender] Mobile browser detected');
+      console.log('   Using signTransaction() + sendRawTransaction() for mobile compatibility');
       return await signAndSendRaw();
     }
-
-    // No signing method available - fail with clear error
-    console.error('❌ [TransactionSender] Wallet does not support signing');
+    
+    // DESKTOP PATH: Use sendTransaction for desktop wallets (more convenient)
+    if (wallet.sendTransaction) {
+      console.log('🖥️ [TransactionSender] Desktop browser detected');
+      console.log('   Using wallet.sendTransaction() for convenience');
+      return await sendTransaction();
+    }
+    
+    // FALLBACK: signTransaction for wallets without sendTransaction
+    if (wallet.signTransaction) {
+      console.log('🔄 [TransactionSender] Fallback path');
+      console.log('   Using signTransaction() + sendRawTransaction()');
+      return await signAndSendRaw();
+    }
+    
+    // No supported methods
     throw new Error('Wallet does not support transaction signing');
   } catch (error: any) {
+    const message = error?.message ?? '';
+    
+    // Only fallback to signTransaction if sendTransaction explicitly failed with signing error
+    // AND we're not already on mobile (to avoid infinite loops)
+    const isMobile = isMobileBrowser();
+    const shouldFallback =
+      !isMobile &&
+      (message.includes('missing signature') ||
+       message.includes('Signature verification failed'));
+
+    if (shouldFallback && wallet.signTransaction) {
+      console.warn('⚠️ [TransactionSender] sendTransaction failed with signature error');
+      console.warn('   Falling back to signTransaction() + sendRawTransaction()');
+      try {
+        return await signAndSendRaw();
+      } catch (fallbackError: any) {
+        return enhanceAndThrow(fallbackError);
+      }
+    }
+
     return enhanceAndThrow(error);
   }
 }
