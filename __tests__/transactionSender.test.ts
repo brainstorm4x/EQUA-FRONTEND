@@ -1,10 +1,10 @@
 /**
  * Tests for Transaction Sender Utility
  *
- * Validates the mobile-first transaction sending logic:
- * - Mobile browsers: Use signTransaction() + sendRawTransaction()
- * - Desktop browsers: Use sendTransaction() for convenience
- * - Desktop fallback: signTransaction() on signature errors
+ * Validates capability-first transaction sending logic:
+ * - Mobile + desktop: Prefer sendTransaction() when available
+ * - Fallback: signTransaction() + sendRawTransaction() when needed
+ * - Signature errors: retry via signTransaction() path
  */
 
 import { Connection, Transaction, PublicKey } from '@solana/web3.js';
@@ -35,7 +35,7 @@ describe('sendTransactionWithSign', () => {
     });
   });
   
-  describe('sendTransaction path (mobile-compatible)', () => {
+  describe('sendTransaction primary path', () => {
     it('should use sendTransaction by default', async () => {
       mockWallet = {
         connected: true,
@@ -282,7 +282,7 @@ describe('sendTransactionWithSign', () => {
       });
     });
     
-    it('should use signTransaction on mobile browsers', async () => {
+    it('should use sendTransaction on mobile browsers when available', async () => {
       // Mock mobile user agent (complete iOS Safari user agent)
       Object.defineProperty(global, 'navigator', {
         value: { 
@@ -320,11 +320,11 @@ describe('sendTransactionWithSign', () => {
         mockConnection
       );
       
-      // On mobile, should use signTransaction even though sendTransaction is available
-      expect(mockWallet.signTransaction).toHaveBeenCalledWith(mockTransaction);
-      expect(mockConnection.sendRawTransaction).toHaveBeenCalled();
-      expect(mockWallet.sendTransaction).not.toHaveBeenCalled();
-      expect(result.method).toBe('signTransaction');
+      // On mobile, should still use sendTransaction as the primary path
+      expect(mockWallet.sendTransaction).toHaveBeenCalled();
+      expect(mockWallet.signTransaction).not.toHaveBeenCalled();
+      expect(mockConnection.sendRawTransaction).not.toHaveBeenCalled();
+      expect(result.method).toBe('sendTransaction');
     });
     
     it('should use sendTransaction on desktop browsers', async () => {
@@ -391,9 +391,10 @@ describe('sendTransactionWithSign', () => {
         mockConnection
       );
       
-      // On Android mobile, should use signTransaction
-      expect(mockWallet.signTransaction).toHaveBeenCalled();
-      expect(result.method).toBe('signTransaction');
+      // On Android mobile, should still use sendTransaction
+      expect(mockWallet.sendTransaction).toHaveBeenCalled();
+      expect(mockWallet.signTransaction).not.toHaveBeenCalled();
+      expect(result.method).toBe('sendTransaction');
     });
     
     it('should fallback to signTransaction on desktop signature errors', async () => {
@@ -440,7 +441,7 @@ describe('sendTransactionWithSign', () => {
       expect(result.method).toBe('signTransaction');
     });
     
-    it('should not fallback on mobile signature errors (avoid infinite loop)', async () => {
+    it('should fallback on mobile signature errors when sendTransaction was attempted', async () => {
       // Mock mobile user agent (complete iOS Safari user agent)
       Object.defineProperty(global, 'navigator', {
         value: { 
@@ -450,26 +451,37 @@ describe('sendTransactionWithSign', () => {
       });
       
       const signatureError = new Error('Signature verification failed');
+
+      const mockSignedTx = new Transaction();
+      mockSignedTx.feePayer = MOCK_PUBLIC_KEY;
+      mockSignedTx.recentBlockhash = MOCK_BLOCKHASH;
+      mockSignedTx.add({
+        keys: [],
+        programId: MOCK_PUBLIC_KEY,
+        data: Buffer.from([]),
+      });
+
+      const mockSerializedTx = Buffer.from('mock-serialized-transaction');
+      mockSignedTx.serialize = jest.fn().mockReturnValue(mockSerializedTx);
       
       mockWallet = {
         connected: true,
         publicKey: MOCK_PUBLIC_KEY,
-        sendTransaction: jest.fn(),
-        signTransaction: jest.fn().mockRejectedValue(signatureError),
+        sendTransaction: jest.fn().mockRejectedValue(signatureError),
+        signTransaction: jest.fn().mockResolvedValue(mockSignedTx),
       };
       
       mockConnection = {
-        sendRawTransaction: jest.fn(),
+        sendRawTransaction: jest.fn().mockResolvedValue(MOCK_SIGNATURE),
       } as any;
-      
-      // Should throw error instead of falling back (already using signTransaction on mobile)
-      await expect(
-        sendTransactionWithSign(mockWallet, mockTransaction, mockConnection)
-      ).rejects.toThrow('Signature verification failed');
-      
-      // Should only call signTransaction once (no fallback attempt)
+
+      const result = await sendTransactionWithSign(mockWallet, mockTransaction, mockConnection);
+
+      // Should try sendTransaction first, then fallback to signTransaction
+      expect(mockWallet.sendTransaction).toHaveBeenCalledTimes(1);
       expect(mockWallet.signTransaction).toHaveBeenCalledTimes(1);
-      expect(mockWallet.sendTransaction).not.toHaveBeenCalled();
+      expect(mockConnection.sendRawTransaction).toHaveBeenCalledTimes(1);
+      expect(result.method).toBe('signTransaction');
     });
     
     it('should not fallback when legacy wallet (no sendTransaction) fails with signature error', async () => {
@@ -480,7 +492,6 @@ describe('sendTransactionWithSign', () => {
       });
       
       const signatureError = new Error('Signature verification failed');
-      
       mockWallet = {
         connected: true,
         publicKey: MOCK_PUBLIC_KEY,
