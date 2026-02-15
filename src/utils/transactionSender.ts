@@ -188,6 +188,9 @@ export async function sendTransactionWithSign(
     throw error;
   };
 
+  // Track which transaction method we're using to prevent duplicate retries
+  let usedSendTransaction = false;
+
   try {
     // CRITICAL FIX: Mobile wallets (Phantom Mobile, Solflare Mobile) require signTransaction()
     // because their sendTransaction() does not properly sign before submitting
@@ -203,6 +206,7 @@ export async function sendTransactionWithSign(
     if (wallet.sendTransaction) {
       console.log('🖥️ [TransactionSender] Desktop browser detected');
       console.log('   Using wallet.sendTransaction() for convenience');
+      usedSendTransaction = true; // Mark that we're attempting sendTransaction
       return await sendTransaction();
     }
     
@@ -218,15 +222,20 @@ export async function sendTransactionWithSign(
   } catch (error: any) {
     const message = error?.message ?? '';
     
-    // Only fallback to signTransaction if sendTransaction explicitly failed with signing error
-    // AND we're not already on mobile (to avoid infinite loops)
+    // ENHANCED FIX: Only fallback to signTransaction if:
+    // 1. sendTransaction() was actually attempted (usedSendTransaction = true)
+    // 2. The error is a signature verification failure
+    // 3. The wallet supports signTransaction as an alternative
+    //
+    // This prevents duplicate retries when signAndSendRaw() was the original failing method
     const shouldFallback =
-      !isMobile &&
+      usedSendTransaction && // ← KEY FIX: Only retry if sendTransaction was attempted
       (message.includes('missing signature') ||
-       message.includes('Signature verification failed'));
+       message.includes('Signature verification failed')) &&
+      wallet.signTransaction;
 
-    if (shouldFallback && wallet.signTransaction) {
-      console.warn('⚠️ [TransactionSender] sendTransaction failed with signature error');
+    if (shouldFallback) {
+      console.warn('⚠️ [TransactionSender] sendTransaction() failed with signature error');
       console.warn('   Falling back to signTransaction() + sendRawTransaction()');
       try {
         return await signAndSendRaw();
