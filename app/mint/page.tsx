@@ -1022,8 +1022,8 @@ export default function MintPage() {
         });
         console.log('  - This will open wallet app for approval on mobile');
 
-        // Use sendTransactionWithSign for mobile wallet compatibility
-        // Prefer signTransaction on mobile when available to avoid missing-signature errors
+        // Use sendTransactionWithSign for universal mobile & desktop wallet compatibility
+        // The utility automatically selects the correct method based on wallet capabilities
         const { signature, method } = await sendTransactionWithSign(
           wallet,
           transaction,
@@ -1031,7 +1031,7 @@ export default function MintPage() {
           {
             skipPreflight: false,
             maxRetries: 3,
-            preferSendTransaction: !(isMobile && !!wallet.signTransaction),
+            // No preferSendTransaction option - automatic selection based on availability
           }
         );
 
