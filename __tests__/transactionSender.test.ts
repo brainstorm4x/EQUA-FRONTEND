@@ -471,5 +471,60 @@ describe('sendTransactionWithSign', () => {
       expect(mockWallet.signTransaction).toHaveBeenCalledTimes(1);
       expect(mockWallet.sendTransaction).not.toHaveBeenCalled();
     });
+    
+    it('should not fallback when legacy wallet (no sendTransaction) fails with signature error', async () => {
+      // Mock desktop user agent
+      Object.defineProperty(global, 'navigator', {
+        value: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        writable: true,
+      });
+      
+      const signatureError = new Error('Signature verification failed');
+      
+      mockWallet = {
+        connected: true,
+        publicKey: MOCK_PUBLIC_KEY,
+        // No sendTransaction method - legacy wallet
+        signTransaction: jest.fn().mockRejectedValue(signatureError),
+      };
+      
+      mockConnection = {
+        sendRawTransaction: jest.fn(),
+      } as any;
+      
+      // Should throw error without retry (usedSendTransaction = false)
+      await expect(
+        sendTransactionWithSign(mockWallet, mockTransaction, mockConnection)
+      ).rejects.toThrow('Signature verification failed');
+      
+      // Should only call signTransaction once (no duplicate retry)
+      expect(mockWallet.signTransaction).toHaveBeenCalledTimes(1);
+    });
+    
+    it('should fallback only when sendTransaction was attempted (not for other errors)', async () => {
+      // Mock desktop user agent
+      Object.defineProperty(global, 'navigator', {
+        value: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        writable: true,
+      });
+      
+      const networkError = new Error('Network timeout');
+      
+      mockWallet = {
+        connected: true,
+        publicKey: MOCK_PUBLIC_KEY,
+        sendTransaction: jest.fn().mockRejectedValue(networkError),
+        signTransaction: jest.fn(),
+      };
+      
+      // Should throw error without fallback (not a signature error)
+      await expect(
+        sendTransactionWithSign(mockWallet, mockTransaction, mockConnection)
+      ).rejects.toThrow('Network timeout');
+      
+      // Should only call sendTransaction, not signTransaction
+      expect(mockWallet.sendTransaction).toHaveBeenCalledTimes(1);
+      expect(mockWallet.signTransaction).not.toHaveBeenCalled();
+    });
   });
 });
