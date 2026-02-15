@@ -98,7 +98,7 @@ EQUA supports mobile wallets through the Solana Mobile Wallet Adapter protocol.
   name: 'EQUA Token',
   uri: 'https://equa-frontend.netlify.app',
   icon: 'https://equa-frontend.netlify.app/branding/equa-logo.svg',
-  cluster: 'devnet' // or 'mainnet-beta'
+  chain: 'devnet' // or 'mainnet-beta'
 }
 ```
 

@@ -111,16 +111,16 @@ describe('WalletProvider Network Detection', () => {
   });
 
   describe('Integration: Mobile Wallet Adapter Type Safety', () => {
-    it('should provide string literal compatible with SolanaMobileWalletAdapter cluster param', () => {
+    it('should provide string literal compatible with SolanaMobileWalletAdapter chain param', () => {
       // Simulate what SolanaMobileWalletAdapter expects
-      type MobileWalletCluster = 'devnet' | 'testnet' | 'mainnet-beta';
+      type MobileWalletChain = 'devnet' | 'testnet' | 'mainnet-beta';
       
-      const acceptsClusterString = (cluster: MobileWalletCluster) => cluster;
+      const acceptsChainString = (chain: MobileWalletChain) => chain;
       
       // This should compile and work without type errors
       const network = getExpectedNetwork('https://api.devnet.solana.com');
-      expect(() => acceptsClusterString(network)).not.toThrow();
-      expect(acceptsClusterString(network)).toBe('devnet');
+      expect(() => acceptsChainString(network)).not.toThrow();
+      expect(acceptsChainString(network)).toBe('devnet');
     });
 
     it('should provide enum compatible with SolflareWalletAdapter network param', () => {
