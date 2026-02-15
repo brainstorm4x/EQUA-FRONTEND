@@ -3,13 +3,13 @@
  * 
  * Provides universal transaction sending for mobile and desktop wallets.
  * 
- * CRITICAL FIX: Mobile browsers (Phantom Mobile, Solflare Mobile) use signTransaction()
- * path because their sendTransaction() does NOT properly sign before submitting,
- * causing "Missing signature" errors. Desktop browsers use sendTransaction() for convenience.
+ * Uses wallet.sendTransaction() whenever available because it lets the wallet
+ * control the signing flow (especially important for deep links on mobile).
+ * Falls back to signTransaction() + sendRawTransaction() for legacy wallets or
+ * when sendTransaction fails with a signature verification error.
  *
- * Mobile Detection: Uses isMobileBrowser() to detect mobile user agents
- * Mobile Path: wallet.signTransaction() + connection.sendRawTransaction()
- * Desktop Path: wallet.sendTransaction() (more convenient, handles signing internally)
+ * Mobile Detection: Uses isMobileBrowser() for logging/diagnostics only.
+ * Sending strategy is capability-first, not user-agent-first.
  */
 
 import { Connection, Transaction, TransactionSignature } from '@solana/web3.js';
@@ -56,14 +56,12 @@ export interface SendTransactionResult {
 /**
  * Universal transaction sender for mobile and desktop wallets
  * 
- * MOBILE BROWSERS: Uses signTransaction() + sendRawTransaction() path
- * - Phantom Mobile, Solflare Mobile require explicit signing
- * - Their sendTransaction() does NOT sign properly
- * - Detects mobile via isMobileBrowser() user agent check
+ * PRIMARY PATH (mobile + desktop): Uses sendTransaction() for wallet-managed signing
+ * - Works with browser extension wallets and deep-link mobile wallets
  * 
- * DESKTOP BROWSERS: Uses sendTransaction() for convenience
- * - Desktop wallets handle signing internally
- * - Falls back to signTransaction() on signature errors
+ * FALLBACK PATH: Uses signTransaction() + sendRawTransaction()
+ * - Used if sendTransaction is unavailable
+ * - Also used if sendTransaction fails with signature-related errors
  * 
  * @param wallet - Wallet adapter context
  * @param transaction - Prepared transaction (must have feePayer and recentBlockhash set)
@@ -192,20 +190,10 @@ export async function sendTransactionWithSign(
   let usedSendTransaction = false;
 
   try {
-    // CRITICAL FIX: Mobile wallets (Phantom Mobile, Solflare Mobile) require signTransaction()
-    // because their sendTransaction() does not properly sign before submitting
-    
-    // MOBILE PATH: Always prefer signTransaction on mobile if available
-    if (isMobile && wallet.signTransaction) {
-      console.log('📱 [TransactionSender] Mobile browser detected');
-      console.log('   Using signTransaction() + sendRawTransaction() for mobile compatibility');
-      return await signAndSendRaw();
-    }
-    
-    // DESKTOP PATH: Use sendTransaction for desktop wallets (more convenient)
+    // Use sendTransaction first (mobile + desktop).
+    // This lets wallet adapters handle signature orchestration internally.
     if (wallet.sendTransaction) {
-      console.log('🖥️ [TransactionSender] Desktop browser detected');
-      console.log('   Using wallet.sendTransaction() for convenience');
+      console.log('🌐 [TransactionSender] Using wallet.sendTransaction() as primary path');
       usedSendTransaction = true; // Mark that we're attempting sendTransaction
       return await sendTransaction();
     }
