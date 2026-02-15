@@ -283,9 +283,11 @@ describe('sendTransactionWithSign', () => {
     });
     
     it('should use signTransaction on mobile browsers', async () => {
-      // Mock mobile user agent
+      // Mock mobile user agent (complete iOS Safari user agent)
       Object.defineProperty(global, 'navigator', {
-        value: { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)' },
+        value: { 
+          userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+        },
         writable: true,
       });
       
@@ -352,9 +354,11 @@ describe('sendTransactionWithSign', () => {
     });
     
     it('should handle Android mobile browsers', async () => {
-      // Mock Android user agent
+      // Mock Android user agent (complete Chrome on Android user agent)
       Object.defineProperty(global, 'navigator', {
-        value: { userAgent: 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36' },
+        value: { 
+          userAgent: 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36'
+        },
         writable: true,
       });
       
@@ -437,9 +441,11 @@ describe('sendTransactionWithSign', () => {
     });
     
     it('should not fallback on mobile signature errors (avoid infinite loop)', async () => {
-      // Mock mobile user agent
+      // Mock mobile user agent (complete iOS Safari user agent)
       Object.defineProperty(global, 'navigator', {
-        value: { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)' },
+        value: { 
+          userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+        },
         writable: true,
       });
       

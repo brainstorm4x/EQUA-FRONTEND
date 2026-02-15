@@ -191,7 +191,6 @@ export async function sendTransactionWithSign(
   try {
     // CRITICAL FIX: Mobile wallets (Phantom Mobile, Solflare Mobile) require signTransaction()
     // because their sendTransaction() does not properly sign before submitting
-    const isMobile = isMobileBrowser();
     
     // MOBILE PATH: Always prefer signTransaction on mobile if available
     if (isMobile && wallet.signTransaction) {
@@ -221,7 +220,6 @@ export async function sendTransactionWithSign(
     
     // Only fallback to signTransaction if sendTransaction explicitly failed with signing error
     // AND we're not already on mobile (to avoid infinite loops)
-    const isMobile = isMobileBrowser();
     const shouldFallback =
       !isMobile &&
       (message.includes('missing signature') ||
