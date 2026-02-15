@@ -142,7 +142,7 @@ describe('WalletProvider Configuration', () => {
       expect(callArgs).toHaveProperty('appIdentity');
       expect(callArgs).toHaveProperty('addressSelector');
       expect(callArgs).toHaveProperty('authorizationResultCache');
-      expect(callArgs).toHaveProperty('cluster');
+      expect(callArgs).toHaveProperty('chain');  // ✅ Modern API (not deprecated 'cluster')
       expect(callArgs).toHaveProperty('onWalletNotFound');
     });
   });
