@@ -55,6 +55,7 @@ import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrat
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
 import { sendTransactionWithSign, isMobileBrowser } from '@/utils/transactionSender';
+import { mobileRegister } from '@/utils/mobileRegistration';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -927,6 +928,83 @@ export default function MintPage() {
 
       // 3. Build transaction using Anchor's .transaction() (mobile-compatible)
       console.log('🔨 [Registration] Building registration transaction...');
+
+      // ============================================================================
+      // MOBILE REGISTRATION PATH
+      // Use clean mobile registration path that avoids transaction.setSigners() and
+      // transaction.compileMessage() which break mobile wallet adapters
+      // ============================================================================
+      const isMobile = isMobileBrowser();
+
+      if (isMobile) {
+        // Use clean mobile registration path
+        console.log('📱 [Registration] Mobile browser detected — using mobile-optimized registration path');
+        
+        const { signature } = await mobileRegister({
+          wallet,
+          connection,
+          program: program!,
+          publicKey,
+          userAccountPDA,
+          userMetadataPDA,
+          globalStatePDA,
+          referralAccountPubkey,
+          referrerMetadataPubkey,
+          referrerPubkey,
+          userTokenAccount,
+          mintPDA,
+          businessRegistryPDA,
+          lockedTokenAta,
+          preInstructions,  // Already built: compute budget + user ATA + locked ATA
+          accountType: userType,
+          now,
+        });
+
+        // Post-registration success handling (same as desktop)
+        console.log('✅ [Registration] Mobile registration successful!');
+        console.log('  📍 Signature:', signature);
+        setTxSignature(signature);
+        setRegistered(true);
+
+        // Note: Registration is now persisted on-chain only. No database storage needed.
+        // The blockchain is the source of truth for all registration data.
+        console.log('✅ Registration persisted on-chain (blockchain is source of truth)');
+        
+        if (typeof window !== 'undefined') {
+          // Record the public key as registered (prevent duplicate registration)
+          recordRegisteredKey(publicKey.toBase58(), metadata?.fingerprint?.fingerprint);
+          console.log('🔑 Public key recorded to prevent duplicate registration');
+          
+          // Store fingerprint AFTER successful registration (Sybil prevention)
+          if (metadata?.fingerprint) {
+            const existingFingerprints = JSON.parse(localStorage.getItem('equa_registered_fingerprints') || '[]');
+            existingFingerprints.push(metadata.fingerprint.fingerprint);
+            localStorage.setItem('equa_registered_fingerprints', JSON.stringify(existingFingerprints));
+            localStorage.setItem(`equa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
+            console.log('🔐 Device fingerprint stored for Sybil prevention');
+          }
+          
+          // Notify other components that registration is complete
+          // This triggers GetStartedButton to update its state
+          localStorage.setItem('equa_registration_complete', Date.now().toString());
+          window.dispatchEvent(new CustomEvent('equa_registration_complete'));
+          console.log('📢 Registration complete event dispatched');
+        }
+        
+        // Call the metadata callback for referral/registration recording
+        if (metadata?.onSuccessfulRegistration) {
+          metadata.onSuccessfulRegistration();
+          console.log('📝 Registration metadata recorded');
+        }
+
+        await checkUserRegistration();
+        return; // Skip the desktop path below
+      }
+
+      // ============================================================================
+      // DESKTOP REGISTRATION PATH (unchanged)
+      // ============================================================================
+
 
       try {
         // ============================================================================
