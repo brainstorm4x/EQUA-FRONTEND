@@ -1723,64 +1723,79 @@ export default function MintPage() {
       console.log('  13. associated_token_program:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
       console.log('  14. system_program:', SystemProgram.programId.toBase58());
       
-      // Create and send transaction using wallet adapter's sendTransaction
-      // This ensures proper signature handling and prevents AccountNotSigner errors
+      // Create and send transaction using wallet adapter
+      // Mobile: Use signTransaction pattern (triggers deep link)
+      // Desktop: Use sendTransaction pattern (works with extensions)
       const transaction = new Transaction().add(mintInstruction);
       transaction.feePayer = publicKey;
       
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
       
-      console.log('📝 Sending transaction via wallet adapter...');
-      if (!wallet.sendTransaction) {
-        throw new Error('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
-      }
+      console.log('📝 Preparing to send transaction...');
       
-      try {
-        // Use wallet.sendTransaction to ensure proper signing by the wallet adapter
-        const tx = await wallet.sendTransaction(transaction, connection, {
+      // Detect mobile browser and use appropriate pattern
+      let tx: string;
+      const isMobile = isMobileBrowser();
+
+      if (isMobile) {
+        // Mobile: Use signTransaction pattern (same as registration)
+        console.log('📱 [Minting] Mobile detected - using signTransaction pattern');
+        
+        if (!wallet.signTransaction) {
+          throw new Error('Wallet does not support transaction signing');
+        }
+        
+        console.log('📱 Opening wallet app for approval...');
+        const signedTx = await wallet.signTransaction(transaction);
+        
+        console.log('✅ Transaction signed, submitting to Solana...');
+        tx = await connection.sendRawTransaction(signedTx.serialize(), {
+          skipPreflight: false,
+          maxRetries: 3,
+          preflightCommitment: 'confirmed',
+        });
+      } else {
+        // Desktop: Keep existing sendTransaction (works fine)
+        console.log('💻 [Minting] Desktop detected - using sendTransaction');
+        
+        if (!wallet.sendTransaction) {
+          throw new Error('Wallet does not support sendTransaction. Please use a compatible wallet like Phantom or Solflare.');
+        }
+        
+        tx = await wallet.sendTransaction(transaction, connection, {
           skipPreflight: false,
           maxRetries: 3
         });
-        
-        console.log('📤 Transaction sent:', tx);
-        console.log('⏳ Confirming mint transaction...');
-        
-        await connection.confirmTransaction({
-          signature: tx,
-          blockhash,
-          lastValidBlockHeight
-        }, 'confirmed');
-
-        console.log('✅ Minting successful!', tx);
-        setTxSignature(tx);
-        
-        // Increment total mints immediately for UI responsiveness
-        setTotalMints(prev => prev + 1);
-
-        // Wait for state to update on-chain
-        await new Promise(resolve => setTimeout(resolve, CHAIN_STATE_UPDATE_DELAY_MS));
-
-        // Refresh balance and last mint time
-        await checkUserRegistration();
-        const newLastMintTime = await getLastMintTime(connection, userAccountPDA);
-        setLastMintTime(newLastMintTime);
-        console.log('⏰ Updated last mint time:', newLastMintTime);
-        
-        // ✅ COOLDOWN GUARD: End mint successfully - reconcile with on-chain data
-        const now = Math.floor(Date.now() / 1000);
-        CooldownGuard.endMint(walletAddress, true, now, newLastMintTime);
-      } catch (sendTxErr: any) {
-        // Enhanced error logging for wallet adapter sendTransaction failures
-        console.error('❌ wallet.sendTransaction failed:', sendTxErr);
-        console.error('Error details:', {
-          message: sendTxErr?.message,
-          name: sendTxErr?.name,
-          code: sendTxErr?.code,
-          logs: sendTxErr?.logs,
-        });
-        throw sendTxErr; // Re-throw to be caught by outer catch block
       }
+
+      console.log('📤 Transaction sent:', tx);
+      console.log('⏳ Confirming mint transaction...');
+      
+      await connection.confirmTransaction({
+        signature: tx,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed');
+
+      console.log('✅ Minting successful!', tx);
+      setTxSignature(tx);
+      
+      // Increment total mints immediately for UI responsiveness
+      setTotalMints(prev => prev + 1);
+
+      // Wait for state to update on-chain
+      await new Promise(resolve => setTimeout(resolve, CHAIN_STATE_UPDATE_DELAY_MS));
+
+      // Refresh balance and last mint time
+      await checkUserRegistration();
+      const newLastMintTime = await getLastMintTime(connection, userAccountPDA);
+      setLastMintTime(newLastMintTime);
+      console.log('⏰ Updated last mint time:', newLastMintTime);
+      
+      // ✅ COOLDOWN GUARD: End mint successfully - reconcile with on-chain data
+      const now = Math.floor(Date.now() / 1000);
+      CooldownGuard.endMint(walletAddress, true, now, newLastMintTime);
 
     } catch (err: any) {
       console.error('❌ Minting error:', err);
@@ -1809,6 +1824,38 @@ export default function MintPage() {
       console.error('  - Mint:', mintPDA?.toBase58() || 'N/A');
       console.error('  - Mint Authority:', mintAuthority?.toBase58() || 'N/A');
       console.error('  - Token Program:', TOKEN_PROGRAM_ID?.toBase58() || 'N/A');
+      
+      // Check for mobile-specific errors first
+      const errMsg = err?.message || '';
+      
+      // User cancelled in wallet app (mobile)
+      if (errMsg.includes('User rejected') || errMsg.includes('rejected the request')) {
+        setError('❌ Transaction cancelled: You rejected the transaction in your wallet app.');
+        return;
+      }
+      
+      // Deep link timeout or wallet app not responding (mobile)
+      if (errMsg.includes('timeout') || errMsg.includes('not responding')) {
+        setError(
+          '❌ Wallet app did not respond. Please ensure:\n' +
+          '• Phantom or Solflare mobile app is installed\n' +
+          '• You approved the transaction in the wallet app\n' +
+          '• You were redirected back to the browser\n\n' +
+          'Try again and make sure to complete the approval in your wallet app.'
+        );
+        return;
+      }
+      
+      // Still a signature error after using signTransaction? (shouldn't happen on mobile)
+      if (errMsg.includes('Missing signature') || errMsg.includes('Signature verification failed')) {
+        setError(
+          '❌ Signature error: Please try these steps:\n' +
+          '1. Close and reopen your wallet app\n' +
+          '2. Disconnect and reconnect your wallet\n' +
+          '3. Clear browser cache and try again'
+        );
+        return;
+      }
       
       // Use categorized error with actionable guidance
       const categorizedError = categorizeError(err, logs);
