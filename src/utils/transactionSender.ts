@@ -216,6 +216,10 @@ export async function sendTransactionWithSign(
     // - The wallet supports signTransaction as an alternative
     //
     // This prevents duplicate retries when signAndSendRaw() was the original failing method
+    //
+    // @deprecated Mobile registration now uses a dedicated path (src/utils/mobileRegistration.ts)
+    // that avoids transaction.setSigners() and transaction.compileMessage() entirely,
+    // eliminating the need for this signature error retry fallback.
     const shouldFallback =
       usedSendTransaction && // ← KEY FIX: Only retry if sendTransaction was attempted
       (message.includes('missing signature') ||
@@ -225,6 +229,7 @@ export async function sendTransactionWithSign(
     if (shouldFallback) {
       console.warn('⚠️ [TransactionSender] sendTransaction() failed with signature error');
       console.warn('   Falling back to signTransaction() + sendRawTransaction()');
+      console.warn('   NOTE: Mobile registration now uses mobileRegistration.ts to avoid this fallback');
       try {
         return await signAndSendRaw();
       } catch (fallbackError: any) {
