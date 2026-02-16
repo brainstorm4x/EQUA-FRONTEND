@@ -98,12 +98,43 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
     return [mobileAdapter, phantomAdapter, solflareAdapter];
   }, [network]);
 
-  const onError = useCallback((error: WalletError) => {
-    console.error('❌ [WalletProvider] Wallet error:', {
-      name: error.name,
-      message: error.message,
-      error: error,
+  useEffect(() => {
+    console.log('✅ [WalletProvider] Wallet provider initialized with', wallets.length, 'adapters');
+    wallets.forEach((wallet, idx) => {
+      console.log(`  ${idx + 1}. ${wallet.name}`);
     });
+  }, [wallets]);
+
+  const onError = useCallback((error: WalletError) => {
+    console.error('❌ [WalletProvider] Wallet error occurred');
+    console.error('  Name:', error.name || 'Unknown');
+    console.error('  Message:', error.message || 'No message');
+    console.error('  Error code:', (error as any).code || 'No code');
+    
+    // Log stack trace if available
+    if (error.stack) {
+      console.error('  Stack:', error.stack);
+    }
+    
+    // Try to log additional properties
+    try {
+      const errorDetails = JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
+      console.error('  Full error details:', errorDetails);
+    } catch (stringifyError) {
+      console.error('  Could not stringify error:', stringifyError);
+    }
+    
+    // Provide user-friendly error messages for common issues
+    if (error.message?.includes('No available wallet')) {
+      console.error('  💡 User action needed: Install a Solana wallet app (Phantom or Solflare)');
+    } else if (error.message?.includes('User rejected')) {
+      console.error('  💡 User action: User cancelled the wallet connection');
+    } else if (error.message?.includes('deep link')) {
+      console.error('  💡 Possible issue: Deep link configuration or wallet app not responding');
+    }
+    
+    // Log the raw error object (for desktop DevTools)
+    console.error('  Raw error object:', error);
   }, []);
 
   return (
