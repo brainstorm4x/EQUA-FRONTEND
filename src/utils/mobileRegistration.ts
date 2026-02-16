@@ -1,13 +1,14 @@
 /**
  * Mobile Registration Utility
  * 
- * Mobile-specific registration function that avoids the patterns that break mobile wallet adapters:
- * - Does NOT call transaction.setSigners() - lets wallet.sendTransaction() manage signatures
- * - Does NOT call transaction.compileMessage() - avoids pre-compilation lock
+ * Mobile-specific registration function that uses the signTransaction pattern for mobile wallets:
+ * - Uses wallet.signTransaction() to trigger deep link to wallet app
+ * - Uses connection.sendRawTransaction() to submit the signed transaction
  * - Uses 'confirmed' commitment for fresher blockhash (survives deep-link round-trip)
  * - Sets skipPreflight: true to avoid simulation failures during mobile app-switch delay
  * 
- * This is the clean pattern that already works for mobile minting in handleMint().
+ * This pattern avoids the "Missing signature" error that occurs when using sendTransaction()
+ * with mobile wallet adapters.
  */
 
 import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
@@ -19,6 +20,7 @@ import { Program } from '@coral-xyz/anchor';
 export interface MobileWalletAdapter {
   connected?: boolean;
   publicKey?: PublicKey | null;
+  signTransaction?: (transaction: Transaction) => Promise<Transaction>;
   sendTransaction?: (
     transaction: Transaction,
     connection: Connection,
@@ -135,41 +137,77 @@ export async function mobileRegister(params: MobileRegisterParams): Promise<{ si
   console.log('    → Locked ATA creation: 1');
   console.log('    → Registration (initializeUser): 1');
 
-  // Validate wallet has sendTransaction method
-  if (!wallet.sendTransaction) {
-    throw new Error('Mobile wallet does not support sendTransaction');
+  // Validate wallet has signTransaction method
+  if (!wallet.signTransaction) {
+    throw new Error('Wallet does not support transaction signing. Please use Phantom or Solflare mobile wallet.');
   }
 
-  console.log('📤 [MobileRegistration] Sending transaction via wallet.sendTransaction()...');
-  console.log('  - skipPreflight: true (avoids simulation failure during app-switch)');
-  console.log('  - This will open wallet app for approval');
+  try {
+    console.log('📱 [MobileRegistration] Calling wallet.signTransaction()...');
+    console.log('  - This will open your wallet app for approval');
 
-  // Send transaction using wallet.sendTransaction() directly
-  // No transaction.setSigners() - wallet manages signatures
-  // No transaction.compileMessage() - no pre-compilation
-  const signature = await wallet.sendTransaction(transaction, connection, {
-    skipPreflight: true,  // Avoid simulation failures during mobile app-switch delay
-    maxRetries: 3,
-  });
+    // Wallet signs (triggers deep link → opens wallet app)
+    const signedTx = await wallet.signTransaction(transaction);
 
-  console.log('✅ [MobileRegistration] Transaction sent successfully!');
-  console.log('  📍 Signature:', signature);
-  console.log('  📍 Explorer:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
+    console.log('✅ [MobileRegistration] Transaction signed by wallet');
+    console.log('📤 [MobileRegistration] Submitting signed transaction to Solana...');
 
-  console.log('⏳ [MobileRegistration] Confirming transaction...');
+    // Submit signed transaction
+    const signature = await connection.sendRawTransaction(signedTx.serialize(), {
+      skipPreflight: true,  // Avoid simulation failures during mobile app-switch delay
+      maxRetries: 3,
+      preflightCommitment: 'confirmed',
+    });
 
-  // Wait for confirmation using the same blockhash from transaction
-  await connection.confirmTransaction(
-    {
-      signature,
-      blockhash,
-      lastValidBlockHeight,
-    },
-    'confirmed'
-  );
+    console.log('✅ [MobileRegistration] Transaction submitted:', signature);
+    console.log('  📍 Explorer:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
 
-  console.log('✅ [MobileRegistration] Transaction confirmed on-chain');
-  console.log('  📍 Signature:', signature);
+    console.log('⏳ [MobileRegistration] Confirming transaction...');
 
-  return { signature };
+    // Wait for confirmation using the same blockhash from transaction
+    await connection.confirmTransaction(
+      {
+        signature,
+        blockhash,
+        lastValidBlockHeight,
+      },
+      'confirmed'
+    );
+
+    console.log('✅ [MobileRegistration] Transaction confirmed on-chain');
+    console.log('  📍 Signature:', signature);
+
+    return { signature };
+  } catch (error: any) {
+    const errorMessage = error?.message || '';
+    
+    // User cancelled in wallet app
+    if (errorMessage.includes('User rejected') || errorMessage.includes('rejected the request')) {
+      throw new Error('❌ Transaction cancelled: You rejected the transaction in your wallet app.');
+    }
+    
+    // Deep link timeout or wallet app not responding
+    if (errorMessage.includes('timeout') || errorMessage.includes('not responding')) {
+      throw new Error(
+        '❌ Wallet app did not respond. Please ensure:\n' +
+        '• Phantom or Solflare mobile app is installed\n' +
+        '• You approved the transaction in the wallet app\n' +
+        '• You were redirected back to the browser\n\n' +
+        'Try again and make sure to complete the approval in your wallet app.'
+      );
+    }
+    
+    // Still a signature error after using signTransaction? (shouldn't happen)
+    if (errorMessage.includes('Missing signature') || errorMessage.includes('Signature verification failed')) {
+      throw new Error(
+        '❌ Signature error: Please try these steps:\n' +
+        '1. Close and reopen your wallet app\n' +
+        '2. Disconnect and reconnect your wallet\n' +
+        '3. Clear browser cache and try again'
+      );
+    }
+    
+    // Re-throw other errors
+    throw error;
+  }
 }
