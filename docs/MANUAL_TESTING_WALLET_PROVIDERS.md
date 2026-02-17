@@ -1,13 +1,13 @@
-# Manual Testing Guide: Wallet Provider Separation
+# Manual Testing Guide: Unified Wallet Provider with Mobile Support
 
 ## Overview
-This guide covers manual testing for the wallet provider separation that fixes mobile wallet connection issues.
+This guide covers manual testing for the unified wallet provider that uses Phantom and Solflare's built-in mobile support via deep links.
 
 ## Changes Summary
-- **Separated desktop and mobile wallet flows** into independent providers
-- **Desktop Provider**: PhantomWalletAdapter + SolflareWalletAdapter, autoConnect: true
-- **Mobile Provider**: SolanaMobileWalletAdapter only, autoConnect: false
-- **Smart Router**: Detects platform and routes to appropriate provider
+- **Removed SolanaMobileWalletAdapter** (incompatible with mobile web browsers)
+- **Unified Provider**: PhantomWalletAdapter + SolflareWalletAdapter for both desktop and mobile
+- **Auto-Detection**: Wallet adapters automatically detect mobile browsers and use deep links
+- **No Separate Mobile Adapter**: Phantom and Solflare handle mobile via deep links internally
 
 ## Prerequisites
 
@@ -22,20 +22,20 @@ This guide covers manual testing for the wallet provider separation that fixes m
 - **Wallet App**: Phantom or Solflare mobile app installed
 - **Network**: Wallet app set to Devnet
 
-## Desktop Testing (No Regression)
+## Desktop Testing
 
 ### Test 1: Extension Detection
 1. Open browser with Phantom extension installed
 2. Navigate to application
-3. **Expected Console Log**: `[DesktopWalletProvider] Initializing desktop wallet adapters`
-4. ✅ **Pass Criteria**: Correct provider loads
+3. **Expected Console Log**: `[WalletProvider] Creating wallet adapters...`
+4. **Expected Console Log**: `Phantom and Solflare auto-detect mobile and use deep links`
+5. ✅ **Pass Criteria**: Provider initializes with 2 adapters
 
 ### Test 2: Wallet Modal Display
 1. Click "Select Wallet" button
 2. Modal opens
 3. **Expected**: Shows "Phantom" and "Solflare" options
-4. **NOT Expected**: "Mobile Wallet Adapter" should NOT appear
-5. ✅ **Pass Criteria**: Only desktop wallets shown
+4. ✅ **Pass Criteria**: Both wallets shown
 
 ### Test 3: Phantom Connection
 1. Click "Select Wallet" → Choose "Phantom"
@@ -56,36 +56,35 @@ This guide covers manual testing for the wallet provider separation that fixes m
 ### Test 5: Auto-Reconnect
 1. Connect wallet
 2. Refresh page
-3. **Expected**: Wallet auto-reconnects (autoConnect: true)
-4. **Expected**: No manual "Connect" click needed
-5. ✅ **Pass Criteria**: Auto-reconnect works
+3. **Expected**: Wallet auto-reconnects (autoConnect: false by default, but can be enabled)
+4. ✅ **Pass Criteria**: Auto-reconnect behavior works as configured
 
 ## Mobile Testing (Fix Verification)
 
 ### Test 6: Mobile Browser Detection
 1. Open Chrome on Android (or Safari on iOS)
 2. Navigate to application
-3. **Expected Console Log**: `[MobileWalletProvider] Initializing Mobile Wallet Adapter`
-4. **Expected Console Log**: `[WalletProvider] Platform detected: { mobile: true, isInAppBrowser: false, willUseMobileProvider: true }`
-5. ✅ **Pass Criteria**: Correct provider loads
+3. **Expected Console Log**: `[WalletProvider] Creating wallet adapters...`
+4. **Expected Console Log**: `Phantom and Solflare auto-detect mobile and use deep links`
+5. **Expected Console Log**: `Is Mobile: true`
+6. ✅ **Pass Criteria**: Same adapters load, mobile detection logged
 
 ### Test 7: Wallet Modal Display (Mobile)
 1. Tap "Select Wallet" button
 2. Modal opens
-3. **Expected**: Shows ONLY "Mobile Wallet Adapter"
-4. **NOT Expected**: Phantom/Solflare desktop adapters should NOT appear
-5. ✅ **Pass Criteria**: Only mobile adapter shown
+3. **Expected**: Shows "Phantom" and "Solflare" options (same as desktop)
+4. ✅ **Pass Criteria**: Both wallets shown
 
 ### Test 8: Deep Link Trigger (KEY FIX)
-1. Tap "Select Wallet" → Tap "Mobile Wallet Adapter"
-2. ✅ **CRITICAL**: Android "Open with" dialog appears (or iOS equivalent)
-3. **Expected**: Lists installed wallet apps (Phantom, Solflare, etc.)
-4. ✅ **Pass Criteria**: Deep link dialog appears (THIS WAS BROKEN BEFORE)
+1. Tap "Select Wallet" → Tap "Phantom" or "Solflare"
+2. ✅ **CRITICAL**: Deep link triggers automatically
+3. **Expected**: Phantom/Solflare app opens with connection request
+4. ✅ **Pass Criteria**: Deep link works (NO WebSocket errors)
 
 ### Test 9: Phantom Mobile Connection
-1. From "Open with" dialog, select "Phantom"
-2. ✅ **CRITICAL**: Phantom app opens with connection request
-3. **Expected**: Shows "EQUA Token" wants to connect
+1. Tap "Phantom" in wallet modal
+2. ✅ **CRITICAL**: Phantom app opens with connection request via deep link
+3. **Expected**: Shows connection request for app
 4. Tap "Connect" in Phantom app
 5. ✅ **CRITICAL**: Browser automatically returns
 6. **Expected**: Shows "Connected" status
@@ -94,13 +93,13 @@ This guide covers manual testing for the wallet provider separation that fixes m
 
 ### Test 10: Solflare Mobile Connection
 1. Disconnect if connected
-2. Repeat Test 8-9 but choose "Solflare"
+2. Repeat Test 9 but tap "Solflare"
 3. ✅ **Pass Criteria**: Complete connection flow works
 
 ### Test 11: No Auto-Reconnect (Mobile Behavior)
 1. Connect wallet on mobile
 2. Refresh page
-3. **Expected**: Wallet does NOT auto-reconnect (autoConnect: false)
+3. **Expected**: Wallet does NOT auto-reconnect (autoConnect: false by default)
 4. **Expected**: User must manually tap "Connect" again
 5. ✅ **Pass Criteria**: No auto-reconnect (this is correct mobile behavior)
 
@@ -109,19 +108,18 @@ This guide covers manual testing for the wallet provider separation that fixes m
 ### Test 12: Phantom In-App Browser
 1. Open Phantom app
 2. Use built-in browser to navigate to application
-3. **Expected Console Log**: `[WalletProvider] Platform detected: { mobile: true, isInAppBrowser: true, willUseMobileProvider: false }`
-4. **Expected**: DesktopWalletProvider loads (NOT MobileWalletProvider)
-5. **Reason**: In-app browser has `window.solana` injected
-6. Click "Select Wallet" → Choose "Phantom"
-7. **Expected**: Instant connection (no deep link needed)
-8. ✅ **Pass Criteria**: Desktop provider used correctly
+3. **Expected**: Standard wallet adapters load
+4. **Reason**: In-app browser has `window.solana` injected
+5. Click "Select Wallet" → Choose "Phantom"
+6. **Expected**: Instant connection (no deep link needed)
+7. ✅ **Pass Criteria**: In-app browser connection works
 
 ### Test 13: Solflare In-App Browser
 1. Open Solflare app
 2. Use built-in browser to navigate to application
-3. **Expected**: DesktopWalletProvider loads
+3. **Expected**: Standard wallet adapters load
 4. **Reason**: In-app browser has `window.solflare` injected
-5. ✅ **Pass Criteria**: Desktop provider used correctly
+5. ✅ **Pass Criteria**: In-app browser connection works
 
 ## Error Handling
 
@@ -133,9 +131,9 @@ This guide covers manual testing for the wallet provider separation that fixes m
 
 ### Test 15: Mobile - No Wallet App Installed
 1. Use device without wallet apps
-2. Tap "Select Wallet" → Tap "Mobile Wallet Adapter"
-3. **Expected Warning**: "Wallet not ready. Please ensure Phantom or Solflare mobile app is installed and unlocked."
-4. ✅ **Pass Criteria**: Clear error message
+2. Tap "Select Wallet" → Tap "Phantom" or "Solflare"
+3. **Expected Warning**: Wallet app opens or error message shown
+4. ✅ **Pass Criteria**: Clear error message or app store redirect
 
 ### Test 16: Wrong Network
 1. Set wallet to Mainnet (app expects Devnet)
@@ -145,28 +143,21 @@ This guide covers manual testing for the wallet provider separation that fixes m
 
 ## Console Logging (Debugging)
 
-### Desktop Logs
+### Provider Initialization Logs
 ```
-[DesktopWalletProvider] Initializing desktop wallet adapters
-```
-
-### Mobile Logs
-```
-[MobileWalletProvider] Initializing Mobile Wallet Adapter
-[WalletProvider] Platform detected: {
-  mobile: true,
-  isInAppBrowser: false,
-  willUseMobileProvider: true
-}
-```
-
-### In-App Browser Logs
-```
-[WalletProvider] Platform detected: {
-  mobile: true,
-  isInAppBrowser: true,
-  willUseMobileProvider: false
-}
+[WalletProvider] Initializing wallet provider...
+  📍 Network: devnet
+  📍 RPC Endpoint: https://api.devnet.solana.com
+  📍 User Agent: [user agent string]
+  📍 Is Mobile: [true/false]
+[WalletProvider] Creating wallet adapters...
+📱 Phantom and Solflare auto-detect mobile and use deep links
+  ✅ Phantom adapter created: Phantom
+  ✅ Solflare adapter created: Solflare
+[WalletProvider] Total adapters: 2
+✅ [WalletProvider] Wallet provider initialized with 2 adapters (mobile auto-detection enabled)
+  1. Phantom
+  2. Solflare
 ```
 
 ## Accessibility Testing
@@ -180,18 +171,18 @@ This guide covers manual testing for the wallet provider separation that fixes m
 ## Troubleshooting
 
 ### Issue: Modal closes but nothing happens (Mobile)
-- **Before Fix**: This was the bug - modal closed, no deep link
-- **After Fix**: "Open with" dialog should appear
-- **If still broken**: Check console logs, ensure MobileWalletProvider is loading
+- **Solution**: Phantom and Solflare now handle deep links automatically
+- **Check**: Ensure wallet app is installed and updated
+- **Check**: Console logs for errors
 
-### Issue: Desktop auto-reconnect not working
-- **Check**: Ensure DesktopWalletProvider is loading (check console)
-- **Check**: Browser extension is unlocked
-- **Note**: autoConnect: true is desktop-only
+### Issue: "Missing signature" or "WebSocket" errors (Mobile)
+- **Before Fix**: This was the bug with SolanaMobileWalletAdapter
+- **After Fix**: These errors should NOT occur
+- **If still occurring**: Check that package was properly updated (no @solana-mobile/wallet-adapter-mobile)
 
-### Issue: Mobile auto-reconnects
-- **This is wrong**: Mobile should NOT auto-reconnect (autoConnect: false)
-- **Check**: Ensure MobileWalletProvider is loading, not DesktopWalletProvider
+### Issue: Auto-reconnect behavior
+- **Note**: autoConnect is set to false by default
+- **Check**: Ensure browser extension/app is unlocked
 
 ## Test Results Template
 
@@ -233,26 +224,27 @@ Notes: ________
 
 ## Success Criteria
 
-✅ **Desktop**: No regressions - all existing flows work
-✅ **Mobile**: Deep linking works - "Open with" dialog appears
-✅ **Console**: Correct provider logs appear
-✅ **Separation**: Desktop and mobile flows are independent
+✅ **Desktop**: All flows work with browser extensions
+✅ **Mobile**: Deep linking works - wallet apps open automatically
+✅ **Console**: Correct provider logs show 2 adapters with mobile auto-detection
+✅ **Unified**: Same adapters work across all platforms
 
 ## Before/After Comparison
 
 ### Before (Broken)
 ```
-Mobile User → Taps "Mobile Wallet Adapter" 
-→ Modal closes → NOTHING HAPPENS ❌
+Mobile User → Taps wallet button
+→ "Missing signature" error ❌
+→ WebSocket connection failed ❌
 → User stuck, can't connect
 ```
 
 ### After (Fixed)
 ```
-Mobile User → Taps "Mobile Wallet Adapter"
-→ "Open with" dialog appears ✅
-→ Selects wallet app
-→ App opens with connection request ✅
+Mobile User → Taps "Phantom" or "Solflare"
+→ Deep link triggers automatically ✅
+→ Wallet app opens with connection request ✅
 → User approves
 → Returns to browser, connected ✅
+→ No WebSocket or signature errors ✅
 ```

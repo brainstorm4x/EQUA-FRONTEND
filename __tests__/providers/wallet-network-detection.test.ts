@@ -1,9 +1,9 @@
 /**
  * Tests for WalletProvider network detection logic
  * 
- * This validates the fix for mobile wallet connection issues where
- * SolanaMobileWalletAdapter requires string literals ('devnet' | 'testnet' | 'mainnet-beta')
- * instead of WalletAdapterNetwork enum values.
+ * This validates network string literal handling for wallet adapters.
+ * Phantom and Solflare adapters use WalletAdapterNetwork enum values,
+ * which are string literals ('devnet' | 'testnet' | 'mainnet-beta').
  */
 
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
@@ -36,21 +36,21 @@ describe('WalletProvider Network Detection', () => {
       const result = getExpectedNetwork('https://api.devnet.solana.com');
       expect(result).toBe('devnet');
       expect(typeof result).toBe('string');
-      // String literal 'devnet' is the correct type for Mobile Wallet Adapter
+      // String literal 'devnet' is the correct type for wallet adapters
     });
 
     it('should return "testnet" string for testnet RPC endpoint', () => {
       const result = getExpectedNetwork('https://api.testnet.solana.com');
       expect(result).toBe('testnet');
       expect(typeof result).toBe('string');
-      // String literal 'testnet' is the correct type for Mobile Wallet Adapter
+      // String literal 'testnet' is the correct type for wallet adapters
     });
 
     it('should return "mainnet-beta" string for mainnet RPC endpoint', () => {
       const result = getExpectedNetwork('https://api.mainnet-beta.solana.com');
       expect(result).toBe('mainnet-beta');
       expect(typeof result).toBe('string');
-      // String literal 'mainnet-beta' is the correct type for Mobile Wallet Adapter
+      // String literal 'mainnet-beta' is the correct type for wallet adapters
     });
 
     it('should handle case-insensitive endpoint matching', () => {
@@ -110,12 +110,12 @@ describe('WalletProvider Network Detection', () => {
     });
   });
 
-  describe('Integration: Mobile Wallet Adapter Type Safety', () => {
-    it('should provide string literal compatible with SolanaMobileWalletAdapter chain param', () => {
-      // Simulate what SolanaMobileWalletAdapter expects
-      type MobileWalletChain = 'devnet' | 'testnet' | 'mainnet-beta';
+  describe('Integration: Wallet Adapter Type Safety', () => {
+    it('should provide string literal compatible with wallet adapter chain param', () => {
+      // Wallet adapters expect string literal types
+      type WalletChain = 'devnet' | 'testnet' | 'mainnet-beta';
       
-      const acceptsChainString = (chain: MobileWalletChain) => chain;
+      const acceptsChainString = (chain: WalletChain) => chain;
       
       // This should compile and work without type errors
       const network = getExpectedNetwork('https://api.devnet.solana.com');
@@ -170,20 +170,20 @@ describe('WalletProvider Network Detection', () => {
       
       // The key is the return TYPE is 'devnet' | 'testnet' | 'mainnet-beta'
       // not WalletAdapterNetwork enum, even though values overlap
-      // This ensures type compatibility with Mobile Wallet Adapter's cluster param
+      // This ensures type compatibility with wallet adapters' cluster param
     });
 
-    it('should fix mobile wallet "not on devnet" error scenario', () => {
+    it('should fix wallet "not on devnet" error scenario', () => {
       // Scenario: RPC is devnet, wallet expects 'devnet' string
       const rpcEndpoint = 'https://api.devnet.solana.com';
       const detectedNetwork = getExpectedNetwork(rpcEndpoint);
       
-      // Mobile Wallet Adapter validation (simplified)
-      const mobileWalletExpects: 'devnet' | 'testnet' | 'mainnet-beta' = 'devnet';
+      // Wallet Adapter validation (simplified)
+      const walletExpects: 'devnet' | 'testnet' | 'mainnet-beta' = 'devnet';
       
       // This should match without type errors
-      expect(detectedNetwork).toBe(mobileWalletExpects);
-      expect(typeof detectedNetwork).toBe(typeof mobileWalletExpects);
+      expect(detectedNetwork).toBe(walletExpects);
+      expect(typeof detectedNetwork).toBe(typeof walletExpects);
     });
   });
 });
