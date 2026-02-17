@@ -117,29 +117,30 @@ EQUA supports three distinct wallet connection environments:
 
 **Adapter Selection:**
 ```typescript
-// Desktop & Mobile In-App: Standard adapters
-new PhantomWalletAdapter()
-new SolflareWalletAdapter()
+// Always provide standard adapters for all environments
+const wallets = [
+  new PhantomWalletAdapter(),
+  new SolflareWalletAdapter({ network })
+];
 
-// Mobile External: Mobile Wallet Adapter
-new SolanaMobileWalletAdapter({
-  appIdentity: { name, uri, icon },
-  cluster: 'devnet',
-})
+// @solana/wallet-adapter-react (v0.15.21+) automatically:
+// 1. Detects mobile environment (Android non-WebView)
+// 2. Creates and adds Mobile Wallet Adapter when on mobile
+// 3. Prepends MWA to adapter list for deep linking support
 ```
 
-**Deep Linking:**
-- Mobile Wallet Adapter uses deep links (`solana-wallet://`) to open native wallet apps
+**Mobile Wallet Adapter (Auto-Added on Mobile):**
+- Automatically created by `@solana/wallet-adapter-react` when mobile is detected
+- Uses deep links (`solana-wallet://`) to open native wallet apps
 - Automatically redirects back to browser after wallet interaction
 - Works with all Solana Mobile Stack (SMS) compatible wallets
+- No manual configuration needed for basic setup
 
-**App Identity:**
+**App Identity (Auto-Generated):**
 ```typescript
 {
-  name: 'EQUA Token',
-  uri: 'https://equa-frontend.netlify.app',
-  icon: 'https://equa-frontend.netlify.app/branding/equa-logo.svg',
-  chain: 'devnet' // or 'mainnet-beta'
+  uri: window.location.origin,  // Auto-detected
+  // Optional: Configure custom name and icon via WalletProvider
 }
 ```
 
