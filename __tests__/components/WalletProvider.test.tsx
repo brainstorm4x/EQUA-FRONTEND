@@ -26,17 +26,6 @@ jest.mock('@solana/wallet-adapter-wallets', () => ({
   SolflareWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Solflare' })),
 }));
 
-jest.mock('@solana-mobile/wallet-adapter-mobile', () => ({
-  SolanaMobileWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Mobile Wallet Adapter' })),
-  createDefaultAddressSelector: jest.fn(() => ({ select: jest.fn() })),
-  createDefaultAuthorizationResultCache: jest.fn(() => ({ 
-    set: jest.fn(),
-    get: jest.fn(),
-    clear: jest.fn(),
-  })),
-  createDefaultWalletNotFoundHandler: jest.fn(() => jest.fn()),
-}));
-
 describe('WalletProvider Configuration', () => {
   beforeEach(() => {
     // Reset mocks before each test
@@ -96,11 +85,9 @@ describe('WalletProvider Configuration', () => {
   });
 
   describe('Wallet Adapters', () => {
-    it('should initialize with multiple wallet adapters including mobile', () => {
+    it('should initialize with Phantom and Solflare wallet adapters', () => {
       const { PhantomWalletAdapter, SolflareWalletAdapter } = 
         require('@solana/wallet-adapter-wallets');
-      const { SolanaMobileWalletAdapter } = 
-        require('@solana-mobile/wallet-adapter-mobile');
 
       render(
         <WalletProvider>
@@ -109,41 +96,23 @@ describe('WalletProvider Configuration', () => {
       );
 
       // Verify that wallet adapters were instantiated
-      expect(SolanaMobileWalletAdapter).toHaveBeenCalled();
       expect(PhantomWalletAdapter).toHaveBeenCalled();
       expect(SolflareWalletAdapter).toHaveBeenCalled();
     });
 
-    it('should initialize SolanaMobileWalletAdapter with correct configuration', () => {
-      const { 
-        SolanaMobileWalletAdapter,
-        createDefaultAddressSelector,
-        createDefaultAuthorizationResultCache,
-        createDefaultWalletNotFoundHandler,
-      } = require('@solana-mobile/wallet-adapter-mobile');
-
+    it('should not use SolanaMobileWalletAdapter (removed for web compatibility)', () => {
       render(
         <WalletProvider>
           <div>Test</div>
         </WalletProvider>
       );
 
-      // Verify that helper functions were called
-      expect(createDefaultAddressSelector).toHaveBeenCalled();
-      expect(createDefaultAuthorizationResultCache).toHaveBeenCalled();
-      expect(createDefaultWalletNotFoundHandler).toHaveBeenCalled();
-
-      // Verify SolanaMobileWalletAdapter was initialized
-      expect(SolanaMobileWalletAdapter).toHaveBeenCalled();
+      // Phantom and Solflare adapters handle mobile detection automatically
+      const { PhantomWalletAdapter, SolflareWalletAdapter } = 
+        require('@solana/wallet-adapter-wallets');
       
-      // Verify it was called with the right structure (has required fields)
-      expect(SolanaMobileWalletAdapter).toHaveBeenCalledTimes(1);
-      const callArgs = SolanaMobileWalletAdapter.mock.calls[0][0];
-      expect(callArgs).toHaveProperty('appIdentity');
-      expect(callArgs).toHaveProperty('addressSelector');
-      expect(callArgs).toHaveProperty('authorizationResultCache');
-      expect(callArgs).toHaveProperty('chain');  // ✅ Modern API (not deprecated 'cluster')
-      expect(callArgs).toHaveProperty('onWalletNotFound');
+      expect(PhantomWalletAdapter).toHaveBeenCalled();
+      expect(SolflareWalletAdapter).toHaveBeenCalled();
     });
   });
 
@@ -206,15 +175,14 @@ describe('WalletProvider Configuration', () => {
     });
   });
 
-  describe('Mobile Wallet Adapter', () => {
+  describe('Mobile Wallet Support', () => {
     beforeEach(() => {
       // Clear mocks before each test
       jest.clearAllMocks();
     });
 
-    it('should render without errors when mobile detection is active', () => {
-      // This test verifies that the component can handle mobile detection
-      // The actual mobile vs desktop wallet selection is based on runtime user agent
+    it('should render without errors (mobile detection handled by adapters)', () => {
+      // Phantom and Solflare adapters auto-detect mobile browsers and use deep links
       expect(() => {
         render(
           <WalletProvider>
@@ -224,8 +192,7 @@ describe('WalletProvider Configuration', () => {
       }).not.toThrow();
     });
     
-    it('should initialize wallet adapters based on device type', () => {
-      // Desktop wallets should be initialized (default in test environment)
+    it('should initialize Phantom and Solflare adapters with mobile auto-detection', () => {
       const { PhantomWalletAdapter, SolflareWalletAdapter } = 
         require('@solana/wallet-adapter-wallets');
       
@@ -235,7 +202,7 @@ describe('WalletProvider Configuration', () => {
         </WalletProvider>
       );
       
-      // In test environment (non-mobile user agent), desktop wallets are used
+      // Both adapters automatically handle mobile detection
       expect(PhantomWalletAdapter).toHaveBeenCalled();
       expect(SolflareWalletAdapter).toHaveBeenCalled();
     });

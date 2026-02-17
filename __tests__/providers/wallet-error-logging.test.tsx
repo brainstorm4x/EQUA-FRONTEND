@@ -48,17 +48,6 @@ jest.mock('@solana/wallet-adapter-wallets', () => ({
   SolflareWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Solflare' })),
 }));
 
-jest.mock('@solana-mobile/wallet-adapter-mobile', () => ({
-  SolanaMobileWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Mobile Wallet Adapter' })),
-  createDefaultAddressSelector: jest.fn(() => ({ select: jest.fn() })),
-  createDefaultAuthorizationResultCache: jest.fn(() => ({
-    set: jest.fn(),
-    get: jest.fn(),
-    clear: jest.fn(),
-  })),
-  createDefaultWalletNotFoundHandler: jest.fn(() => jest.fn()),
-}));
-
 describe('WalletProvider Error Logging', () => {
   beforeEach(() => {
     // Spy on console.error

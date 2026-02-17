@@ -12,12 +12,6 @@ import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
-import {
-  SolanaMobileWalletAdapter,
-  createDefaultAddressSelector,
-  createDefaultAuthorizationResultCache,
-  createDefaultWalletNotFoundHandler,
-} from '@solana-mobile/wallet-adapter-mobile';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { ProgramIdMigration } from '@/components/ProgramIdMigration';
 import { WalletDebugLogger } from '@/components/WalletDebugLogger';
@@ -52,15 +46,15 @@ const WalletConnectionLogger: FC = () => {
  * 
  * ARCHITECTURE:
  * - Single ConnectionProvider for all environments
- * - Single WalletProvider with all adapters
+ * - Single WalletProvider with Phantom and Solflare adapters
  * - Wallet adapter library auto-detects environment
- * - Mobile browsers → SolanaMobileWalletAdapter
- * - Desktop browsers → PhantomWalletAdapter or SolflareWalletAdapter
+ * - Mobile browsers → PhantomWalletAdapter or SolflareWalletAdapter use deep links
+ * - Desktop browsers → PhantomWalletAdapter or SolflareWalletAdapter use extensions
  * 
  * CRITICAL:
  * - No nested providers (prevents conflicts)
- * - All adapters available simultaneously
- * - Adapter selection happens internally by wallet-adapter library
+ * - Phantom and Solflare automatically detect mobile and use deep links
+ * - No separate mobile adapter needed for web applications
  */
 export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
@@ -74,32 +68,21 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
 
   const wallets = useMemo(() => {
     console.log('🔧 [WalletProvider] Creating wallet adapters...');
+    console.log('📱 Phantom and Solflare auto-detect mobile and use deep links');
     
-    const mobileAdapter = new SolanaMobileWalletAdapter({
-      addressSelector: createDefaultAddressSelector(),
-      appIdentity: {
-        name: 'EQUA',
-        uri: 'https://equa.app',
-      },
-      authorizationResultCache: createDefaultAuthorizationResultCache(),
-      chain: network,  // ✅ Modern API (not deprecated 'cluster')
-      onWalletNotFound: createDefaultWalletNotFoundHandler(),
-    });
-    console.log('  ✅ Mobile adapter created:', mobileAdapter.name);
-
     const phantomAdapter = new PhantomWalletAdapter();
     console.log('  ✅ Phantom adapter created:', phantomAdapter.name);
 
     const solflareAdapter = new SolflareWalletAdapter({ network });
     console.log('  ✅ Solflare adapter created:', solflareAdapter.name);
 
-    console.log('🔧 [WalletProvider] Total adapters:', [mobileAdapter, phantomAdapter, solflareAdapter].length);
+    console.log('🔧 [WalletProvider] Total adapters:', [phantomAdapter, solflareAdapter].length);
 
-    return [mobileAdapter, phantomAdapter, solflareAdapter];
+    return [phantomAdapter, solflareAdapter];
   }, [network]);
 
   useEffect(() => {
-    console.log('✅ [WalletProvider] Wallet provider initialized with', wallets.length, 'adapters');
+    console.log('✅ [WalletProvider] Wallet provider initialized with', wallets.length, 'adapters (mobile auto-detection enabled)');
     wallets.forEach((wallet, idx) => {
       console.log(`  ${idx + 1}. ${wallet.name}`);
     });

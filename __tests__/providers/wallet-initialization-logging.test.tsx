@@ -37,17 +37,6 @@ jest.mock('@solana/wallet-adapter-wallets', () => ({
   SolflareWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Solflare' })),
 }));
 
-jest.mock('@solana-mobile/wallet-adapter-mobile', () => ({
-  SolanaMobileWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Mobile Wallet Adapter' })),
-  createDefaultAddressSelector: jest.fn(() => ({ select: jest.fn() })),
-  createDefaultAuthorizationResultCache: jest.fn(() => ({
-    set: jest.fn(),
-    get: jest.fn(),
-    clear: jest.fn(),
-  })),
-  createDefaultWalletNotFoundHandler: jest.fn(() => jest.fn()),
-}));
-
 describe('WalletProvider Initialization Logging', () => {
   beforeEach(() => {
     // Spy on console.log
@@ -66,11 +55,11 @@ describe('WalletProvider Initialization Logging', () => {
       </WalletProvider>
     );
 
-    // Should log initialization with 3 adapters
+    // Should log initialization with 2 adapters (Phantom and Solflare)
     expect(consoleLogSpy).toHaveBeenCalledWith(
       '✅ [WalletProvider] Wallet provider initialized with',
-      3,
-      'adapters'
+      2,
+      'adapters (mobile auto-detection enabled)'
     );
   });
 
@@ -81,10 +70,9 @@ describe('WalletProvider Initialization Logging', () => {
       </WalletProvider>
     );
 
-    // Should list each adapter
-    expect(consoleLogSpy).toHaveBeenCalledWith('  1. Mobile Wallet Adapter');
-    expect(consoleLogSpy).toHaveBeenCalledWith('  2. Phantom');
-    expect(consoleLogSpy).toHaveBeenCalledWith('  3. Solflare');
+    // Should list each adapter (now only Phantom and Solflare)
+    expect(consoleLogSpy).toHaveBeenCalledWith('  1. Phantom');
+    expect(consoleLogSpy).toHaveBeenCalledWith('  2. Solflare');
   });
 
   it('should log initialization only when wallets change', () => {
