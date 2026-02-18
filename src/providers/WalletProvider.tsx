@@ -1,25 +1,13 @@
 'use client';
 
-import { FC, ReactNode, useMemo, useCallback, useEffect } from 'react';
-import { clusterApiUrl } from '@solana/web3.js';
-import {
-  ConnectionProvider,
-  WalletProvider as SolanaWalletProvider,
-  useWallet,
-} from '@solana/wallet-adapter-react';
-import { WalletError, WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import {
-  PhantomWalletAdapter,
-  SolflareWalletAdapter,
-} from '@solana/wallet-adapter-wallets';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import { FC, ReactNode, useState, useEffect } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { detectWalletEnvironment, type WalletEnvironment } from '@/utils/walletEnvironment';
+import { DesktopWalletProvider } from './DesktopWalletProvider';
+import { MobileInAppWalletProvider } from './MobileInAppWalletProvider';
+import { MobileExternalWalletProvider } from './MobileExternalWalletProvider';
 import { ProgramIdMigration } from '@/components/ProgramIdMigration';
 import { WalletDebugLogger } from '@/components/WalletDebugLogger';
-import { 
-  detectWalletEnvironment, 
-  getEnvironmentDescription,
-  type WalletEnvironment 
-} from '@/utils/walletEnvironment';
 
 interface WalletProviderProps {
   children: ReactNode;
@@ -47,123 +35,77 @@ const WalletConnectionLogger: FC = () => {
 };
 
 /**
- * Unified Wallet Provider with Environment-Based Adapter Selection
+ * Wallet Provider Router
  * 
  * ARCHITECTURE:
- * - Single ConnectionProvider for all environments
- * - Environment detection determines which adapters to use
- * - Three distinct environments:
- *   1. Desktop → Browser extension adapters (Phantom, Solflare)
- *   2. Mobile In-App Browser → Injected wallet adapters (Phantom, Solflare)
- *   3. Mobile External Browser → Mobile Wallet Adapter with deep linking
+ * - Detects environment ONCE on client mount
+ * - Routes to environment-specific provider BEFORE rendering children
+ * - Three isolated provider flows:
+ *   1. Desktop → DesktopWalletProvider (Phantom/Solflare extensions)
+ *   2. Mobile In-App → MobileInAppWalletProvider (injected wallet)
+ *   3. Mobile External → MobileExternalWalletProvider (Mobile Wallet Adapter with deep linking)
  * 
  * CRITICAL:
- * - Desktop and mobile in-app use standard adapters (window.solana injection)
- * - Mobile external browsers MUST use Mobile Wallet Adapter for deep linking
- * - No nested providers (prevents conflicts)
+ * - No adapter mixing - each environment has its own provider tree
+ * - Complete flow isolation - separate code paths, no shared state
+ * - Preserves existing features: ProgramIdMigration, WalletDebugLogger, WalletConnectionLogger
  */
 export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
-  const network = WalletAdapterNetwork.Devnet;
-  const endpoint = clusterApiUrl(network);
-
-  // Detect wallet environment on mount (client-side only)
-  const environment = typeof window !== 'undefined' 
-    ? detectWalletEnvironment() 
-    : 'desktop'; // Default to desktop during SSR
-
-  console.log('🔧 [WalletProvider] Initializing wallet provider...');
-  console.log('  📍 Network:', network);
-  console.log('  📍 RPC Endpoint:', endpoint);
-  console.log('  📍 Environment:', environment);
-  console.log('  📍 Description:', getEnvironmentDescription(environment));
-  console.log('  📍 User Agent:', typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A');
-
-  const wallets = useMemo(() => {
-    console.log('🔧 [WalletProvider] Creating wallet adapters for environment:', environment);
-    
-    // IMPORTANT: Always provide standard adapters (Phantom, Solflare)
-    // @solana/wallet-adapter-react (v0.15.21+) automatically:
-    // 1. Detects mobile environment
-    // 2. Creates and adds Mobile Wallet Adapter when on mobile
-    // 3. Prepends MWA to adapter list for mobile users
-    //
-    // Desktop/Mobile In-App: Standard adapters work via window.solana injection
-    // Mobile External: WalletProvider auto-adds Mobile Wallet Adapter for deep linking
-    
-    const phantomAdapter = new PhantomWalletAdapter();
-    const solflareAdapter = new SolflareWalletAdapter({ network });
-    
-    console.log('  ✅ Phantom adapter created');
-    console.log('  ✅ Solflare adapter created');
-    
-    if (environment === 'mobile-browser') {
-      console.log('  📱 Mobile external browser detected');
-      console.log('  🔗 WalletProvider will auto-add Mobile Wallet Adapter with deep linking');
-    } else if (environment === 'mobile-inapp') {
-      console.log('  📱 Mobile in-app browser detected - wallet injected via window.solana');
-    } else {
-      console.log('  🖥️ Desktop browser detected - using extensions');
-    }
-    
-    // Return standard adapters - let WalletProvider handle mobile detection
-    return [phantomAdapter, solflareAdapter];
-  }, [network, environment]);
-
+  const [environment, setEnvironment] = useState<WalletEnvironment | null>(null);
+  
   useEffect(() => {
-    console.log('✅ [WalletProvider] Wallet provider initialized');
-    console.log('  📍 Environment:', environment);
-    console.log('  📍 Total adapters:', wallets.length);
-    wallets.forEach((wallet, idx) => {
-      console.log(`  ${idx + 1}. ${wallet.name}`);
-    });
-  }, [wallets, environment]);
-
-  const onError = useCallback((error: WalletError) => {
-    console.error('❌ [WalletProvider] Wallet error occurred');
-    console.error('  Name:', error.name || 'Unknown');
-    console.error('  Message:', error.message || 'No message');
-    console.error('  Error code:', (error as any).code || 'No code');
-    
-    // Log stack trace if available
-    if (error.stack) {
-      console.error('  Stack:', error.stack);
+    // Detect environment ONCE on client mount
+    if (typeof window !== 'undefined') {
+      const detected = detectWalletEnvironment();
+      setEnvironment(detected);
+      console.log('🔀 [WalletProvider] Environment detected:', detected);
     }
-    
-    // Try to log additional properties
-    try {
-      const errorDetails = JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
-      console.error('  Full error details:', errorDetails);
-    } catch (stringifyError) {
-      console.error('  Could not stringify error:', stringifyError);
-    }
-    
-    // Provide user-friendly error messages for common issues
-    if (error.message?.includes('No available wallet')) {
-      console.error('  💡 User action needed: Install a Solana wallet app (Phantom or Solflare)');
-    } else if (error.message?.includes('User rejected')) {
-      console.error('  💡 User action: User cancelled the wallet connection');
-    } else if (error.message?.includes('deep link')) {
-      console.error('  💡 Possible issue: Deep link configuration or wallet app not responding');
-    }
-    
-    // Log the raw error object (for desktop DevTools)
-    console.error('  Raw error object:', error);
   }, []);
 
-  return (
-    <ConnectionProvider endpoint={endpoint}>
-      <SolanaWalletProvider 
-        wallets={wallets} 
-        onError={onError} 
-        autoConnect={false}  // Disable autoConnect to prevent mobile re-connection issues
-      >
-        <WalletModalProvider>
-          <WalletDebugLogger />
-          <WalletConnectionLogger />
-          <ProgramIdMigration />
-          {children}
-        </WalletModalProvider>
-      </SolanaWalletProvider>
-    </ConnectionProvider>
+  // SSR fallback - show loading screen while detecting environment
+  if (!environment) {
+    return <div className="min-h-screen bg-gray-900" />;
+  }
+
+  // Wrap routed provider with migration and debug components
+  const ProviderWithExtras: FC<{ children: ReactNode }> = ({ children }) => (
+    <>
+      <ProgramIdMigration />
+      <WalletDebugLogger />
+      <WalletConnectionLogger />
+      {children}
+    </>
   );
+
+  // Route to environment-specific provider
+  switch (environment) {
+    case 'desktop':
+      return (
+        <DesktopWalletProvider>
+          <ProviderWithExtras>{children}</ProviderWithExtras>
+        </DesktopWalletProvider>
+      );
+    
+    case 'mobile-inapp':
+      return (
+        <MobileInAppWalletProvider>
+          <ProviderWithExtras>{children}</ProviderWithExtras>
+        </MobileInAppWalletProvider>
+      );
+    
+    case 'mobile-browser':
+      return (
+        <MobileExternalWalletProvider>
+          <ProviderWithExtras>{children}</ProviderWithExtras>
+        </MobileExternalWalletProvider>
+      );
+    
+    default:
+      // Fallback to desktop provider
+      return (
+        <DesktopWalletProvider>
+          <ProviderWithExtras>{children}</ProviderWithExtras>
+        </DesktopWalletProvider>
+      );
+  }
 };
