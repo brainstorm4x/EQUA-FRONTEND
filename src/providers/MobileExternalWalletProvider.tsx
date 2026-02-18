@@ -9,11 +9,11 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { 
   SolanaMobileWalletAdapter,
   createDefaultAddressSelector,
-  createDefaultAuthorizationResultCache,
   createDefaultWalletNotFoundHandler,
 } from '@solana-mobile/wallet-adapter-mobile';
 import { clusterApiUrl } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { createInMemoryAuthorizationCache } from '@/utils/walletAuthCache';
 
 interface Props {
   children: ReactNode;
@@ -25,6 +25,11 @@ interface Props {
  * For mobile external browsers (Chrome, Safari).
  * Uses ONLY Mobile Wallet Adapter with deep linking to installed wallet apps.
  * No browser extension adapters to prevent conflicts.
+ * 
+ * AUTHORIZATION FIX:
+ * - Uses in-memory authorization cache instead of persistent cache
+ * - This ensures fresh authorization approval is requested each session
+ * - Prevents wallet app from returning immediately without approval dialog
  */
 export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
@@ -39,7 +44,7 @@ export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
           uri: 'https://equa.live',
           icon: 'https://equa.live/icon.png',
         },
-        authorizationResultCache: createDefaultAuthorizationResultCache(),
+        authorizationResultCache: createInMemoryAuthorizationCache(),
         cluster: network,
         onWalletNotFound: createDefaultWalletNotFoundHandler(),
       }),
@@ -48,6 +53,7 @@ export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
   );
 
   console.log('🔗 [MobileExternalProvider] Initializing with Mobile Wallet Adapter ONLY');
+  console.log('   - Using in-memory auth cache for fresh authorization each session');
 
   return (
     <ConnectionProvider endpoint={endpoint}>
