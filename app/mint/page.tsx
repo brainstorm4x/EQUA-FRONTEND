@@ -946,11 +946,17 @@ export default function MintPage() {
 
       // ============================================================================
       // MOBILE WALLET ADAPTER PATH & STANDARD MOBILE ADAPTERS PATH
+      // 
+      // ⚠️ CRITICAL: Mobile Wallet Adapter MUST use signTransaction() pattern
+      // 
       // Both Mobile Wallet Adapter and standard mobile adapters (Phantom/Solflare)
       // require the signTransaction() pattern to work correctly:
       // - Mobile Wallet Adapter: Uses signTransaction() → deep link → wallet app
       // - Standard mobile adapters: Uses signTransaction() → in-app browser wallet
       // Both paths avoid setSigners() and compileMessage() which cause signature errors
+      //
+      // Historical context: PRs #267, #276, #277
+      // See docs/MOBILE_WALLET_ADAPTER_FIX_HISTORY.md for full details
       // ============================================================================
       if (isMobileWalletAdapter || isMobile) {
         // Use clean mobile registration path for all mobile adapters
@@ -1025,8 +1031,14 @@ export default function MintPage() {
 
       // ============================================================================
       // DESKTOP PATH ONLY
+      // 
+      // ⚠️ WARNING: This path is ONLY for desktop browser extension wallets
+      // 
       // Desktop wallets use sendTransaction() for browser extension signing
-      // Mobile Wallet Adapter and mobile browsers are handled above
+      // Mobile Wallet Adapter and mobile browsers are handled above in mobileRegister()
+      // 
+      // DO NOT add Mobile Wallet Adapter conditionals here - it will break mobile signing
+      // See docs/MOBILE_WALLET_ADAPTER_FIX_HISTORY.md for why
       // ============================================================================
       console.log('🖥️ [Registration] Using desktop transaction flow');
       console.log('  📝 Will use sendTransactionWithSign() for automatic method selection');
