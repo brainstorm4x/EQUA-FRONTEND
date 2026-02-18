@@ -15,6 +15,11 @@ import {
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { ProgramIdMigration } from '@/components/ProgramIdMigration';
 import { WalletDebugLogger } from '@/components/WalletDebugLogger';
+import { 
+  detectWalletEnvironment, 
+  getEnvironmentDescription,
+  type WalletEnvironment 
+} from '@/utils/walletEnvironment';
 
 interface WalletProviderProps {
   children: ReactNode;
@@ -42,51 +47,76 @@ const WalletConnectionLogger: FC = () => {
 };
 
 /**
- * Unified Wallet Provider (Mobile + Desktop)
+ * Unified Wallet Provider with Environment-Based Adapter Selection
  * 
  * ARCHITECTURE:
  * - Single ConnectionProvider for all environments
- * - Single WalletProvider with Phantom and Solflare adapters
- * - Wallet adapter library auto-detects environment
- * - Mobile browsers → PhantomWalletAdapter or SolflareWalletAdapter use deep links
- * - Desktop browsers → PhantomWalletAdapter or SolflareWalletAdapter use extensions
+ * - Environment detection determines which adapters to use
+ * - Three distinct environments:
+ *   1. Desktop → Browser extension adapters (Phantom, Solflare)
+ *   2. Mobile In-App Browser → Injected wallet adapters (Phantom, Solflare)
+ *   3. Mobile External Browser → Mobile Wallet Adapter with deep linking
  * 
  * CRITICAL:
+ * - Desktop and mobile in-app use standard adapters (window.solana injection)
+ * - Mobile external browsers MUST use Mobile Wallet Adapter for deep linking
  * - No nested providers (prevents conflicts)
- * - Phantom and Solflare automatically detect mobile and use deep links
- * - No separate mobile adapter needed for web applications
  */
 export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
   const endpoint = clusterApiUrl(network);
 
+  // Detect wallet environment on mount (client-side only)
+  const environment = typeof window !== 'undefined' 
+    ? detectWalletEnvironment() 
+    : 'desktop'; // Default to desktop during SSR
+
   console.log('🔧 [WalletProvider] Initializing wallet provider...');
   console.log('  📍 Network:', network);
   console.log('  📍 RPC Endpoint:', endpoint);
+  console.log('  📍 Environment:', environment);
+  console.log('  📍 Description:', getEnvironmentDescription(environment));
   console.log('  📍 User Agent:', typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A');
-  console.log('  📍 Is Mobile:', typeof navigator !== 'undefined' ? /Mobile|Android|iPhone/i.test(navigator.userAgent) : false);
 
   const wallets = useMemo(() => {
-    console.log('🔧 [WalletProvider] Creating wallet adapters...');
-    console.log('📱 Phantom and Solflare auto-detect mobile and use deep links');
+    console.log('🔧 [WalletProvider] Creating wallet adapters for environment:', environment);
+    
+    // IMPORTANT: Always provide standard adapters (Phantom, Solflare)
+    // @solana/wallet-adapter-react (v0.15.21+) automatically:
+    // 1. Detects mobile environment
+    // 2. Creates and adds Mobile Wallet Adapter when on mobile
+    // 3. Prepends MWA to adapter list for mobile users
+    //
+    // Desktop/Mobile In-App: Standard adapters work via window.solana injection
+    // Mobile External: WalletProvider auto-adds Mobile Wallet Adapter for deep linking
     
     const phantomAdapter = new PhantomWalletAdapter();
-    console.log('  ✅ Phantom adapter created:', phantomAdapter.name);
-
     const solflareAdapter = new SolflareWalletAdapter({ network });
-    console.log('  ✅ Solflare adapter created:', solflareAdapter.name);
-
-    console.log('🔧 [WalletProvider] Total adapters:', [phantomAdapter, solflareAdapter].length);
-
+    
+    console.log('  ✅ Phantom adapter created');
+    console.log('  ✅ Solflare adapter created');
+    
+    if (environment === 'mobile-browser') {
+      console.log('  📱 Mobile external browser detected');
+      console.log('  🔗 WalletProvider will auto-add Mobile Wallet Adapter with deep linking');
+    } else if (environment === 'mobile-inapp') {
+      console.log('  📱 Mobile in-app browser detected - wallet injected via window.solana');
+    } else {
+      console.log('  🖥️ Desktop browser detected - using extensions');
+    }
+    
+    // Return standard adapters - let WalletProvider handle mobile detection
     return [phantomAdapter, solflareAdapter];
-  }, [network]);
+  }, [network, environment]);
 
   useEffect(() => {
-    console.log('✅ [WalletProvider] Wallet provider initialized with', wallets.length, 'adapters (mobile auto-detection enabled)');
+    console.log('✅ [WalletProvider] Wallet provider initialized');
+    console.log('  📍 Environment:', environment);
+    console.log('  📍 Total adapters:', wallets.length);
     wallets.forEach((wallet, idx) => {
       console.log(`  ${idx + 1}. ${wallet.name}`);
     });
-  }, [wallets]);
+  }, [wallets, environment]);
 
   const onError = useCallback((error: WalletError) => {
     console.error('❌ [WalletProvider] Wallet error occurred');

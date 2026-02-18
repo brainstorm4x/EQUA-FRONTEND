@@ -930,15 +930,39 @@ export default function MintPage() {
       console.log('🔨 [Registration] Building registration transaction...');
 
       // ============================================================================
-      // MOBILE REGISTRATION PATH
-      // Use clean mobile registration path that avoids transaction.setSigners() and
-      // transaction.compileMessage() which break mobile wallet adapters
+      // WALLET ADAPTER DETECTION
+      // Determine which transaction flow to use based on wallet adapter type
       // ============================================================================
+      
+      // Check if using Mobile Wallet Adapter (auto-added by @solana/wallet-adapter-react)
+      const walletName = wallet.wallet?.adapter?.name;
+      const isMobileWalletAdapter = walletName === 'Mobile Wallet Adapter';
       const isMobile = isMobileBrowser();
+      
+      console.log('🔍 [Registration] Wallet adapter detection:');
+      console.log('  📍 Wallet name:', walletName);
+      console.log('  📍 Is Mobile Wallet Adapter:', isMobileWalletAdapter);
+      console.log('  📍 Is mobile browser (UA):', isMobile);
 
-      if (isMobile) {
-        // Use clean mobile registration path
-        console.log('📱 [Registration] Mobile browser detected — using mobile-optimized registration path');
+      // ============================================================================
+      // MOBILE WALLET ADAPTER PATH
+      // Mobile Wallet Adapter uses sendTransaction() internally and handles
+      // signing via deep links automatically. Use the desktop transaction flow.
+      // ============================================================================
+      if (isMobileWalletAdapter) {
+        console.log('📱 [Registration] Mobile Wallet Adapter detected');
+        console.log('  🔗 Will use sendTransaction() for deep link signing');
+        // Continue to desktop path below which uses sendTransactionWithSign()
+      }
+      
+      // ============================================================================
+      // STANDARD MOBILE ADAPTERS PATH (Phantom/Solflare on mobile)
+      // Use signTransaction() pattern that works with mobile in-app browsers
+      // ============================================================================
+      else if (isMobile) {
+        // Use clean mobile registration path for standard adapters on mobile
+        console.log('📱 [Registration] Standard mobile adapter detected (Phantom/Solflare)');
+        console.log('  📝 Using signTransaction() pattern for mobile in-app browser');
         
         const { signature } = await mobileRegister({
           wallet,
@@ -1002,8 +1026,11 @@ export default function MintPage() {
       }
 
       // ============================================================================
-      // DESKTOP REGISTRATION PATH (unchanged)
+      // DESKTOP & MOBILE WALLET ADAPTER PATH
+      // Use sendTransaction() for both desktop and Mobile Wallet Adapter
       // ============================================================================
+      console.log('🖥️ [Registration] Using desktop/MWA transaction flow');
+      console.log('  📝 Will use sendTransactionWithSign() for automatic method selection');
 
 
       try {
@@ -1057,10 +1084,19 @@ export default function MintPage() {
         transaction.add(...preInstructions);  // Compute budget + ATA creations
         transaction.add(registerIx);          // Registration instruction
         
-        // ⚠️ CRITICAL: Set feePayer BEFORE fetching blockhash
-        // This initializes transaction.signatures array with proper slots
+        // Set fee payer (required for all transactions)
         transaction.feePayer = publicKey;
-        transaction.setSigners(publicKey);
+        
+        // ⚠️ IMPORTANT: Only call setSigners() for desktop, NOT for Mobile Wallet Adapter
+        // Mobile Wallet Adapter handles signing internally and expects an unsigned transaction
+        if (!isMobileWalletAdapter) {
+          // Desktop path: Pre-initialize signature slots
+          transaction.setSigners(publicKey);
+          console.log('🔨 [Registration] Transaction built with setSigners (desktop)');
+        } else {
+          // Mobile Wallet Adapter path: Skip setSigners to allow MWA to handle signing
+          console.log('🔨 [Registration] Transaction built without setSigners (MWA)');
+        }
         
         console.log('🔨 [Registration] Transaction built successfully');
         console.log('- Fee payer:', transaction.feePayer.toBase58());
@@ -1070,27 +1106,35 @@ export default function MintPage() {
         console.log('  → Locked ATA creation: 1');
         console.log('  → Registration (initializeUser): 1');
         
-        // Use 'confirmed' on mobile for a fresher blockhash that survives the deep-link round-trip
+        // Use 'confirmed' on mobile/MWA for a fresher blockhash that survives the deep-link round-trip
         // 'finalized' blockhashes are confirmed ~32 slots behind the current tip, which combined
         // with mobile app-switch delays can cause expiration before the transaction is processed
-        const isMobile = isMobileBrowser();
-        const commitmentLevel = isMobile ? 'confirmed' : 'finalized';
+        const commitmentLevel = (isMobile || isMobileWalletAdapter) ? 'confirmed' : 'finalized';
         console.log('⛓️ [Registration] Getting blockhash...');
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(commitmentLevel);
         transaction.recentBlockhash = blockhash;
         console.log('  ✅ Blockhash:', blockhash);
         console.log('  ✅ Last valid block height:', lastValidBlockHeight);
-        console.log(`  ✅ Commitment level: ${commitmentLevel} (mobile: ${isMobile ? 'yes' : 'no'})`);
+        console.log(`  ✅ Commitment level: ${commitmentLevel} (mobile: ${isMobile}, MWA: ${isMobileWalletAdapter})`);
 
-        // Compile and log message
-        const message = transaction.compileMessage();
-        console.log('📦 [Registration] Compiled transaction message:', {
-          numRequiredSignatures: message.header.numRequiredSignatures,
-          numReadonlySignedAccounts: message.header.numReadonlySignedAccounts,
-          numReadonlyUnsignedAccounts: message.header.numReadonlyUnsignedAccounts,
-          accountKeys: message.accountKeys.map(k => k.toBase58()),
-          recentBlockhash: message.recentBlockhash,
-        });
+        // Log transaction details (skip compileMessage for MWA to avoid signature verification issues)
+        if (!isMobileWalletAdapter) {
+          // Desktop/standard mobile: Can safely compile message for debugging
+          const message = transaction.compileMessage();
+          console.log('📦 [Registration] Compiled transaction message:', {
+            numRequiredSignatures: message.header.numRequiredSignatures,
+            numReadonlySignedAccounts: message.header.numReadonlySignedAccounts,
+            numReadonlyUnsignedAccounts: message.header.numReadonlyUnsignedAccounts,
+            accountKeys: message.accountKeys.map(k => k.toBase58()),
+            recentBlockhash: message.recentBlockhash,
+          });
+        } else {
+          // Mobile Wallet Adapter: Skip compileMessage to keep transaction unsigned
+          console.log('📦 [Registration] Transaction ready (skipping compile for MWA)');
+          console.log('  - Instructions:', transaction.instructions.length);
+          console.log('  - Fee payer:', transaction.feePayer?.toBase58());
+          console.log('  - Blockhash:', transaction.recentBlockhash);
+        }
 
         console.log('📤 [Registration] Sending transaction...');
         console.log('  📍 Wallet method check:', {
