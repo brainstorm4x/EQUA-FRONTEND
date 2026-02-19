@@ -9,11 +9,11 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { 
   SolanaMobileWalletAdapter,
   createDefaultAddressSelector,
+  createDefaultAuthorizationResultCache,
   createDefaultWalletNotFoundHandler,
 } from '@solana-mobile/wallet-adapter-mobile';
 import { clusterApiUrl } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { createInMemoryAuthorizationCache } from '@/utils/walletAuthCache';
 
 interface Props {
   children: ReactNode;
@@ -36,12 +36,21 @@ function getAppIdentityUri(): string | undefined {
  * Uses ONLY Mobile Wallet Adapter with deep linking to installed wallet apps.
  * No browser extension adapters to prevent conflicts.
  * 
- * AUTHORIZATION FIX:
- * - Uses in-memory authorization cache instead of persistent cache
- * - This ensures fresh authorization approval is requested each session
- * - Prevents wallet app from returning immediately without approval dialog
+ * DEEP LINK FLOW:
+ * 1. User clicks "Select Wallet" → modal opens
+ * 2. User selects wallet app → walletName saved to localStorage
+ * 3. User clicks "Connect" → transact() deep links to wallet app
+ * 4. Wallet app shows approval → user approves → auth token stored in persistent cache
+ * 5. Browser returns (page may reload) → walletName still in localStorage
+ * 6. autoConnect uses cached auth token to silently reconnect
+ * 
+ * IMPORTANT:
+ * - Uses DEFAULT persistent authorization cache (localStorage-based)
+ *   because the page may be destroyed when deep linking to the wallet app.
+ *   On return, the cached auth token allows silent reconnection.
  * - Uses actual window location for app identity URI so the wallet app
- *   can properly identify the requesting dApp on any deployment
+ *   can properly identify the requesting dApp on any deployment.
+ * - autoConnect MUST be enabled for reconnection after returning from wallet app.
  */
 export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
@@ -56,7 +65,7 @@ export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
           uri: getAppIdentityUri(),
           icon: 'https://equa.live/icon.png',
         },
-        authorizationResultCache: createInMemoryAuthorizationCache(),
+        authorizationResultCache: createDefaultAuthorizationResultCache(),
         cluster: network,
         onWalletNotFound: createDefaultWalletNotFoundHandler(),
       }),
@@ -65,12 +74,11 @@ export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
   );
 
   console.log('🔗 [MobileExternalProvider] Initializing with Mobile Wallet Adapter ONLY');
-  console.log('   - Using in-memory auth cache for fresh authorization each session');
   console.log('   - App identity URI:', getAppIdentityUri());
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <SolanaWalletProvider wallets={wallets} autoConnect={false}>
+      <SolanaWalletProvider wallets={wallets} autoConnect={true}>
         <WalletModalProvider>
           {children}
         </WalletModalProvider>
