@@ -6,12 +6,10 @@ import {
   WalletProvider as SolanaWalletProvider,
 } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { 
-  SolanaMobileWalletAdapter,
-  createDefaultAddressSelector,
-  createDefaultAuthorizationResultCache,
-  createDefaultWalletNotFoundHandler,
-} from '@solana-mobile/wallet-adapter-mobile';
+import {
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
+} from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
@@ -20,37 +18,25 @@ interface Props {
 }
 
 /**
- * Returns the current page URI for Mobile Wallet Adapter app identity.
- * Uses actual window location so authorization works on all environments
- * (production, Netlify previews, localhost).
- */
-function getAppIdentityUri(): string | undefined {
-  if (typeof window === 'undefined') return undefined;
-  return `${window.location.protocol}//${window.location.host}`;
-}
-
-/**
  * Mobile External Wallet Provider
  * 
- * For mobile external browsers (Chrome, Safari).
- * Uses ONLY Mobile Wallet Adapter with deep linking to installed wallet apps.
- * No browser extension adapters to prevent conflicts.
+ * For mobile external browsers (Chrome, Safari on Android).
  * 
- * DEEP LINK FLOW:
- * 1. User clicks "Select Wallet" → modal opens
- * 2. User selects wallet app → walletName saved to localStorage
- * 3. User clicks "Connect" → transact() deep links to wallet app
- * 4. Wallet app shows approval → user approves → auth token stored in persistent cache
- * 5. Browser returns (page may reload) → walletName still in localStorage
- * 6. autoConnect uses cached auth token to silently reconnect
+ * Uses the standard Phantom and Solflare wallet adapters and lets the
+ * @solana/wallet-adapter-react WalletProvider handle Mobile Wallet Adapter
+ * (MWA) detection and creation automatically. The upstream WalletProvider:
+ * - Detects Android mobile browser via user agent
+ * - Creates a SolanaMobileWalletAdapter with correct app identity and cache
+ * - Adds it to the adapter list alongside Phantom/Solflare
+ * - Handles the MWA deep-link lifecycle (beforeunload, autoConnect, etc.)
  * 
- * IMPORTANT:
- * - Uses DEFAULT persistent authorization cache (localStorage-based)
- *   because the page may be destroyed when deep linking to the wallet app.
- *   On return, the cached auth token allows silent reconnection.
- * - Uses actual window location for app identity URI so the wallet app
- *   can properly identify the requesting dApp on any deployment.
- * - autoConnect MUST be enabled for reconnection after returning from wallet app.
+ * autoConnect is enabled so that when the user returns from the wallet app
+ * after approving a deep-link authorization, the page can silently reconnect
+ * using the cached auth token from localStorage.
+ * 
+ * The mobile registration code (src/utils/mobileRegistration.ts) uses
+ * wallet.signTransaction() instead of wallet.sendTransaction() to avoid
+ * the "Missing signature" error on mobile wallets.
  */
 export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
@@ -58,23 +44,13 @@ export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
 
   const wallets = useMemo(
     () => [
-      new SolanaMobileWalletAdapter({
-        addressSelector: createDefaultAddressSelector(),
-        appIdentity: {
-          name: 'EQUA',
-          uri: getAppIdentityUri(),
-          icon: 'https://equa.live/icon.png',
-        },
-        authorizationResultCache: createDefaultAuthorizationResultCache(),
-        cluster: network,
-        onWalletNotFound: createDefaultWalletNotFoundHandler(),
-      }),
+      new PhantomWalletAdapter(),
+      new SolflareWalletAdapter(),
     ],
-    [network]
+    []
   );
 
-  console.log('🔗 [MobileExternalProvider] Initializing with Mobile Wallet Adapter ONLY');
-  console.log('   - App identity URI:', getAppIdentityUri());
+  console.log('📱 [MobileExternalProvider] Initializing with standard adapters + auto MWA detection');
 
   return (
     <ConnectionProvider endpoint={endpoint}>
