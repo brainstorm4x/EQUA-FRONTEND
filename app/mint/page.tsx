@@ -56,6 +56,7 @@ import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '
 import { PROGRAM_ID } from '@/lib/constants';
 import { sendTransactionWithSign, isMobileBrowser } from '@/utils/transactionSender';
 import { mobileRegister } from '@/utils/mobileRegistration';
+import { restoreTransactionState, clearTransactionState } from '@/utils/TransactionStateManager';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -368,6 +369,54 @@ export default function MintPage() {
     return () => clearTimeout(timer);
   }, []);
   
+  // Restore pending transaction after deep link return (mobile wallet flow)
+  useEffect(() => {
+    if (!mounted || !publicKey || !isReady) return;
+
+    const restoreTransaction = async () => {
+      const pendingState = restoreTransactionState();
+
+      if (!pendingState) {
+        return; // No pending transaction
+      }
+
+      console.log('🔄 [MintPage] Restoring pending transaction:', pendingState.type);
+
+      // Verify public key matches
+      if (pendingState.publicKey !== publicKey.toBase58()) {
+        console.warn('⚠️ [MintPage] Public key mismatch, clearing state');
+        clearTransactionState();
+        return;
+      }
+
+      // Check if registration completed while we were away
+      let isNowRegistered = false;
+      try {
+        isNowRegistered = await isUserRegistered(connection, publicKey);
+      } catch (registrationCheckError) {
+        console.error('❌ [MintPage] Failed to check registration after deep link return:', registrationCheckError);
+        // Network error - cannot determine state, clear and let user retry
+        clearTransactionState();
+        setError('Could not verify registration status due to network issues. Please try registering again.');
+        return;
+      }
+
+      if (isNowRegistered) {
+        console.log('✅ [MintPage] Registration completed during deep link!');
+        clearTransactionState();
+        setRegistered(true);
+        return;
+      }
+
+      // Still not registered - deep link might have failed
+      console.warn('⚠️ [MintPage] Transaction pending but registration incomplete');
+      setError('Registration incomplete. Your wallet transaction may still be processing. Please try registering again or check your wallet for pending transactions.');
+      clearTransactionState();
+    };
+
+    restoreTransaction();
+  }, [mounted, publicKey, isReady, connection]);
+
   // Check registration status on mount and when wallet changes
   useEffect(() => {
     async function checkRegistrationForMintPage() {

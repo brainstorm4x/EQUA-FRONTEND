@@ -13,6 +13,11 @@
 
 import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { Program } from '@coral-xyz/anchor';
+import {
+  saveTransactionState,
+  clearTransactionState,
+  type TransactionState,
+} from './TransactionStateManager';
 
 /**
  * Wallet adapter interface for mobile registration
@@ -142,6 +147,18 @@ export async function mobileRegister(params: MobileRegisterParams): Promise<{ si
     throw new Error('Wallet does not support transaction signing. Please use Phantom or Solflare mobile wallet.');
   }
 
+  // SAVE STATE BEFORE DEEP LINK
+  const transactionState: TransactionState = {
+    type: 'registration',
+    timestamp: Date.now(),
+    publicKey: publicKey.toBase58(),
+    metadata: {
+      accountType,
+      referrer: params.referrerPubkey?.toBase58(),
+    },
+  };
+  saveTransactionState(transactionState);
+
   try {
     console.log('📱 [MobileRegistration] Calling wallet.signTransaction()...');
     console.log('  - This will open your wallet app for approval');
@@ -177,17 +194,23 @@ export async function mobileRegister(params: MobileRegisterParams): Promise<{ si
     console.log('✅ [MobileRegistration] Transaction confirmed on-chain');
     console.log('  📍 Signature:', signature);
 
+    // CLEAR STATE ON SUCCESS
+    clearTransactionState();
+
     return { signature };
   } catch (error: any) {
+    console.error('❌ [MobileRegistration] Transaction signing failed:', error);
     const errorMessage = error?.message || '';
     
     // User cancelled in wallet app
     if (errorMessage.includes('User rejected') || errorMessage.includes('rejected the request')) {
+      clearTransactionState();
       throw new Error('❌ Transaction cancelled: You rejected the transaction in your wallet app.');
     }
     
     // Deep link timeout or wallet app not responding
     if (errorMessage.includes('timeout') || errorMessage.includes('not responding')) {
+      clearTransactionState();
       throw new Error(
         '❌ Wallet app did not respond. Please ensure:\n' +
         '• Phantom or Solflare mobile app is installed\n' +
@@ -199,6 +222,7 @@ export async function mobileRegister(params: MobileRegisterParams): Promise<{ si
     
     // Still a signature error after using signTransaction? (shouldn't happen)
     if (errorMessage.includes('Missing signature') || errorMessage.includes('Signature verification failed')) {
+      clearTransactionState();
       throw new Error(
         '❌ Signature error: Please try these steps:\n' +
         '1. Close and reopen your wallet app\n' +
@@ -208,6 +232,7 @@ export async function mobileRegister(params: MobileRegisterParams): Promise<{ si
     }
     
     // Re-throw other errors
+    clearTransactionState();
     throw error;
   }
 }
