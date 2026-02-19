@@ -5,7 +5,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { detectWalletEnvironment, type WalletEnvironment } from '@/utils/walletEnvironment';
 import { DesktopWalletProvider } from './DesktopWalletProvider';
 import { MobileInAppWalletProvider } from './MobileInAppWalletProvider';
-import { MobileExternalWalletProvider } from './MobileExternalWalletProvider';
+import { MobileWalletInstructions } from '@/components/MobileWalletInstructions';
 import { ProgramIdMigration } from '@/components/ProgramIdMigration';
 import { WalletDebugLogger } from '@/components/WalletDebugLogger';
 
@@ -43,7 +43,7 @@ const WalletConnectionLogger: FC = () => {
  * - Three isolated provider flows:
  *   1. Desktop → DesktopWalletProvider (Phantom/Solflare extensions)
  *   2. Mobile In-App → MobileInAppWalletProvider (injected wallet)
- *   3. Mobile External → MobileExternalWalletProvider (Mobile Wallet Adapter with deep linking)
+ *   3. Mobile Browser → MobileWalletInstructions (guides users to in-app browser)
  * 
  * CRITICAL:
  * - No adapter mixing - each environment has its own provider tree
@@ -94,11 +94,9 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
       );
     
     case 'mobile-browser':
-      return (
-        <MobileExternalWalletProvider>
-          <ProviderWithExtras>{children}</ProviderWithExtras>
-        </MobileExternalWalletProvider>
-      );
+      // Mobile external browser: show in-app browser instructions instead of deep linking
+      console.log('📱 [WalletProvider] Mobile browser detected - showing in-app browser instructions');
+      return <MobileWalletInstructions />;
     
     default:
       // Fallback to desktop provider

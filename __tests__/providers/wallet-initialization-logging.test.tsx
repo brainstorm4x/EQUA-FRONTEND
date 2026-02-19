@@ -11,6 +11,11 @@ import { WalletProvider } from '@/providers/WalletProvider';
 const originalLog = console.log;
 let consoleLogSpy: jest.SpyInstance;
 
+// Mock wallet environment detection so tests are deterministic
+jest.mock('@/utils/walletEnvironment', () => ({
+  detectWalletEnvironment: jest.fn(() => 'desktop'),
+}));
+
 // Mock the wallet adapter modules
 jest.mock('@solana/wallet-adapter-react', () => ({
   ConnectionProvider: ({ children }: { children: React.ReactNode }) => (
@@ -87,7 +92,7 @@ describe('WalletProvider Initialization Logging', () => {
       const hasProviderLog = consoleLogSpy.mock.calls.some(call => 
         call[0]?.includes('[DesktopProvider]') ||
         call[0]?.includes('[MobileInAppProvider]') ||
-        call[0]?.includes('[MobileExternalProvider]')
+        call[0]?.includes('[WalletProvider] Mobile browser detected')
       );
       expect(hasProviderLog).toBe(true);
     });

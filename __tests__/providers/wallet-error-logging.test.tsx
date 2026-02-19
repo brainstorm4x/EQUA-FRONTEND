@@ -16,6 +16,11 @@ import { WalletError } from '@solana/wallet-adapter-base';
 const originalError = console.error;
 let consoleErrorSpy: jest.SpyInstance;
 
+// Mock wallet environment detection so tests are deterministic
+jest.mock('@/utils/walletEnvironment', () => ({
+  detectWalletEnvironment: jest.fn(() => 'desktop'),
+}));
+
 // Mock the wallet adapter modules
 jest.mock('@solana/wallet-adapter-react', () => {
   return {

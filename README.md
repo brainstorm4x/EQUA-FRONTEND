@@ -58,124 +58,87 @@ The app will be available at `http://localhost:3000`.
 
 ## Mobile Wallet Support
 
-EQUA supports three distinct wallet connection environments:
+EQUA provides the best mobile experience through wallet in-app browsers:
 
-### Connection Environments
+### 🎯 Recommended Approach: In-App Browser
 
-**1. Desktop Browser** 🖥️
-- Uses browser extension adapters (Phantom, Solflare)
-- Wallet connects via `window.solana` injection
-- One-click connection without redirects
+**Why?**
+- ✅ Instant wallet connection (no redirects)
+- ✅ 100% reliable (no deep linking issues)
+- ✅ Seamless transaction approval
+- ✅ More secure (wallet stays in control)
+- ✅ Faster experience (no app switching)
 
-**2. Mobile In-App Browser** 📱
-- Access EQUA directly from within your wallet app (Phantom/Solflare in-app browser)
-- Uses the same extension adapters as desktop
-- Wallet is pre-injected via `window.solana`
-- Fastest connection method on mobile
+**How to Use:**
 
-**3. Mobile External Browser** 🔗
-- Use Chrome, Safari, or any mobile browser
-- Uses Mobile Wallet Adapter with deep linking
-- Requires wallet app to be installed
-- Automatically redirects to wallet app for signing
-- Returns to browser after approval
+#### Phantom Wallet
+1. Download [Phantom app](https://phantom.app/download) (iOS/Android)
+2. Open Phantom → Tap **Browser** tab
+3. Navigate to `https://equa.live`
+4. Connect & start using EQUA!
 
-### For Mobile Users
+#### Solflare Wallet
+1. Download [Solflare app](https://solflare.com/download) (iOS/Android)
+2. Open Solflare → Tap **Discover** → **Browser**
+3. Navigate to `https://equa.live`
+4. Connect & start using EQUA!
 
-#### Option 1: In-App Browser (Recommended)
-1. **Open wallet app** (Phantom or Solflare)
-2. **Use in-app browser** to visit EQUA
-3. **Connect instantly** - wallet is already available
-4. **Register and mint** - no redirects needed
+### 🔍 What About Mobile Browsers (Chrome/Safari)?
 
-#### Option 2: External Browser (Chrome/Safari)
-1. **Install a Solana wallet app**:
-   - [Phantom Mobile](https://phantom.app/download) (iOS/Android)
-   - [Solflare Mobile](https://solflare.com/download) (iOS/Android)
-   - Or any Solana Mobile Stack (SMS) compatible wallet
+If you visit EQUA from Chrome or Safari on mobile, you'll see clear instructions
+guiding you to use the in-app browser instead. This ensures a reliable experience
+for all users.
 
-2. **Connect on mobile**:
-   - Visit EQUA in your mobile browser
-   - Click **"Select Wallet"**
-   - Choose your wallet from the list
-   - You'll be redirected to your wallet app (deep link)
-   - Approve the connection in your wallet app
-   - You'll be redirected back to browser
+### 💻 Desktop Support
 
-3. **Register and mint**:
-   - Each transaction opens your wallet app
-   - Approve in the wallet app
-   - Automatically returns to browser
-   - Secure and seamless experience
+Desktop users can continue using browser extensions:
+- Phantom browser extension
+- Solflare browser extension
+- One-click connection — no setup needed
 
-### Technical Details
+---
 
-**Environment Detection:**
-- **Desktop**: Browser extensions via `window.solana` injection
-- **Mobile In-App**: Wallet injection via `window.solana` (same as desktop)
-- **Mobile External**: Mobile Wallet Adapter with deep linking to installed apps
+## Technical Architecture
 
-**Adapter Selection:**
+### Wallet Connection Environments
+
+EQUA detects three environments and routes accordingly:
+
+| Environment | Detection | Behavior |
+|------------|-----------|----------|
+| **Desktop** | No touch support, desktop user agent | Uses browser extension adapters |
+| **Mobile In-App** | Mobile device + `window.solana` injected | Uses injected wallet adapters |
+| **Mobile Browser** | Mobile device + no wallet injection | Shows in-app browser instructions |
+
+### Environment Detection Logic
+
 ```typescript
-// Always provide standard adapters for all environments
-const wallets = [
-  new PhantomWalletAdapter(),
-  new SolflareWalletAdapter({ network })
-];
+// src/utils/walletEnvironment.ts
+export function detectWalletEnvironment(): WalletEnvironment {
+  const isMobile = isMobileDevice();
 
-// @solana/wallet-adapter-react (v0.15.21+) automatically:
-// 1. Detects mobile environment (Android non-WebView)
-// 2. Creates and adds Mobile Wallet Adapter when on mobile
-// 3. Prepends MWA to adapter list for deep linking support
-```
+  if (!isMobile) return 'desktop';
 
-**Mobile Wallet Adapter (Auto-Added on Mobile):**
-- Automatically created by `@solana/wallet-adapter-react` when mobile is detected
-- Uses deep links (`solana-wallet://`) to open native wallet apps
-- Automatically redirects back to browser after wallet interaction
-- Works with all Solana Mobile Stack (SMS) compatible wallets
-- No manual configuration needed for basic setup
+  // Check for injected wallet (in-app browser)
+  const hasInjectedWallet = typeof (window as any).solana !== 'undefined';
 
-**App Identity (Auto-Generated):**
-```typescript
-{
-  uri: window.location.origin,  // Auto-detected
-  // Optional: Configure custom name and icon via WalletProvider
+  return hasInjectedWallet ? 'mobile-inapp' : 'mobile-browser';
 }
 ```
 
 ### Troubleshooting
 
-**Registration fails in mobile browser:**
-- ✅ **Solution**: Use wallet's in-app browser for fastest experience
-- **Alternative**: Install wallet app and use deep linking
-  1. Install Phantom or Solflare mobile app
-  2. Open EQUA in Chrome/Safari (not in-app)
-  3. Wallet adapter will automatically deep link to installed app
-  4. Approve transaction in wallet app
-  5. Browser will automatically redirect back
+**On mobile and don't see the instructions?**
+- If you're already inside Phantom or Solflare's in-app browser, the wallet is injected and you'll see the normal connection flow.
 
-**Wallet not connecting:**
-- Ensure wallet app is installed on your device
-- Check wallet is on correct network (devnet/mainnet)
-- Try disconnecting and reconnecting
-- Check that wallet app is up to date
-
-**Deep link not working:**
-- **In-app browser detected**: If you're in Phantom/Solflare's in-app browser, the wallet is already connected
-- **External browser**: Ensure wallet app is installed
-- Try opening the link in Safari (iOS) or Chrome (Android)
-- Check that wallet app is installed and running
+**Wallet not connecting on desktop:**
+- Ensure the Phantom or Solflare browser extension is installed and unlocked.
+- Try disconnecting and reconnecting.
+- Check the wallet is set to Devnet.
 
 **Connection timeout:**
-- Slow network connection may cause timeouts
-- Try again with better network connectivity
-- Check that RPC endpoint is accessible
-
-**"Missing signature" error:**
-- This should be automatically resolved by environment detection
-- Try using wallet's in-app browser instead
-- If persists, clear browser cache and reconnect wallet
+- Check your network connection.
+- Verify the RPC endpoint is accessible.
 
 ## Development
 
