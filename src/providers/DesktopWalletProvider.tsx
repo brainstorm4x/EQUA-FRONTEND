@@ -141,6 +141,7 @@ export const DesktopWalletProvider: FC<Props> = ({ children }) => {
             <div 
               className="fixed top-4 right-4 max-w-md bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded shadow-lg z-50"
               role="alert"
+              aria-live="assertive"
             >
               <div className="flex justify-between items-start">
                 <p className="text-sm">{walletWarning}</p>
