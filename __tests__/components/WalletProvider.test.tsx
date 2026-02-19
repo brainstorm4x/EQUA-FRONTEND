@@ -6,6 +6,15 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { WalletProvider } from '@/providers/WalletProvider';
 
+// Mock environment detection to always return 'desktop' in test environment
+// (jsdom's touch capability causes incorrect mobile detection)
+jest.mock('@/utils/walletEnvironment', () => ({
+  detectWalletEnvironment: () => 'desktop',
+  getEnvironmentDescription: (env: string) => `Mock: ${env}`,
+  requiresMobileWalletAdapter: () => false,
+  supportsInjectedWallet: () => true,
+}));
+
 // Mock the wallet adapter modules
 jest.mock('@solana/wallet-adapter-react', () => ({
   ConnectionProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="connection-provider">{children}</div>,
@@ -24,6 +33,14 @@ jest.mock('@solana/wallet-adapter-react-ui', () => ({
 jest.mock('@solana/wallet-adapter-wallets', () => ({
   PhantomWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Phantom' })),
   SolflareWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Solflare' })),
+}));
+
+// Mock mobile wallet adapter to prevent import issues in test environment
+jest.mock('@solana-mobile/wallet-adapter-mobile', () => ({
+  SolanaMobileWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Mobile Wallet Adapter' })),
+  createDefaultAddressSelector: jest.fn(() => ({})),
+  createDefaultAuthorizationResultCache: jest.fn(() => ({})),
+  createDefaultWalletNotFoundHandler: jest.fn(() => jest.fn()),
 }));
 
 describe('WalletProvider Configuration', () => {

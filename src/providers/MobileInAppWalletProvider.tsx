@@ -1,17 +1,17 @@
 'use client';
 
-import { FC, ReactNode, useMemo } from 'react';
+import { FC, ReactNode, useMemo, useCallback } from 'react';
 import {
   ConnectionProvider,
   WalletProvider as SolanaWalletProvider,
 } from '@solana/wallet-adapter-react';
+import { WalletError } from '@solana/wallet-adapter-base';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
-import { clusterApiUrl } from '@solana/web3.js';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { RPC_ENDPOINT } from '@/lib/constants';
 
 interface Props {
   children: ReactNode;
@@ -24,9 +24,6 @@ interface Props {
  * Wallet is pre-injected via window.solana, so we enable autoConnect.
  */
 export const MobileInAppWalletProvider: FC<Props> = ({ children }) => {
-  const network = WalletAdapterNetwork.Devnet;
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
-
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),
@@ -35,11 +32,15 @@ export const MobileInAppWalletProvider: FC<Props> = ({ children }) => {
     []
   );
 
+  const onError = useCallback((error: WalletError) => {
+    console.error('[Mobile InApp Wallet Error]:', error.name, error.message);
+  }, []);
+
   console.log('📱 [MobileInAppProvider] Initializing with injected wallet adapters');
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <SolanaWalletProvider wallets={wallets} autoConnect={true}>
+    <ConnectionProvider endpoint={RPC_ENDPOINT}>
+      <SolanaWalletProvider wallets={wallets} autoConnect={true} onError={onError}>
         <WalletModalProvider>
           {children}
         </WalletModalProvider>
