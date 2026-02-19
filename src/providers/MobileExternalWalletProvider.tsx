@@ -20,6 +20,16 @@ interface Props {
 }
 
 /**
+ * Returns the current page URI for Mobile Wallet Adapter app identity.
+ * Uses actual window location so authorization works on all environments
+ * (production, Netlify previews, localhost).
+ */
+function getAppIdentityUri(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  return `${window.location.protocol}//${window.location.host}`;
+}
+
+/**
  * Mobile External Wallet Provider
  * 
  * For mobile external browsers (Chrome, Safari).
@@ -30,6 +40,8 @@ interface Props {
  * - Uses in-memory authorization cache instead of persistent cache
  * - This ensures fresh authorization approval is requested each session
  * - Prevents wallet app from returning immediately without approval dialog
+ * - Uses actual window location for app identity URI so the wallet app
+ *   can properly identify the requesting dApp on any deployment
  */
 export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
@@ -41,7 +53,7 @@ export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
         addressSelector: createDefaultAddressSelector(),
         appIdentity: {
           name: 'EQUA',
-          uri: 'https://equa.live',
+          uri: getAppIdentityUri(),
           icon: 'https://equa.live/icon.png',
         },
         authorizationResultCache: createInMemoryAuthorizationCache(),
@@ -54,6 +66,7 @@ export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
 
   console.log('🔗 [MobileExternalProvider] Initializing with Mobile Wallet Adapter ONLY');
   console.log('   - Using in-memory auth cache for fresh authorization each session');
+  console.log('   - App identity URI:', getAppIdentityUri());
 
   return (
     <ConnectionProvider endpoint={endpoint}>
