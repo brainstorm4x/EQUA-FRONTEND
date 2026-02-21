@@ -51,24 +51,32 @@ function isMobileInAppBrowser(): boolean {
     return false;
   }
 
-  // Check for Phantom mobile in-app browser
-  // Phantom mobile injects window.phantom and window.solana
-  const hasPhantomMobile = 
+  // Check for Phantom mobile in-app browser.
+  // Phantom's built-in browser injects window.phantom.solana with isPhantom === true.
+  // This signature is ONLY present inside the Phantom app's built-in browser —
+  // NOT in Chrome on Android even when Phantom is installed.
+  const hasPhantomMobile =
     typeof (window as any).phantom !== 'undefined' &&
     typeof (window as any).phantom.solana !== 'undefined' &&
     (window as any).phantom.solana.isPhantom === true;
 
-  // Check for Solflare mobile in-app browser
-  // Solflare mobile injects window.solflare
-  const hasSolflareMobile = 
+  // Check for Solflare mobile in-app browser.
+  // Solflare's built-in browser injects window.solflare with isSolflare === true.
+  const hasSolflareMobile =
     typeof (window as any).solflare !== 'undefined' &&
-    typeof (window as any).solflare.isSolflare !== 'undefined';
+    (window as any).solflare?.isSolflare === true;
 
-  // Check if window.solana exists (generic injection check)
-  // This catches cases where the wallet injects but we don't have specific detection
-  const hasInjectedWallet = typeof (window as any).solana !== 'undefined';
+  // IMPORTANT: Do NOT use `typeof window.solana !== 'undefined'` as a signal.
+  //
+  // The Mobile Wallet Adapter (MWA) library and WalletConnect bridge inject window.solana
+  // into Chrome on Android when a wallet (e.g. Phantom) is installed. Using window.solana
+  // as an in-app signal causes a false-positive: Chrome mobile users are classified as
+  // 'mobile-inapp' instead of 'mobile-browser', which bypasses the mobileRegister()
+  // function and routes them to the desktop signing path. The desktop path still uses
+  // signTransaction() which deep-links and orphans the Promise, resulting in
+  // "Signature verification failed".
 
-  return hasPhantomMobile || hasSolflareMobile || hasInjectedWallet;
+  return hasPhantomMobile || hasSolflareMobile;
 }
 
 /**
@@ -99,7 +107,7 @@ export function detectWalletEnvironment(): WalletEnvironment {
   
   if (isInApp) {
     console.log('📱 [WalletEnvironment] Detected: Mobile In-App Browser');
-    console.log('  - Wallet injection detected via window.solana');
+    console.log('  - Wallet injection detected via window.phantom or window.solflare');
     return 'mobile-inapp';
   }
 

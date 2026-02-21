@@ -1146,7 +1146,9 @@ export default function MintPage() {
         
         // Set fee payer (required for all transactions)
         transaction.feePayer = publicKey;
-        transaction.setSigners(publicKey);
+        // NOTE: Do NOT call transaction.setSigners() — it pre-populates empty signature slots
+        // which causes "Signature verification failed" because the compiled message no longer
+        // matches when the wallet later adds its real signature.
         
         console.log('🔨 [Registration] Transaction built successfully');
         console.log('- Fee payer:', transaction.feePayer.toBase58());
