@@ -22,7 +22,12 @@ export function isMobileBrowser(): boolean {
   if (typeof window === 'undefined') return false;
   
   const ua = window.navigator.userAgent.toLowerCase();
-  return /android|iphone|ipad|ipod|mobile/i.test(ua);
+  // android: Android Chrome/browsers
+  // iphone/ipad/ipod: Safari on iOS
+  // mobile: generic mobile browsers
+  // crios: Chrome for iOS
+  // fxios: Firefox for iOS
+  return /android|iphone|ipad|ipod|mobile|crios|fxios/i.test(ua);
 }
 
 /**
