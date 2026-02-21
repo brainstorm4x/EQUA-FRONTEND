@@ -1,14 +1,24 @@
 /**
  * Mobile Registration Utility
- * 
- * Mobile-specific registration function that uses the signTransaction pattern for mobile wallets:
- * - Uses wallet.signTransaction() to trigger deep link to wallet app
- * - Uses connection.sendRawTransaction() to submit the signed transaction
- * - Uses 'confirmed' commitment for fresher blockhash (survives deep-link round-trip)
- * - Sets skipPreflight: true to avoid simulation failures during mobile app-switch delay
- * 
- * This pattern avoids the "Missing signature" error that occurs when using sendTransaction()
- * with mobile wallet adapters.
+ *
+ * Mobile-specific registration function that uses the correct transaction signing
+ * strategy for mobile wallets:
+ *
+ * PRIMARY PATH — wallet.sendTransaction():
+ *   - Used when the wallet adapter exposes sendTransaction()
+ *   - Handles signing + submission atomically inside the wallet adapter
+ *   - Does NOT trigger a full-page deep-link navigation — Promise is preserved
+ *   - REQUIRED for Chrome mobile (external browser) + Phantom/Solflare
+ *
+ * FALLBACK PATH — wallet.signTransaction() + connection.sendRawTransaction():
+ *   - Used only when sendTransaction() is unavailable
+ *   - Triggers a deep-link that navigates to wallet app
+ *   - ONLY reliable inside wallet in-app browsers (e.g., Phantom's built-in browser)
+ *   - On external browsers (Chrome/Firefox mobile), the Promise is orphaned during
+ *     the deep-link round-trip, resulting in "Signature verification failed"
+ *
+ * Historical note: Previously this file used signTransaction() exclusively, which
+ * caused "Signature verification failed" on Chrome mobile.
  */
 
 import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
@@ -127,27 +137,20 @@ export async function mobileRegister(params: MobileRegisterParams): Promise<{ si
   // CRITICAL: Do NOT call transaction.setSigners() - let wallet.sendTransaction() handle it
   transaction.feePayer = publicKey;
 
-  console.log('⛓️ [MobileRegistration] Getting blockhash (confirmed commitment for mobile)...');
-  // Use 'confirmed' commitment for fresher blockhash that survives deep-link round-trip
-  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-  transaction.recentBlockhash = blockhash;
-
   console.log('✅ [MobileRegistration] Transaction prepared:');
   console.log('  - Fee payer:', transaction.feePayer.toBase58());
-  console.log('  - Blockhash:', blockhash);
-  console.log('  - Last valid block height:', lastValidBlockHeight);
   console.log('  - Instructions count:', transaction.instructions.length);
   console.log('    → Compute budget: 1');
   console.log('    → User ATA creation: 1');
   console.log('    → Locked ATA creation: 1');
   console.log('    → Registration (initializeUser): 1');
 
-  // Validate wallet has signTransaction method
-  if (!wallet.signTransaction) {
-    throw new Error('Wallet does not support transaction signing. Please use Phantom or Solflare mobile wallet.');
+  // Validate wallet has at least one signing method
+  if (!wallet.sendTransaction && !wallet.signTransaction) {
+    throw new Error('Wallet does not support transaction signing or sending. Please use Phantom or Solflare mobile wallet.');
   }
 
-  // SAVE STATE BEFORE DEEP LINK
+  // SAVE STATE BEFORE SIGNING (in case page reloads on deep-link return)
   const transactionState: TransactionState = {
     type: 'registration',
     timestamp: Date.now(),
@@ -160,25 +163,66 @@ export async function mobileRegister(params: MobileRegisterParams): Promise<{ si
   saveTransactionState(transactionState);
 
   try {
-    console.log('📱 [MobileRegistration] Calling wallet.signTransaction()...');
-    console.log('  - This will open your wallet app for approval');
+    let signature: string;
 
-    // Wallet signs (triggers deep link → opens wallet app)
-    const signedTx = await wallet.signTransaction(transaction);
+    // Fetch fresh blockhash immediately before signing.
+    // This is done here (not earlier) to minimize staleness risk in case any
+    // setup steps above were slow or involved deep-link navigation.
+    console.log('⛓️ [MobileRegistration] Fetching fresh blockhash immediately before signing...');
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+    transaction.recentBlockhash = blockhash;
+    console.log('  - Blockhash:', blockhash);
+    console.log('  - Last valid block height:', lastValidBlockHeight);
 
-    console.log('✅ [MobileRegistration] Transaction signed by wallet');
-    console.log('📤 [MobileRegistration] Submitting signed transaction to Solana...');
+    if (wallet.sendTransaction) {
+      // PRIMARY PATH: sendTransaction() handles signing + submission atomically.
+      //
+      // This is the CORRECT method for Chrome mobile (external browser).
+      // Modern Phantom and Solflare adapters implement sendTransaction() using an
+      // internal mechanism (WalletConnect popup, sandboxed tab, or extension bridge)
+      // that does NOT navigate away from the page — so the Promise is NOT orphaned.
+      //
+      // Contrast: signTransaction() triggers a deep-link that navigates Chrome to the
+      // wallet app. When Chrome returns, the original Promise is garbage-collected and
+      // resolves with an empty/zero signature, causing "Signature verification failed".
+      console.log('📱 [MobileRegistration] Using sendTransaction() — primary path for Chrome mobile');
+      console.log('  - This handles signing and submission atomically without a deep-link navigation');
 
-    // Submit signed transaction
-    const signature = await connection.sendRawTransaction(signedTx.serialize(), {
-      skipPreflight: true,  // Avoid simulation failures during mobile app-switch delay
-      maxRetries: 3,
-      preflightCommitment: 'confirmed',
-    });
+      signature = await wallet.sendTransaction(transaction, connection, {
+        skipPreflight: true,
+        maxRetries: 3,
+      });
 
-    console.log('✅ [MobileRegistration] Transaction submitted:', signature);
+      console.log('✅ [MobileRegistration] Transaction sent via sendTransaction():', signature);
+    } else {
+      // FALLBACK PATH: signTransaction() + sendRawTransaction()
+      //
+      // Used ONLY when sendTransaction is unavailable (e.g., certain legacy adapters
+      // or wallet in-app browsers where the wallet fully controls the browser context
+      // and the Promise survives navigation).
+      console.log('📱 [MobileRegistration] sendTransaction unavailable — using signTransaction() fallback');
+      console.log('  ⚠️  This path is only reliable inside wallet in-app browsers (e.g., Phantom browser)');
+      console.log('  ⚠️  On Chrome mobile, this may fail with "Signature verification failed"');
+
+      if (!wallet.signTransaction) {
+        throw new Error('Wallet does not support transaction signing. Please use Phantom or Solflare mobile wallet.');
+      }
+
+      const signedTx = await wallet.signTransaction(transaction);
+
+      console.log('✅ [MobileRegistration] Transaction signed by wallet');
+      console.log('📤 [MobileRegistration] Submitting signed transaction to Solana...');
+
+      signature = await connection.sendRawTransaction(signedTx.serialize(), {
+        skipPreflight: true,
+        maxRetries: 3,
+        preflightCommitment: 'confirmed',
+      });
+
+      console.log('✅ [MobileRegistration] Transaction submitted:', signature);
+    }
+
     console.log('  📍 Explorer:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
-
     console.log('⏳ [MobileRegistration] Confirming transaction...');
 
     // Wait for confirmation using the same blockhash from transaction
@@ -199,7 +243,7 @@ export async function mobileRegister(params: MobileRegisterParams): Promise<{ si
 
     return { signature };
   } catch (error: any) {
-    console.error('❌ [MobileRegistration] Transaction signing failed:', error);
+    console.error('❌ [MobileRegistration] Transaction failed:', error);
     const errorMessage = error?.message || '';
     
     // User cancelled in wallet app
@@ -220,14 +264,18 @@ export async function mobileRegister(params: MobileRegisterParams): Promise<{ si
       );
     }
     
-    // Still a signature error after using signTransaction? (shouldn't happen)
+    // Signature verification failed — most likely signTransaction() was used in Chrome mobile
+    // and the Promise was orphaned during the deep-link navigation round-trip
     if (errorMessage.includes('Missing signature') || errorMessage.includes('Signature verification failed')) {
       clearTransactionState();
       throw new Error(
-        '❌ Signature error: Please try these steps:\n' +
-        '1. Close and reopen your wallet app\n' +
-        '2. Disconnect and reconnect your wallet\n' +
-        '3. Clear browser cache and try again'
+        '❌ Signature verification failed.\n\n' +
+        'This can happen when using Chrome on mobile with an external wallet.\n\n' +
+        'Please try:\n' +
+        '1. Open this page inside your wallet app\'s built-in browser\n' +
+        '   (Phantom → Browse → paste the URL)\n' +
+        '2. Or use a desktop browser with the wallet extension\n' +
+        '3. Disconnect and reconnect your wallet, then try again'
       );
     }
     
