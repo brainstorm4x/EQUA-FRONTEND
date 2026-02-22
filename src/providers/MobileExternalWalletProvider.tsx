@@ -12,6 +12,12 @@ import {
 } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import {
+  SolanaMobileWalletAdapter,
+  createDefaultAddressSelector,
+  createDefaultAuthorizationResultCache,
+  createDefaultWalletNotFoundHandler,
+} from '@solana-mobile/wallet-adapter-mobile';
 
 interface Props {
   children: ReactNode;
@@ -19,38 +25,51 @@ interface Props {
 
 /**
  * Mobile External Wallet Provider
- * 
+ *
  * For mobile external browsers (Chrome, Safari on Android).
- * 
- * Uses the standard Phantom and Solflare wallet adapters and lets the
- * @solana/wallet-adapter-react WalletProvider handle Mobile Wallet Adapter
- * (MWA) detection and creation automatically. The upstream WalletProvider:
- * - Detects Android mobile browser via user agent
- * - Creates a SolanaMobileWalletAdapter with correct app identity and cache
- * - Adds it to the adapter list alongside Phantom/Solflare
- * - Handles the MWA deep-link lifecycle (beforeunload, autoConnect, etc.)
- * 
+ *
+ * Explicitly instantiates SolanaMobileWalletAdapter as the first adapter so
+ * that Android Chrome can deep-link into an installed wallet app (Phantom,
+ * Solflare, etc.) via the `solana-wallet://` MWA intent. Without explicit
+ * instantiation, adapters report `readyState = NotDetected` on Android Chrome
+ * and the modal navigates to the wallet's download page instead.
+ *
+ * PhantomWalletAdapter and SolflareWalletAdapter are kept as fallbacks for
+ * in-app browser environments where they can inject `window.phantom` /
+ * `window.solflare`.
+ *
  * autoConnect is enabled so that when the user returns from the wallet app
  * after approving a deep-link authorization, the page can silently reconnect
  * using the cached auth token from localStorage.
- * 
- * The mobile registration code (src/utils/mobileRegistration.ts) uses
- * wallet.signTransaction() instead of wallet.sendTransaction() to avoid
- * the "Missing signature" error on mobile wallets.
  */
+const PRODUCTION_URL = 'https://equa-frontend.netlify.app';
+
 export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
   const wallets = useMemo(
     () => [
+      new SolanaMobileWalletAdapter({
+        addressSelector: createDefaultAddressSelector(),
+        appIdentity: {
+          name: 'EQUA Token',
+          uri: typeof window !== 'undefined' ? window.location.origin : PRODUCTION_URL,
+          icon: typeof window !== 'undefined'
+            ? `${window.location.origin}/branding/equa-logo.png`
+            : `${PRODUCTION_URL}/branding/equa-logo.png`,
+        },
+        authorizationResultCache: createDefaultAuthorizationResultCache(),
+        cluster: 'devnet',
+        onWalletNotFound: createDefaultWalletNotFoundHandler(),
+      }),
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
     ],
     []
   );
 
-  console.log('📱 [MobileExternalProvider] Initializing with standard adapters + auto MWA detection');
+  console.log('📱 [MobileExternalProvider] Initializing with SolanaMobileWalletAdapter (MWA) + Phantom + Solflare');
 
   return (
     <ConnectionProvider endpoint={endpoint}>
