@@ -12,12 +12,6 @@ import {
 } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import {
-  SolanaMobileWalletAdapter,
-  createDefaultAddressSelector,
-  createDefaultAuthorizationResultCache,
-  createDefaultWalletNotFoundHandler,
-} from '@solana-mobile/wallet-adapter-mobile';
 
 interface Props {
   children: ReactNode;
@@ -26,50 +20,37 @@ interface Props {
 /**
  * Mobile External Wallet Provider
  *
- * For mobile external browsers (Chrome, Safari on Android).
+ * For mobile external browsers (Chrome, Safari on Android/iOS).
  *
- * Explicitly instantiates SolanaMobileWalletAdapter as the first adapter so
- * that Android Chrome can deep-link into an installed wallet app (Phantom,
- * Solflare, etc.) via the `solana-wallet://` MWA intent. Without explicit
- * instantiation, adapters report `readyState = NotDetected` on Android Chrome
- * and the modal navigates to the wallet's download page instead.
+ * IMPORTANT: SolanaMobileWalletAdapter (MWA v1) CANNOT be used here.
+ * MWA v1 uses a local WebSocket server that Android kills when Chrome tabs
+ * go to the background during deep-link navigation. This causes the wallet
+ * app to open and return without connecting.
  *
- * PhantomWalletAdapter and SolflareWalletAdapter are kept as fallbacks for
- * in-app browser environments where they can inject `window.phantom` /
- * `window.solflare`.
+ * Instead, we use PhantomWalletAdapter and SolflareWalletAdapter directly.
+ * On mobile external browsers, these adapters' connect() method triggers
+ * a redirect-based deep link (not WebSocket) that survives tab backgrounding.
  *
- * autoConnect is enabled so that when the user returns from the wallet app
- * after approving a deep-link authorization, the page can silently reconnect
- * using the cached auth token from localStorage.
+ * The MobileWalletConnect component (not WalletMultiButton) is used to
+ * initiate connections on mobile, bypassing readyState checks that would
+ * otherwise redirect to the wallet's download page.
+ *
+ * autoConnect={true} silently reconnects when the user returns from the
+ * wallet app, using the cached connection state.
  */
-const PRODUCTION_URL = 'https://equa-frontend.netlify.app';
-
 export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
   const wallets = useMemo(
     () => [
-      new SolanaMobileWalletAdapter({
-        addressSelector: createDefaultAddressSelector(),
-        appIdentity: {
-          name: 'EQUA Token',
-          uri: typeof window !== 'undefined' ? window.location.origin : PRODUCTION_URL,
-          icon: typeof window !== 'undefined'
-            ? `${window.location.origin}/branding/equa-logo.png`
-            : `${PRODUCTION_URL}/branding/equa-logo.png`,
-        },
-        authorizationResultCache: createDefaultAuthorizationResultCache(),
-        cluster: 'devnet',
-        onWalletNotFound: createDefaultWalletNotFoundHandler(),
-      }),
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
     ],
     []
   );
 
-  console.log('📱 [MobileExternalProvider] Initializing with SolanaMobileWalletAdapter (MWA) + Phantom + Solflare');
+  console.log('📱 [MobileExternalProvider] Initializing with PhantomWalletAdapter + SolflareWalletAdapter (autoConnect)');
 
   return (
     <ConnectionProvider endpoint={endpoint}>

@@ -64,6 +64,11 @@ const WalletButton = dynamic(
   { ssr: false }
 );
 
+const MobileWalletConnect = dynamic(
+  () => import('@/components/ui/MobileWalletConnect').then((mod) => ({ default: mod.MobileWalletConnect })),
+  { ssr: false }
+);
+
 // Constants for error handling
 const ERROR_STACK_TRACE_LINES = 3;
 
@@ -358,6 +363,14 @@ export default function MintPage() {
   const [minLoadingComplete, setMinLoadingComplete] = useState(false);
   // Migration support: Track users who registered before PR#198 and need locked token ATA created
   const [needsRepair, setNeedsRepair] = useState(false);
+  const [isMobileExternalBrowser, setIsMobileExternalBrowser] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const { detectWalletEnvironment } = require('@/utils/walletEnvironment');
+      setIsMobileExternalBrowser(detectWalletEnvironment() === 'mobile-browser');
+    }
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -2010,7 +2023,11 @@ export default function MintPage() {
             <h1 className="text-4xl font-bold text-white mb-6">Connect Your Wallet</h1>
             <p className="text-purple-200 mb-8">Please connect your wallet to get started</p>
             <div className="flex justify-center">
-              <WalletButton testId="select-wallet-button" />
+              {isMobileExternalBrowser ? (
+                <MobileWalletConnect />
+              ) : (
+                <WalletButton testId="select-wallet-button" />
+              )}
             </div>
           </div>
         </div>
