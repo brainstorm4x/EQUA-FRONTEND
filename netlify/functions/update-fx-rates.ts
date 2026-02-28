@@ -9,7 +9,7 @@
  */
 
 import { Handler } from '@netlify/functions';
-import { storeFxRates, FxRateData } from './lib/blobStorage';
+import { storeFxRates, getLatestFxRates, FxRateData } from './lib/blobStorage';
 
 // ============================================================================
 // Environment Variable Validation (runs at module load time)
@@ -51,6 +51,13 @@ const EXCHANGERATE_API_URL = EXCHANGERATE_API_KEY
  * Fallback URL (free version, no key required)
  */
 const FALLBACK_URL = 'https://api.exchangerate-api.com/v4/latest/USD';
+
+/**
+ * Skip API call if stored data is fresher than this many minutes.
+ * 5-minute buffer below 60 ensures hourly refreshes still fire on schedule
+ * while blocking duplicate calls from deploys or Netlify retries.
+ */
+const FRESHNESS_THRESHOLD_MINUTES = 55;
 
 // ============================================================================
 // Helper Functions
@@ -163,7 +170,38 @@ function getFallbackRates(): FxRateData {
 
 const handler: Handler = async (event, context) => {
   console.log('Starting FX rates update...');
-  
+
+  // ── Idempotency guard: skip if data was fetched less than 55 minutes ago ──
+  // Prevents duplicate API calls when triggered by deploys or Netlify retries.
+  // Budget protection: ensures we stay within the 1,500 req/month free tier.
+  try {
+    const existing = await getLatestFxRates();
+    if (existing) {
+      const ageMinutes = (Date.now() - existing.timestamp) / (60 * 1_000);
+      if (ageMinutes < FRESHNESS_THRESHOLD_MINUTES) {
+        console.log(`✓ FX rates are fresh (${ageMinutes.toFixed(1)}m old) — skipping API call`);
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            skipped: true,
+            reason: 'rates_fresh',
+            ageMinutes: Math.round(ageMinutes),
+            timestamp: existing.timestamp,
+            date: existing.date,
+            source: existing.source,
+            next_update: existing.next_update,
+          }),
+        };
+      }
+      console.log(`FX rates are ${ageMinutes.toFixed(1)}m old — refreshing`);
+    } else {
+      console.log('No existing FX rates found — fetching fresh data');
+    }
+  } catch (guardError) {
+    // If the freshness check itself fails, proceed with fetch (fail-open)
+    console.warn('Freshness check failed, proceeding with API fetch:', guardError);
+  }
+
   try {
     // Fetch FX rates from API
     console.log('Fetching FX rates from ExchangeRate-API...');
