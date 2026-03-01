@@ -1,7 +1,7 @@
 /**
  * Tests for FX Rate Client - Cache TTL Behavior
  * 
- * Tests cache expiration with 6-hour TTL.
+ * Tests cache expiration with 2-hour TTL and Netlify function response format.
  */
 
 import {
@@ -42,14 +42,14 @@ describe('FX Rate Client - Cache TTL', () => {
     mockLocalStorage.clear();
   });
 
-  describe('Cache TTL is 6 hours', () => {
-    it('should cache data for 6 hours', async () => {
-      // Mock successful fetch with ExchangeRate-API format
+  describe('Cache TTL is 2 hours', () => {
+    it('should cache data for 2 hours', async () => {
+      // Mock successful fetch with Netlify get-fx-rates response format
       const mockApiResponse = {
-        base: 'USD',
+        timestamp: Date.now(), // milliseconds (Netlify format)
         date: '2026-01-06',
-        time_last_updated: Math.floor(Date.now() / 1000), // Unix seconds
         rates: { EUR: 0.92, INR: 90.2979 },
+        source: 'exchangerate-api',
       };
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -73,12 +73,12 @@ describe('FX Rate Client - Cache TTL', () => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
-    it('should expire cache after 6 hours', async () => {
+    it('should expire cache after 2 hours', async () => {
       const mockApiResponse = {
-        base: 'USD',
+        timestamp: Date.now(), // milliseconds (Netlify format)
         date: '2026-01-06',
-        time_last_updated: Math.floor(Date.now() / 1000), // Unix seconds
         rates: { EUR: 0.92, INR: 90.2979 },
+        source: 'exchangerate-api',
       };
 
       // Mock initial fetch
@@ -90,11 +90,11 @@ describe('FX Rate Client - Cache TTL', () => {
       // First call
       await getFxRate('EUR');
       
-      // Get the cache and manipulate timestamp to be 7 hours old
+      // Get the cache and manipulate timestamp to be 3 hours old
       const cacheKey = 'equa_fx_rates_cache';
       const cached = JSON.parse(mockLocalStorage.getItem(cacheKey)!);
-      const SEVEN_HOURS_MS = 7 * 60 * 60 * 1000;
-      cached.cachedAt = Date.now() - SEVEN_HOURS_MS;
+      const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+      cached.cachedAt = Date.now() - THREE_HOURS_MS;
       mockLocalStorage.setItem(cacheKey, JSON.stringify(cached));
       
       // Cache should now be invalid
@@ -102,10 +102,10 @@ describe('FX Rate Client - Cache TTL', () => {
       
       // Mock second fetch with updated data
       const updatedApiResponse = {
-        base: 'USD',
+        timestamp: Date.now(), // milliseconds (Netlify format)
         date: '2026-01-06',
-        time_last_updated: Math.floor(Date.now() / 1000),
         rates: { EUR: 0.93, INR: 91.5 },
+        source: 'exchangerate-api',
       };
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -123,12 +123,12 @@ describe('FX Rate Client - Cache TTL', () => {
       expect(result.rate).toBe(0.93);
     });
 
-    it('should not expire cache before 6 hours', async () => {
+    it('should not expire cache before 2 hours', async () => {
       const mockApiResponse = {
-        base: 'USD',
+        timestamp: Date.now(), // milliseconds (Netlify format)
         date: '2026-01-06',
-        time_last_updated: Math.floor(Date.now() / 1000), // Unix seconds
         rates: { EUR: 0.92, INR: 90.2979 },
+        source: 'exchangerate-api',
       };
 
       // Mock initial fetch
@@ -140,11 +140,11 @@ describe('FX Rate Client - Cache TTL', () => {
       // First call
       await getFxRate('EUR');
       
-      // Get the cache and manipulate timestamp to be 5 hours old (still valid)
+      // Get the cache and manipulate timestamp to be 1 hour old (still valid within 2h TTL)
       const cacheKey = 'equa_fx_rates_cache';
       const cached = JSON.parse(mockLocalStorage.getItem(cacheKey)!);
-      const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
-      cached.cachedAt = Date.now() - FIVE_HOURS_MS;
+      const ONE_HOUR_MS = 1 * 60 * 60 * 1000;
+      cached.cachedAt = Date.now() - ONE_HOUR_MS;
       mockLocalStorage.setItem(cacheKey, JSON.stringify(cached));
       
       // Cache should still be valid
@@ -166,10 +166,10 @@ describe('FX Rate Client - Cache TTL', () => {
       const TWENTY_THREE_HOURS_MS = 23 * 60 * 60 * 1000;
       
       const mockApiResponse = {
-        base: 'USD',
+        timestamp: Date.now() - TWENTY_THREE_HOURS_MS, // milliseconds (Netlify format)
         date: '2026-01-05',
-        time_last_updated: Math.floor((Date.now() - TWENTY_THREE_HOURS_MS) / 1000),
         rates: { EUR: 0.92, INR: 90.2979 },
+        source: 'exchangerate-api',
       };
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -187,10 +187,10 @@ describe('FX Rate Client - Cache TTL', () => {
       const TWENTY_FIVE_HOURS_MS = 25 * 60 * 60 * 1000;
       
       const mockApiResponse = {
-        base: 'USD',
+        timestamp: Date.now() - TWENTY_FIVE_HOURS_MS, // milliseconds (Netlify format)
         date: '2026-01-05',
-        time_last_updated: Math.floor((Date.now() - TWENTY_FIVE_HOURS_MS) / 1000),
         rates: { EUR: 0.92, INR: 83.5 },
+        source: 'exchangerate-api',
       };
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -209,10 +209,10 @@ describe('FX Rate Client - Cache TTL', () => {
     it('should clear cache', async () => {
       // Setup cache
       const mockApiResponse = {
-        base: 'USD',
+        timestamp: Date.now(), // milliseconds (Netlify format)
         date: '2026-01-06',
-        time_last_updated: Math.floor(Date.now() / 1000),
         rates: { EUR: 0.92 },
+        source: 'exchangerate-api',
       };
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -233,10 +233,10 @@ describe('FX Rate Client - Cache TTL', () => {
     it('should get cache age in hours', async () => {
       // Setup cache
       const mockApiResponse = {
-        base: 'USD',
+        timestamp: Date.now(), // milliseconds (Netlify format)
         date: '2026-01-06',
-        time_last_updated: Math.floor(Date.now() / 1000),
         rates: { EUR: 0.92 },
+        source: 'exchangerate-api',
       };
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -261,34 +261,32 @@ describe('FX Rate Client - Cache TTL', () => {
     });
   });
 
-  describe('ExchangeRate-API Integration', () => {
-    it('should correctly transform Unix timestamp to milliseconds', async () => {
-      const unixTimestamp = 1736121600; // Jan 6, 2026 in Unix seconds
+  describe('Netlify Function Integration', () => {
+    it('should use timestamp (milliseconds) directly from Netlify response', async () => {
+      const timestampMs = Date.now() - 500; // 500ms ago
       
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          base: 'USD',
+          timestamp: timestampMs, // already milliseconds (Netlify format)
           date: '2026-01-06',
-          time_last_updated: unixTimestamp,
           rates: { EUR: 0.92 },
+          source: 'exchangerate-api',
         }),
       });
   
       const result = await getFxRate('EUR');
       
-      // Verify timestamp conversion
+      // Verify timestamp used directly (no * 1000 conversion)
       expect(result.age).toBeLessThan(1000); // Should be very recent
-      // Age should be calculated from milliseconds, not seconds
       expect(result.age).toBeGreaterThanOrEqual(0);
     });
   
-    it('should handle malformed API response gracefully', async () => {
+    it('should handle malformed Netlify response gracefully', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          // Missing time_last_updated
-          base: 'USD',
+          // Missing timestamp (required Netlify format field)
           date: '2026-01-06',
           rates: { EUR: 0.92 },
         }),
@@ -297,7 +295,7 @@ describe('FX Rate Client - Cache TTL', () => {
       const result = await getFxRate('EUR');
       
       // Should fall back to DEFAULT_RATES
-      expect(result.source).toBe('static');
+      expect(result.source).toBe('fallback');
       expect(result.rate).toBe(0.92); // From DEFAULT_RATES
     });
   });
