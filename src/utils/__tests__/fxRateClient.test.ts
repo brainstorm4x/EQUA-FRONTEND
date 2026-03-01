@@ -1,7 +1,7 @@
 /**
  * Tests for FX Rate Client
  * 
- * Validates real-time FX rate fetching, caching, and fallback behavior.
+ * Validates FX rate fetching via Netlify function, caching, and fallback behavior.
  */
 
 import {
@@ -19,12 +19,11 @@ import {
 // ============================================================================
 
 /**
- * Helper to create mock ExchangeRate-API response
+ * Helper to create mock Netlify get-fx-rates response
  */
 const createMockApiResponse = (timestamp: number = Date.now()) => ({
-  base: 'USD',
+  timestamp,                                               // milliseconds (Netlify format)
   date: new Date(timestamp).toISOString().split('T')[0],
-  time_last_updated: Math.floor(timestamp / 1000),
   rates: {
     USD: 1,
     EUR: 0.92,
@@ -32,6 +31,8 @@ const createMockApiResponse = (timestamp: number = Date.now()) => ({
     JPY: 149.5,
     CNY: 7.25,
   },
+  source: 'exchangerate-api',
+  next_update: timestamp + 3600000,
 });
 
 const MOCK_FX_DATA: FxRateData = {
@@ -127,7 +128,7 @@ describe('FX Rate Client', () => {
   // ==========================================================================
   
   describe('fetchFxRates()', () => {
-    it('should fetch from ExchangeRate-API (primary URL)', async () => {
+    it('should fetch from Netlify get-fx-rates function (primary URL)', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => createMockApiResponse(1736104801000),
@@ -138,7 +139,7 @@ describe('FX Rate Client', () => {
       expect(result.rates).toEqual(MOCK_FX_DATA.rates);
       expect(result.source).toBe('exchangerate-api');
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('exchangerate-api.com'),
+        expect.stringContaining('netlify.app'),
         expect.objectContaining({
           method: 'GET',
           cache: 'no-store',
@@ -160,11 +161,11 @@ describe('FX Rate Client', () => {
       expect(cached.cachedAt).toBe(1736160000000);
     });
     
-    it('should return cached data if fresh (<6h)', async () => {
-      // Pre-populate cache with fresh data (within 6h TTL)
+    it('should return cached data if fresh (<2h)', async () => {
+      // Pre-populate cache with fresh data (within 2h TTL)
       const cachedData = {
         data: MOCK_FX_DATA,
-        cachedAt: 1736160000000 - 1000 * 60 * 60 * 3, // 3 hours ago (within 6h TTL)
+        cachedAt: 1736160000000 - 1000 * 60 * 60 * 1, // 1 hour ago (within 2h TTL)
       };
       mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
       
@@ -193,7 +194,7 @@ describe('FX Rate Client', () => {
       expect(global.fetch).toHaveBeenCalledTimes(2);
       expect(global.fetch).toHaveBeenNthCalledWith(
         2,
-        expect.stringContaining('exchangerate-api.com'),
+        expect.stringContaining('netlify.app'),
         expect.any(Object)
       );
     });
@@ -234,8 +235,8 @@ describe('FX Rate Client', () => {
       expect(result.rates.USD).toBe(1);
       expect(result.rates.EUR).toBeDefined();
       expect(result.rates.INR).toBeDefined();
-      // Date is generated from Date.now() which is mocked to 1736160000000 (2026-01-06)
-      expect(result.date).toBe('2026-01-06');
+      // Date is generated from new Date() - validate it's a valid date string
+      expect(result.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
     
     it('should handle malformed JSON gracefully', async () => {
@@ -258,7 +259,7 @@ describe('FX Rate Client', () => {
     it('should validate required fields in response', async () => {
       const invalidData = {
         rates: { USD: 1 },
-        // Missing time_last_updated
+        // Missing timestamp (required Netlify format field)
       };
       
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -309,11 +310,11 @@ describe('FX Rate Client', () => {
       expect(result.isStale).toBe(false);
     });
     
-    it('should use cached rate if fresh (<6h)', async () => {
-      // Pre-populate cache with fresh data (within 6h TTL)
+    it('should use cached rate if fresh (<2h)', async () => {
+      // Pre-populate cache with fresh data (within 2h TTL)
       const cachedData = {
         data: MOCK_FX_DATA,
-        cachedAt: 1736160000000 - 1000 * 60 * 60 * 3, // 3 hours ago (within 6h TTL)
+        cachedAt: 1736160000000 - 1000 * 60 * 60 * 1, // 1 hour ago (within 2h TTL)
       };
       mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
       
@@ -432,10 +433,10 @@ describe('FX Rate Client', () => {
   // ==========================================================================
   
   describe('isCacheValid()', () => {
-    it('should return true for fresh cache (<6h)', () => {
+    it('should return true for fresh cache (<2h)', () => {
       const cachedData = {
         data: MOCK_FX_DATA,
-        cachedAt: 1736160000000 - 1000 * 60 * 60 * 3, // 3 hours ago (within 6h TTL)
+        cachedAt: 1736160000000 - 1000 * 60 * 60 * 1, // 1 hour ago (within 2h TTL)
       };
       mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
       

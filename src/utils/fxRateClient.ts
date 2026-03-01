@@ -1,10 +1,12 @@
 /**
  * FX Rate Client - Real-Time Exchange Rate Fetching
  * 
- * Fetches real-time FX rates from ExchangeRate-API (exchangerate-api.com).
+ * Fetches FX rates from the EQUA Netlify function (get-fx-rates),
+ * which reads blob-stored rates updated hourly by the update-fx-rates scheduled function.
+ * NEVER calls ExchangeRate-API directly from the browser.
  * Provides 4-layer fallback chain for maximum reliability:
  * 1. Fresh localStorage cache (<2h old)
- * 2. ExchangeRate-API (primary endpoint)
+ * 2. Netlify get-fx-rates function (reads from blobs, updated hourly)
  * 3. Stale localStorage cache (emergency fallback)
  * 4. Static DEFAULT_RATES from localeCurrency.ts
  * 
@@ -22,16 +24,17 @@ import { DEFAULT_RATES } from './localeCurrency';
 // ============================================================================
 
 /**
- * ExchangeRate-API endpoints for FX rate data
- * Free tier: 1,500 requests/month, updates daily
- * Can be overridden via NEXT_PUBLIC_FX_API_URL environment variable
+ * Netlify function endpoints for FX rate data
+ * Reads blob-stored rates updated hourly by the update-fx-rates scheduled function.
+ * Can be overridden via NEXT_PUBLIC_FX_RATES_URL environment variable.
+ * NEVER call ExchangeRate-API directly from the browser.
  */
 const FX_RATES_PRIMARY_URL = 
-  process.env.NEXT_PUBLIC_FX_API_URL || 
-  'https://api.exchangerate-api.com/v4/latest/USD';
+  process.env.NEXT_PUBLIC_FX_RATES_URL || 
+  'https://equa-frontend.netlify.app/.netlify/functions/get-fx-rates';
 const FX_RATES_FALLBACK_URL = 
-  process.env.NEXT_PUBLIC_FX_API_FALLBACK_URL || 
-  'https://api.exchangerate-api.com/v4/latest/USD';
+  process.env.NEXT_PUBLIC_FX_RATES_FALLBACK_URL ||
+  'https://equa-frontend.netlify.app/.netlify/functions/get-fx-rates';
 
 /**
  * Cache configuration
@@ -209,25 +212,18 @@ async function fetchFromUrl(url: string): Promise<FxRateData | null> {
     
     const apiData = await response.json();
     
-    // Transform ExchangeRate-API format to FxRateData
-    // API response: { base: "USD", date: "2026-01-06", time_last_updated: 1736121600, rates: {...} }
-    // Our format: { rates: {...}, timestamp: number (ms), date: string, source: string }
+    // Validate required fields — Netlify get-fx-rates response format:
+    // { timestamp: number (ms), date: string, rates: {...}, source: string, next_update?: number }
     
-// Validate required fields with type checking
+    // Validate required fields with type checking
     if (!apiData.rates || typeof apiData.rates !== 'object') {
       console.warn(`Invalid FX rate data from ${url}:  missing or invalid rates`);
       return null;
     }
     
-    if (!apiData.time_last_updated || typeof apiData.time_last_updated !== 'number') {
+    if (!apiData.timestamp || typeof apiData.timestamp !== 'number') {
       console.warn(`Invalid FX rate data from ${url}: missing or invalid timestamp`);
       return null;
-    }
-    
-    // Validate base currency (should always be USD for our use case)
-    if (apiData.base && apiData.base !== 'USD') {
-      console.warn(`Unexpected base currency from ${url}: ${apiData.base} (expected USD)`);
-      // Don't fail, but log the warning
     }
     
     // Validate at least one rate exists
@@ -238,9 +234,10 @@ async function fetchFromUrl(url: string): Promise<FxRateData | null> {
         
     return {
       rates: apiData.rates,
-      timestamp: apiData.time_last_updated * 1000, // Convert Unix seconds to milliseconds
+      timestamp: apiData.timestamp,   // already milliseconds from our Netlify function
       date: apiData.date || new Date().toISOString().split('T')[0],
-      source: "exchangerate-api",
+      source: apiData.source || 'exchangerate-api',
+      next_update: apiData.next_update,
     };
   } catch (error) {
     console.warn(`Error fetching FX rates from ${url}:`, error);
@@ -249,12 +246,12 @@ async function fetchFromUrl(url: string): Promise<FxRateData | null> {
 }
 
 /**
- * Fetch all FX rates from ExchangeRate-API
+ * Fetch all FX rates from the Netlify get-fx-rates function
  * 
  * Fallback chain:
- * 1. Primary ExchangeRate-API endpoint
- * 2. Fallback ExchangeRate-API endpoint (same URL, retry logic)
- * 3. Stale localStorage cache
+ * 1. Fresh localStorage cache (<2h old)
+ * 2. Netlify get-fx-rates function (reads from blobs, updated hourly)
+ * 3. Stale localStorage cache (emergency fallback)
  * 4. Static DEFAULT_RATES (never returns null)
  * 
  * @returns FX rate data (never null)
