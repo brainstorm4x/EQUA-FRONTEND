@@ -190,7 +190,7 @@ export const MobileWalletConnect: FC<MobileWalletConnectProps> = ({ compact = fa
       )}
 
       <p className="text-purple-400 text-xs text-center mt-2">
-        You'll be redirected to your wallet app to approve the connection
+        You&apos;ll be redirected to your wallet app to approve the connection
       </p>
     </div>
   );
