@@ -26,6 +26,8 @@ import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRaw } from '@/utils/tokenFormat';
 import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
+import { EquaPriceCalculator } from '@/utils/priceCalculator';
+import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
@@ -41,9 +43,6 @@ interface WalletDashboardProps {
 
 // EQUA Token decimals will be fetched from on-chain mint
 // Default to 6 decimals as per the on-chain mint configuration
-
-// Default EQUA price in USD per 1 EQUA token (used as fallback if price fetch fails)
-const DEFAULT_EQUA_PRICE_USD = 0.01;
 
 // Shared constants for referral messages
 const EQUA_SHARE_BASE_URL = 'https://equa.live/mint';
@@ -591,17 +590,20 @@ const SendModal: FC<SendModalProps> = ({
   const animationFrameRef = useRef<number | null>(null);
   const jsQRRef = useRef<typeof import('jsqr').default | null>(null);
 
-  // Fetch EQUA price on mount
+  // Fetch totalTransactions from GlobalState for accurate price calculation
+  const { totalTransactions } = useGlobalStateStats();
+
+  // Fetch EQUA price based on current transaction count (re-runs when totalTransactions changes)
   useEffect(() => {
     const fetchPrice = async () => {
       setIsLoadingPrice(true);
+      // Compute price from on-chain transaction count (matches PriceDisplay.tsx pattern)
+      const equaPriceUsd = EquaPriceCalculator.calculatePrice(totalTransactions);
       try {
         // Use the already-initialized localCurrency state
         const currencyCode = localCurrency;
         
-        // Get current EQUA price from global state
-        // For now, use a default price - in production, fetch from blockchain
-        const priceData = await getEquaPriceMultiFormat(DEFAULT_EQUA_PRICE_USD, currencyCode, connection);
+        const priceData = await getEquaPriceMultiFormat(equaPriceUsd, currencyCode, connection);
         setEquaPrice(priceData.localCurrency);
         
         // Log FX metadata for debugging
@@ -613,13 +615,13 @@ const SendModal: FC<SendModalProps> = ({
         }
       } catch (err) {
         console.warn('Failed to fetch EQUA price:', err);
-        setEquaPrice(DEFAULT_EQUA_PRICE_USD);
+        setEquaPrice(equaPriceUsd);
       } finally {
         setIsLoadingPrice(false);
       }
     };
     fetchPrice();
-  }, [connection, localCurrency]);
+  }, [connection, localCurrency, totalTransactions]);
 
   // Handle local currency amount change
   const handleLocalCurrencyChange = (value: string) => {
