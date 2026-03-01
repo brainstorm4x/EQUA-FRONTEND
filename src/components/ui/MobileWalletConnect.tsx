@@ -4,6 +4,11 @@ import { FC, useState, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletName } from '@solana/wallet-adapter-base';
 
+interface MobileWalletConnectProps {
+  /** When true, renders a compact header-friendly version */
+  compact?: boolean;
+}
+
 /**
  * Mobile Wallet Connect Component
  *
@@ -20,14 +25,19 @@ import { WalletName } from '@solana/wallet-adapter-base';
  * connection, and redirects back to the browser.
  *
  * autoConnect={true} on the provider handles silent reconnection on return.
+ *
+ * compact={true} renders a single "Select Wallet" button suitable for headers.
+ * On click it expands to show Phantom + Solflare options inline.
  */
-export const MobileWalletConnect: FC = () => {
+export const MobileWalletConnect: FC<MobileWalletConnectProps> = ({ compact = false }) => {
   const { select, connect, connecting, connected, publicKey, disconnect } = useWallet();
   const [error, setError] = useState<string | null>(null);
+  const [showOptions, setShowOptions] = useState(false);
 
   const connectWallet = useCallback(async (walletName: WalletName) => {
     try {
       setError(null);
+      setShowOptions(false);
       console.log(`📱 [MobileWalletConnect] Selecting ${walletName} and connecting...`);
       select(walletName);
       // Small delay to allow adapter selection to propagate
@@ -48,10 +58,27 @@ export const MobileWalletConnect: FC = () => {
     }
   }, [select, connect]);
 
-  // If connected, show address + disconnect
+  // If connected, show address + disconnect (same for both compact and full)
   if (connected && publicKey) {
     const address = publicKey.toBase58();
     const shortAddress = `${address.slice(0, 4)}...${address.slice(-4)}`;
+
+    if (compact) {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="bg-purple-500/30 border border-purple-500/50 text-white px-3 py-1.5 rounded-lg text-sm font-mono">
+            {shortAddress}
+          </div>
+          <button
+            onClick={disconnect}
+            className="text-purple-300 text-xs underline"
+          >
+            Disconnect
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center gap-3">
         <div className="bg-purple-500/30 border border-purple-500/50 text-white px-4 py-2 rounded-xl text-sm font-mono">
@@ -67,6 +94,61 @@ export const MobileWalletConnect: FC = () => {
     );
   }
 
+  // COMPACT MODE: Single button → expands to wallet options
+  if (compact) {
+    if (!showOptions) {
+      return (
+        <button
+          onClick={() => setShowOptions(true)}
+          disabled={connecting}
+          className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold py-2 px-4 rounded-lg transition-all text-sm"
+        >
+          {connecting ? 'Connecting...' : 'Select Wallet'}
+        </button>
+      );
+    }
+
+    // Show wallet options inline (compact)
+    return (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => connectWallet('Phantom' as WalletName)}
+          disabled={connecting}
+          className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold py-2 px-3 rounded-lg transition-all text-sm"
+        >
+          <img
+            src="https://phantom.app/img/phantom-logo.png"
+            alt="Phantom"
+            className="w-4 h-4 rounded-full"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+          {connecting ? '...' : 'Phantom'}
+        </button>
+        <button
+          onClick={() => connectWallet('Solflare' as WalletName)}
+          disabled={connecting}
+          className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold py-2 px-3 rounded-lg transition-all text-sm"
+        >
+          <img
+            src="https://solflare.com/favicon.ico"
+            alt="Solflare"
+            className="w-4 h-4 rounded-full"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+          {connecting ? '...' : 'Solflare'}
+        </button>
+        <button
+          onClick={() => setShowOptions(false)}
+          className="text-purple-300 text-xs px-2"
+          aria-label="Cancel"
+        >
+          ✕
+        </button>
+      </div>
+    );
+  }
+
+  // FULL MODE: Side-by-side wallet buttons (for connect screen)
   return (
     <div className="flex flex-col items-center gap-4 w-full max-w-xs">
       <p className="text-purple-200 text-sm text-center">

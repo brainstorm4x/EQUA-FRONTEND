@@ -31,6 +31,12 @@ interface Props {
  * On mobile external browsers, these adapters' connect() method triggers
  * a redirect-based deep link (not WebSocket) that survives tab backgrounding.
  *
+ * NOTE: The upstream @solana/wallet-adapter-react WalletProvider automatically
+ * injects SolanaMobileWalletAdapter when it detects Android mobile web. This is
+ * harmless because WalletMultiButton is never shown on mobile-browser — the
+ * MobileWalletConnect component is used instead (via WalletButton's environment
+ * detection), so MWA never appears in the UI.
+ *
  * The MobileWalletConnect component (not WalletMultiButton) is used to
  * initiate connections on mobile, bypassing readyState checks that would
  * otherwise redirect to the wallet's download page.
