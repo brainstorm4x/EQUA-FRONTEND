@@ -155,7 +155,7 @@ describe('FX Rate Client', () => {
       
       await fetchFxRates();
       
-      const cached = JSON.parse(mockLocalStorage['equa_fx_rates_cache']);
+      const cached = JSON.parse(mockLocalStorage['equa_fx_rates_cache_v2']);
       expect(cached.data.rates).toEqual(MOCK_FX_DATA.rates);
       expect(cached.data.source).toBe('exchangerate-api');
       expect(cached.cachedAt).toBe(1736160000000);
@@ -167,7 +167,7 @@ describe('FX Rate Client', () => {
         data: MOCK_FX_DATA,
         cachedAt: 1736160000000 - 1000 * 60 * 60 * 1, // 1 hour ago (within 2h TTL)
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(cachedData);
       
       const result = await fetchFxRates();
       
@@ -205,7 +205,7 @@ describe('FX Rate Client', () => {
         data: MOCK_FX_DATA,
         cachedAt: 1736160000000 - 1000 * 60 * 60 * 48, // 48 hours ago
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(staleData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(staleData);
       
       // Both API calls fail
       (global.fetch as jest.Mock).mockResolvedValue({
@@ -316,7 +316,7 @@ describe('FX Rate Client', () => {
         data: MOCK_FX_DATA,
         cachedAt: 1736160000000 - 1000 * 60 * 60 * 1, // 1 hour ago (within 2h TTL)
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(cachedData);
       
       const result = await getFxRate('INR');
       
@@ -335,7 +335,7 @@ describe('FX Rate Client', () => {
         },
         cachedAt: oldTimestamp,
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(staleData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(staleData);
       
       // API fails, so use stale cache
       (global.fetch as jest.Mock).mockResolvedValue({
@@ -356,7 +356,7 @@ describe('FX Rate Client', () => {
         data: MOCK_FALLBACK_DATA,
         cachedAt: 1736160000000 - 1000 * 60 * 60 * 48, // 48 hours ago
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(staleData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(staleData);
       
       // API returns fresh data
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -397,7 +397,7 @@ describe('FX Rate Client', () => {
         },
         cachedAt: oldTimestamp,
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(cachedData);
       
       const result = await getFxRate('EUR');
       
@@ -412,15 +412,15 @@ describe('FX Rate Client', () => {
   
   describe('clearFxCache()', () => {
     it('should remove cache from localStorage', () => {
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify({
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify({
         data: MOCK_FX_DATA,
         cachedAt: Date.now(),
       });
       
       clearFxCache();
       
-      expect(mockLocalStorage['equa_fx_rates_cache']).toBeUndefined();
-      expect(removeItemSpy).toHaveBeenCalledWith('equa_fx_rates_cache');
+      expect(mockLocalStorage['equa_fx_rates_cache_v2']).toBeUndefined();
+      expect(removeItemSpy).toHaveBeenCalledWith('equa_fx_rates_cache_v2');
     });
     
     it('should not throw if cache does not exist', () => {
@@ -438,7 +438,7 @@ describe('FX Rate Client', () => {
         data: MOCK_FX_DATA,
         cachedAt: 1736160000000 - 1000 * 60 * 60 * 1, // 1 hour ago (within 2h TTL)
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(cachedData);
       
       expect(isCacheValid()).toBe(true);
     });
@@ -448,7 +448,7 @@ describe('FX Rate Client', () => {
         data: MOCK_FX_DATA,
         cachedAt: 1736160000000 - 1000 * 60 * 60 * 48, // 48 hours ago
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(staleData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(staleData);
       
       expect(isCacheValid()).toBe(false);
     });
@@ -464,7 +464,7 @@ describe('FX Rate Client', () => {
         data: MOCK_FX_DATA,
         cachedAt: 1736160000000 - 24 * 60 * 60 * 1000 - 1, // Just past 24h
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(boundaryData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(boundaryData);
       
       expect(isCacheValid()).toBe(false);
     });
@@ -480,7 +480,7 @@ describe('FX Rate Client', () => {
         data: MOCK_FX_DATA,
         cachedAt: 1736160000000 - 1000 * 60 * 60 * 6, // 6 hours ago
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(cachedData);
       
       const age = getRateAge();
       
@@ -498,7 +498,7 @@ describe('FX Rate Client', () => {
         data: MOCK_FX_DATA,
         cachedAt: 1736160000000 - 1000 * 60 * 60 * 48, // 48 hours ago
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(staleData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(staleData);
       
       const age = getRateAge();
       
@@ -510,7 +510,7 @@ describe('FX Rate Client', () => {
         data: MOCK_FX_DATA,
         cachedAt: 1736160000000 - 1000 * 60 * 90, // 1.5 hours ago
       };
-      mockLocalStorage['equa_fx_rates_cache'] = JSON.stringify(cachedData);
+      mockLocalStorage['equa_fx_rates_cache_v2'] = JSON.stringify(cachedData);
       
       const age = getRateAge();
       

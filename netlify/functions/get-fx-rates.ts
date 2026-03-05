@@ -46,6 +46,7 @@ const handler: Handler = async (event, context): Promise<HandlerResponse> => {
       },
       body: JSON.stringify({
         timestamp: fxData.timestamp,
+        data_age_seconds: Math.floor((Date.now() - fxData.timestamp) / 1000),
         date: fxData.date,
         rates: fxData.rates,
         source: fxData.source,

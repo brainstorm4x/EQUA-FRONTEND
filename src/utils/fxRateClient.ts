@@ -42,9 +42,13 @@ const FX_RATES_URL =
  * - TTL: 2 hours (aligns with hourly Netlify scheduled function updates)
  * - Staleness: 24 hours (for warning/staleness detection)
  */
-const CACHE_KEY = "equa_fx_rates_cache";
+// Increment this version when a deploy should force-clear all client FX caches
+// (e.g., after fixing stale data bugs, changing the Blobs data format, etc.)
+const CACHE_VERSION = "v2";
+const CACHE_KEY = `equa_fx_rates_cache_${CACHE_VERSION}`;
 const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+const BLOBS_STALE_THRESHOLD_SECONDS = 7200; // 2 hours — warn if Blobs data is older than this
 
 // ============================================================================
 // TypeScript Interfaces
@@ -93,7 +97,10 @@ function getCachedData(): CachedFxData | null {
     const cached = localStorage.getItem(CACHE_KEY);
     if (!cached) return null;
     const parsed = JSON.parse(cached) as CachedFxData;
+    // Expire on localStorage TTL
     if (Date.now() - parsed.cachedAt > CACHE_TTL_MS) return null;
+    // Also expire if the upstream source has signalled a newer update is available
+    if (parsed.data.next_update && Date.now() > parsed.data.next_update) return null;
     return parsed;
   } catch {
     return null;
@@ -176,6 +183,13 @@ async function fetchFromUrl(url: string): Promise<FxRateData | null> {
     if (Object.keys(apiData.rates).length === 0) {
       console.warn(`Invalid FX rate data from ${url}: empty rates object`);
       return null;
+    }
+
+    if (apiData.data_age_seconds && apiData.data_age_seconds > BLOBS_STALE_THRESHOLD_SECONDS) {
+      console.warn(
+        `⚠ Blobs data is ${Math.round(apiData.data_age_seconds / 3600)}h old — ` +
+        `update-fx-rates may not have run recently. Rates may be stale.`
+      );
     }
 
     return {
