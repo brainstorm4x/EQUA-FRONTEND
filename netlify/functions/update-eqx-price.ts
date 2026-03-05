@@ -191,9 +191,9 @@ const handler: Handler = async (event, context) => {
     // 4. Get current slot
     const slot = await connection.getSlot();
     
-    // 5. Store price snapshot in blobs
+    // 5. Store price snapshot in blobs (best-effort — non-fatal)
     console.log('Storing price snapshot to Netlify Blobs...');
-    
+
     const snapshot: EqxPriceSnapshot = {
       timestamp: Date.now(),
       price: basketPrice,
@@ -204,20 +204,37 @@ const handler: Handler = async (event, context) => {
       weightsHash,
       source,
     };
-    
-    await storeEqxPrice(snapshot);
-    
-    console.log('EQX price oracle update completed successfully');
-    
+
+    let blobsWriteSuccess = false;
+    try {
+      await storeEqxPrice(snapshot);
+      blobsWriteSuccess = true;
+      console.log('✓ EQX price snapshot stored to Netlify Blobs');
+    } catch (blobsError) {
+      console.warn(
+        '⚠ Blobs write failed — snapshot not persisted. ' +
+        'Ensure NETLIFY_SITE_ID and NETLIFY_ACCESS_TOKEN are set in Netlify environment variables.',
+        blobsError
+      );
+    }
+
+    console.log('EQX price oracle update completed');
+
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
+        blobsWriteSuccess,
         price: basketPrice,
         priceFixed: basketPriceFixed.toString(),
         slot,
         source,
         timestamp: snapshot.timestamp,
+        sampleComponents: {
+          XAUUSD: componentPrices.XAUUSD,
+          USDEUR: componentPrices.USDEUR,
+          OIL: componentPrices.OIL,
+        },
       }),
     };
   } catch (error) {

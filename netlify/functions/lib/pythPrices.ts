@@ -22,16 +22,16 @@ const PYTH_PRICE_FEEDS = {
 
 /**
  * Fallback prices (used if Hermes API fails)
- * These are reasonable market values as of Jan 2025
+ * These are reasonable market values as of Mar 2025
  */
 const FALLBACK_PRICES = {
   USDUSD: 1.0,        // Always 1.0
-  USDEUR: 0.91,       // Inverted from EUR/USD ≈ 1.10
+  USDEUR: 0.92,       // Inverted from EUR/USD ≈ 1.087
   USDCNY: 0.14,       // USD in Chinese Yuan
-  USDJPY: 0.0067,     // USD in Japanese Yen
+  USDJPY: 0.0066,     // USD in Japanese Yen (USD/JPY ≈ 151)
   USDGBP: 0.79,       // Inverted from GBP/USD ≈ 1.27
-  XAUUSD: 2650.0,     // Gold spot price ($/oz)
-  OIL: 73.5,          // WTI Crude ($/barrel)
+  XAUUSD: 2900.0,     // Gold spot price ($/oz)
+  OIL: 68.5,          // WTI Crude ($/barrel)
 };
 
 /**
@@ -80,7 +80,27 @@ export async function fetchComponentPrices(): Promise<{
       XAUUSD: parsePythPrice(data, PYTH_PRICE_FEEDS.XAUUSD, FALLBACK_PRICES.XAUUSD, false),
       OIL: parsePythPrice(data, PYTH_PRICE_FEEDS.OIL, FALLBACK_PRICES.OIL, false),
     };
-    
+
+    // Warn if all feeds returned fallback values despite a successful HTTP response
+    const livePriceCount = [
+      prices.USDEUR !== FALLBACK_PRICES.USDEUR,
+      prices.USDCNY !== FALLBACK_PRICES.USDCNY,
+      prices.USDJPY !== FALLBACK_PRICES.USDJPY,
+      prices.USDGBP !== FALLBACK_PRICES.USDGBP,
+      prices.XAUUSD !== FALLBACK_PRICES.XAUUSD,
+      prices.OIL    !== FALLBACK_PRICES.OIL,
+    ].filter(Boolean).length;
+
+    const totalFeeds = Object.keys(PYTH_PRICE_FEEDS).length;
+    if (livePriceCount === 0) {
+      console.warn(
+        'All Hermes feeds returned fallback values — check feed IDs or Hermes API response shape. ' +
+        `Response top-level keys: [${Object.keys(data).join(', ')}]`
+      );
+    } else {
+      console.log(`✓ Fetched ${livePriceCount}/${totalFeeds} live prices from Hermes`);
+    }
+
     return { prices, source: 'hermes' };
   } catch (error) {
     console.warn('Pyth Hermes API failed, using fallback prices:', error);
@@ -105,7 +125,13 @@ function parsePythPrice(
 ): number {
   try {
     // Find the feed in the response
-    const feed = data.parsed?.find((p: any) => p.id === feedId);
+    // Hermes v2 returns IDs without '0x' prefix; our constants include it — normalise both sides
+    const normalizedFeedId = feedId.startsWith('0x') ? feedId.slice(2) : feedId;
+
+    const feed = data.parsed?.find((p: any) => {
+      const responseId = p.id.startsWith('0x') ? p.id.slice(2) : p.id;
+      return responseId.toLowerCase() === normalizedFeedId.toLowerCase();
+    });
     if (!feed) {
       console.warn(`Feed ${feedId} not found in Hermes response, using fallback`);
       return fallback;
