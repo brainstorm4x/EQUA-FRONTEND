@@ -21,14 +21,14 @@ const handler: Handler = async (event, context): Promise<HandlerResponse> => {
     if (!fxData) {
       // No data available yet
       return {
-        statusCode: 404,
+        statusCode: 503,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': 'Content-Type',
         },
         body: JSON.stringify({
-          error: 'No FX rate data available',
+          error: 'FX rate data temporarily unavailable',
           message: 'The FX rate update job may not have run yet. Please try again later.',
         }),
       };

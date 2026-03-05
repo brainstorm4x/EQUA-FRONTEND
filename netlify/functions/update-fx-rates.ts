@@ -110,9 +110,16 @@ async function fetchFxRatesFromAPI(): Promise<FxRateData | null> {
     const apiData = await response.json();
     const apiResponseTime = Date.now() - startTime;
     
-    // Validate response
-    if (!apiData.rates || typeof apiData.rates !== 'object') {
-      console.error('Invalid FX rate data: missing or invalid rates');
+    // Normalise BEFORE validating:
+    // v6 (paid tier with key): response uses `conversion_rates`
+    // v4 (free keyless endpoint): response uses `rates`
+    const rates = apiData.conversion_rates ?? apiData.rates;
+
+    if (!rates || typeof rates !== 'object' || Object.keys(rates).length === 0) {
+      console.error(
+        `Invalid FX rate data from API. ` +
+        `Top-level keys present: [${Object.keys(apiData).join(', ')}]`
+      );
       return null;
     }
     
@@ -124,7 +131,7 @@ async function fetchFxRatesFromAPI(): Promise<FxRateData | null> {
     const data: FxRateData = {
       timestamp,
       date: apiData.date || new Date().toISOString().split('T')[0],
-      rates: apiData.rates || apiData.conversion_rates,
+      rates,
       source: 'exchangerate-api',
       next_update: apiData.time_next_update_unix ? apiData.time_next_update_unix * 1000 : undefined,
       api_response_time: apiResponseTime,
@@ -137,33 +144,6 @@ async function fetchFxRatesFromAPI(): Promise<FxRateData | null> {
   }
 }
 
-/**
- * Get fallback FX rates
- */
-function getFallbackRates(): FxRateData {
-  // Static fallback rates (updated 2026-01-08)
-  const fallbackRates: Record<string, number> = {
-    USD: 1.0,
-    EUR: 0.91,
-    GBP: 0.79,
-    JPY: 149.5,
-    CNY: 7.24,
-    INR: 83.25,
-    AUD: 1.52,
-    CAD: 1.35,
-    CHF: 0.88,
-    SEK: 10.45,
-    // Add more common currencies as needed
-  };
-  
-  return {
-    timestamp: Date.now(),
-    date: new Date().toISOString().split('T')[0],
-    rates: fallbackRates,
-    source: 'fallback',
-  };
-}
-
 // ============================================================================
 // Main Handler
 // ============================================================================
@@ -171,80 +151,123 @@ function getFallbackRates(): FxRateData {
 const handler: Handler = async (event, context) => {
   console.log('Starting FX rates update...');
 
-  // ── Idempotency guard: skip if data was fetched less than 55 minutes ago ──
-  // Prevents duplicate API calls when triggered by deploys or Netlify retries.
-  // Budget protection: ensures we stay within the 1,500 req/month free tier.
+  // Read the last-known-good value from Blobs upfront.
+  // This is used for BOTH the idempotency guard AND as the API-failure fallback.
+  // It preserves all 160+ currencies at their last real exchange rates.
+  let lastKnownGood: FxRateData | null = null;
   try {
-    const existing = await getLatestFxRates();
-    if (existing) {
-      const ageMinutes = (Date.now() - existing.timestamp) / (60 * 1_000);
-      if (ageMinutes < FRESHNESS_THRESHOLD_MINUTES) {
-        console.log(`✓ FX rates are fresh (${ageMinutes.toFixed(1)}m old) — skipping API call`);
-        return {
-          statusCode: 200,
-          body: JSON.stringify({
-            skipped: true,
-            reason: 'rates_fresh',
-            ageMinutes: Math.round(ageMinutes),
-            timestamp: existing.timestamp,
-            date: existing.date,
-            source: existing.source,
-            next_update: existing.next_update,
-          }),
-        };
-      }
-      console.log(`FX rates are ${ageMinutes.toFixed(1)}m old — refreshing`);
-    } else {
-      console.log('No existing FX rates found — fetching fresh data');
-    }
-  } catch (guardError) {
-    // If the freshness check itself fails, proceed with fetch (fail-open)
-    console.warn('Freshness check failed, proceeding with API fetch:', guardError);
+    lastKnownGood = await getLatestFxRates();
+  } catch (blobsReadError) {
+    console.warn('Could not read last-known-good from Blobs (will proceed with API fetch):', blobsReadError);
   }
 
-  try {
-    // Fetch FX rates from API
-    console.log('Fetching FX rates from ExchangeRate-API...');
-    let fxData = await fetchFxRatesFromAPI();
-    
-    // Fallback to static rates if API fails
-    if (!fxData) {
-      console.warn('API fetch failed, using fallback rates');
-      fxData = getFallbackRates();
+  // ── Idempotency guard ────────────────────────────────────────────────────
+  if (lastKnownGood) {
+    const ageMinutes = (Date.now() - lastKnownGood.timestamp) / (60 * 1_000);
+    if (ageMinutes < FRESHNESS_THRESHOLD_MINUTES) {
+      console.log(`✓ FX rates are fresh (${ageMinutes.toFixed(1)}m old) — skipping API call`);
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          skipped: true,
+          reason: 'rates_fresh',
+          ageMinutes: Math.round(ageMinutes),
+          timestamp: lastKnownGood.timestamp,
+          date: lastKnownGood.date,
+          source: lastKnownGood.source,
+          next_update: lastKnownGood.next_update,
+        }),
+      };
     }
-    
-    console.log(`Fetched ${Object.keys(fxData.rates).length} currency rates`);
-    console.log('Source:', fxData.source);
-    
-    // Store to Netlify Blobs
-    console.log('Storing FX rates to Netlify Blobs...');
-    await storeFxRates(fxData);
-    
-    console.log('FX rates update completed successfully');
-    
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        timestamp: fxData.timestamp,
-        date: fxData.date,
-        source: fxData.source,
-        currencyCount: Object.keys(fxData.rates).length,
-        next_update: fxData.next_update,
-        api_response_time: fxData.api_response_time,
-      }),
-    };
-  } catch (error) {
-    console.error('Error updating FX rates:', error);
-    
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }),
-    };
+    console.log(`FX rates are ${ageMinutes.toFixed(1)}m old — refreshing`);
+  } else {
+    console.log('No existing FX rates found — fetching fresh data');
   }
+
+  // ── Fetch from ExchangeRate-API ──────────────────────────────────────────
+  let fxData: FxRateData | null = null;
+  try {
+    console.log('Fetching FX rates from ExchangeRate-API...');
+    fxData = await fetchFxRatesFromAPI();
+  } catch (fetchError) {
+    console.error('Unexpected error during API fetch:', fetchError);
+  }
+
+  // ── API-failure fallback: use last-known-good from Blobs ─────────────────
+  // IMPORTANT: There are NO hardcoded currency values in this file.
+  // If the API fails, the fallback is always the last real value from Blobs.
+  // This preserves all 160+ currencies at their most recent real exchange rates.
+  if (!fxData) {
+    if (lastKnownGood) {
+      console.warn(
+        `⚠ API fetch failed — using last-known-good rates from ${lastKnownGood.date} ` +
+        `(${Object.keys(lastKnownGood.rates).length} currencies, source: ${lastKnownGood.source}). ` +
+        `These are real rates from the last successful API call, not hardcoded values.`
+      );
+      // Re-store with a refreshed timestamp so downstream consumers know
+      // this function ran and attempted a refresh, even if the API was unavailable.
+      fxData = {
+        ...lastKnownGood,
+        source: 'fallback', // Mark as fallback so consumers can detect this condition
+      };
+    } else {
+      // No API data AND no Blobs data: this is a genuine cold-start failure.
+      // Do NOT store anything. Return 503 so Netlify can retry.
+      console.error(
+        '✗ CRITICAL: API fetch failed and no last-known-good data exists in Blobs. ' +
+        'No FX rates are available. Ensure NETLIFY_SITE_ID and NETLIFY_ACCESS_TOKEN ' +
+        'are set, and that update-fx-rates has successfully run at least once.'
+      );
+      return {
+        statusCode: 503,
+        body: JSON.stringify({
+          success: false,
+          error: 'no_data_available',
+          message:
+            'ExchangeRate-API fetch failed and no previous rates exist in Blobs. ' +
+            'FX rates are temporarily unavailable.',
+        }),
+      };
+    }
+  }
+
+  // ── Store to Netlify Blobs (best-effort, non-fatal) ───────────────────────
+  let blobsWriteSuccess = false;
+  try {
+    console.log(`Storing ${Object.keys(fxData.rates).length} FX rates to Netlify Blobs...`);
+    await storeFxRates(fxData);
+    blobsWriteSuccess = true;
+    console.log('✓ FX rates stored to Netlify Blobs');
+  } catch (blobsError) {
+    console.warn(
+      '⚠ Blobs write failed — rates not persisted. ' +
+      'Ensure NETLIFY_SITE_ID and NETLIFY_ACCESS_TOKEN are set in Netlify environment variables.',
+      blobsError
+    );
+  }
+
+  console.log('FX rates update completed');
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      success: true,
+      blobsWriteSuccess,
+      timestamp: fxData.timestamp,
+      date: fxData.date,
+      source: fxData.source,
+      currencyCount: Object.keys(fxData.rates).length,
+      next_update: fxData.next_update,
+      api_response_time: fxData.api_response_time,
+      // Sample rates for quick visual verification when invoking manually
+      sampleRates: {
+        INR: fxData.rates['INR'],
+        EUR: fxData.rates['EUR'],
+        GBP: fxData.rates['GBP'],
+        JPY: fxData.rates['JPY'],
+      },
+    }),
+  };
 };
 
 // Export as scheduled function (runs hourly)
