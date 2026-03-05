@@ -161,10 +161,10 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
             <div className="mt-1">
               <p className="text-green-300 text-sm" data-testid="local-currency-price">
                 ≈ {formatLocalCurrencyDynamic(currentPrice, localCurrency, eqxData.fxRate || 1)}
-                {/* Add subtle cache indicator only when using cached data */}
-                {eqxData.fxSource === 'cache' && (
-                  <span className="text-purple-300 text-xs ml-1" title="Using cached exchange rate">
-                    (cached)
+                {/* Add stale indicator only when exchange rate data is genuinely outdated */}
+                {eqxData.fxIsStale && (
+                  <span className="text-orange-300 text-xs ml-1" title="Exchange rate may be outdated (>24h old)">
+                    (stale)
                   </span>
                 )}
               </p>

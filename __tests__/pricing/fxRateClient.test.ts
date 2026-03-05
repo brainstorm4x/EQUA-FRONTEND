@@ -91,7 +91,7 @@ describe('FX Rate Client - Cache TTL', () => {
       await getFxRate('EUR');
       
       // Get the cache and manipulate timestamp to be 3 hours old
-      const cacheKey = 'equa_fx_rates_cache';
+      const cacheKey = 'equa_fx_rates_cache_v2';
       const cached = JSON.parse(mockLocalStorage.getItem(cacheKey)!);
       const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
       cached.cachedAt = Date.now() - THREE_HOURS_MS;
@@ -141,7 +141,7 @@ describe('FX Rate Client - Cache TTL', () => {
       await getFxRate('EUR');
       
       // Get the cache and manipulate timestamp to be 1 hour old (still valid within 2h TTL)
-      const cacheKey = 'equa_fx_rates_cache';
+      const cacheKey = 'equa_fx_rates_cache_v2';
       const cached = JSON.parse(mockLocalStorage.getItem(cacheKey)!);
       const ONE_HOUR_MS = 1 * 60 * 60 * 1000;
       cached.cachedAt = Date.now() - ONE_HOUR_MS;
@@ -247,7 +247,7 @@ describe('FX Rate Client - Cache TTL', () => {
       await getFxRate('EUR');
       
       // Manipulate cache to be 3 hours old
-      const cacheKey = 'equa_fx_rates_cache';
+      const cacheKey = 'equa_fx_rates_cache_v2';
       const cached = JSON.parse(mockLocalStorage.getItem(cacheKey)!);
       const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
       cached.cachedAt = Date.now() - THREE_HOURS_MS;

@@ -11,23 +11,25 @@ export interface CurrencyInfo {
   rate: number; // Rate relative to USD
 }
 
-// Default exchange rates (fallback if API fails)
-// Note: These are approximate rates for display purposes only.
-// For actual transactions, always use real-time exchange rates.
+// EMERGENCY FALLBACK RATES — used ONLY when get-fx-rates Netlify function is
+// unreachable AND localStorage cache is empty. These are approximate values
+// updated periodically. For real-time rates, the system uses Netlify Blobs
+// via the get-fx-rates function. NEVER use these for actual transaction amounts
+// without surfacing a visible warning to the user.
 export const DEFAULT_RATES: Record<string, CurrencyInfo> = {
   USD: { code: 'USD', symbol: '$', rate: 1 },
   EUR: { code: 'EUR', symbol: '€', rate: 0.92 },
   GBP: { code: 'GBP', symbol: '£', rate: 0.79 },
-  JPY: { code: 'JPY', symbol: '¥', rate: 149.5 },
-  INR: { code: 'INR', symbol: '₹', rate: 83.5 },
-  CNY: { code: 'CNY', symbol: '¥', rate: 7.24 },
-  KRW: { code: 'KRW', symbol: '₩', rate: 1320 },
+  JPY: { code: 'JPY', symbol: '¥', rate: 151.0 },
+  INR: { code: 'INR', symbol: '₹', rate: 87.0 },
+  CNY: { code: 'CNY', symbol: '¥', rate: 7.25 },
+  KRW: { code: 'KRW', symbol: '₩', rate: 1380 },
   BRL: { code: 'BRL', symbol: 'R$', rate: 4.97 },
   MXN: { code: 'MXN', symbol: '$', rate: 17.15 },
   AUD: { code: 'AUD', symbol: 'A$', rate: 1.53 },
   CAD: { code: 'CAD', symbol: 'C$', rate: 1.36 },
   CHF: { code: 'CHF', symbol: 'CHF', rate: 0.88 },
-  NGN: { code: 'NGN', symbol: '₦', rate: 1550 },
+  NGN: { code: 'NGN', symbol: '₦', rate: 1580 },
   ZAR: { code: 'ZAR', symbol: 'R', rate: 18.5 },
   AED: { code: 'AED', symbol: 'د.إ', rate: 3.67 },
   SGD: { code: 'SGD', symbol: 'S$', rate: 1.34 },

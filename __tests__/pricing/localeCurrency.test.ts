@@ -239,9 +239,9 @@ describe('Local Currency Utilities', () => {
     });
 
     it('should format INR correctly', () => {
-      // $10 * 83.5 = ₹835
+      // $10 * 87.0 = ₹870
       const result = formatLocalCurrency(10, 'INR');
-      expect(result).toMatch(/₹835\.00/);
+      expect(result).toMatch(/₹870\.00/);
     });
 
     it('should format small prices with 4 decimal places', () => {
