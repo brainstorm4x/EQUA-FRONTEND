@@ -17,7 +17,7 @@ export type EquaToken = {
       "name": "activateSocialFunds",
       "docs": [
         "Activate social funds (can only be called once after compounding phase ends)",
-        "This is a ONE-TIME action that enables monthly distributions"
+        "This is a ONE-TIME action that enables annual distributions"
       ],
       "discriminator": [
         1,
@@ -671,8 +671,8 @@ export type EquaToken = {
     {
       "name": "distributeSocialFunds",
       "docs": [
-        "Distribute monthly social funds to all 5 special-purpose accounts",
-        "Can only be called ONCE per calendar month after activation"
+        "Distribute annual social funds to all 5 special-purpose accounts",
+        "Can only be called ONCE per calendar year, in January, after activation"
       ],
       "discriminator": [
         106,
@@ -2612,12 +2612,12 @@ export type EquaToken = {
     {
       "code": 6007,
       "name": "mintAmountExceedsTierLimit",
-      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 EQUA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 EQUA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 EQUA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M-100M): 0.001 EQUA; Tier 10 (#100M-1B): 0.0005 EQUA."
+      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 EQUA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 EQUA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 EQUA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M-100M): 0.001 EQUA; Tier 10 (#100M-1B): 0.0001 EQUA; Tier 11 (#1B+): 0.00001 EQUA"
     },
     {
       "code": 6008,
       "name": "insufficientSolBalance",
-      "msg": "Insufficient SOL balance for registration (anti-sybil measure). Minimum required: 0.05 SOL. Please ensure your wallet has sufficient SOL balance."
+      "msg": "Insufficient SOL balance for registration (anti-sybil measure). Minimum required: 0.01 SOL. Please ensure your wallet has sufficient SOL balance."
     },
     {
       "code": 6009,
@@ -2746,66 +2746,71 @@ export type EquaToken = {
     },
     {
       "code": 6034,
-      "name": "monthlyDistributionAlreadyExecuted",
-      "msg": "Monthly distribution already executed for this calendar month. Distributions are limited to once per calendar month."
+      "name": "annualDistributionAlreadyExecuted",
+      "msg": "Annual distribution already executed for this calendar year. Distributions are limited to once per calendar year on January 1st."
     },
     {
       "code": 6035,
+      "name": "annualDistributionNotJanuary",
+      "msg": "Social fund distributions can only be executed in January. Please wait until January of the next year."
+    },
+    {
+      "code": 6036,
       "name": "invalidTimestamp",
       "msg": "Invalid timestamp. Timestamp must be a valid positive Unix timestamp (after January 1, 1970)."
     },
     {
-      "code": 6036,
+      "code": 6037,
       "name": "legacyReferralRewardsDeprecated",
       "msg": "Legacy referral rewards functionality is deprecated. Referral rewards are now stored as credits. Use claim_bonus_mint to redeem credits for bonus mint attempts."
     },
     {
-      "code": 6037,
+      "code": 6038,
       "name": "insufficientReferralCredits",
       "msg": "Insufficient referral credits. You need at least 5 credits to claim a bonus mint attempt."
     },
     {
-      "code": 6038,
+      "code": 6039,
       "name": "monthlyBonusMintCapReached",
       "msg": "Monthly bonus mint cap reached. You have reached the maximum of 5 bonus mints per calendar month."
     },
     {
-      "code": 6039,
+      "code": 6040,
       "name": "bonusMintOverflow",
       "msg": "Bonus mint overflow. The bonus mint counter has reached its maximum value."
     },
     {
-      "code": 6040,
+      "code": 6041,
       "name": "lockPeriodNotExpired",
       "msg": "Lock period has not expired yet. Tokens can only be unlocked after the 4-year cliff vesting period."
     },
     {
-      "code": 6041,
+      "code": 6042,
       "name": "alreadyUnlocked",
       "msg": "Tokens have already been unlocked. This operation can only be performed once."
     },
     {
-      "code": 6042,
+      "code": 6043,
       "name": "timestampOverflow",
       "msg": "Timestamp overflow. The calculated unlock timestamp exceeds the maximum representable value."
     },
     {
-      "code": 6043,
+      "code": 6044,
       "name": "mintingCooldownNotExpired",
       "msg": "Minting cooldown has not expired. You must wait 24 hours between regular mints."
     },
     {
-      "code": 6044,
+      "code": 6045,
       "name": "businessRegistryNotInitialized",
       "msg": "Business registry is not initialized. Initialize the registry before registering business users."
     },
     {
-      "code": 6045,
+      "code": 6046,
       "name": "businessRegistryFull",
       "msg": "Business registry is full. Maximum capacity of 100 business referrers reached."
     },
     {
-      "code": 6046,
+      "code": 6047,
       "name": "invalidUserType",
       "msg": "Invalid user type. User type must be 0 (Individual) or 1 (Business)."
     }
@@ -2979,7 +2984,7 @@ export type EquaToken = {
     {
       "name": "socialFundsState",
       "docs": [
-        "Social Funds State for tracking activation and monthly distribution",
+        "Social Funds State for tracking activation and annual distribution",
         "PDA Seeds: [b\"social-funds-state\"]",
         "Activated only after compounding phase ends"
       ],
