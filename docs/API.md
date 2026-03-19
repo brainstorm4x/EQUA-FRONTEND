@@ -171,6 +171,87 @@ const eurAmount = await convertToLocalCurrency(100, 'EUR');
 console.log(`100 USD = ${eurAmount.toFixed(2)} EUR`);
 ```
 
+### 3. Get Performance Data
+
+Retrieve EQUA/EQX performance history with a computed summary comparing EQUA price appreciation against USD purchasing-power loss.
+
+**Endpoint:** `GET /get-performance-data`
+
+**Query Parameters:**
+
+| Parameter  | Type   | Default      | Description                                |
+|-----------|--------|--------------|-------------------------------------------|
+| `from`    | string | 30 days ago  | Start date (YYYY-MM-DD or ISO 8601)       |
+| `to`      | string | now          | End date (YYYY-MM-DD or ISO 8601)         |
+| `currency`| string | `USD`        | One of the 16 send-modal currencies       |
+| `interval`| string | `hourly`     | Data interval (`hourly` or `daily`)       |
+
+Supported currencies: `USD`, `EUR`, `GBP`, `INR`, `JPY`, `CNY`, `KRW`, `BRL`, `MXN`, `AUD`, `CAD`, `CHF`, `NGN`, `ZAR`, `AED`, `SGD`
+
+**Example Request:**
+
+```bash
+# Last 30 days in INR (daily)
+GET /.netlify/functions/get-performance-data?currency=INR&interval=daily
+
+# Specific date range
+GET /.netlify/functions/get-performance-data?from=2025-12-09&to=2026-01-08&currency=EUR&interval=hourly
+```
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "timestamp": 1736341200000,
+      "recordedAt": "2026-01-08T13:00:00.000Z",
+      "equaPriceUsd": 0.010003,
+      "equaPriceLocal": 0.84,
+      "eqxPriceUsd": 933.12,
+      "usdInflationIndex": 1.00038,
+      "equaPurchasingPower": 0.009999,
+      "source": "hermes"
+    }
+  ],
+  "summary": {
+    "equaPriceChange": 0.0003,
+    "equaPriceChangePercent": 3.0,
+    "usdPurchasingPowerLoss": 0.38,
+    "equaVsUsdAdvantage": 3.38,
+    "currentEquaPriceUsd": 0.010003,
+    "currentEquaPriceLocal": 0.84,
+    "currentEqxPriceUsd": 933.12,
+    "dataPoints": 720
+  },
+  "currency": "INR",
+  "from": "2025-12-09T00:00:00.000Z",
+  "to": "2026-01-08T13:00:00.000Z",
+  "interval": "hourly",
+  "supportedCurrencies": ["USD","EUR","GBP","INR","JPY","CNY","KRW","BRL","MXN","AUD","CAD","CHF","NGN","ZAR","AED","SGD"]
+}
+```
+
+**Summary fields:**
+
+| Field | Description |
+|---|---|
+| `equaPriceChange` | Absolute USD price change (last − first) |
+| `equaPriceChangePercent` | Relative change as a percentage |
+| `usdPurchasingPowerLoss` | `(1 − 1/lastInflationIndex) × 100` |
+| `equaVsUsdAdvantage` | `equaPriceChangePercent + usdPurchasingPowerLoss` |
+| `currentEquaPriceUsd` | Latest EQUA price in USD |
+| `currentEquaPriceLocal` | Latest EQUA price in the requested currency |
+| `currentEqxPriceUsd` | Latest EQX basket price in USD |
+| `dataPoints` | Number of rows returned |
+
+**Cache:** Responses are cached for 1 hour.
+
+**Error responses:**
+
+- `503` — Turso database environment variables (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`) are not configured.
+- `200` with `"data": []` — Database is configured but no snapshots have been written yet.
+
 ## Error Handling
 
 All endpoints return standard HTTP status codes:
