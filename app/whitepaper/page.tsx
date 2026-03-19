@@ -48,7 +48,7 @@ export default function WhitepaperPage() {
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                 EQUA: A Fair Economy Built on Transparent Rules
               </h1>
-              <p className="text-purple-300 text-lg">Last Updated: January 2026</p>
+              <p className="text-purple-300 text-lg">Last Updated: March 2026</p>
             </div>
 
             {/* Executive Summary */}
@@ -276,7 +276,7 @@ export default function WhitepaperPage() {
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">3. Referral Merit System (Not Recruitment)</h4>
               <p className="text-purple-200 leading-relaxed">
-                EQUA&apos;s referral system is fundamentally different: <strong className="text-white">rewards come only when real value is created.</strong> When someone you refer becomes active and contributes to the network, you receive 1% of their minted allocation—not as tokens handed to you, but as recognition of your contribution to bringing them into the ecosystem.
+                EQUA&apos;s referral system is fundamentally different: <strong className="text-white">rewards come only when real value is created.</strong> When someone you refer becomes active and contributes to the network, you earn referral credits—not as tokens handed to you, but as recognition of your contribution to bringing them into the ecosystem. Individual referrals earn +1 credit; business referrals earn +2 credits. Credits can be redeemed for bonus mint attempts (5 credits = 1 bonus mint, up to 5 bonus mints per month).
               </p>
             </section>
 
@@ -354,7 +354,7 @@ export default function WhitepaperPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Confidence in Every Transaction</h3>
               <p className="text-purple-200 leading-relaxed">
-                Because exchange rates update in real-time from Hermes/Pyth oracle feeds (every 4 hours for EQX components, continuously for local currencies), you always know you&apos;re getting fair value.
+                Because exchange rates update in real-time from Hermes/Pyth oracle feeds (every hour for EQX components, continuously for local currencies), you always know you&apos;re getting fair value.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 No hidden markups. No surprise conversions. No &quot;platform fees&quot; that quietly drain your balance.
@@ -706,7 +706,7 @@ export default function WhitepaperPage() {
                   </tbody>
                 </table>
                 <p className="text-purple-200 text-xs mt-2 italic">
-                  <strong className="text-white">Note:</strong> All prices denominated in EQX (EQUA Index). USD values shown are approximate equivalents for convenience only. Actual pricing uses EQX, which is a diversified basket of 7 components (57% currencies, 35% gold, 8% oil). The on-chain oracle updates EQX/USD exchange rates every 4 hours.
+                  <strong className="text-white">Note:</strong> All prices denominated in EQX (EQUA Index). USD values shown are approximate equivalents for convenience only. Actual pricing uses EQX, which is a diversified basket of 7 components (57% currencies, 35% gold, 8% oil). The on-chain oracle updates EQX/USD exchange rates every hour.
                 </p>
               </div>
 
@@ -717,7 +717,7 @@ export default function WhitepaperPage() {
                   <strong className="text-white">All price appreciation is calculated in EQX (EQUA Index), not USD.</strong> EQX is a diversified basket of 7 components: 57% major currencies, 35% gold, and 8% oil. The USD values shown throughout this whitepaper are <strong className="text-white">approximate equivalents for convenience only</strong>—actual pricing on-chain is denominated in EQX.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
-                  This means that when the whitepaper says &quot;Tier 1: $0.01 to $0.1,&quot; it actually means <strong className="text-white">&quot;0.01 to 0.1 EQX&quot;</strong>, with USD values calculated dynamically based on the current EQX/USD exchange rate (updated every 4 hours from Hermes/Pyth price feeds).
+                  This means that when the whitepaper says &quot;Tier 1: $0.01 to $0.1,&quot; it actually means <strong className="text-white">&quot;0.01 to 0.1 EQX&quot;</strong>, with USD values calculated dynamically based on the current EQX/USD exchange rate (updated every hour from Hermes/Pyth price feeds).
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3 italic">
                   <strong className="text-white">Why this matters:</strong> EQX provides inflation resistance and stability by spreading risk across multiple global anchors. Your EQUA holdings appreciate in EQX terms—USD is just one of many components affecting EQX&apos;s value.
@@ -771,10 +771,10 @@ export default function WhitepaperPage() {
                     <h5 className="text-blue-300 font-semibold mb-2">Currencies (57%)</h5>
                     <ul className="text-purple-200 text-sm space-y-1">
                       <li>USD/USD: 23%</li>
-                      <li>USD/EUR: 17%</li>
-                      <li>USD/CNY: 9%</li>
-                      <li>USD/JPY: 5%</li>
-                      <li>USD/GBP: 3%</li>
+                      <li>EUR/USD: 17%</li>
+                      <li>CNH/USD: 9%</li>
+                      <li>JPY/USD: 5%</li>
+                      <li>GBP/USD: 3%</li>
                     </ul>
                     <p className="text-blue-200 text-xs mt-2">Major global currencies</p>
                   </div>
@@ -1129,7 +1129,7 @@ export default function WhitepaperPage() {
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
                   <li>Variable minting rate tied to user adoption</li>
                   <li>Utility-first design: use EQUA to buy and sell goods and services</li>
-                  <li>Referral rewards at 1% of new user allocation (merit-based)</li>
+                  <li>Referral rewards via credit-based system: individual referral = +1 credit, business referral = +2 credits; 5 credits = 1 bonus mint attempt (max 5/month)</li>
                 </ul>
               </div>
 
@@ -1173,7 +1173,7 @@ export default function WhitepaperPage() {
             <div className="text-center pt-8 border-t border-purple-500/30">
               <p className="text-2xl font-bold text-white mb-2">EQUA</p>
               <p className="text-purple-300">Equal Access. Equal Opportunity. Equal Economy.</p>
-              <p className="text-purple-400 text-sm mt-4">Last Updated: January 2026</p>
+              <p className="text-purple-400 text-sm mt-4">Last Updated: March 2026</p>
             </div>
           </article>
 
