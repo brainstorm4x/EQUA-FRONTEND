@@ -1,0 +1,233 @@
+/**
+ * Netlify API Function: Get EQX Performance Data
+ *
+ * On-demand function to serve EQUA/EQX performance history from Turso,
+ * including a computed summary comparing EQUA appreciation vs USD inflation.
+ *
+ * Query params:
+ * - ?from=YYYY-MM-DD        (optional, default: 30 days ago)
+ * - ?to=YYYY-MM-DD          (optional, default: now)
+ * - ?currency=USD           (optional, default: USD — one of 16 send-modal currencies)
+ * - ?interval=hourly|daily  (optional, default: hourly)
+ */
+
+import { Handler, HandlerResponse } from '@netlify/functions';
+import {
+  getEqxPerformanceHistory,
+  EqxPerformanceRow,
+  SEND_MODAL_CURRENCIES,
+} from './lib/tursoStorage';
+
+// ============================================================================
+// CORS / Cache headers
+// ============================================================================
+
+const RESPONSE_HEADERS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Cache-Control': 'public, max-age=3600',
+};
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Parse a date from a query-parameter string.
+ * Accepts YYYY-MM-DD or any ISO 8601 string.
+ * Falls back to `defaultDate` on invalid input.
+ */
+function parseDate(dateString: string | undefined, defaultDate: Date): Date {
+  if (!dateString) return defaultDate;
+  try {
+    const d = new Date(dateString);
+    return isNaN(d.getTime()) ? defaultDate : d;
+  } catch {
+    return defaultDate;
+  }
+}
+
+/**
+ * Format a Date as a UTC date key (YYYY-MM-DD).
+ */
+function utcDateKey(d: Date): string {
+  return (
+    `${d.getUTCFullYear()}-` +
+    `${String(d.getUTCMonth() + 1).padStart(2, '0')}-` +
+    `${String(d.getUTCDate()).padStart(2, '0')}`
+  );
+}
+
+/**
+ * Aggregate hourly EqxPerformanceRow records to daily averages.
+ * Groups by UTC date of `recordedAt`; averages all numeric fields.
+ */
+function aggregateToDaily(rows: EqxPerformanceRow[]): EqxPerformanceRow[] {
+  const dailyMap = new Map<string, EqxPerformanceRow[]>();
+
+  for (const row of rows) {
+    const key = utcDateKey(new Date(row.recordedAt));
+    if (!dailyMap.has(key)) dailyMap.set(key, []);
+    dailyMap.get(key)!.push(row);
+  }
+
+  const dailyRows: EqxPerformanceRow[] = [];
+
+  for (const [key, dayRows] of dailyMap) {
+    const n = dayRows.length;
+    // Average a numeric field across the day's rows, treating null as 0.
+    const avg = (field: keyof EqxPerformanceRow) =>
+      dayRows.reduce((sum, r) => sum + ((r[field] as number) ?? 0), 0) / n;
+
+    const last = dayRows[dayRows.length - 1];
+    dailyRows.push({
+      timestamp: new Date(key + 'T00:00:00.000Z').getTime(),
+      recordedAt: key + 'T00:00:00.000Z',
+      equaPriceUsd: avg('equaPriceUsd'),
+      // equaPriceLocal may be null; treat null as 0 for the average then
+      // restore null if all rows had null (no local currency column matched).
+      equaPriceLocal: dayRows.every((r) => r.equaPriceLocal == null)
+        ? null
+        : avg('equaPriceLocal'),
+      eqxPriceUsd: avg('eqxPriceUsd'),
+      usdInflationIndex: avg('usdInflationIndex'),
+      equaPurchasingPower: avg('equaPurchasingPower'),
+      source: last.source,
+    });
+  }
+
+  return dailyRows.sort((a, b) => a.timestamp - b.timestamp);
+}
+
+/**
+ * Compute the response summary from the first and last data points.
+ */
+function computeSummary(rows: EqxPerformanceRow[]) {
+  if (rows.length === 0) {
+    return {
+      equaPriceChange: 0,
+      equaPriceChangePercent: 0,
+      usdPurchasingPowerLoss: 0,
+      equaVsUsdAdvantage: 0,
+      currentEquaPriceUsd: 0,
+      currentEquaPriceLocal: null as number | null,
+      currentEqxPriceUsd: 0,
+      dataPoints: 0,
+    };
+  }
+
+  const first = rows[0];
+  const last = rows[rows.length - 1];
+
+  const equaPriceChange = last.equaPriceUsd - first.equaPriceUsd;
+  const equaPriceChangePercent =
+    first.equaPriceUsd !== 0
+      ? ((last.equaPriceUsd - first.equaPriceUsd) / first.equaPriceUsd) * 100
+      : 0;
+  const usdPurchasingPowerLoss =
+    last.usdInflationIndex > 0
+      ? (1 - 1 / last.usdInflationIndex) * 100
+      : 0;
+  const equaVsUsdAdvantage = equaPriceChangePercent + usdPurchasingPowerLoss;
+
+  return {
+    equaPriceChange,
+    equaPriceChangePercent,
+    usdPurchasingPowerLoss,
+    equaVsUsdAdvantage,
+    currentEquaPriceUsd: last.equaPriceUsd,
+    currentEquaPriceLocal: last.equaPriceLocal,
+    currentEqxPriceUsd: last.eqxPriceUsd,
+    dataPoints: rows.length,
+  };
+}
+
+// ============================================================================
+// Main Handler
+// ============================================================================
+
+const handler: Handler = async (event): Promise<HandlerResponse> => {
+  try {
+    // ------------------------------------------------------------------
+    // Validate Turso env vars up-front so we return 503 with a clear
+    // message rather than an opaque 500 from inside getTursoClient().
+    // ------------------------------------------------------------------
+    if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+      return {
+        statusCode: 503,
+        headers: RESPONSE_HEADERS,
+        body: JSON.stringify({
+          error: 'Turso database not configured',
+          message:
+            'Performance data requires TURSO_DATABASE_URL and TURSO_AUTH_TOKEN ' +
+            'environment variables. Please set them in your Netlify dashboard ' +
+            '(Site settings → Environment variables).',
+        }),
+      };
+    }
+
+    // ------------------------------------------------------------------
+    // Parse query parameters
+    // ------------------------------------------------------------------
+    const params = event.queryStringParameters || {};
+
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const fromDate = parseDate(params.from, thirtyDaysAgo);
+    const toDate = parseDate(params.to, now);
+
+    const rawCurrency = (params.currency ?? 'USD').toUpperCase();
+    const currency = SEND_MODAL_CURRENCIES.includes(rawCurrency) ? rawCurrency : 'USD';
+
+    const interval = params.interval === 'daily' ? 'daily' : 'hourly';
+
+    console.log(
+      `Fetching performance data: from=${fromDate.toISOString()} to=${toDate.toISOString()} ` +
+        `currency=${currency} interval=${interval}`
+    );
+
+    // ------------------------------------------------------------------
+    // Fetch from Turso
+    // ------------------------------------------------------------------
+    let rows = await getEqxPerformanceHistory(fromDate, toDate, currency);
+
+    // ------------------------------------------------------------------
+    // Aggregate to daily if requested
+    // ------------------------------------------------------------------
+    if (interval === 'daily') {
+      rows = aggregateToDaily(rows);
+    }
+
+    const summary = computeSummary(rows);
+
+    console.log(`Returning ${rows.length} data points (${interval}, ${currency})`);
+
+    return {
+      statusCode: 200,
+      headers: RESPONSE_HEADERS,
+      body: JSON.stringify({
+        data: rows,
+        summary,
+        currency,
+        from: fromDate.toISOString(),
+        to: toDate.toISOString(),
+        interval,
+        supportedCurrencies: SEND_MODAL_CURRENCIES,
+      }),
+    };
+  } catch (error) {
+    console.error('Error fetching performance data:', error);
+
+    return {
+      statusCode: 500,
+      headers: RESPONSE_HEADERS,
+      body: JSON.stringify({
+        error: 'Internal server error',
+      }),
+    };
+  }
+};
+
+export { handler };
