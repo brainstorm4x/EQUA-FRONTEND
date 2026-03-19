@@ -358,7 +358,7 @@ describe('Error Resilience and Edge Cases', () => {
       render(
         <RegistrationForm
           {...defaultProps}
-          walletBalance={50_000_000} // Exactly 0.05 SOL
+          walletBalance={10_000_000} // Exactly 0.01 SOL
         />
       );
 
@@ -370,7 +370,7 @@ describe('Error Resilience and Edge Cases', () => {
       render(
         <RegistrationForm
           {...defaultProps}
-          walletBalance={49_999_999} // Just below 0.05 SOL
+          walletBalance={9_999_999} // Just below 0.01 SOL
         />
       );
 

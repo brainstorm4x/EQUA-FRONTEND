@@ -862,7 +862,7 @@ export default function WhitepaperPage() {
               <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V.5: Social Purpose Accounts—Generosity Through Restraint</h2>
               
               <p className="text-purple-200 leading-relaxed">
-                EQUA is designed to create value for everyone—not just token holders. Once the terminal phase is reached and price growth stabilizes, the protocol activates <strong className="text-white">five social purpose accounts</strong> that distribute EQUA monthly to support education, healthcare, research, grants, and operations.
+                EQUA is designed to create value for everyone—not just token holders. Once the terminal phase is reached and price growth stabilizes, the protocol activates <strong className="text-white">five social purpose accounts</strong> that distribute EQUA annually to support education, healthcare, research, grants, and operations.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 <strong className="text-white">Critical timing:</strong> These distributions activate <em>only after</em> the compounding phase completes (76,269,935 peer-to-peer transactions, when EQUA reaches $500,000 in EQX terms). This ensures early holders and builders are not diluted during the compounding growth phase.
@@ -890,7 +890,7 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Purpose:</strong> Support scholarships, learning materials, and educational infrastructure</p>
-                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 100 EQUA</p>
+                    <p className="mt-2"><strong className="text-white">Annual Allocation:</strong> 100 EQUA</p>
                   </div>
                   <div>
                     <p><strong className="text-white">Why Constrained?</strong></p>
@@ -905,7 +905,7 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Purpose:</strong> Fund medical care, medicines, and health clinics in underserved communities</p>
-                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 100 EQUA</p>
+                    <p className="mt-2"><strong className="text-white">Annual Allocation:</strong> 100 EQUA</p>
                   </div>
                   <div>
                     <p><strong className="text-white">Why Constrained?</strong></p>
@@ -920,7 +920,7 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Purpose:</strong> Support open research, protocol improvements, and technological innovation</p>
-                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 100 EQUA</p>
+                    <p className="mt-2"><strong className="text-white">Annual Allocation:</strong> 100 EQUA</p>
                   </div>
                   <div>
                     <p><strong className="text-white">Why Constrained?</strong></p>
@@ -935,7 +935,7 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Purpose:</strong> Support community projects, local businesses, and public goods initiatives</p>
-                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 100 EQUA</p>
+                    <p className="mt-2"><strong className="text-white">Annual Allocation:</strong> 100 EQUA</p>
                   </div>
                   <div>
                     <p><strong className="text-white">Why Constrained?</strong></p>
@@ -950,7 +950,7 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Purpose:</strong> Maintain infrastructure, pay for audits, and ensure protocol sustainability</p>
-                    <p className="mt-2"><strong className="text-white">Monthly Allocation:</strong> 1 EQUA</p>
+                    <p className="mt-2"><strong className="text-white">Annual Allocation:</strong> 10 EQUA</p>
                   </div>
                   <div>
                     <p><strong className="text-white">Why Constrained?</strong></p>
@@ -960,33 +960,33 @@ export default function WhitepaperPage() {
               </div>
 
               <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
-                <strong className="text-white">Total Monthly Distribution: 401 EQUA</strong> across all five accounts. By terminal phase, each EQUA has substantial value, making even these constrained allocations meaningful for real-world impact.
+                <strong className="text-white">Total Annual Distribution: 410 EQUA</strong> across all five accounts. By terminal phase, each EQUA has substantial value, making even these constrained allocations meaningful for real-world impact.
               </p>
             </section>
 
-            {/* Part V.6 - Monthly Distribution Safety */}
+            {/* Part V.6 - Annual Distribution Safety */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V.6: Monthly Distribution Safety—Predictability Over Speed</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V.6: Annual Distribution Safety—Predictability Over Speed</h2>
               
               <p className="text-purple-200 leading-relaxed">
-                Social purpose distributions occur <strong className="text-white">exactly once per calendar month</strong>. Not daily. Not per transaction. Not based on volume. Once per month, on a predictable schedule.
+                Social purpose distributions occur <strong className="text-white">exactly once per calendar year, in January</strong>. Not daily. Not per transaction. Not based on volume. Once per year, on a predictable schedule.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Monthly, Not More Frequent?</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Annual, Not More Frequent?</h3>
               
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">1. Predictability for Recipients</h4>
               <p className="text-purple-200 leading-relaxed">
-                A school planning a scholarship program or a clinic ordering medicines needs to know <em>when</em> funds arrive. Monthly cadence allows organizations to plan, budget, and deliver real outcomes.
+                A school planning a scholarship program or a clinic ordering medicines needs to know <em>when</em> funds arrive. Annual cadence allows organizations to plan, budget, and deliver real outcomes.
               </p>
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">2. Auditability for All</h4>
               <p className="text-purple-200 leading-relaxed">
-                Monthly distributions are easy to track, verify, and audit. Anyone can check that funds went to the right places. High-frequency distributions create noise that hides manipulation.
+                Annual distributions are easy to track, verify, and audit. Anyone can check that funds went to the right places. High-frequency distributions create noise that hides manipulation.
               </p>
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">3. Abuse Resistance</h4>
               <p className="text-purple-200 leading-relaxed">
-                Volume-based or high-frequency distributions create incentives to game the system—fake transactions, wash trading, and extraction schemes. Monthly caps eliminate these attack vectors.
+                Volume-based or high-frequency distributions create incentives to game the system—fake transactions, wash trading, and extraction schemes. Annual caps eliminate these attack vectors.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">What We Explicitly Reject</h3>
@@ -1000,7 +1000,7 @@ export default function WhitepaperPage() {
               </div>
 
               <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
-                Restraint is not cruelty. It is the foundation of fairness. By limiting distributions to monthly cadence and fixed amounts, EQUA ensures that generosity is sustainable, auditable, and immune to exploitation.
+                Restraint is not cruelty. It is the foundation of fairness. By limiting distributions to annual cadence and fixed amounts, EQUA ensures that generosity is sustainable, auditable, and immune to exploitation.
               </p>
             </section>
 
@@ -1057,7 +1057,7 @@ export default function WhitepaperPage() {
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li><strong className="text-white">Early holders are rewarded</strong> for taking the risk during the compounding phase</li>
                 <li><strong className="text-white">Social purpose accounts activate</strong> only when each EQUA has substantial value</li>
-                <li><strong className="text-white">Monthly distributions are constrained</strong> to prevent dependency and abuse</li>
+                <li><strong className="text-white">Annual distributions are constrained</strong> to prevent dependency and abuse</li>
                 <li><strong className="text-white">The system remains sustainable</strong> for decades, not just years</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">

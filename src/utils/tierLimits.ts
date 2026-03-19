@@ -40,8 +40,11 @@ export const TIER_8_MINT_LIMIT = 10_000n;          // 0.01 EQUA
 /** Tier 9: Users #10000001-100000000 - 0.001 EQUA */
 export const TIER_9_MINT_LIMIT = 1_000n;           // 0.001 EQUA
 
-/** Tier 10: Users #100000001+ - 0.0005 EQUA */
-export const TIER_10_MINT_LIMIT = 500n;            // 0.0005 EQUA
+/** Tier 10: Users #100000001-1000000000 - 0.0001 EQUA */
+export const TIER_10_MINT_LIMIT = 100n;            // 0.0001 EQUA
+
+/** Tier 11: Users #1000000001+ - 0.00001 EQUA */
+export const TIER_11_MINT_LIMIT = 10n;             // 0.00001 EQUA
 
 /** Number of elevated attempts available to Tiers 1-3 */
 export const ELEVATED_MINT_ATTEMPTS = 100;
@@ -75,9 +78,11 @@ export function calculatePrevailingRate(totalUsers: number): bigint {
     return TIER_8_MINT_LIMIT; // 0.01 EQUA
   } else if (totalUsers >= 10_000_001 && totalUsers <= 100_000_000) {
     return TIER_9_MINT_LIMIT; // 0.001 EQUA
+  } else if (totalUsers >= 100_000_001 && totalUsers <= 1_000_000_000) {
+    return TIER_10_MINT_LIMIT; // 0.0001 EQUA
   } else {
-    // totalUsers >= 100_000_001
-    return TIER_10_MINT_LIMIT; // 0.0005 EQUA
+    // totalUsers >= 1_000_000_001
+    return TIER_11_MINT_LIMIT; // 0.00001 EQUA
   }
 }
 
@@ -166,9 +171,12 @@ export function calculateTierLimit(
   } else if (userIndex >= 10_000_001 && userIndex <= 100_000_000) {
     // Users #10000001-100000000
     userTierRate = TIER_9_MINT_LIMIT; // 0.001 EQUA
+  } else if (userIndex >= 100_000_001 && userIndex <= 1_000_000_000) {
+    // Users #100000001-1000000000
+    userTierRate = TIER_10_MINT_LIMIT; // 0.0001 EQUA
   } else {
-    // Users #100000001+
-    userTierRate = TIER_10_MINT_LIMIT; // 0.0005 EQUA
+    // Users #1000000001+
+    userTierRate = TIER_11_MINT_LIMIT; // 0.00001 EQUA
   }
   
   // STEP 3: Calculate prevailing rate (based on total_users)
@@ -230,8 +238,10 @@ export function describeTierCalculation(
     tierName = 'Tier 8';
   } else if (userIndex >= 10_000_001 && userIndex <= 100_000_000) {
     tierName = 'Tier 9';
-  } else {
+  } else if (userIndex >= 100_000_001 && userIndex <= 1_000_000_000) {
     tierName = 'Tier 10';
+  } else {
+    tierName = 'Tier 11';
   }
   
   // Calculate component rates
@@ -253,8 +263,10 @@ export function describeTierCalculation(
       userTierRate = TIER_8_MINT_LIMIT;
     } else if (userIndex >= 10_000_001 && userIndex <= 100_000_000) {
       userTierRate = TIER_9_MINT_LIMIT;
-    } else {
+    } else if (userIndex >= 100_000_001 && userIndex <= 1_000_000_000) {
       userTierRate = TIER_10_MINT_LIMIT;
+    } else {
+      userTierRate = TIER_11_MINT_LIMIT;
     }
   }
   

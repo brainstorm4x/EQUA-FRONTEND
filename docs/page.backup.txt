@@ -193,7 +193,7 @@ function categorizeError(error: any, logs: string[] = []): string {
     if (anchorLog) {
       return `❌ Transaction Simulation Failed: ${anchorLog}\n\nPlease check your account status and try again.`;
     }
-    return '⚠️ Transaction Simulation Failed: The transaction could not be simulated successfully. Common causes:\n• Cooldown period not expired (wait 24 hours between mints)\n• Insufficient SOL balance (need at least 0.05 SOL)\n• Account state mismatch\n\nPlease verify your account status and try again.';
+    return '⚠️ Transaction Simulation Failed: The transaction could not be simulated successfully. Common causes:\n• Cooldown period not expired (wait 24 hours between mints)\n• Insufficient SOL balance (need at least 0.01 SOL)\n• Account state mismatch\n\nPlease verify your account status and try again.';
   }
   
   // User rejected transaction

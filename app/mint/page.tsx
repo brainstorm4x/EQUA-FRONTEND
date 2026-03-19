@@ -199,7 +199,7 @@ function categorizeError(error: any, logs: string[] = []): string {
     if (anchorLog) {
       return `❌ Transaction Simulation Failed: ${anchorLog}\n\nPlease check your account status and try again.`;
     }
-    return '⚠️ Transaction Simulation Failed: The transaction could not be simulated successfully. Common causes:\n• Cooldown period not expired (wait 24 hours between mints)\n• Insufficient SOL balance (need at least 0.05 SOL)\n• Account state mismatch\n\nPlease verify your account status and try again.';
+    return '⚠️ Transaction Simulation Failed: The transaction could not be simulated successfully. Common causes:\n• Cooldown period not expired (wait 24 hours between mints)\n• Insufficient SOL balance (need at least 0.01 SOL)\n• Account state mismatch\n\nPlease verify your account status and try again.';
   }
   
   // User rejected transaction
@@ -1340,7 +1340,7 @@ export default function MintPage() {
       }
       // Insufficient funds
       else if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient lamports')) {
-        errorMessage = '❌ Insufficient SOL balance. You need at least 0.1 SOL for registration fees. Please add SOL to your wallet and try again.';
+        errorMessage = `❌ Insufficient SOL balance. You need at least ${MIN_SOL_BALANCE} SOL for registration fees. Please add SOL to your wallet and try again.`;
       }
       // Account already exists
       else if (errorMessage.includes('0x0') || errorMessage.includes('already in use')) {

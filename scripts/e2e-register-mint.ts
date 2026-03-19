@@ -63,7 +63,7 @@ async function main() {
   const balance = await connection.getBalance(payer.publicKey);
   console.log(`💰 Payer balance: ${balance / LAMPORTS_PER_SOL} SOL`);
   
-  if (balance < 0.1 * LAMPORTS_PER_SOL) {
+  if (balance < 0.01 * LAMPORTS_PER_SOL) {
     console.log('⚠️  Insufficient balance for testing. Requesting airdrop...');
     try {
       const airdropSig = await connection.requestAirdrop(
