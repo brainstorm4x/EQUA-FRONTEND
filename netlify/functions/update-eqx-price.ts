@@ -28,7 +28,7 @@ import {
 import { storeEqxPrice, getLatestFxRates, EqxPriceSnapshot } from './lib/blobStorage';
 import { EquaToken } from './lib/equa_token';
 import idl from './lib/equa_token.json';
-import { storeEqxSnapshotToTurso, SEND_MODAL_CURRENCIES } from './lib/tursoStorage';
+import { storeEqxSnapshotToTurso, SEND_MODAL_CURRENCIES, computeUsdInflationIndexAsync } from './lib/tursoStorage';
 
 // ============================================================================
 // Environment Variable Validation (runs at module load time)
@@ -271,6 +271,7 @@ const handler: Handler = async (event, context) => {
         components: componentPrices,
         totalTransactions,
         source,
+        usdInflationIndex: await computeUsdInflationIndexAsync(snapshot.timestamp),
       });
 
       if (!tursoResult.success) {
