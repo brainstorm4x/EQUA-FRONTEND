@@ -20,7 +20,7 @@ export function accountTypeToUserType(accountType: AccountType): UserType {
 }
 
 // Minimum SOL balance required for registration
-export const MIN_SOL_BALANCE = 0.05;
+export const MIN_SOL_BALANCE = 0.01;
 
 // Number of users who can register without a referral
 export const REFERRAL_FREE_LIMIT = 100;

@@ -16,7 +16,9 @@ export const MINT_SLOTS: MintSlot[] = [
   { minUser: 10001, maxUser: 100000, rate: 1, period: Number.POSITIVE_INFINITY },
   { minUser: 100001, maxUser: 1000000, rate: 0.1, period: Number.POSITIVE_INFINITY },
   { minUser: 1000001, maxUser: 10000000, rate: 0.01, period: Number.POSITIVE_INFINITY },
-  { minUser: 10000001, maxUser: Infinity, rate: 0.001, period: Number.POSITIVE_INFINITY },
+  { minUser: 10000001, maxUser: 100000000, rate: 0.001, period: Number.POSITIVE_INFINITY },
+  { minUser: 100000001, maxUser: 1000000000, rate: 0.0001, period: Number.POSITIVE_INFINITY },
+  { minUser: 1000000001, maxUser: Infinity, rate: 0.00001, period: Number.POSITIVE_INFINITY },
 ];
 
 // Util for prevailing rate logic (extend for shifting as daily rates evolve)

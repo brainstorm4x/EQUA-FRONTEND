@@ -19,6 +19,7 @@ import {
   TIER_8_MINT_LIMIT,
   TIER_9_MINT_LIMIT,
   TIER_10_MINT_LIMIT,
+  TIER_11_MINT_LIMIT,
   ELEVATED_MINT_ATTEMPTS,
 } from '@/utils/tierLimits';
 
@@ -33,7 +34,8 @@ describe('Tier Limits - Constants', () => {
     expect(TIER_7_MINT_LIMIT).toBe(100_000n);         // 0.1 EQUA
     expect(TIER_8_MINT_LIMIT).toBe(10_000n);          // 0.01 EQUA
     expect(TIER_9_MINT_LIMIT).toBe(1_000n);           // 0.001 EQUA
-    expect(TIER_10_MINT_LIMIT).toBe(500n);            // 0.0005 EQUA
+    expect(TIER_10_MINT_LIMIT).toBe(100n);             // 0.0001 EQUA
+    expect(TIER_11_MINT_LIMIT).toBe(10n);              // 0.00001 EQUA
   });
 
   test('Elevated mint attempts is 100', () => {
@@ -81,9 +83,15 @@ describe('calculatePrevailingRate', () => {
     expect(calculatePrevailingRate(100000000)).toBe(TIER_9_MINT_LIMIT);
   });
 
-  test('Returns Tier 10 rate for total users 100000001+', () => {
+  test('Returns Tier 10 rate for total users 100000001-1000000000', () => {
     expect(calculatePrevailingRate(100000001)).toBe(TIER_10_MINT_LIMIT);
-    expect(calculatePrevailingRate(200000000)).toBe(TIER_10_MINT_LIMIT);
+    expect(calculatePrevailingRate(500000000)).toBe(TIER_10_MINT_LIMIT);
+    expect(calculatePrevailingRate(1000000000)).toBe(TIER_10_MINT_LIMIT);
+  });
+
+  test('Returns Tier 11 rate for total users 1000000001+', () => {
+    expect(calculatePrevailingRate(1000000001)).toBe(TIER_11_MINT_LIMIT);
+    expect(calculatePrevailingRate(5000000000)).toBe(TIER_11_MINT_LIMIT);
   });
 });
 
@@ -216,11 +224,19 @@ describe('calculateTierLimit - Base Tiers (no elevated attempts)', () => {
     });
   });
 
-  describe('Users #100000001+ (Tier 10)', () => {
-    test('Returns 0.0005 EQUA for user #100000001', () => {
+  describe('Users #100000001-1000000000 (Tier 10)', () => {
+    test('Returns 0.0001 EQUA for user #100000001', () => {
       const result = calculateTierLimit(100000001, 0, 100000001);
       expect(result).toBe(TIER_10_MINT_LIMIT);
-      expect(Number(result) / 1_000_000).toBe(0.0005);
+      expect(Number(result) / 1_000_000).toBe(0.0001);
+    });
+  });
+
+  describe('Users #1000000001+ (Tier 11)', () => {
+    test('Returns 0.00001 EQUA for user #1000000001', () => {
+      const result = calculateTierLimit(1000000001, 0, 1000000001);
+      expect(result).toBe(TIER_11_MINT_LIMIT);
+      expect(Number(result) / 1_000_000).toBe(0.00001);
     });
   });
 });
