@@ -80,6 +80,7 @@ In **Netlify Dashboard → Site Settings → Environment Variables**, add:
 | `EXCHANGERATE_API_KEY` | ExchangeRate API key | Free tier | For production (higher rate limits) |
 | `NETLIFY_SITE_ID` | Netlify site ID | Auto-detected | Only for manual blob config |
 | `NETLIFY_ACCESS_TOKEN` | Netlify access token | Auto-detected | Only for manual blob config |
+| `FRED_API_KEY` | Federal Reserve FRED API key | Fallback 3.2% CPI | For real CPI data in the performance dashboard. Get a free key at https://fred.stlouisfed.org/docs/api/api_key.html |
 
 ### 4. Generate Admin Wallet Private Key (Base58)
 

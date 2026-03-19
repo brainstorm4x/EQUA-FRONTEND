@@ -245,6 +245,13 @@ GET /.netlify/functions/get-performance-data?from=2025-12-09&to=2026-01-08&curre
 | `currentEqxPriceUsd` | Latest EQX basket price in USD |
 | `dataPoints` | Number of rows returned |
 
+> **Real CPI data:** The `usdInflationIndex` and `usdPurchasingPowerLoss` fields use real US CPI data
+> from the FRED API (series `CPIAUCSL` — Consumer Price Index for All Urban Consumers, seasonally
+> adjusted) when the `FRED_API_KEY` environment variable is configured. FRED data is fetched once
+> per 24 hours and cached in memory; the year-over-year annualised rate is recalculated on each
+> cache refresh. If FRED is unavailable the system falls back transparently to a hardcoded 3.2%
+> annual rate.
+
 **Cache:** Responses are cached for 1 hour.
 
 **Error responses:**

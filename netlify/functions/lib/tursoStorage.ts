@@ -11,6 +11,7 @@
  */
 
 import { createClient } from '@libsql/client';
+import { computeRealInflationIndex } from './fredInflation';
 
 // ============================================================================
 // Client Factory
@@ -126,6 +127,21 @@ export interface TursoEqxSnapshot {
 export function computeUsdInflationIndex(snapshotTimestampMs: number): number {
   const hoursElapsed = (snapshotTimestampMs - EQUA_GENESIS_TIMESTAMP) / (1000 * 60 * 60);
   return Math.pow(HOURLY_INFLATION_RATE, Math.max(0, hoursElapsed));
+}
+
+/**
+ * Async variant of `computeUsdInflationIndex` that uses real FRED CPI data
+ * when available. Used in the write path (hourly snapshot) where an async
+ * call is acceptable.
+ *
+ * Falls back transparently to the synchronous hardcoded-rate behaviour if
+ * FRED is unavailable or `FRED_API_KEY` is not set.
+ *
+ * @param snapshotTimestampMs - Unix timestamp of the snapshot in milliseconds
+ * @returns inflation index (>= 1.0)
+ */
+export async function computeUsdInflationIndexAsync(snapshotTimestampMs: number): Promise<number> {
+  return computeRealInflationIndex(snapshotTimestampMs);
 }
 
 // ============================================================================
