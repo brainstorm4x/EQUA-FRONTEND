@@ -8,6 +8,7 @@
  * 2. Calculate weighted EQX basket price
  * 3. Update on-chain EQX Oracle PDA
  * 4. Store price snapshot in Netlify Blobs
+ * 5. Write EQX snapshot to Turso for long-term performance tracking
  */
 
 import { Handler } from '@netlify/functions';
@@ -24,9 +25,10 @@ import {
   PRECISION,
   validateHash
 } from './lib/eqxOracle';
-import { storeEqxPrice, EqxPriceSnapshot } from './lib/blobStorage';
+import { storeEqxPrice, getLatestFxRates, EqxPriceSnapshot } from './lib/blobStorage';
 import { EquaToken } from './lib/equa_token';
 import idl from './lib/equa_token.json';
+import { storeEqxSnapshotToTurso, SEND_MODAL_CURRENCIES } from './lib/tursoStorage';
 
 // ============================================================================
 // Environment Variable Validation (runs at module load time)
@@ -215,6 +217,70 @@ const handler: Handler = async (event, context) => {
         '⚠ Blobs write failed — snapshot not persisted. ' +
         'Ensure NETLIFY_SITE_ID and NETLIFY_ACCESS_TOKEN are set in Netlify environment variables.',
         blobsError
+      );
+    }
+
+    // 6. Write to Turso for long-term performance tracking (best-effort — non-fatal)
+    console.log('Writing EQX price snapshot to Turso...');
+    try {
+      // Fetch latest FX rates from blobs (already written by update-fx-rates function).
+      // Use null-safe fallback so a blob failure does not abort the Turso write.
+      let fxRates = null;
+      try {
+        fxRates = await getLatestFxRates();
+      } catch (fxErr) {
+        console.warn('Could not fetch FX rates for Turso snapshot, currency prices will default to USD:', fxErr);
+      }
+
+      // Best-effort: fetch on-chain totalTransactions to determine EQUA USD price tier.
+      // Defaults to 0 (initial price tier) if the fetch fails.
+      let totalTransactions = 0;
+      try {
+        const [globalStatePda] = PublicKey.findProgramAddressSync(
+          [Buffer.from('global-state')],
+          PROGRAM_ID
+        );
+        const globalState = await program.account.globalState.fetch(globalStatePda);
+        totalTransactions = (globalState as any).totalTransactions?.toNumber?.() ?? 0;
+      } catch (txFetchErr) {
+        console.warn('Could not fetch totalTransactions for Turso snapshot, defaulting to 0:', txFetchErr);
+      }
+
+      // Calculate EQUA price in USD from the tier-based formula.
+      const { EquaPriceCalculator } = await import('../../src/utils/priceCalculator');
+      const equaPriceUsd = EquaPriceCalculator.calculatePrice(totalTransactions);
+
+      // Build EQUA price map for all 16 send-modal currencies.
+      // Rates in fxRates.rates are expressed as "1 USD = X <currency>".
+      const currencyPrices: Record<string, number> = {};
+      for (const currency of SEND_MODAL_CURRENCIES) {
+        if (currency === 'USD') {
+          currencyPrices['USD'] = equaPriceUsd;
+        } else {
+          const rate = fxRates?.rates?.[currency];
+          currencyPrices[currency] = rate != null ? equaPriceUsd * rate : equaPriceUsd;
+        }
+      }
+
+      const tursoResult = await storeEqxSnapshotToTurso({
+        timestamp: snapshot.timestamp,
+        eqxPriceUsd: basketPrice,
+        equaPriceUsd,
+        equaPriceEqx: basketPrice > 0 ? equaPriceUsd / basketPrice : 0,
+        currencyPrices,
+        components: componentPrices,
+        totalTransactions,
+        source,
+      });
+
+      if (!tursoResult.success) {
+        console.warn('⚠ Turso write reported failure:', tursoResult.error);
+      }
+    } catch (tursoError) {
+      console.warn(
+        '⚠ Turso write failed — long-term snapshot not persisted. ' +
+        'Ensure TURSO_DATABASE_URL and TURSO_AUTH_TOKEN are set in Netlify environment variables.',
+        tursoError
       );
     }
 
