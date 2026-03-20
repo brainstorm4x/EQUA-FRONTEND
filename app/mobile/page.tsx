@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 
 /**
@@ -92,6 +93,14 @@ export default function MobilePage() {
             browser extension, then visit this page in your desktop browser.
           </p>
         </div>
+
+        {/* Back to browsing */}
+        <Link
+          href="/"
+          className="text-purple-400 hover:text-purple-200 text-sm underline transition-colors"
+        >
+          ← Back to browsing
+        </Link>
 
       </div>
     </main>
