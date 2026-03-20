@@ -18,32 +18,38 @@ const DesktopWalletConnect = dynamic(
 /**
  * Environment-aware wallet button.
  *
- * - Desktop / Mobile In-App: renders DesktopWalletConnect which auto-calls connect()
- *   immediately after the user selects an adapter from the WalletMultiButton modal,
- *   giving a single-click flow (select → extension popup → approve → connected).
- * - Mobile External Browser (Chrome/Safari): redirects to the dedicated /mobile page
- *   which guides users to download the EQUA mobile app or switch to a desktop browser.
+ * - Desktop / Mobile In-App: renders DesktopWalletConnect (standard wallet adapter flow)
+ * - Mobile External Browser: renders a "Select Wallet" button that redirects to /mobile
+ *   when clicked. Mobile users can browse the site freely; the redirect only fires on
+ *   explicit wallet interaction.
  */
 export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
-  const [isMobileExternal, setIsMobileExternal] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [environment, setEnvironment] = useState<ReturnType<typeof detectWalletEnvironment> | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    setMounted(true);
     if (typeof window !== 'undefined') {
-      if (detectWalletEnvironment() === 'mobile-browser') {
-        setIsMobileExternal(true);
-        router.replace('/mobile');
-      }
+      setEnvironment(detectWalletEnvironment());
     }
-  }, [router]);
+  }, []);
 
-  // Avoid SSR/hydration mismatch
-  if (!mounted) return null;
+  // SSR/hydration guard
+  if (!environment) return null;
 
-  // While the redirect is in flight, render nothing so the navbar stays clean.
-  if (isMobileExternal) return null;
+  // Mobile external browser: show a button that redirects to /mobile on click
+  if (environment === 'mobile-browser') {
+    return (
+      <button
+        data-testid={testId}
+        onClick={() => router.push('/mobile')}
+        className="wallet-adapter-button wallet-adapter-button-trigger"
+        type="button"
+      >
+        Select Wallet
+      </button>
+    );
+  }
 
+  // Desktop or mobile in-app: standard wallet adapter flow
   return <DesktopWalletConnect testId={testId} />;
 };

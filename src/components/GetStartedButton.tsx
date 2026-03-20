@@ -4,6 +4,7 @@ import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useRouter } from 'next/navigation';
 import { isUserRegistered, getUserAccountPDA } from '@/lib/program';
+import { detectWalletEnvironment } from '@/utils/walletEnvironment';
 
 interface GetStartedButtonProps {
   className?: string;
@@ -35,6 +36,14 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
   const router = useRouter();
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isMobileBrowser, setIsMobileBrowser] = useState<boolean>(false);
+
+  // Detect mobile browser once on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsMobileBrowser(detectWalletEnvironment() === 'mobile-browser');
+    }
+  }, []);
   
   // Cache to prevent excessive network calls
   const cacheRef = useRef<{ pubkey: string; registered: boolean; timestamp: number } | null>(null);
@@ -143,6 +152,11 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
   // Handle button click - use explicit navigation to prevent page refresh
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    // On mobile browser, redirect to /mobile since wallet connection isn't available
+    if (isMobileBrowser) {
+      router.push('/mobile');
+      return;
+    }
     router.push('/mint');
   };
 
