@@ -14,7 +14,9 @@
 import { Handler, HandlerResponse } from '@netlify/functions';
 import {
   getEqxPerformanceHistory,
+  getDailyPerformance,
   EqxPerformanceRow,
+  DailyPerformanceRow,
   SEND_MODAL_CURRENCIES,
 } from './lib/tursoStorage';
 
@@ -101,6 +103,15 @@ function aggregateToDaily(rows: EqxPerformanceRow[]): EqxPerformanceRow[] {
 }
 
 /**
+ * EqxPerformanceRow annotated with "$100 held" comparison values.
+ */
+type AnnotatedPerformanceRow = EqxPerformanceRow & {
+  equaHoldingValue: number;
+  usdHoldingValue: number;
+  advantagePerHundred: number;
+};
+
+/**
  * Compute the response summary from the first and last data points.
  */
 function computeSummary(rows: EqxPerformanceRow[]) {
@@ -114,6 +125,10 @@ function computeSummary(rows: EqxPerformanceRow[]) {
       currentEquaPriceLocal: null as number | null,
       currentEqxPriceUsd: 0,
       dataPoints: 0,
+      equaHoldingValue: 100,
+      usdHoldingValue: 100,
+      advantagePerHundred: 0,
+      holdingPeriodLabel: '0 days',
     };
   }
 
@@ -131,6 +146,30 @@ function computeSummary(rows: EqxPerformanceRow[]) {
       : 0;
   const equaVsUsdAdvantage = equaPriceChangePercent + usdPurchasingPowerLoss;
 
+  // "$100 held" metrics — baseline is the first row in the selected range
+  const equaHoldingValue =
+    first.equaPriceUsd > 0 ? 100 * (last.equaPriceUsd / first.equaPriceUsd) : 100;
+  const usdHoldingValue =
+    last.usdInflationIndex > 0
+      ? 100 * (first.usdInflationIndex / last.usdInflationIndex)
+      : 100;
+  const advantagePerHundred = equaHoldingValue - usdHoldingValue;
+
+  // Human-readable holding period label
+  const daysElapsed = Math.round(
+    (last.timestamp - first.timestamp) / (1000 * 60 * 60 * 24)
+  );
+  const holdingPeriodLabel =
+    daysElapsed < 1
+      ? 'today'
+      : daysElapsed === 1
+      ? '1 day'
+      : daysElapsed < 60
+      ? `${daysElapsed} days`
+      : daysElapsed < 365
+      ? `${Math.round(daysElapsed / 30)} months`
+      : `${(daysElapsed / 365).toFixed(1)} years`;
+
   return {
     equaPriceChange,
     equaPriceChangePercent,
@@ -140,7 +179,37 @@ function computeSummary(rows: EqxPerformanceRow[]) {
     currentEquaPriceLocal: last.equaPriceLocal,
     currentEqxPriceUsd: last.eqxPriceUsd,
     dataPoints: rows.length,
+    equaHoldingValue,
+    usdHoldingValue,
+    advantagePerHundred,
+    holdingPeriodLabel,
   };
+}
+
+/**
+ * Annotate each row with "$100 held" comparison values.
+ * The first row in the slice is used as the baseline ($100 invested).
+ */
+function addHoldingValues(rows: EqxPerformanceRow[]): AnnotatedPerformanceRow[] {
+  if (rows.length === 0) return [];
+
+  const firstEquaPrice = rows[0].equaPriceUsd;
+  const firstInflationIndex = rows[0].usdInflationIndex;
+
+  return rows.map((row) => {
+    const equaHoldingValue =
+      firstEquaPrice > 0 ? 100 * (row.equaPriceUsd / firstEquaPrice) : 100;
+    const usdHoldingValue =
+      row.usdInflationIndex > 0
+        ? 100 * (firstInflationIndex / row.usdInflationIndex)
+        : 100;
+    return {
+      ...row,
+      equaHoldingValue,
+      usdHoldingValue,
+      advantagePerHundred: equaHoldingValue - usdHoldingValue,
+    };
+  });
 }
 
 // ============================================================================
@@ -194,12 +263,43 @@ const handler: Handler = async (event): Promise<HandlerResponse> => {
     let rows = await getEqxPerformanceHistory(fromDate, toDate, currency);
 
     // ------------------------------------------------------------------
-    // Aggregate to daily if requested
+    // Aggregate to daily if requested.
+    // Prefer the pre-computed eqx_daily_performance table when available;
+    // fall back to on-the-fly aggregation for backward compatibility.
     // ------------------------------------------------------------------
+    let dailyRows: DailyPerformanceRow[] = [];
     if (interval === 'daily') {
+      try {
+        dailyRows = await getDailyPerformance(fromDate, toDate);
+      } catch (dailyErr) {
+        // The eqx_daily_performance table may not exist yet on first deploy.
+        // Log the error and fall back to on-the-fly aggregation.
+        console.warn(
+          'getDailyPerformance failed (falling back to on-the-fly aggregation):',
+          dailyErr instanceof Error ? dailyErr.message : String(dailyErr)
+        );
+        dailyRows = [];
+      }
+    }
+
+    if (interval === 'daily' && dailyRows.length > 0) {
+      // Map DailyPerformanceRow → EqxPerformanceRow-compatible shape so the
+      // rest of the pipeline (computeSummary, addHoldingValues) works unchanged.
+      rows = dailyRows.map((d) => ({
+        timestamp: d.timestamp,
+        recordedAt: d.recordedAt,
+        equaPriceUsd: d.equaPriceClose,
+        equaPriceLocal: null,
+        eqxPriceUsd: d.eqxBasketClose,
+        usdInflationIndex: d.usdInflationIndex,
+        equaPurchasingPower: d.equaPriceClose / d.usdInflationIndex,
+        source: d.source,
+      }));
+    } else if (interval === 'daily') {
       rows = aggregateToDaily(rows);
     }
 
+    const annotatedRows = addHoldingValues(rows);
     const summary = computeSummary(rows);
 
     console.log(`Returning ${rows.length} data points (${interval}, ${currency})`);
@@ -208,7 +308,7 @@ const handler: Handler = async (event): Promise<HandlerResponse> => {
       statusCode: 200,
       headers: RESPONSE_HEADERS,
       body: JSON.stringify({
-        data: rows,
+        data: annotatedRows,
         summary,
         currency,
         from: fromDate.toISOString(),

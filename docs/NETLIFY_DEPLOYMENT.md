@@ -8,6 +8,7 @@ The EQUA Frontend uses Netlify Scheduled Functions to maintain real-time pricing
 
 - **`update-eqx-price`** - Updates the on-chain EQX Oracle and stores historical prices (runs hourly)
 - **`update-fx-rates`** - Fetches and stores foreign exchange rates (runs hourly)
+- **`snapshot-daily-performance`** - Consolidates hourly data into daily records with "$100 held" metrics (runs daily at midnight UTC)
 - **`get-eqx-history`** - API endpoint for querying historical EQX prices
 - **`get-fx-rates`** - API endpoint for querying latest FX rates
 
@@ -26,6 +27,17 @@ The EQUA Frontend uses Netlify Scheduled Functions to maintain real-time pricing
    - Schedule: `0 * * * *` (hourly at minute 0)
    - Fetches daily FX rates from ExchangeRate-API
    - Stores rates in Netlify Blobs
+
+3. **`netlify/functions/snapshot-daily-performance.ts`**
+   - Schedule: `0 0 * * *` (daily at 00:00 UTC)
+   - Reads yesterday's hourly rows from the `eqx_price_snapshots` Turso table
+   - Computes OHLC values for EQUA price and the EQX basket close
+   - Computes "$100 held" comparison metrics:
+     - `equaHoldingValue`: value of a $100 EQUA holding since the first-ever snapshot
+     - `usdHoldingValue`: value of a $100 USD holding after inflation (`100 / inflationIndex`)
+     - `advantagePerHundred`: `equaHoldingValue − usdHoldingValue`
+   - Writes a row to the `eqx_daily_performance` Turso table (idempotent)
+   - Runs Netlify Blobs housekeeping (deletes snapshots older than 30 days)
 
 ### On-Demand API Functions
 
@@ -129,6 +141,7 @@ Check the **Functions** tab in Netlify Dashboard:
 
 - ✅ `update-eqx-price` (scheduled)
 - ✅ `update-fx-rates` (scheduled)
+- ✅ `snapshot-daily-performance` (scheduled)
 - ✅ `get-eqx-history` (on-demand)
 - ✅ `get-fx-rates` (on-demand)
 
@@ -392,7 +405,7 @@ console.log('GBP to USD:', data.rates.GBP);
 
 ### Expected Usage
 
-- **Scheduled functions:** 2 × 24 × 30 = 1,440 invocations/month
+- **Scheduled functions:** (2 × 24 + 1) × 30 ≈ 1,470 invocations/month
 - **API functions:** Depends on frontend traffic
 - **Blob storage:** ~1-2 MB/month (hourly snapshots)
 

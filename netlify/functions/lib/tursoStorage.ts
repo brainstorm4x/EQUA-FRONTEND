@@ -6,8 +6,10 @@
  * beyond the 30-day Netlify Blobs retention window.
  *
  * Storage Schema:
- * - Table: `eqx_price_snapshots` - Hourly EQX price snapshots with
+ * - Table: `eqx_price_snapshots`      - Hourly EQX price snapshots with
  *   per-currency EQUA prices, inflation index, and purchasing power.
+ * - Table: `eqx_daily_performance`    - Pre-aggregated daily records with
+ *   "$100 held" comparison metrics (written by snapshot-daily-performance).
  */
 
 import { createClient } from '@libsql/client/web';
@@ -208,6 +210,29 @@ export async function initTursoSchema(
   await client.execute(`
     CREATE INDEX IF NOT EXISTS idx_eqx_recorded_at ON eqx_price_snapshots(recorded_at)
   `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS eqx_daily_performance (
+      id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+      date                  TEXT NOT NULL,
+      equa_price_open       REAL NOT NULL,
+      equa_price_close      REAL NOT NULL,
+      equa_price_high       REAL NOT NULL,
+      equa_price_low        REAL NOT NULL,
+      eqx_basket_close      REAL NOT NULL,
+      usd_inflation_index   REAL NOT NULL,
+      equa_holding_value    REAL NOT NULL,
+      usd_holding_value     REAL NOT NULL,
+      advantage_per_hundred REAL NOT NULL,
+      hourly_data_points    INTEGER NOT NULL,
+      source                TEXT NOT NULL,
+      UNIQUE(date)
+    )
+  `);
+
+  await client.execute(`
+    CREATE INDEX IF NOT EXISTS idx_daily_perf_date ON eqx_daily_performance(date DESC)
+  `);
 }
 
 // ============================================================================
@@ -395,4 +420,237 @@ export async function getEqxPerformanceHistory(
     equaPurchasingPower: row['equa_purchasing_power'] as number,
     source: row['source'] as string,
   }));
+}
+
+// ============================================================================
+// Daily Performance Types
+// ============================================================================
+
+/**
+ * A daily performance record for the eqx_daily_performance table.
+ */
+export interface TursoDailyPerformance {
+  /** Date of the record in YYYY-MM-DD format */
+  date: string;
+  /** EQUA price at the first hourly snapshot of the day */
+  equaPriceOpen: number;
+  /** EQUA price at the last hourly snapshot of the day */
+  equaPriceClose: number;
+  /** Highest EQUA price seen during the day */
+  equaPriceHigh: number;
+  /** Lowest EQUA price seen during the day */
+  equaPriceLow: number;
+  /** EQX basket price at the last hourly snapshot of the day */
+  eqxBasketClose: number;
+  /** USD inflation index at the last hourly snapshot of the day */
+  usdInflationIndex: number;
+  /**
+   * Current value of a $100 EQUA holding (relative to the first-ever snapshot).
+   * Formula: 100 * (equaPriceClose / firstEverEquaPrice)
+   */
+  equaHoldingValue: number;
+  /**
+   * Current value of a $100 USD holding after inflation.
+   * Formula: 100 / usdInflationIndex  (index starts at 1.0 at genesis)
+   */
+  usdHoldingValue: number;
+  /** equaHoldingValue − usdHoldingValue */
+  advantagePerHundred: number;
+  /** Number of hourly data points that contributed to this record */
+  hourlyDataPoints: number;
+  /** Data source label */
+  source: string;
+}
+
+/**
+ * A daily performance row returned by getDailyPerformance.
+ * Extends TursoDailyPerformance with the numeric Unix timestamp
+ * of midnight UTC for easy sorting / chart rendering.
+ */
+export interface DailyPerformanceRow extends TursoDailyPerformance {
+  /** Unix timestamp (ms) for midnight UTC of `date` */
+  timestamp: number;
+  /** ISO 8601 string for midnight UTC of `date` */
+  recordedAt: string;
+}
+
+// ============================================================================
+// Daily Performance Write Functions
+// ============================================================================
+
+/**
+ * Store a daily performance record in the eqx_daily_performance table.
+ * Uses INSERT OR REPLACE so re-running the snapshot function is idempotent.
+ *
+ * @param record - Daily performance data to persist
+ * @returns `{ success: true }` on success or `{ success: false, error }` on failure
+ */
+export async function storeDailyPerformance(
+  record: TursoDailyPerformance
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const client = getTursoClient();
+    await initTursoSchema(client);
+
+    await client.execute({
+      sql: `
+        INSERT OR REPLACE INTO eqx_daily_performance (
+          date,
+          equa_price_open,
+          equa_price_close,
+          equa_price_high,
+          equa_price_low,
+          eqx_basket_close,
+          usd_inflation_index,
+          equa_holding_value,
+          usd_holding_value,
+          advantage_per_hundred,
+          hourly_data_points,
+          source
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      args: [
+        record.date,
+        record.equaPriceOpen,
+        record.equaPriceClose,
+        record.equaPriceHigh,
+        record.equaPriceLow,
+        record.eqxBasketClose,
+        record.usdInflationIndex,
+        record.equaHoldingValue,
+        record.usdHoldingValue,
+        record.advantagePerHundred,
+        record.hourlyDataPoints,
+        record.source,
+      ],
+    });
+
+    console.log(`✓ Daily performance record written to Turso — date: ${record.date}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn('⚠ Turso daily performance write failed (non-fatal):', message);
+    return { success: false, error: message };
+  }
+}
+
+// ============================================================================
+// Daily Performance Read Functions
+// ============================================================================
+
+/**
+ * Query daily performance records from the eqx_daily_performance table.
+ *
+ * @param from - Start of the date window (inclusive; only the date part is used)
+ * @param to   - End of the date window (inclusive; only the date part is used)
+ * @returns Array of daily performance rows ordered by ascending date
+ */
+export async function getDailyPerformance(
+  from: Date,
+  to: Date
+): Promise<DailyPerformanceRow[]> {
+  const client = getTursoClient();
+
+  const fromStr = utcDateString(from);
+  const toStr = utcDateString(to);
+
+  const result = await client.execute({
+    sql: `
+      SELECT
+        date,
+        equa_price_open,
+        equa_price_close,
+        equa_price_high,
+        equa_price_low,
+        eqx_basket_close,
+        usd_inflation_index,
+        equa_holding_value,
+        usd_holding_value,
+        advantage_per_hundred,
+        hourly_data_points,
+        source
+      FROM eqx_daily_performance
+      WHERE date >= ? AND date <= ?
+      ORDER BY date ASC
+    `,
+    args: [fromStr, toStr],
+  });
+
+  return result.rows.map((row) => {
+    const date = row['date'] as string;
+    return {
+      date,
+      timestamp: new Date(date + 'T00:00:00.000Z').getTime(),
+      recordedAt: date + 'T00:00:00.000Z',
+      equaPriceOpen: row['equa_price_open'] as number,
+      equaPriceClose: row['equa_price_close'] as number,
+      equaPriceHigh: row['equa_price_high'] as number,
+      equaPriceLow: row['equa_price_low'] as number,
+      eqxBasketClose: row['eqx_basket_close'] as number,
+      usdInflationIndex: row['usd_inflation_index'] as number,
+      equaHoldingValue: row['equa_holding_value'] as number,
+      usdHoldingValue: row['usd_holding_value'] as number,
+      advantagePerHundred: row['advantage_per_hundred'] as number,
+      hourlyDataPoints: row['hourly_data_points'] as number,
+      source: row['source'] as string,
+    };
+  });
+}
+
+// ============================================================================
+// Earliest Snapshot Query
+// ============================================================================
+
+/**
+ * Fetch the very first row from eqx_price_snapshots.
+ * Used as the baseline for "$100 held" calculations.
+ *
+ * @returns The earliest snapshot row, or null if the table is empty
+ */
+export async function getEarliestSnapshot(): Promise<EqxPerformanceRow | null> {
+  const client = getTursoClient();
+
+  const result = await client.execute(`
+    SELECT
+      timestamp,
+      recorded_at,
+      equa_price_usd,
+      equa_price_usd_val AS equa_price_local,   -- USD value column; no local currency conversion needed here
+      eqx_price_usd,
+      usd_inflation_index,
+      equa_purchasing_power,
+      source
+    FROM eqx_price_snapshots
+    ORDER BY timestamp ASC
+    LIMIT 1
+  `);
+
+  if (result.rows.length === 0) return null;
+
+  const row = result.rows[0];
+  return {
+    timestamp: row['timestamp'] as number,
+    recordedAt: row['recorded_at'] as string,
+    equaPriceUsd: row['equa_price_usd'] as number,
+    equaPriceLocal: row['equa_price_local'] as number | null,
+    eqxPriceUsd: row['eqx_price_usd'] as number,
+    usdInflationIndex: row['usd_inflation_index'] as number,
+    equaPurchasingPower: row['equa_purchasing_power'] as number,
+    source: row['source'] as string,
+  };
+}
+
+// ============================================================================
+// Internal Helpers
+// ============================================================================
+
+/**
+ * Format a Date as a UTC date string (YYYY-MM-DD).
+ */
+function utcDateString(d: Date): string {
+  return (
+    `${d.getUTCFullYear()}-` +
+    `${String(d.getUTCMonth() + 1).padStart(2, '0')}-` +
+    `${String(d.getUTCDate()).padStart(2, '0')}`
+  );
 }
