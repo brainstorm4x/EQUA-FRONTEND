@@ -22,27 +22,29 @@ const PYTH_PRICE_FEEDS = {
 
 /**
  * Fallback prices (used if Hermes API fails)
+ * All values in XXX/USD format (USD in denominator)
  * These are reasonable market values as of Mar 2025
  */
 const FALLBACK_PRICES = {
   USDUSD: 1.0,        // Always 1.0
-  USDEUR: 0.92,       // Inverted from EUR/USD ≈ 1.087
-  USDCNY: 0.14,       // USD in Chinese Yuan
-  USDJPY: 0.0066,     // USD in Japanese Yen (USD/JPY ≈ 151)
-  USDGBP: 0.79,       // Inverted from GBP/USD ≈ 1.27
+  EURUSD: 1.087,      // EUR/USD (direct quote)
+  CNHUSD: 0.14,       // CNH/USD (inverted from USD/CNH ≈ 7.14)
+  JPYUSD: 0.0066,     // JPY/USD (inverted from USD/JPY ≈ 151)
+  GBPUSD: 1.27,       // GBP/USD (direct quote)
   XAUUSD: 2900.0,     // Gold spot price ($/oz)
   OIL: 68.5,          // WTI Crude ($/barrel)
 };
 
 /**
  * Component prices structure
+ * All values in XXX/USD format (USD in denominator — "how many USD to buy 1 unit of X")
  */
 export interface ComponentPrices {
   USDUSD: number;
-  USDEUR: number;
-  USDCNY: number;
-  USDJPY: number;
-  USDGBP: number;
+  EURUSD: number;
+  CNHUSD: number;
+  JPYUSD: number;
+  GBPUSD: number;
   XAUUSD: number;
   OIL: number;
 }
@@ -71,22 +73,23 @@ export async function fetchComponentPrices(): Promise<{
     
     // Parse prices from Hermes response
     // Hermes returns: { parsed: [{ id, price: { price, expo, ... } }] }
+    // All prices stored in XXX/USD format (USD in denominator)
     const prices: ComponentPrices = {
       USDUSD: 1.0, // Always 1.0
-      USDEUR: parsePythPrice(data, PYTH_PRICE_FEEDS.EURUSD, FALLBACK_PRICES.USDEUR, true),  // INVERT
-      USDCNY: parsePythPrice(data, PYTH_PRICE_FEEDS.USDCNH, FALLBACK_PRICES.USDCNY, false),
-      USDJPY: parsePythPrice(data, PYTH_PRICE_FEEDS.USDJPY, FALLBACK_PRICES.USDJPY, false),
-      USDGBP: parsePythPrice(data, PYTH_PRICE_FEEDS.GBPUSD, FALLBACK_PRICES.USDGBP, true),  // INVERT
+      EURUSD: parsePythPrice(data, PYTH_PRICE_FEEDS.EURUSD, FALLBACK_PRICES.EURUSD, false), // EUR/USD: use directly
+      CNHUSD: parsePythPrice(data, PYTH_PRICE_FEEDS.USDCNH, FALLBACK_PRICES.CNHUSD, true),  // USD/CNH → invert → CNH/USD
+      JPYUSD: parsePythPrice(data, PYTH_PRICE_FEEDS.USDJPY, FALLBACK_PRICES.JPYUSD, true),  // USD/JPY → invert → JPY/USD
+      GBPUSD: parsePythPrice(data, PYTH_PRICE_FEEDS.GBPUSD, FALLBACK_PRICES.GBPUSD, false), // GBP/USD: use directly
       XAUUSD: parsePythPrice(data, PYTH_PRICE_FEEDS.XAUUSD, FALLBACK_PRICES.XAUUSD, false),
       OIL: parsePythPrice(data, PYTH_PRICE_FEEDS.OIL, FALLBACK_PRICES.OIL, false),
     };
 
     // Warn if all feeds returned fallback values despite a successful HTTP response
     const livePriceCount = [
-      prices.USDEUR !== FALLBACK_PRICES.USDEUR,
-      prices.USDCNY !== FALLBACK_PRICES.USDCNY,
-      prices.USDJPY !== FALLBACK_PRICES.USDJPY,
-      prices.USDGBP !== FALLBACK_PRICES.USDGBP,
+      prices.EURUSD !== FALLBACK_PRICES.EURUSD,
+      prices.CNHUSD !== FALLBACK_PRICES.CNHUSD,
+      prices.JPYUSD !== FALLBACK_PRICES.JPYUSD,
+      prices.GBPUSD !== FALLBACK_PRICES.GBPUSD,
       prices.XAUUSD !== FALLBACK_PRICES.XAUUSD,
       prices.OIL    !== FALLBACK_PRICES.OIL,
     ].filter(Boolean).length;
@@ -165,17 +168,18 @@ function parsePythPrice(
 /**
  * Convert component prices object to array
  * Order matches BASKET_COMPONENTS from eqxOracle.ts
+ * All values in XXX/USD format (USD in denominator)
  * 
  * @param prices - Component prices object
- * @returns Array of 7 prices [USDUSD, USDEUR, USDCNY, USDJPY, USDGBP, XAUUSD, OIL]
+ * @returns Array of 7 prices [USDUSD, EURUSD, CNHUSD, JPYUSD, GBPUSD, XAUUSD, OIL]
  */
 export function componentPricesToArray(prices: ComponentPrices): number[] {
   return [
     prices.USDUSD,  // Index 0: USD/USD
-    prices.USDEUR,  // Index 1: USD/EUR
-    prices.USDCNY,  // Index 2: USD/CNY
-    prices.USDJPY,  // Index 3: USD/JPY
-    prices.USDGBP,  // Index 4: USD/GBP
+    prices.EURUSD,  // Index 1: EUR/USD
+    prices.CNHUSD,  // Index 2: CNH/USD
+    prices.JPYUSD,  // Index 3: JPY/USD
+    prices.GBPUSD,  // Index 4: GBP/USD
     prices.XAUUSD,  // Index 5: XAU/USD (Gold)
     prices.OIL,     // Index 6: OIL
   ];
