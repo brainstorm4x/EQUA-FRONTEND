@@ -16,6 +16,11 @@ jest.mock('next/navigation', () => ({
   })),
 }));
 
+// Mock wallet environment detection so tests always run in desktop mode
+jest.mock('@/utils/walletEnvironment', () => ({
+  detectWalletEnvironment: jest.fn(() => 'desktop'),
+}));
+
 // Mock Solana wallet adapter hooks
 jest.mock('@solana/wallet-adapter-react', () => ({
   useWallet: jest.fn(() => ({
