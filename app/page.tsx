@@ -5,7 +5,9 @@ import dynamic from 'next/dynamic';
 import { Logo } from '@/components/Logo';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { isUserRegistered } from '@/utils/registrationCheck';
+import { detectWalletEnvironment } from '@/utils/walletEnvironment';
 
 // Loading placeholder components
 const WalletButtonLoading = () => (
@@ -52,6 +54,16 @@ export default function HomePage() {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
   const [isRegistered, setIsRegistered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
+
+  // Redirect mobile browser users to the dedicated /mobile page immediately.
+  useEffect(() => {
+    if (detectWalletEnvironment() === 'mobile-browser') {
+      setIsMobile(true);
+      router.replace('/mobile');
+    }
+  }, [router]);
   
   // Check if user is registered (for UI state only, no redirect)
   useEffect(() => {
@@ -73,6 +85,15 @@ export default function HomePage() {
     
     checkRegistration();
   }, [publicKey, connection]);
+
+  // Show a minimal loading screen while the mobile redirect is in flight.
+  if (isMobile) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600 flex items-center justify-center">
+        <div className="text-purple-300 text-lg animate-pulse">Redirecting…</div>
+      </main>
+    );
+  }
   
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600">

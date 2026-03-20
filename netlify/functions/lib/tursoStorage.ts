@@ -10,7 +10,7 @@
  *   per-currency EQUA prices, inflation index, and purchasing power.
  */
 
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 import { computeRealInflationIndex } from './fredInflation';
 
 // ============================================================================
