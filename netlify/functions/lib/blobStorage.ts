@@ -67,10 +67,10 @@ export interface EqxPriceSnapshot {
   slot: number;                // Solana slot number
   components: {
     USDUSD: number;
-    USDEUR: number;
-    USDCNY: number;
-    USDJPY: number;
-    USDGBP: number;
+    EURUSD: number;
+    CNHUSD: number;
+    JPYUSD: number;
+    GBPUSD: number;
     XAUUSD: number;
     OIL: number;
   };

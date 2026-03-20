@@ -6,10 +6,10 @@
  * 
  * Basket Composition (7 assets):
  * - USD/USD: 23%
- * - USD/EUR: 17%
- * - USD/CNY: 9%
- * - USD/JPY: 5%
- * - USD/GBP: 3%
+ * - EUR/USD: 17%
+ * - CNH/USD: 9%
+ * - JPY/USD: 5%
+ * - GBP/USD: 3%
  * - XAU/USD (Gold): 35%
  * - OIL: 8%
  * 
@@ -71,10 +71,10 @@ export interface ComponentInfo {
  */
 export const BASKET_COMPONENTS: ComponentInfo[] = [
   { id: BasketComponent.USDUSD, name: 'USD/USD', weight: 0.23 },
-  { id: BasketComponent.USDEUR, name: 'USD/EUR', weight: 0.17 },
-  { id: BasketComponent.USDCNY, name: 'USD/CNY', weight: 0.09 },
-  { id: BasketComponent.USDJPY, name: 'USD/JPY', weight: 0.05 },
-  { id: BasketComponent.USDGBP, name: 'USD/GBP', weight: 0.03 },
+  { id: BasketComponent.USDEUR, name: 'EUR/USD', weight: 0.17 },
+  { id: BasketComponent.USDCNY, name: 'CNH/USD', weight: 0.09 },
+  { id: BasketComponent.USDJPY, name: 'JPY/USD', weight: 0.05 },
+  { id: BasketComponent.USDGBP, name: 'GBP/USD', weight: 0.03 },
   { id: BasketComponent.XAUUSD, name: 'XAU/USD', weight: 0.35 },
   { id: BasketComponent.OIL, name: 'OIL', weight: 0.08 },
 ];

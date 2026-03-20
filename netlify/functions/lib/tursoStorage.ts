@@ -89,13 +89,18 @@ export interface TursoEqxSnapshot {
   equaPriceEqx: number;
   /** EQUA price in each of the 16 send-modal currencies */
   currencyPrices: Record<string, number>;
-  /** Raw EQX basket component prices */
+  /**
+   * Raw EQX basket component prices in XXX/USD format (USD in denominator).
+   * Note: field names use the corrected XXX/USD convention, but the
+   * corresponding SQL columns retain the original names (comp_usdeur, etc.)
+   * to avoid a breaking schema migration.
+   */
   components: {
     XAUUSD: number;
-    USDEUR: number;
-    USDCNY: number;
-    USDJPY: number;
-    USDGBP: number;
+    EURUSD: number;  // SQL column: comp_usdeur
+    CNHUSD: number;  // SQL column: comp_usdcny
+    JPYUSD: number;  // SQL column: comp_usdjpy
+    GBPUSD: number;  // SQL column: comp_usdgbp
     OIL: number;
     USDUSD: number;
   };
@@ -298,10 +303,10 @@ export async function storeEqxSnapshotToTurso(
         cp['AED'] ?? null,
         cp['SGD'] ?? null,
         co.XAUUSD ?? null,
-        co.USDEUR ?? null,
-        co.USDCNY ?? null,
-        co.USDJPY ?? null,
-        co.USDGBP ?? null,
+        co.EURUSD ?? null,  // maps to comp_usdeur SQL column
+        co.CNHUSD ?? null,  // maps to comp_usdcny SQL column
+        co.JPYUSD ?? null,  // maps to comp_usdjpy SQL column
+        co.GBPUSD ?? null,  // maps to comp_usdgbp SQL column
         co.OIL ?? null,
         co.USDUSD ?? null,
         snap.totalTransactions ?? null,
