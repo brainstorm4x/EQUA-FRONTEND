@@ -2,26 +2,31 @@
 
 import { FC, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { detectWalletEnvironment } from '@/utils/walletEnvironment';
 
 interface WalletButtonProps {
   testId?: string;
 }
 
-// Dynamically import MobileWalletConnect (avoids SSR issues)
-const MobileWalletConnect = dynamic(
-  () => import('@/components/ui/MobileWalletConnect').then((mod) => ({ default: mod.MobileWalletConnect })),
+// Dynamically import environment-specific components (avoids SSR issues)
+const DesktopWalletConnect = dynamic(
+  () => import('@/components/ui/DesktopWalletConnect').then((mod) => ({ default: mod.DesktopWalletConnect })),
+  { ssr: false }
+);
+
+const MobileBrowserGate = dynamic(
+  () => import('@/components/ui/MobileBrowserGate').then((mod) => ({ default: mod.MobileBrowserGate })),
   { ssr: false }
 );
 
 /**
  * Environment-aware wallet button.
  *
- * - Desktop / Mobile In-App: renders WalletMultiButton (extension or injected wallet)
- * - Mobile External Browser (Chrome/Safari): renders MobileWalletConnect (compact mode)
- *   which calls select() + connect() directly, bypassing readyState checks that would
- *   otherwise redirect to the wallet download page.
+ * - Desktop / Mobile In-App: renders DesktopWalletConnect which auto-calls connect()
+ *   immediately after the user selects an adapter from the WalletMultiButton modal,
+ *   giving a single-click flow (select → extension popup → approve → connected).
+ * - Mobile External Browser (Chrome/Safari): renders MobileBrowserGate which guides
+ *   users to download the EQUA mobile app or switch to a desktop browser.
  */
 export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
   const [isMobileExternal, setIsMobileExternal] = useState(false);
@@ -38,9 +43,8 @@ export const WalletButton: FC<WalletButtonProps> = ({ testId }) => {
   if (!mounted) return null;
 
   if (isMobileExternal) {
-    // Use compact MobileWalletConnect for header use on mobile external browser
-    return <MobileWalletConnect compact />;
+    return <MobileBrowserGate />;
   }
 
-  return <WalletMultiButton data-testid={testId} />;
+  return <DesktopWalletConnect testId={testId} />;
 };
