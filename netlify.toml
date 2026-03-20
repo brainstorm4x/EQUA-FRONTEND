@@ -12,6 +12,9 @@ schedule = "0 * * * *"
 [functions."update-fx-rates"]
 schedule = "0 * * * *"
 
+[functions."snapshot-daily-performance"]
+schedule = "0 0 * * *"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
