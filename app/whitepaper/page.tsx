@@ -98,6 +98,108 @@ export default function WhitepaperPage() {
               </p>
             </section>
 
+            {/* Part I.5 - How Value Is Truly Created */}
+            <section className="mb-12">
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part I.5: How Value Is Truly Created</h2>
+              
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">You Already Know This</h3>
+              <p className="text-purple-200 leading-relaxed">
+                Pause for a moment. Look at the world around you.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Everything we consider valuable today was once meaningless.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Land was just empty space. Fruit grew freely on trees. Paper money was just paper.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                There was no inherent value in any of them.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Value appeared only when people began to use them. Not because someone declared it. Not because an authority stamped it. But because ordinary people—<strong className="text-white">people like you</strong>—quietly agreed that these things mattered.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                This is how value has always been created. Not by governments. Not by institutions. Not by force.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">By people. By you.</strong>
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Think About What Money Really Is</h3>
+              <p className="text-purple-200 leading-relaxed">
+                In the beginning, money is nothing more than a symbol. A number. An idea written on paper or stored on a screen.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                It has no power on its own.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                It becomes powerful only when people start using it—to exchange, to transact, to participate in real life.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                The more it is used, the more it is trusted. The more it is trusted, the more valuable it becomes.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">You have seen this happen your entire life.</strong> Every currency you&apos;ve ever held only worked because millions of people agreed to use it. That agreement—that collective act of trust—is the most powerful economic force in human history.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                And it has always come from people like you.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">This Is the Foundation of EQUA</h3>
+              <p className="text-purple-200 leading-relaxed">
+                EQUA does not try to create value artificially. It does not depend on speculation. It does not rely on people buying and selling it on exchanges.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Instead, EQUA follows the same path that has created value since the beginning of human civilization:
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">Value is created through usage.</strong>
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Every transaction. Every transfer. Every real interaction between two people.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                That is what gives EQUA meaning. That is what gives EQUA strength. And over time, that is what gives EQUA value.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">This Changes Everything—For You</h3>
+              <p className="text-purple-200 leading-relaxed">
+                Because now, value is no longer controlled by a few. It is not decided by markets, exchanges, or institutions you have no access to.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">It is created by you.</strong>
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                Every time you use EQUA—to pay someone, to receive payment, to transfer value to a friend—you are not just making a transaction. <strong className="text-white">You are creating value.</strong> Not for a corporation. Not for a distant shareholder. For yourself, and for every other person in the network.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                This is not a theory. This is not a promise. This is how value has worked for all of human history.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                The only difference is that now, for the first time, <strong className="text-white">the system is designed to recognize it.</strong>
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">You Are Not a User. You Are the Source.</h3>
+              <p className="text-purple-200 leading-relaxed">
+                Traditional economies extract value from your participation and deliver it to someone else. You work, you spend, you transact—and the system grows richer while you stay in the same place.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                EQUA reverses this.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                When you participate, the network grows. When the network grows, your holdings appreciate. When your holdings appreciate, your economic power increases.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">You are not waiting for value to be handed to you. You are creating it—with every transaction, every day, alongside millions of others doing the same.</strong>
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                This is the oldest truth in economics, and EQUA is built on it:
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4 border-l-4 border-purple-500 pl-4 italic">
+                <strong className="text-white">Value was never created by the powerful. It was always created by the many. EQUA simply makes sure that the many finally benefit from what they create.</strong>
+              </p>
+            </section>
+
             {/* Part II */}
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part II: How EQUA Works—Real Use, Real Growth</h2>
