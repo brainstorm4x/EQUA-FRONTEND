@@ -350,7 +350,7 @@ export default function WhitepaperPage() {
                 This utility-first design makes UNIA extremely difficult to manipulate.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Speculative attack vectors are closed: In UNIA, this doesn&apos;t have the same devastating effect because:
+                <strong className="text-white">Speculative attack vectors are closed:</strong> In UNIA, this doesn&apos;t have the same devastating effect because:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
                 <li>Users need UNIA to transact, not to speculate</li>
