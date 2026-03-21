@@ -67,8 +67,8 @@ describe('WalletDashboard - Send Modal Currency Initialization', () => {
     // Verify it includes SSR safety check
     expect(sourceCode).toMatch(/typeof window !== ['"]undefined['"]/);
     
-    // Verify it calls getUserLocaleCurrency() in the initializer
-    expect(sourceCode).toMatch(/getUserLocaleCurrency\(\)/);
+    // Verify it calls getPreferredCurrency() in the initializer (not getUserLocaleCurrency() directly)
+    expect(sourceCode).toMatch(/getPreferredCurrency\(\)/);
   });
 
   it('should include SSR fallback to USD when window is undefined', () => {
@@ -86,8 +86,8 @@ describe('WalletDashboard - Send Modal Currency Initialization', () => {
     
     if (lazyInitMatch) {
       const initializerCode = lazyInitMatch[0];
-      // Should have both getUserLocaleCurrency and USD fallback
-      expect(initializerCode).toContain('getUserLocaleCurrency()');
+      // Should have both getPreferredCurrency and USD fallback
+      expect(initializerCode).toContain('getPreferredCurrency()');
       expect(initializerCode).toContain("'USD'");
     }
   });
