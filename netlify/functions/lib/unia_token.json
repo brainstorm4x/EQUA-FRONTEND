@@ -1,23 +1,17 @@
-/**
- * Program IDL in camelCase format in order to be used in JS/TS.
- *
- * Note that this is only a type helper and is not the actual IDL. The original
- * IDL can be found at `target/idl/equa_token.json`.
- */
-export type EquaToken = {
-  "address": "D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw",
+{
+  "address": "B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2",
   "metadata": {
-    "name": "equaToken",
+    "name": "unia_token",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Created with Anchor"
   },
   "instructions": [
     {
-      "name": "activateSocialFunds",
+      "name": "activate_social_funds",
       "docs": [
         "Activate social funds (can only be called once after compounding phase ends)",
-        "This is a ONE-TIME action that enables annual distributions"
+        "This is a ONE-TIME action that enables monthly distributions"
       ],
       "discriminator": [
         1,
@@ -31,7 +25,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "socialFundsState",
+          "name": "social_funds_state",
           "writable": true,
           "pda": {
             "seeds": [
@@ -62,7 +56,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "globalState",
+          "name": "global_state",
           "pda": {
             "seeds": [
               {
@@ -93,7 +87,7 @@ export type EquaToken = {
       "args": []
     },
     {
-      "name": "addBusinessReferrer",
+      "name": "add_business_referrer",
       "docs": [
         "Add a business referrer to the registry (admin only)"
       ],
@@ -109,7 +103,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "businessRegistry",
+          "name": "business_registry",
           "writable": true,
           "pda": {
             "seeds": [
@@ -142,19 +136,19 @@ export type EquaToken = {
           "name": "authority",
           "signer": true,
           "relations": [
-            "businessRegistry"
+            "business_registry"
           ]
         }
       ],
       "args": [
         {
-          "name": "businessReferrer",
+          "name": "business_referrer",
           "type": "pubkey"
         }
       ]
     },
     {
-      "name": "claimBonusMint",
+      "name": "claim_bonus_mint",
       "docs": [
         "Claim a bonus mint attempt by redeeming referral credits",
         "",
@@ -165,10 +159,9 @@ export type EquaToken = {
         "- Bonus mints consume elevated_mint_attempts_used",
         "",
         "Monthly Caps:",
+        "- Base cap: 3 bonus mints per calendar month",
         "- Absolute cap: 5 bonus mints per calendar month",
         "- No rollover between months",
-        "",
-        "Cooldown: NO cooldown for bonus mints (cooldown only applies to regular mints)",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
         "Only P2P transfers (transfer_tokens) increment the transaction counter."
@@ -185,7 +178,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "userAccount",
+          "name": "user_account",
           "writable": true,
           "pda": {
             "seeds": [
@@ -214,7 +207,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "userMetadata",
+          "name": "user_metadata",
           "writable": true,
           "pda": {
             "seeds": [
@@ -240,7 +233,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "globalState",
+          "name": "global_state",
           "pda": {
             "seeds": [
               {
@@ -264,7 +257,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "userTokenAccount",
+          "name": "user_token_account",
           "writable": true
         },
         {
@@ -290,7 +283,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "pda": {
             "seeds": [
               {
@@ -317,144 +310,13 @@ export type EquaToken = {
         },
         {
           "name": "authority",
-          "writable": true,
           "signer": true,
           "relations": [
-            "userAccount"
+            "user_account"
           ]
         },
         {
-          "name": "lockedTokenAccount",
-          "docs": [
-            "Locked token account PDA (only for tiers 1-3)"
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  111,
-                  99,
-                  107,
-                  101,
-                  100,
-                  45,
-                  116,
-                  111,
-                  107,
-                  101,
-                  110,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "lockedTokenAta",
-          "docs": [
-            "Associated token account for locked tokens"
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "lockedTokenPda"
-              },
-              {
-                "kind": "account",
-                "path": "tokenProgram"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "lockedTokenPda",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  111,
-                  99,
-                  107,
-                  101,
-                  100,
-                  45,
-                  116,
-                  111,
-                  107,
-                  101,
-                  110,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "tokenProgram"
-        },
-        {
-          "name": "associatedTokenProgram",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
+          "name": "token_program"
         }
       ],
       "args": [
@@ -465,7 +327,7 @@ export type EquaToken = {
       ]
     },
     {
-      "name": "claimReferralRewards",
+      "name": "claim_referral_rewards",
       "docs": [
         "Claim accumulated referral rewards (LEGACY - DEPRECATED)",
         "",
@@ -488,7 +350,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "userAccount",
+          "name": "user_account",
           "writable": true,
           "pda": {
             "seeds": [
@@ -517,7 +379,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "userTokenAccount",
+          "name": "user_token_account",
           "writable": true
         },
         {
@@ -543,7 +405,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "pda": {
             "seeds": [
               {
@@ -572,17 +434,17 @@ export type EquaToken = {
           "name": "authority",
           "signer": true,
           "relations": [
-            "userAccount"
+            "user_account"
           ]
         },
         {
-          "name": "tokenProgram"
+          "name": "token_program"
         }
       ],
       "args": []
     },
     {
-      "name": "createTokenMint",
+      "name": "create_token_mint",
       "docs": [
         "Create the EQUA token mint (call once during deployment)"
       ],
@@ -620,7 +482,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "pda": {
             "seeds": [
               {
@@ -646,7 +508,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "globalState",
+          "name": "global_state",
           "writable": true
         },
         {
@@ -655,10 +517,10 @@ export type EquaToken = {
           "signer": true
         },
         {
-          "name": "tokenProgram"
+          "name": "token_program"
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         },
         {
@@ -669,10 +531,10 @@ export type EquaToken = {
       "args": []
     },
     {
-      "name": "distributeSocialFunds",
+      "name": "distribute_social_funds",
       "docs": [
-        "Distribute annual social funds to all 5 special-purpose accounts",
-        "Can only be called ONCE per calendar year, in January, after activation"
+        "Distribute monthly social funds to all 5 special-purpose accounts",
+        "Can only be called ONCE per calendar month after activation"
       ],
       "discriminator": [
         106,
@@ -686,7 +548,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "socialFundsState",
+          "name": "social_funds_state",
           "writable": true,
           "pda": {
             "seeds": [
@@ -739,7 +601,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "pda": {
             "seeds": [
               {
@@ -765,17 +627,17 @@ export type EquaToken = {
           }
         },
         {
-          "name": "educationFundTokenAccount",
+          "name": "education_fund_token_account",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "educationFundPda"
+                "path": "education_fund_pda"
               },
               {
                 "kind": "account",
-                "path": "tokenProgram"
+                "path": "token_program"
               },
               {
                 "kind": "account",
@@ -822,7 +684,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "educationFundPda",
+          "name": "education_fund_pda",
           "pda": {
             "seeds": [
               {
@@ -848,17 +710,17 @@ export type EquaToken = {
           }
         },
         {
-          "name": "healthcareFundTokenAccount",
+          "name": "healthcare_fund_token_account",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "healthcareFundPda"
+                "path": "healthcare_fund_pda"
               },
               {
                 "kind": "account",
-                "path": "tokenProgram"
+                "path": "token_program"
               },
               {
                 "kind": "account",
@@ -905,7 +767,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "healthcareFundPda",
+          "name": "healthcare_fund_pda",
           "pda": {
             "seeds": [
               {
@@ -932,17 +794,17 @@ export type EquaToken = {
           }
         },
         {
-          "name": "researchFundTokenAccount",
+          "name": "research_fund_token_account",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "researchFundPda"
+                "path": "research_fund_pda"
               },
               {
                 "kind": "account",
-                "path": "tokenProgram"
+                "path": "token_program"
               },
               {
                 "kind": "account",
@@ -989,7 +851,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "researchFundPda",
+          "name": "research_fund_pda",
           "pda": {
             "seeds": [
               {
@@ -1014,17 +876,17 @@ export type EquaToken = {
           }
         },
         {
-          "name": "generalGrantsFundTokenAccount",
+          "name": "general_grants_fund_token_account",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "generalGrantsFundPda"
+                "path": "general_grants_fund_pda"
               },
               {
                 "kind": "account",
-                "path": "tokenProgram"
+                "path": "token_program"
               },
               {
                 "kind": "account",
@@ -1071,7 +933,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "generalGrantsFundPda",
+          "name": "general_grants_fund_pda",
           "pda": {
             "seeds": [
               {
@@ -1102,17 +964,17 @@ export type EquaToken = {
           }
         },
         {
-          "name": "operationsFundTokenAccount",
+          "name": "operations_fund_token_account",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "operationsFundPda"
+                "path": "operations_fund_pda"
               },
               {
                 "kind": "account",
-                "path": "tokenProgram"
+                "path": "token_program"
               },
               {
                 "kind": "account",
@@ -1159,7 +1021,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "operationsFundPda",
+          "name": "operations_fund_pda",
           "pda": {
             "seeds": [
               {
@@ -1191,14 +1053,14 @@ export type EquaToken = {
           "signer": true
         },
         {
-          "name": "associatedTokenProgram",
+          "name": "associated_token_program",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
-          "name": "tokenProgram"
+          "name": "token_program"
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -1221,7 +1083,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "globalState",
+          "name": "global_state",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1251,14 +1113,14 @@ export type EquaToken = {
           "signer": true
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "initializeBusinessRegistry",
+      "name": "initialize_business_registry",
       "docs": [
         "Initialize the business registry (call once during deployment)"
       ],
@@ -1274,7 +1136,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "businessRegistry",
+          "name": "business_registry",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1309,16 +1171,16 @@ export type EquaToken = {
           "signer": true
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "initializeEqxOracle",
+      "name": "initialize_eqx_oracle",
       "docs": [
-        "Initialize the EQX Oracle (call once during deployment)"
+        "Initialize the UNX Oracle (call once during deployment)"
       ],
       "discriminator": [
         64,
@@ -1332,7 +1194,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "eqxOracle",
+          "name": "eqx_oracle",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1360,14 +1222,14 @@ export type EquaToken = {
           "signer": true
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "initializeSocialFunds",
+      "name": "initialize_social_funds",
       "docs": [
         "Initialize the social funds state (call once during deployment)"
       ],
@@ -1383,7 +1245,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "socialFundsState",
+          "name": "social_funds_state",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1419,14 +1281,14 @@ export type EquaToken = {
           "signer": true
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "initializeUser",
+      "name": "initialize_user",
       "docs": [
         "Register a new user with account type (Individual/Business) and metadata",
         "Enforces referral requirement after first 100 users and anti-sybil measures",
@@ -1446,7 +1308,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "userAccount",
+          "name": "user_account",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1475,7 +1337,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "userMetadata",
+          "name": "user_metadata",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1506,7 +1368,7 @@ export type EquaToken = {
           "signer": true
         },
         {
-          "name": "globalState",
+          "name": "global_state",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1531,15 +1393,15 @@ export type EquaToken = {
           }
         },
         {
-          "name": "referralAccount",
+          "name": "referral_account",
           "writable": true
         },
         {
-          "name": "referrerMetadata",
+          "name": "referrer_metadata",
           "writable": true
         },
         {
-          "name": "userTokenAccount",
+          "name": "user_token_account",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1549,7 +1411,7 @@ export type EquaToken = {
               },
               {
                 "kind": "account",
-                "path": "tokenProgram"
+                "path": "token_program"
               },
               {
                 "kind": "account",
@@ -1617,8 +1479,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "businessRegistry",
-          "writable": true,
+          "name": "business_registry",
           "pda": {
             "seeds": [
               {
@@ -1647,14 +1508,14 @@ export type EquaToken = {
           }
         },
         {
-          "name": "associatedTokenProgram",
+          "name": "associated_token_program",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
-          "name": "tokenProgram"
+          "name": "token_program"
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -1664,24 +1525,22 @@ export type EquaToken = {
           "type": "pubkey"
         },
         {
-          "name": "mintStart",
+          "name": "mint_start",
           "type": "i64"
         },
         {
-          "name": "userType",
+          "name": "user_type",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "mintTokens",
+      "name": "mint_tokens",
       "docs": [
         "Mint EQUA tokens with tier limits based on user index",
         "User #1: 100 attempts at 100,000 EQUA each",
         "Users #2-10: 100 attempts at 10,000 EQUA each",
         "Users #11+: Normal limit (1,000 EQUA)",
-        "",
-        "Cooldown: 24-hour cooldown enforced between regular mints",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
         "Only P2P transfers (transfer_tokens) increment the transaction counter."
@@ -1698,7 +1557,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "userAccount",
+          "name": "user_account",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1727,7 +1586,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "userMetadata",
+          "name": "user_metadata",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1753,7 +1612,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "globalState",
+          "name": "global_state",
           "pda": {
             "seeds": [
               {
@@ -1777,7 +1636,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "userTokenAccount",
+          "name": "user_token_account",
           "writable": true
         },
         {
@@ -1803,7 +1662,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "pda": {
             "seeds": [
               {
@@ -1829,40 +1688,11 @@ export type EquaToken = {
           }
         },
         {
-          "name": "referrerAccount",
+          "name": "referrer_account",
           "docs": [
             "NOTE: Must be writable. When no referrer exists, pass user's own account as self-reference"
           ],
           "writable": true
-        },
-        {
-          "name": "businessRegistry",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  117,
-                  115,
-                  105,
-                  110,
-                  101,
-                  115,
-                  115,
-                  45,
-                  114,
-                  101,
-                  103,
-                  105,
-                  115,
-                  116,
-                  114,
-                  121
-                ]
-              }
-            ]
-          }
         },
         {
           "name": "authority",
@@ -1870,7 +1700,7 @@ export type EquaToken = {
           "signer": true
         },
         {
-          "name": "lockedTokenAccount",
+          "name": "locked_token_account",
           "docs": [
             "Locked token account PDA (only for tiers 1-3)"
           ],
@@ -1903,7 +1733,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "lockedTokenAta",
+          "name": "locked_token_ata",
           "docs": [
             "Associated token account for locked tokens"
           ],
@@ -1912,11 +1742,11 @@ export type EquaToken = {
             "seeds": [
               {
                 "kind": "account",
-                "path": "lockedTokenPda"
+                "path": "locked_token_pda"
               },
               {
                 "kind": "account",
-                "path": "tokenProgram"
+                "path": "token_program"
               },
               {
                 "kind": "account",
@@ -1963,7 +1793,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "lockedTokenPda",
+          "name": "locked_token_pda",
           "pda": {
             "seeds": [
               {
@@ -1992,14 +1822,14 @@ export type EquaToken = {
           }
         },
         {
-          "name": "tokenProgram"
+          "name": "token_program"
         },
         {
-          "name": "associatedTokenProgram",
+          "name": "associated_token_program",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -2011,7 +1841,7 @@ export type EquaToken = {
       ]
     },
     {
-      "name": "recordTransaction",
+      "name": "record_transaction",
       "docs": [
         "Record a transaction for price tracking",
         "",
@@ -2031,7 +1861,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "globalState",
+          "name": "global_state",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2063,7 +1893,7 @@ export type EquaToken = {
       "args": []
     },
     {
-      "name": "removeBusinessReferrer",
+      "name": "remove_business_referrer",
       "docs": [
         "Remove a business referrer from the registry (admin only)"
       ],
@@ -2079,7 +1909,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "businessRegistry",
+          "name": "business_registry",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2112,19 +1942,19 @@ export type EquaToken = {
           "name": "authority",
           "signer": true,
           "relations": [
-            "businessRegistry"
+            "business_registry"
           ]
         }
       ],
       "args": [
         {
-          "name": "businessReferrer",
+          "name": "business_referrer",
           "type": "pubkey"
         }
       ]
     },
     {
-      "name": "transferTokens",
+      "name": "transfer_tokens",
       "docs": [
         "Transfer EQUA tokens between users (P2P)",
         "",
@@ -2150,7 +1980,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "senderUserAccount",
+          "name": "sender_user_account",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2173,17 +2003,17 @@ export type EquaToken = {
               },
               {
                 "kind": "account",
-                "path": "senderAuthority"
+                "path": "sender_authority"
               }
             ]
           }
         },
         {
-          "name": "senderTokenAccount",
+          "name": "sender_token_account",
           "writable": true
         },
         {
-          "name": "recipientUserAccount",
+          "name": "recipient_user_account",
           "docs": [
             "Recipient's user account - caller must provide the correct PDA for recipient's wallet",
             "Validation: Must be a valid UserAccount (Anchor checks discriminator and deserialization)"
@@ -2191,7 +2021,7 @@ export type EquaToken = {
           "writable": true
         },
         {
-          "name": "recipientTokenAccount",
+          "name": "recipient_token_account",
           "writable": true
         },
         {
@@ -2217,7 +2047,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "pda": {
             "seeds": [
               {
@@ -2243,7 +2073,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "globalState",
+          "name": "global_state",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2268,11 +2098,11 @@ export type EquaToken = {
           }
         },
         {
-          "name": "senderAuthority",
+          "name": "sender_authority",
           "signer": true
         },
         {
-          "name": "tokenProgram"
+          "name": "token_program"
         }
       ],
       "args": [
@@ -2283,7 +2113,7 @@ export type EquaToken = {
       ]
     },
     {
-      "name": "unlockTokens",
+      "name": "unlock_tokens",
       "docs": [
         "Unlock tokens after 4-year cliff vesting period",
         "",
@@ -2303,7 +2133,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "lockedTokenAccount",
+          "name": "locked_token_account",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2333,11 +2163,11 @@ export type EquaToken = {
           }
         },
         {
-          "name": "lockedTokenAta",
+          "name": "locked_token_ata",
           "writable": true
         },
         {
-          "name": "lockedTokenPda",
+          "name": "locked_token_pda",
           "pda": {
             "seeds": [
               {
@@ -2366,7 +2196,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "userTokenAccount",
+          "name": "user_token_account",
           "writable": true
         },
         {
@@ -2395,19 +2225,19 @@ export type EquaToken = {
           "name": "authority",
           "signer": true,
           "relations": [
-            "lockedTokenAccount"
+            "locked_token_account"
           ]
         },
         {
-          "name": "tokenProgram"
+          "name": "token_program"
         }
       ],
       "args": []
     },
     {
-      "name": "updateEqxPrice",
+      "name": "update_eqx_price",
       "docs": [
-        "Update the EQX Oracle price (admin only)",
+        "Update the UNX Oracle price (admin only)",
         "All basket calculations occur OFF-CHAIN. This instruction only stores the final price.",
         "",
         "# Arguments",
@@ -2427,7 +2257,7 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "eqxOracle",
+          "name": "eqx_oracle",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2456,11 +2286,11 @@ export type EquaToken = {
       ],
       "args": [
         {
-          "name": "eqxPrice",
+          "name": "eqx_price",
           "type": "u64"
         },
         {
-          "name": "componentPricesHash",
+          "name": "component_prices_hash",
           "type": {
             "array": [
               "u8",
@@ -2469,7 +2299,7 @@ export type EquaToken = {
           }
         },
         {
-          "name": "weightsHash",
+          "name": "weights_hash",
           "type": {
             "array": [
               "u8",
@@ -2482,7 +2312,7 @@ export type EquaToken = {
   ],
   "accounts": [
     {
-      "name": "businessRegistry",
+      "name": "BusinessRegistry",
       "discriminator": [
         177,
         43,
@@ -2495,7 +2325,7 @@ export type EquaToken = {
       ]
     },
     {
-      "name": "eqxOracle",
+      "name": "EqxOracle",
       "discriminator": [
         31,
         243,
@@ -2508,7 +2338,7 @@ export type EquaToken = {
       ]
     },
     {
-      "name": "globalState",
+      "name": "GlobalState",
       "discriminator": [
         163,
         46,
@@ -2521,7 +2351,7 @@ export type EquaToken = {
       ]
     },
     {
-      "name": "lockedTokenAccount",
+      "name": "LockedTokenAccount",
       "discriminator": [
         3,
         186,
@@ -2534,7 +2364,7 @@ export type EquaToken = {
       ]
     },
     {
-      "name": "socialFundsState",
+      "name": "SocialFundsState",
       "discriminator": [
         70,
         6,
@@ -2547,7 +2377,7 @@ export type EquaToken = {
       ]
     },
     {
-      "name": "userAccount",
+      "name": "UserAccount",
       "discriminator": [
         211,
         33,
@@ -2560,7 +2390,7 @@ export type EquaToken = {
       ]
     },
     {
-      "name": "userMetadata",
+      "name": "UserMetadata",
       "discriminator": [
         157,
         214,
@@ -2576,248 +2406,223 @@ export type EquaToken = {
   "errors": [
     {
       "code": 6000,
-      "name": "userCountOverflow",
+      "name": "UserCountOverflow",
       "msg": "User count overflowed the maximum u32 value. The maximum number of users has been reached."
     },
     {
       "code": 6001,
-      "name": "mintOverflow",
+      "name": "MintOverflow",
       "msg": "Minted amount overflow. The total minted amount would exceed u64::MAX."
     },
     {
       "code": 6002,
-      "name": "transactionOverflow",
+      "name": "TransactionOverflow",
       "msg": "Transaction count overflow. The total transactions would exceed u64::MAX."
     },
     {
       "code": 6003,
-      "name": "rewardOverflow",
+      "name": "RewardOverflow",
       "msg": "Referral reward overflow. The referral rewards would exceed u64::MAX."
     },
     {
       "code": 6004,
-      "name": "insufficientBalance",
+      "name": "InsufficientBalance",
       "msg": "Insufficient balance for transfer. Check your token account balance before attempting transfer."
     },
     {
       "code": 6005,
-      "name": "referralRequired",
+      "name": "ReferralRequired",
       "msg": "Referral is required for user registration after the first 100 users. Please provide a valid referrer's public key."
     },
     {
       "code": 6006,
-      "name": "invalidReferralAccount",
+      "name": "InvalidReferralAccount",
       "msg": "Invalid referral account - account does not exist or is not a valid user. Ensure the referrer has already registered."
     },
     {
       "code": 6007,
-      "name": "mintAmountExceedsTierLimit",
-      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 EQUA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 EQUA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 EQUA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M-100M): 0.001 EQUA; Tier 10 (#100M-1B): 0.0001 EQUA; Tier 11 (#1B+): 0.00001 EQUA"
+      "name": "MintAmountExceedsTierLimit",
+      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 EQUA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 EQUA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 EQUA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M+): 0.001 EQUA."
     },
     {
       "code": 6008,
-      "name": "insufficientSolBalance",
-      "msg": "Insufficient SOL balance for registration (anti-sybil measure). Minimum required: 0.01 SOL. Please ensure your wallet has sufficient SOL balance."
+      "name": "InsufficientSolBalance",
+      "msg": "Insufficient SOL balance for registration (anti-sybil measure). Minimum required: 0.05 SOL. Please ensure your wallet has sufficient SOL balance."
     },
     {
       "code": 6009,
-      "name": "rapidReferralSequence",
+      "name": "RapidReferralSequence",
       "msg": "Too rapid referral sequence - wait a few slots before referring another user. This anti-sybil measure prevents automated mass registrations."
     },
     {
       "code": 6010,
-      "name": "invalidPdaDerivation",
+      "name": "InvalidPdaDerivation",
       "msg": "Account validation failed: The provided account does not match the expected PDA derivation. Check that you're using the correct seeds and program ID."
     },
     {
       "code": 6011,
-      "name": "invalidAssociatedTokenAccount",
+      "name": "InvalidAssociatedTokenAccount",
       "msg": "Missing or invalid Associated Token Account (ATA). Ensure the ATA is initialized for the EQUA mint with Token-2022 program. Use getAssociatedTokenAddressSync() to derive the correct address."
     },
     {
       "code": 6012,
-      "name": "invalidAccountOwner",
+      "name": "InvalidAccountOwner",
       "msg": "Account ownership validation failed. The account must be owned by this program. Check that the provided account is a valid program account."
     },
     {
       "code": 6013,
-      "name": "invalidAccountDiscriminator",
+      "name": "InvalidAccountDiscriminator",
       "msg": "Account discriminator mismatch. The account data does not match the expected account type. Ensure you're providing the correct account for this instruction."
     },
     {
       "code": 6014,
-      "name": "invalidUserAccountPda",
+      "name": "InvalidUserAccountPda",
       "msg": "User account PDA derivation failed. Expected seeds: ['user-account', authority.key()]. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6015,
-      "name": "invalidUserMetadataPda",
+      "name": "InvalidUserMetadataPda",
       "msg": "User metadata PDA derivation failed. Expected seeds: ['user-meta', authority.key()]. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6016,
-      "name": "invalidGlobalStatePda",
+      "name": "InvalidGlobalStatePda",
       "msg": "Global state PDA derivation failed. Expected seeds: ['global-state']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6017,
-      "name": "invalidMintPda",
-      "msg": "Mint PDA derivation failed. Expected seeds: ['equa-mint']. Ensure you're deriving the PDA correctly on the client side."
+      "name": "InvalidMintPda",
+      "msg": "Mint PDA derivation failed. Expected seeds: ['unia-mint']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6018,
-      "name": "invalidMintAuthorityPda",
+      "name": "InvalidMintAuthorityPda",
       "msg": "Mint authority PDA derivation failed. Expected seeds: ['mint-authority']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6019,
-      "name": "insufficientReferralRewards",
+      "name": "InsufficientReferralRewards",
       "msg": "Insufficient referral rewards. No rewards available to claim."
     },
     {
       "code": 6020,
-      "name": "unauthorizedBusinessRegistryAccess",
+      "name": "UnauthorizedBusinessRegistryAccess",
       "msg": "Unauthorized access to business registry. Only the registry authority can manage business referrers."
     },
     {
       "code": 6021,
-      "name": "businessReferrerAlreadyExists",
+      "name": "BusinessReferrerAlreadyExists",
       "msg": "Business referrer already exists in the registry."
     },
     {
       "code": 6022,
-      "name": "referralEventsOverflow",
+      "name": "ReferralEventsOverflow",
       "msg": "Referral events count overflow. The referral events counter has reached its maximum value."
     },
     {
       "code": 6023,
-      "name": "invalidBusinessRegistryOwner",
+      "name": "InvalidBusinessRegistryOwner",
       "msg": "Invalid business registry owner. The business registry must be owned by this program."
     },
     {
       "code": 6024,
-      "name": "invalidBusinessRegistryData",
+      "name": "InvalidBusinessRegistryData",
       "msg": "Invalid business registry data. The business registry account data is corrupted or invalid."
     },
     {
       "code": 6025,
-      "name": "unauthorizedEqxOracleUpdate",
+      "name": "UnauthorizedEqxOracleUpdate",
       "msg": "Unauthorized EQX oracle update. Only the oracle authority can update prices."
     },
     {
       "code": 6026,
-      "name": "invalidEqxPrice",
+      "name": "InvalidEqxPrice",
       "msg": "Invalid EQX price. Price must be greater than zero."
     },
     {
       "code": 6027,
-      "name": "invalidEqxHashes",
+      "name": "InvalidEqxHashes",
       "msg": "Invalid EQX hashes. Component prices and weights hashes must not be all zeros."
     },
     {
       "code": 6028,
-      "name": "invalidEqxOraclePda",
-      "msg": "EQX Oracle PDA derivation failed. Expected seeds: ['eqx-oracle']. Ensure you're deriving the PDA correctly on the client side."
+      "name": "InvalidEqxOraclePda",
+      "msg": "UNX Oracle PDA derivation failed. Expected seeds: ['unx-oracle']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6029,
-      "name": "invalidSocialFundsStatePda",
+      "name": "InvalidSocialFundsStatePda",
       "msg": "Social Funds State PDA derivation failed. Expected seeds: ['social-funds-state']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6030,
-      "name": "socialFundsNotActivated",
+      "name": "SocialFundsNotActivated",
       "msg": "Social funds have not been activated yet. Activation can only occur after the compounding phase ends."
     },
     {
       "code": 6031,
-      "name": "socialFundsAlreadyActivated",
+      "name": "SocialFundsAlreadyActivated",
       "msg": "Social funds have already been activated. Activation is a one-time operation."
     },
     {
       "code": 6032,
-      "name": "unauthorizedSocialFundsOperation",
+      "name": "UnauthorizedSocialFundsOperation",
       "msg": "Unauthorized social funds operation. Only the social funds authority can perform this action."
     },
     {
       "code": 6033,
-      "name": "compoundingNotComplete",
+      "name": "CompoundingNotComplete",
       "msg": "Compounding phase has not ended yet. Social funds can only be activated after compounding completes."
     },
     {
       "code": 6034,
-      "name": "annualDistributionAlreadyExecuted",
-      "msg": "Annual distribution already executed for this calendar year. Distributions are limited to once per calendar year on January 1st."
+      "name": "MonthlyDistributionAlreadyExecuted",
+      "msg": "Monthly distribution already executed for this calendar month. Distributions are limited to once per calendar month."
     },
     {
       "code": 6035,
-      "name": "annualDistributionNotJanuary",
-      "msg": "Social fund distributions can only be executed in January. Please wait until January of the next year."
-    },
-    {
-      "code": 6036,
-      "name": "invalidTimestamp",
+      "name": "InvalidTimestamp",
       "msg": "Invalid timestamp. Timestamp must be a valid positive Unix timestamp (after January 1, 1970)."
     },
     {
-      "code": 6037,
-      "name": "legacyReferralRewardsDeprecated",
+      "code": 6036,
+      "name": "LegacyReferralRewardsDeprecated",
       "msg": "Legacy referral rewards functionality is deprecated. Referral rewards are now stored as credits. Use claim_bonus_mint to redeem credits for bonus mint attempts."
     },
     {
-      "code": 6038,
-      "name": "insufficientReferralCredits",
+      "code": 6037,
+      "name": "InsufficientReferralCredits",
       "msg": "Insufficient referral credits. You need at least 5 credits to claim a bonus mint attempt."
     },
     {
-      "code": 6039,
-      "name": "monthlyBonusMintCapReached",
+      "code": 6038,
+      "name": "MonthlyBonusMintCapReached",
       "msg": "Monthly bonus mint cap reached. You have reached the maximum of 5 bonus mints per calendar month."
     },
     {
-      "code": 6040,
-      "name": "bonusMintOverflow",
+      "code": 6039,
+      "name": "BonusMintOverflow",
       "msg": "Bonus mint overflow. The bonus mint counter has reached its maximum value."
     },
     {
-      "code": 6041,
-      "name": "lockPeriodNotExpired",
+      "code": 6040,
+      "name": "LockPeriodNotExpired",
       "msg": "Lock period has not expired yet. Tokens can only be unlocked after the 4-year cliff vesting period."
     },
     {
-      "code": 6042,
-      "name": "alreadyUnlocked",
+      "code": 6041,
+      "name": "AlreadyUnlocked",
       "msg": "Tokens have already been unlocked. This operation can only be performed once."
     },
     {
-      "code": 6043,
-      "name": "timestampOverflow",
+      "code": 6042,
+      "name": "TimestampOverflow",
       "msg": "Timestamp overflow. The calculated unlock timestamp exceeds the maximum representable value."
-    },
-    {
-      "code": 6044,
-      "name": "mintingCooldownNotExpired",
-      "msg": "Minting cooldown has not expired. You must wait 24 hours between regular mints."
-    },
-    {
-      "code": 6045,
-      "name": "businessRegistryNotInitialized",
-      "msg": "Business registry is not initialized. Initialize the registry before registering business users."
-    },
-    {
-      "code": 6046,
-      "name": "businessRegistryFull",
-      "msg": "Business registry is full. Maximum capacity of 100 business referrers reached."
-    },
-    {
-      "code": 6047,
-      "name": "invalidUserType",
-      "msg": "Invalid user type. User type must be 0 (Individual) or 1 (Business)."
     }
   ],
   "types": [
     {
-      "name": "businessRegistry",
+      "name": "BusinessRegistry",
       "docs": [
         "Business Registry for tracking business-type referrers",
         "PDA Seeds: [b\"business-registry\"]"
@@ -2830,7 +2635,7 @@ export type EquaToken = {
             "type": "pubkey"
           },
           {
-            "name": "businessReferrers",
+            "name": "business_referrers",
             "type": {
               "vec": "pubkey"
             }
@@ -2839,10 +2644,10 @@ export type EquaToken = {
       }
     },
     {
-      "name": "eqxOracle",
+      "name": "EqxOracle",
       "docs": [
-        "EQX Oracle PDA Account",
-        "Seeds: [b\"eqx-oracle\"]"
+        "UNX Oracle PDA Account",
+        "Seeds: [b\"unx-oracle\"]"
       ],
       "type": {
         "kind": "struct",
@@ -2855,21 +2660,21 @@ export type EquaToken = {
             "type": "u64"
           },
           {
-            "name": "lastUpdated",
+            "name": "last_updated",
             "docs": [
               "Timestamp when price was last updated"
             ],
             "type": "i64"
           },
           {
-            "name": "lastUpdatedSlot",
+            "name": "last_updated_slot",
             "docs": [
               "Slot when price was last updated"
             ],
             "type": "u64"
           },
           {
-            "name": "componentPricesHash",
+            "name": "component_prices_hash",
             "docs": [
               "Hash of basket component prices used in off-chain calculation (for auditability)"
             ],
@@ -2881,7 +2686,7 @@ export type EquaToken = {
             }
           },
           {
-            "name": "weightsHash",
+            "name": "weights_hash",
             "docs": [
               "Hash of basket weights used in off-chain calculation (for auditability)"
             ],
@@ -2910,47 +2715,47 @@ export type EquaToken = {
       }
     },
     {
-      "name": "globalState",
+      "name": "GlobalState",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "userCount",
+            "name": "user_count",
             "type": "u32"
           },
           {
-            "name": "totalTransactions",
+            "name": "total_transactions",
             "type": "u64"
           },
           {
-            "name": "currentEpoch",
+            "name": "current_epoch",
             "type": "u64"
           },
           {
-            "name": "compoundingComplete",
+            "name": "compounding_complete",
             "type": "bool"
           },
           {
-            "name": "lastEpochUpdateTime",
+            "name": "last_epoch_update_time",
             "type": "i64"
           },
           {
-            "name": "tokenMint",
+            "name": "token_mint",
             "type": "pubkey"
           },
           {
-            "name": "minSolBalance",
+            "name": "min_sol_balance",
             "type": "u64"
           },
           {
-            "name": "minSlotGapForReferrals",
+            "name": "min_slot_gap_for_referrals",
             "type": "u64"
           }
         ]
       }
     },
     {
-      "name": "lockedTokenAccount",
+      "name": "LockedTokenAccount",
       "docs": [
         "Locked token account storing locked tokens per user",
         "PDA Seeds: [b\"locked-tokens\", authority.key()]"
@@ -2963,28 +2768,28 @@ export type EquaToken = {
             "type": "pubkey"
           },
           {
-            "name": "lockedAmount",
+            "name": "locked_amount",
             "type": "u64"
           },
           {
-            "name": "lockStartTimestamp",
+            "name": "lock_start_timestamp",
             "type": "i64"
           },
           {
-            "name": "unlockTimestamp",
+            "name": "unlock_timestamp",
             "type": "i64"
           },
           {
-            "name": "isUnlocked",
+            "name": "is_unlocked",
             "type": "bool"
           }
         ]
       }
     },
     {
-      "name": "socialFundsState",
+      "name": "SocialFundsState",
       "docs": [
-        "Social Funds State for tracking activation and annual distribution",
+        "Social Funds State for tracking activation and monthly distribution",
         "PDA Seeds: [b\"social-funds-state\"]",
         "Activated only after compounding phase ends"
       ],
@@ -2996,15 +2801,15 @@ export type EquaToken = {
             "type": "bool"
           },
           {
-            "name": "activationTimestamp",
+            "name": "activation_timestamp",
             "type": "i64"
           },
           {
-            "name": "lastDistributionYear",
+            "name": "last_distribution_year",
             "type": "u32"
           },
           {
-            "name": "lastDistributionMonth",
+            "name": "last_distribution_month",
             "type": "u32"
           },
           {
@@ -3015,7 +2820,7 @@ export type EquaToken = {
       }
     },
     {
-      "name": "userAccount",
+      "name": "UserAccount",
       "docs": [
         "User account storing registration and minting data",
         "PDA Seeds: [b\"user-account\", authority.key()]",
@@ -3033,38 +2838,38 @@ export type EquaToken = {
             "type": "pubkey"
           },
           {
-            "name": "tokenAccount",
+            "name": "token_account",
             "type": "pubkey"
           },
           {
-            "name": "mintedAmount",
+            "name": "minted_amount",
             "type": "u64"
           },
           {
-            "name": "mintStart",
+            "name": "mint_start",
             "type": "i64"
           },
           {
-            "name": "referralRewards",
+            "name": "referral_rewards",
             "type": "u64"
           },
           {
-            "name": "lastMintTime",
+            "name": "last_mint_time",
             "type": "i64"
           },
           {
-            "name": "referralType",
+            "name": "referral_type",
             "type": "u8"
           },
           {
-            "name": "referralEventsCount",
+            "name": "referral_events_count",
             "type": "u32"
           }
         ]
       }
     },
     {
-      "name": "userMetadata",
+      "name": "UserMetadata",
       "docs": [
         "User metadata stored in a separate PDA",
         "Seeds: [b\"user-meta\", authority.key()]"
@@ -3073,31 +2878,31 @@ export type EquaToken = {
         "kind": "struct",
         "fields": [
           {
-            "name": "userAccount",
+            "name": "user_account",
             "type": "pubkey"
           },
           {
-            "name": "userType",
+            "name": "user_type",
             "type": "u8"
           },
           {
-            "name": "userIndex",
+            "name": "user_index",
             "type": "u32"
           },
           {
-            "name": "elevatedMintAttemptsUsed",
+            "name": "elevated_mint_attempts_used",
             "type": "u32"
           },
           {
-            "name": "kycVerified",
+            "name": "kyc_verified",
             "type": "bool"
           },
           {
-            "name": "captchaPassed",
+            "name": "captcha_passed",
             "type": "bool"
           },
           {
-            "name": "deviceFingerprint",
+            "name": "device_fingerprint",
             "type": {
               "array": [
                 "u8",
@@ -3106,11 +2911,11 @@ export type EquaToken = {
             }
           },
           {
-            "name": "lastReferralSlot",
+            "name": "last_referral_slot",
             "type": "u64"
           },
           {
-            "name": "referralsMade",
+            "name": "referrals_made",
             "type": "u32"
           },
           {
@@ -3118,19 +2923,19 @@ export type EquaToken = {
             "type": "u8"
           },
           {
-            "name": "bonusMintsThisMonth",
+            "name": "bonus_mints_this_month",
             "type": "u8"
           },
           {
-            "name": "lastBonusMintYear",
+            "name": "last_bonus_mint_year",
             "type": "u32"
           },
           {
-            "name": "lastBonusMintMonth",
+            "name": "last_bonus_mint_month",
             "type": "u32"
           }
         ]
       }
     }
   ]
-};
+}

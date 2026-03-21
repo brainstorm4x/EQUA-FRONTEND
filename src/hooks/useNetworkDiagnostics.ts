@@ -46,10 +46,10 @@ export interface NetworkDiagnostics {
  */
 async function loadIdlProgramId(): Promise<string | null> {
   try {
-    const response = await fetch('/idl/equa_token.json');
+    const response = await fetch('/idl/unia_token.json');
     if (!response.ok) {
       if (response.status === 404) {
-        console.warn('IDL file not found at /idl/equa_token.json - program ID validation will be skipped');
+        console.warn('IDL file not found at /idl/unia_token.json - program ID validation will be skipped');
       } else {
         console.warn(`Failed to load IDL (HTTP ${response.status}) - program ID validation will be skipped`);
       }
@@ -117,7 +117,7 @@ export function useNetworkDiagnostics(): NetworkDiagnostics {
           message: `Program ID mismatch: env has ${PROGRAM_ID.toBase58()}, but IDL has ${idlAddress}`,
           actionableSteps: [
             'Update NEXT_PUBLIC_PROGRAM_ID to match the deployed program',
-            'Ensure you have the correct IDL file in public/idl/equa_token.json',
+            'Ensure you have the correct IDL file in public/idl/unia_token.json',
             'Redeploy the program if needed and update both IDL and env',
           ],
         });
@@ -174,7 +174,7 @@ export function useNetworkDiagnostics(): NetworkDiagnostics {
               message: `Mint owner (${owner}) does not match configured TOKEN_PROGRAM_ID (${TOKEN_PROGRAM_ID.toBase58()})`,
               actionableSteps: [
                 `Mint on-chain uses: ${isToken2022 ? 'Token-2022' : owner === STANDARD_TOKEN_PROGRAM_ADDRESS ? 'Standard SPL Token' : 'Unknown'}`,
-                'EQUA requires Token-2022 only',
+                'UNIA requires Token-2022 only',
                 isToken2022 
                   ? 'Frontend is misconfigured - TOKEN_PROGRAM_ID should be Token-2022'
                   : 'Recreate the mint with Token-2022 program',

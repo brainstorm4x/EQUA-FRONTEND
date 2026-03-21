@@ -5,7 +5,7 @@
  * This ensures users start fresh with new program deployments.
  */
 
-const PROGRAM_ID_KEY = 'equa_current_program_id';
+const PROGRAM_ID_KEY = 'unia_current_program_id';
 
 /**
  * Gets the stored program ID from localStorage
@@ -34,22 +34,22 @@ function storeProgramId(programId: string): void {
 }
 
 /**
- * Clears all EQUA-related localStorage data
+ * Clears all UNIA-related localStorage data
  */
-function clearEquaLocalStorage(): void {
+function clearUniaLocalStorage(): void {
   if (typeof window === 'undefined') return;
   
-  console.log('🧹 Clearing old EQUA data due to program ID change...');
+  console.log('🧹 Clearing old UNIA data due to program ID change...');
   
   // List of localStorage keys to clear
   const keysToRemove = [
-    'equa_registration_stats',        // Registration stats tracking
-    'equa_transfer_stats',             // Transfer stats tracking
-    'equa_referral_rate_limit_registry', // Referral rate limiting
-    'equa_registered_keys',            // Registered public keys
-    'equa_registered_fingerprints',    // Device fingerprints
-    'equa_user_number',                // User registration number
-    'equa_registration_complete',      // Registration event flag
+    'unia_registration_stats',        // Registration stats tracking
+    'unia_transfer_stats',             // Transfer stats tracking
+    'unia_referral_rate_limit_registry', // Referral rate limiting
+    'unia_registered_keys',            // Registered public keys
+    'unia_registered_fingerprints',    // Device fingerprints
+    'unia_user_number',                // User registration number
+    'unia_registration_complete',      // Registration event flag
   ];
   
   let clearedCount = 0;
@@ -66,11 +66,11 @@ function clearEquaLocalStorage(): void {
     }
   }
   
-  // Also clear any fingerprint keys (pattern: equa_fingerprint_*)
+  // Also clear any fingerprint keys (pattern: unia_fingerprint_*)
   try {
     const allKeys = Object.keys(localStorage);
     for (const key of allKeys) {
-      if (key.startsWith('equa_fingerprint_')) {
+      if (key.startsWith('unia_fingerprint_')) {
         localStorage.removeItem(key);
         clearedCount++;
       }
@@ -107,12 +107,12 @@ export function checkAndMigrateForProgramIdChange(currentProgramId: string): voi
     console.log(`   Old: ${storedProgramId}`);
     console.log(`   New: ${currentProgramId}`);
     
-    clearEquaLocalStorage();
+    clearUniaLocalStorage();
     storeProgramId(currentProgramId);
     
     // Dispatch event to notify components
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('equa_program_id_changed', {
+      window.dispatchEvent(new CustomEvent('unia_program_id_changed', {
         detail: { oldProgramId: storedProgramId, newProgramId: currentProgramId }
       }));
     }
@@ -125,16 +125,16 @@ export function checkAndMigrateForProgramIdChange(currentProgramId: string): voi
 }
 
 /**
- * Manually clear all EQUA data (for testing/admin purposes)
+ * Manually clear all UNIA data (for testing/admin purposes)
  */
-export function manualClearEquaData(): void {
-  clearEquaLocalStorage();
+export function manualClearUniaData(): void {
+  clearUniaLocalStorage();
   
   // Also clear the stored program ID to force re-check on next load
   if (typeof window !== 'undefined') {
     try {
       localStorage.removeItem(PROGRAM_ID_KEY);
-      console.log('✅ All EQUA data cleared manually');
+      console.log('✅ All UNIA data cleared manually');
     } catch (error) {
       console.warn('Failed to clear program ID key:', error);
     }
@@ -170,11 +170,11 @@ export function resetForNewProgramId(currentProgramId: string): void {
     console.log(`   Old: ${storedProgramId}`);
     console.log(`   New: ${currentProgramId}`);
     
-    clearEquaLocalStorage();
+    clearUniaLocalStorage();
     storeProgramId(currentProgramId);
     
     // Dispatch event to notify components
-    window.dispatchEvent(new CustomEvent('equa_program_id_changed', {
+    window.dispatchEvent(new CustomEvent('unia_program_id_changed', {
       detail: { oldProgramId: storedProgramId, newProgramId: currentProgramId }
     }));
     

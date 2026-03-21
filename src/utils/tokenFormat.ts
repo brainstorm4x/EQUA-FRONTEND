@@ -1,11 +1,11 @@
 /**
- * Token formatting utilities for EQUA token
+ * Token formatting utilities for UNIA token
  * 
- * EQUA token uses 6 decimals (1,000,000 base units = 1 EQUA)
- * The smallest unit of EQUA is called Gajbhiye (singular) / Gajbhiyes (plural)
+ * UNIA token uses 6 decimals (1,000,000 base units = 1 UNIA)
+ * The smallest unit of UNIA is called Gajbhiye (singular) / Gajbhiyes (plural)
  */
 
-// EQUA token decimals - imported from centralized config for consistency
+// UNIA token decimals - imported from centralized config for consistency
 import { EQUA_DECIMALS } from '@/lib/constants';
 
 /**
@@ -26,8 +26,8 @@ export interface FormatOptions {
 }
 
 /**
- * Formats a raw EQUA token amount (in base units/Gajbhiyes) to a human-readable EQUA string
- * This shows the actual EQUA balance, not the smallest unit
+ * Formats a raw UNIA token amount (in base units/Gajbhiyes) to a human-readable UNIA string
+ * This shows the actual UNIA balance, not the smallest unit
  * 
  * @param rawAmount - The raw token amount in base units (Gajbhiyes)
  * @param options - Formatting options
@@ -43,7 +43,7 @@ export interface FormatOptions {
  * 
  * @note This function converts bigint to Number. While this can lose precision for values
  * larger than Number.MAX_SAFE_INTEGER (2^53 - 1 = ~9 quadrillion), with 6 decimal places
- * this means amounts above ~9 billion EQUA tokens (in raw base units) may lose precision.
+ * this means amounts above ~9 billion UNIA tokens (in raw base units) may lose precision.
  * For typical individual holdings and transactions, this precision is more than sufficient.
  * The SPL token program uses u64, which has a maximum value of ~18 quintillion.
  */
@@ -70,7 +70,7 @@ export function formatEquaRaw(
     return '0'.padEnd(decimals + 2, '0'); // "0.000..." with appropriate decimal places
   }
 
-  // Convert from raw units (Gajbhiyes) to EQUA tokens using dynamic decimals
+  // Convert from raw units (Gajbhiyes) to UNIA tokens using dynamic decimals
   const multiplier = Math.pow(10, tokenDecimals);
   const tokenAmount = amount / multiplier;
 
@@ -85,12 +85,12 @@ export function formatEquaRaw(
 }
 
 /**
- * Formats a raw EQUA token amount to display the actual EQUA balance
+ * Formats a raw UNIA token amount to display the actual UNIA balance
  * Shows appropriate decimal places based on the balance value
  * 
  * @param rawAmount - The raw token amount in base units (Gajbhiyes)
  * @param tokenDecimals - Token decimals (defaults to 6)
- * @returns Formatted EQUA balance string with appropriate decimals
+ * @returns Formatted UNIA balance string with appropriate decimals
  * 
  * @example
  * formatEquaBalance(100_000_000_000) // "100,000" (whole number, no decimals needed)
@@ -110,7 +110,7 @@ export function formatEquaBalance(rawAmount: number | string | bigint, tokenDeci
     return '0';
   }
 
-  // Convert from raw units (Gajbhiyes) to EQUA tokens using dynamic decimals
+  // Convert from raw units (Gajbhiyes) to UNIA tokens using dynamic decimals
   const multiplier = Math.pow(10, tokenDecimals);
   const tokenAmount = amount / multiplier;
 
@@ -137,7 +137,7 @@ export function formatEquaBalance(rawAmount: number | string | bigint, tokenDeci
 }
 
 /**
- * Parses a formatted EQUA token string back to raw base units (Gajbhiyes)
+ * Parses a formatted UNIA token string back to raw base units (Gajbhiyes)
  * 
  * @param formattedAmount - The formatted token amount (e.g., "1,000.50" or "0.123456789")
  * @param tokenDecimals - Token decimals (defaults to 6)
@@ -166,11 +166,11 @@ export function parseEquaFormatted(formattedAmount: string, tokenDecimals: numbe
 }
 
 /**
- * Converts raw EQUA amount (in Gajbhiyes) to a number (decimal EQUA form)
+ * Converts raw UNIA amount (in Gajbhiyes) to a number (decimal EQUA form)
  * 
  * @param rawAmount - The raw token amount in base units (Gajbhiyes)
  * @param tokenDecimals - Token decimals (defaults to 6)
- * @returns Token amount as a decimal number (EQUA)
+ * @returns Token amount as a decimal number (UNIA)
  * 
  * @example
  * rawToDecimal(1_000_000) // 1 (with 6 decimals)
@@ -178,7 +178,7 @@ export function parseEquaFormatted(formattedAmount: string, tokenDecimals: numbe
  * 
  * @note Converting bigint to Number can lose precision for values larger than
  * Number.MAX_SAFE_INTEGER (~9 quadrillion). With 6 decimal places, this means
- * amounts above ~9 billion EQUA tokens (in raw base units) may lose precision.
+ * amounts above ~9 billion UNIA tokens (in raw base units) may lose precision.
  * For typical individual holdings, this is more than sufficient.
  */
 export function rawToDecimal(rawAmount: number | string | bigint, tokenDecimals: number = EQUA_DECIMALS): number {

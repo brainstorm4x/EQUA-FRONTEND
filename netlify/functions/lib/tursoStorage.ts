@@ -1,14 +1,14 @@
 /**
- * Turso (libSQL) Storage Helpers for EQX Price History
+ * Turso (libSQL) Storage Helpers for UNX Price History
  *
- * Provides durable, long-term storage for EQX price snapshots in a Turso
- * database. Used by the hourly update-eqx-price function to persist data
+ * Provides durable, long-term storage for UNX price snapshots in a Turso
+ * database. Used by the hourly update-unx-price function to persist data
  * beyond the 30-day Netlify Blobs retention window.
  *
  * Storage Schema:
- * - Table: `eqx_price_snapshots`      - Hourly EQX price snapshots with
- *   per-currency EQUA prices, inflation index, and purchasing power.
- * - Table: `eqx_daily_performance`    - Pre-aggregated daily records with
+ * - Table: `unx_price_snapshots`      - Hourly UNX price snapshots with
+ *   per-currency UNIA prices, inflation index, and purchasing power.
+ * - Table: `unx_daily_performance`    - Pre-aggregated daily records with
  *   "$100 held" comparison metrics (written by snapshot-daily-performance).
  */
 
@@ -50,7 +50,7 @@ function getTursoClient(): ReturnType<typeof createClient> {
 // ============================================================================
 
 /**
- * The 16 send-modal currencies tracked in the EQUA Flutter app.
+ * The 16 send-modal currencies tracked in the UNIA Flutter app.
  * Order matches lib/features/send/send_screen.dart exactly.
  */
 export const SEND_MODAL_CURRENCIES: string[] = [
@@ -66,11 +66,11 @@ export const SEND_MODAL_CURRENCIES: string[] = [
 export const HOURLY_INFLATION_RATE = 1 + (0.032 / (365.25 * 24));
 
 /**
- * EQUA genesis timestamp (Unix ms).
- * Reads from EQUA_GENESIS_TIMESTAMP env var; falls back to 2025-01-01T00:00:00Z.
+ * UNIA genesis timestamp (Unix ms).
+ * Reads from UNIA_GENESIS_TIMESTAMP env var; falls back to 2025-01-01T00:00:00Z.
  */
-export const EQUA_GENESIS_TIMESTAMP: number = process.env.EQUA_GENESIS_TIMESTAMP
-  ? parseInt(process.env.EQUA_GENESIS_TIMESTAMP, 10)
+export const UNIA_GENESIS_TIMESTAMP: number = process.env.UNIA_GENESIS_TIMESTAMP
+  ? parseInt(process.env.UNIA_GENESIS_TIMESTAMP, 10)
   : new Date('2025-01-01T00:00:00Z').getTime();
 
 // ============================================================================
@@ -78,18 +78,18 @@ export const EQUA_GENESIS_TIMESTAMP: number = process.env.EQUA_GENESIS_TIMESTAMP
 // ============================================================================
 
 /**
- * A single EQX price snapshot for storage in Turso.
+ * A single UNX price snapshot for storage in Turso.
  */
-export interface TursoEqxSnapshot {
+export interface TursoUnxSnapshot {
   /** Unix timestamp in milliseconds */
   timestamp: number;
-  /** EQX basket value in USD (e.g. ~933.0) */
-  eqxPriceUsd: number;
-  /** EQUA token price in USD (from tier-based formula) */
+  /** UNX basket value in USD (e.g. ~933.0) */
+  unxPriceUsd: number;
+  /** UNIA token price in USD (from tier-based formula) */
   equaPriceUsd: number;
-  /** EQUA price expressed in EQX units (= equaPriceUsd / eqxPriceUsd) */
-  equaPriceEqx: number;
-  /** EQUA price in each of the 16 send-modal currencies */
+  /** UNIA price expressed in EQX units (= equaPriceUsd / unxPriceUsd) */
+  equaPriceUnx: number;
+  /** UNIA price in each of the 16 send-modal currencies */
   currencyPrices: Record<string, number>;
   /**
    * Raw EQX basket component prices in XXX/USD format (USD in denominator).
@@ -125,14 +125,14 @@ export interface TursoEqxSnapshot {
 /**
  * Compute the USD inflation index for a given snapshot timestamp.
  *
- * The index starts at 1.0 at EQUA_GENESIS_TIMESTAMP and compounds hourly
+ * The index starts at 1.0 at UNIA_GENESIS_TIMESTAMP and compounds hourly
  * at HOURLY_INFLATION_RATE (based on ~3.2% annual US CPI).
  *
  * @param snapshotTimestampMs - Unix timestamp of the snapshot in milliseconds
  * @returns inflation index (>= 1.0)
  */
 export function computeUsdInflationIndex(snapshotTimestampMs: number): number {
-  const hoursElapsed = (snapshotTimestampMs - EQUA_GENESIS_TIMESTAMP) / (1000 * 60 * 60);
+  const hoursElapsed = (snapshotTimestampMs - UNIA_GENESIS_TIMESTAMP) / (1000 * 60 * 60);
   return Math.pow(HOURLY_INFLATION_RATE, Math.max(0, hoursElapsed));
 }
 
@@ -156,7 +156,7 @@ export async function computeUsdInflationIndexAsync(snapshotTimestampMs: number)
 // ============================================================================
 
 /**
- * Ensure the eqx_price_snapshots table and its indexes exist.
+ * Ensure the unx_price_snapshots table and its indexes exist.
  * Safe to call on every invocation (uses IF NOT EXISTS).
  *
  * @param client - Turso libSQL client
@@ -165,7 +165,7 @@ export async function initTursoSchema(
   client: ReturnType<typeof createClient>
 ): Promise<void> {
   await client.execute(`
-    CREATE TABLE IF NOT EXISTS eqx_price_snapshots (
+    CREATE TABLE IF NOT EXISTS unx_price_snapshots (
       id                    INTEGER PRIMARY KEY AUTOINCREMENT,
       timestamp             INTEGER NOT NULL,
       recorded_at           TEXT NOT NULL,
@@ -204,15 +204,15 @@ export async function initTursoSchema(
   `);
 
   await client.execute(`
-    CREATE INDEX IF NOT EXISTS idx_eqx_timestamp ON eqx_price_snapshots(timestamp DESC)
+    CREATE INDEX IF NOT EXISTS idx_eqx_timestamp ON unx_price_snapshots(timestamp DESC)
   `);
 
   await client.execute(`
-    CREATE INDEX IF NOT EXISTS idx_eqx_recorded_at ON eqx_price_snapshots(recorded_at)
+    CREATE INDEX IF NOT EXISTS idx_eqx_recorded_at ON unx_price_snapshots(recorded_at)
   `);
 
   await client.execute(`
-    CREATE TABLE IF NOT EXISTS eqx_daily_performance (
+    CREATE TABLE IF NOT EXISTS unx_daily_performance (
       id                    INTEGER PRIMARY KEY AUTOINCREMENT,
       date                  TEXT NOT NULL,
       equa_price_open       REAL NOT NULL,
@@ -231,7 +231,7 @@ export async function initTursoSchema(
   `);
 
   await client.execute(`
-    CREATE INDEX IF NOT EXISTS idx_daily_perf_date ON eqx_daily_performance(date DESC)
+    CREATE INDEX IF NOT EXISTS idx_daily_perf_date ON unx_daily_performance(date DESC)
   `);
 }
 
@@ -240,7 +240,7 @@ export async function initTursoSchema(
 // ============================================================================
 
 /**
- * Store an EQX price snapshot to Turso.
+ * Store an UNX price snapshot to Turso.
  *
  * This is best-effort and non-fatal: callers should never rely on this
  * succeeding; a failure here must not interrupt the main hourly function.
@@ -248,8 +248,8 @@ export async function initTursoSchema(
  * @param snap - Snapshot data to persist
  * @returns `{ success: true }` on success or `{ success: false, error }` on failure
  */
-export async function storeEqxSnapshotToTurso(
-  snap: TursoEqxSnapshot
+export async function storeUnxSnapshotToTurso(
+  snap: TursoUnxSnapshot
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const client = getTursoClient();
@@ -266,7 +266,7 @@ export async function storeEqxSnapshotToTurso(
 
     await client.execute({
       sql: `
-        INSERT OR REPLACE INTO eqx_price_snapshots (
+        INSERT OR REPLACE INTO unx_price_snapshots (
           timestamp,
           recorded_at,
           source,
@@ -308,9 +308,9 @@ export async function storeEqxSnapshotToTurso(
         snap.timestamp,
         recordedAt,
         snap.source,
-        snap.eqxPriceUsd,
+        snap.unxPriceUsd,
         snap.equaPriceUsd,
-        snap.equaPriceEqx,
+        snap.equaPriceUnx,
         cp['USD'] ?? null,
         cp['EUR'] ?? null,
         cp['GBP'] ?? null,
@@ -365,7 +365,7 @@ export interface EqxPerformanceRow {
   recordedAt: string;
   equaPriceUsd: number;
   equaPriceLocal: number | null;
-  eqxPriceUsd: number;
+  unxPriceUsd: number;
   usdInflationIndex: number;
   equaPurchasingPower: number;
   source: string;
@@ -403,7 +403,7 @@ export async function getEqxPerformanceHistory(
         usd_inflation_index,
         equa_purchasing_power,
         source
-      FROM eqx_price_snapshots
+      FROM unx_price_snapshots
       WHERE timestamp >= ? AND timestamp <= ?
       ORDER BY timestamp ASC
     `,
@@ -415,7 +415,7 @@ export async function getEqxPerformanceHistory(
     recordedAt: row['recorded_at'] as string,
     equaPriceUsd: row['equa_price_usd'] as number,
     equaPriceLocal: row['equa_price_local'] as number | null,
-    eqxPriceUsd: row['eqx_price_usd'] as number,
+    unxPriceUsd: row['eqx_price_usd'] as number,
     usdInflationIndex: row['usd_inflation_index'] as number,
     equaPurchasingPower: row['equa_purchasing_power'] as number,
     source: row['source'] as string,
@@ -427,7 +427,7 @@ export async function getEqxPerformanceHistory(
 // ============================================================================
 
 /**
- * A daily performance record for the eqx_daily_performance table.
+ * A daily performance record for the unx_daily_performance table.
  */
 export interface TursoDailyPerformance {
   /** Date of the record in YYYY-MM-DD format */
@@ -440,7 +440,7 @@ export interface TursoDailyPerformance {
   equaPriceHigh: number;
   /** Lowest EQUA price seen during the day */
   equaPriceLow: number;
-  /** EQX basket price at the last hourly snapshot of the day */
+  /** UNX basket price at the last hourly snapshot of the day */
   eqxBasketClose: number;
   /** USD inflation index at the last hourly snapshot of the day */
   usdInflationIndex: number;
@@ -479,7 +479,7 @@ export interface DailyPerformanceRow extends TursoDailyPerformance {
 // ============================================================================
 
 /**
- * Store a daily performance record in the eqx_daily_performance table.
+ * Store a daily performance record in the unx_daily_performance table.
  * Uses INSERT OR REPLACE so re-running the snapshot function is idempotent.
  *
  * @param record - Daily performance data to persist
@@ -494,7 +494,7 @@ export async function storeDailyPerformance(
 
     await client.execute({
       sql: `
-        INSERT OR REPLACE INTO eqx_daily_performance (
+        INSERT OR REPLACE INTO unx_daily_performance (
           date,
           equa_price_open,
           equa_price_close,
@@ -539,7 +539,7 @@ export async function storeDailyPerformance(
 // ============================================================================
 
 /**
- * Query daily performance records from the eqx_daily_performance table.
+ * Query daily performance records from the unx_daily_performance table.
  *
  * @param from - Start of the date window (inclusive; only the date part is used)
  * @param to   - End of the date window (inclusive; only the date part is used)
@@ -569,7 +569,7 @@ export async function getDailyPerformance(
         advantage_per_hundred,
         hourly_data_points,
         source
-      FROM eqx_daily_performance
+      FROM unx_daily_performance
       WHERE date >= ? AND date <= ?
       ORDER BY date ASC
     `,
@@ -602,7 +602,7 @@ export async function getDailyPerformance(
 // ============================================================================
 
 /**
- * Fetch the very first row from eqx_price_snapshots.
+ * Fetch the very first row from unx_price_snapshots.
  * Used as the baseline for "$100 held" calculations.
  *
  * @returns The earliest snapshot row, or null if the table is empty
@@ -620,7 +620,7 @@ export async function getEarliestSnapshot(): Promise<EqxPerformanceRow | null> {
       usd_inflation_index,
       equa_purchasing_power,
       source
-    FROM eqx_price_snapshots
+    FROM unx_price_snapshots
     ORDER BY timestamp ASC
     LIMIT 1
   `);
@@ -633,7 +633,7 @@ export async function getEarliestSnapshot(): Promise<EqxPerformanceRow | null> {
     recordedAt: row['recorded_at'] as string,
     equaPriceUsd: row['equa_price_usd'] as number,
     equaPriceLocal: row['equa_price_local'] as number | null,
-    eqxPriceUsd: row['eqx_price_usd'] as number,
+    unxPriceUsd: row['eqx_price_usd'] as number,
     usdInflationIndex: row['usd_inflation_index'] as number,
     equaPurchasingPower: row['equa_purchasing_power'] as number,
     source: row['source'] as string,

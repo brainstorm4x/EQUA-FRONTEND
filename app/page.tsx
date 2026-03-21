@@ -84,7 +84,7 @@ export default function HomePage() {
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
                 <Logo size={40} />
-                <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+                <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
               </Link>
 
               <nav className="hidden md:flex items-center gap-6">
@@ -122,7 +122,7 @@ export default function HomePage() {
           </div>
           
           <h1 className="text-6xl font-bold text-white mb-6">
-            Welcome to EQUA Token
+            Welcome to UNIA Token
           </h1>
           
           <p className="text-xl text-purple-200 mb-8 max-w-2xl mx-auto">
@@ -136,13 +136,13 @@ export default function HomePage() {
               // ✅ Show "Get Started" for UNREGISTERED users
               <GetStartedButton />
             ) : (
-              // ✅ Show "Mint EQUA" for REGISTERED users
+              // ✅ Show "Mint UNIA" for REGISTERED users
               <Link
                 href="/mint"
-                data-testid="mint-equa-cta"
+                data-testid="mint-unia-cta"
                 className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg"
               >
-                Mint EQUA →
+                Mint UNIA →
               </Link>
             )}
             
@@ -153,7 +153,7 @@ export default function HomePage() {
               Read Whitepaper
             </Link>
             <a
-              href="https://explorer.solana.com/address/D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw?cluster=devnet"
+              href="https://explorer.solana.com/address/B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2?cluster=devnet"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg backdrop-blur-sm"
@@ -223,7 +223,7 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="text-purple-300 text-sm mb-2">Program ID</p>
-                <p className="text-white text-sm font-mono">2oSti...fV7g4</p>
+                <p className="text-white text-sm font-mono">B2zocF...kDfx2</p>
               </div>
             </div>
           </div>

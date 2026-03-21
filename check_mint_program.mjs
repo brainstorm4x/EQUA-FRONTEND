@@ -1,8 +1,8 @@
 import { PublicKey, Connection } from '@solana/web3.js';
 
 // EQUA Token Program ID (Token-2022)
-const PROGRAM_ID = new PublicKey('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw');
-const MINT_SEED = 'equa-mint';
+const PROGRAM_ID = new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
+const MINT_SEED = 'unia-mint';
 
 async function checkMint() {
   const [mintPDA] = PublicKey.findProgramAddressSync(

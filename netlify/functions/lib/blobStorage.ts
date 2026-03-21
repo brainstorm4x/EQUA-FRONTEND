@@ -1,11 +1,11 @@
 /**
  * Netlify Blobs Storage Helpers
  * 
- * Provides helper functions for storing and retrieving EQX price history and FX rates
+ * Provides helper functions for storing and retrieving UNX price history and FX rates
  * using Netlify Blobs (persistent key-value storage).
  * 
  * Storage Schema:
- * - Store: `eqx-prices` - Historical EQX price snapshots (hourly)
+ * - Store: `unx-prices` - Historical UNX price snapshots (hourly)
  * - Store: `fx-rates` - Latest FX rates (overwritten hourly)
  */
 
@@ -50,7 +50,7 @@ function getStore(storeName: string) {
 }
 
 // Export store getters
-export const getEqxPriceStore = () => getStore('eqx-prices');
+export const getUnxPriceStore = () => getStore('unx-prices');
 export const getFxRateStore = () => getStore('fx-rates');
 
 // ============================================================================
@@ -58,12 +58,12 @@ export const getFxRateStore = () => getStore('fx-rates');
 // ============================================================================
 
 /**
- * EQX price snapshot stored in blobs
+ * UNX price snapshot stored in blobs
  */
-export interface EqxPriceSnapshot {
+export interface UnxPriceSnapshot {
   timestamp: number;           // Unix timestamp (ms)
-  price: number;               // EQX basket price (float, 8 decimals)
-  priceFixed: string;          // EQX price in fixed-point format (for accuracy)
+  price: number;               // UNX basket price (float, 8 decimals)
+  priceFixed: string;          // UNX price in fixed-point format (for accuracy)
   slot: number;                // Solana slot number
   components: {
     USDUSD: number;
@@ -92,18 +92,18 @@ export interface FxRateData {
 }
 
 // ============================================================================
-// EQX Price Storage Functions
+// UNX Price Storage Functions
 // ============================================================================
 
 /**
- * Store EQX price snapshot
+ * Store UNX price snapshot
  * Key format: YYYY-MM-DD-HH (hourly snapshots)
  * 
- * @param data - EQX price snapshot
+ * @param data - UNX price snapshot
  */
-export async function storeEqxPrice(data: EqxPriceSnapshot): Promise<void> {
+export async function storeUnxPrice(data: UnxPriceSnapshot): Promise<void> {
   try {
-    const store = getEqxPriceStore();
+    const store = getUnxPriceStore();
     
     // Generate key from timestamp
     const date = new Date(data.timestamp);
@@ -112,26 +112,26 @@ export async function storeEqxPrice(data: EqxPriceSnapshot): Promise<void> {
     // Store as JSON
     await store.set(key, JSON.stringify(data));
     
-    console.log(`Stored EQX price snapshot: ${key}`);
+    console.log(`Stored UNX price snapshot: ${key}`);
   } catch (error) {
-    console.error('Error storing EQX price snapshot:', error);
+    console.error('Error storing UNX price snapshot:', error);
     throw error;
   }
 }
 
 /**
- * Get EQX price history
+ * Get UNX price history
  * 
  * @param from - Start date
  * @param to - End date
- * @returns Array of EQX price snapshots
+ * @returns Array of UNX price snapshots
  */
-export async function getEqxHistory(
+export async function getUnxHistory(
   from: Date,
   to: Date
-): Promise<EqxPriceSnapshot[]> {
+): Promise<UnxPriceSnapshot[]> {
   try {
-    const store = getEqxPriceStore();
+    const store = getUnxPriceStore();
     
     // Generate all hourly keys in range
     const keys: string[] = [];
@@ -144,12 +144,12 @@ export async function getEqxHistory(
     }
     
     // Fetch all snapshots
-    const snapshots: EqxPriceSnapshot[] = [];
+    const snapshots: UnxPriceSnapshot[] = [];
     
     for (const key of keys) {
       const data = await store.get(key);
       if (data) {
-        const snapshot = JSON.parse(data) as EqxPriceSnapshot;
+        const snapshot = JSON.parse(data) as UnxPriceSnapshot;
         snapshots.push(snapshot);
       }
     }
@@ -159,19 +159,19 @@ export async function getEqxHistory(
     
     return snapshots;
   } catch (error) {
-    console.error('Error fetching EQX price history:', error);
+    console.error('Error fetching UNX price history:', error);
     return [];
   }
 }
 
 /**
- * Get latest EQX price snapshot
+ * Get latest UNX price snapshot
  * 
- * @returns Latest EQX price snapshot or null if not found
+ * @returns Latest UNX price snapshot or null if not found
  */
-export async function getLatestEqxPrice(): Promise<EqxPriceSnapshot | null> {
+export async function getLatestEqxPrice(): Promise<UnxPriceSnapshot | null> {
   try {
-    const store = getEqxPriceStore();
+    const store = getUnxPriceStore();
     
     // Get all keys (limited to last 24 hours for performance)
     const list = await store.list();
@@ -194,7 +194,7 @@ export async function getLatestEqxPrice(): Promise<EqxPriceSnapshot | null> {
       return null;
     }
     
-    return JSON.parse(data) as EqxPriceSnapshot;
+    return JSON.parse(data) as UnxPriceSnapshot;
   } catch (error) {
     console.error('Error fetching latest EQX price:', error);
     return null;
@@ -252,13 +252,13 @@ export async function getLatestFxRates(): Promise<FxRateData | null> {
 // ============================================================================
 
 /**
- * Clean up old EQX price snapshots
+ * Clean up old UNX price snapshots
  * Keeps hourly data for 30 days, then deletes to avoid quota issues
  * 
  * Call this periodically (e.g., daily via scheduled function)
  */
 export async function cleanupOldEqxPrices(): Promise<void> {
-  const store = getEqxPriceStore();
+  const store = getUnxPriceStore();
   const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
   
   try {
@@ -276,7 +276,7 @@ export async function cleanupOldEqxPrices(): Promise<void> {
       }
     }
     
-    console.log(`Cleaned up ${deletedCount} old EQX price snapshots`);
+    console.log(`Cleaned up ${deletedCount} old UNX price snapshots`);
   } catch (error) {
     console.error('Error cleaning up old EQX prices:', error);
   }

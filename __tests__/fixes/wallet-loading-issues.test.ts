@@ -88,11 +88,12 @@ describe('Fix verification tests', () => {
   describe('Issue 3: Pyth API endpoint verification', () => {
     it('should use the correct Pyth Hermes API endpoint', () => {
       // Import the module to verify the constant
-      const eqxOracle = require('@/utils/eqxOracle');
+      const unxOracle = require('@/utils/unxOracle');
       
       // We can't directly access the const, but we can verify the module loads
-      expect(eqxOracle).toBeDefined();
-      expect(eqxOracle.getEQXPriceData).toBeDefined();
+      expect(unxOracle).toBeDefined();
+      // getEQXPriceData was renamed to getUniaPriceMultiFormat
+      expect(unxOracle.getUniaPriceMultiFormat).toBeDefined();
       
       // The correct endpoint should be used internally
       // This test verifies the module structure is correct

@@ -167,7 +167,7 @@ function parsePythPrice(
 
 /**
  * Convert component prices object to array
- * Order matches BASKET_COMPONENTS from eqxOracle.ts
+ * Order matches BASKET_COMPONENTS from unxOracle.ts
  * All values in XXX/USD format (USD in denominator)
  * 
  * @param prices - Component prices object

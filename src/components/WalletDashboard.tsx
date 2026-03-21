@@ -26,7 +26,7 @@ import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRaw } from '@/utils/tokenFormat';
 import { getUserLocaleCurrency, getPreferredCurrency, setPreferredCurrency, getSavedPreferredCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { fetchFxRates } from '@/utils/fxRateClient';
-import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
+import { getUniaPriceMultiFormat } from '@/utils/unxOracle';
 import { EquaPriceCalculator } from '@/utils/priceCalculator';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
 import { useUserAccount } from '@/hooks/useUserAccount';
@@ -42,11 +42,11 @@ interface WalletDashboardProps {
   className?: string;
 }
 
-// EQUA Token decimals will be fetched from on-chain mint
+// UNIA Token decimals will be fetched from on-chain mint
 // Default to 6 decimals as per the on-chain mint configuration
 
 // Shared constants for referral messages
-const EQUA_SHARE_BASE_URL = 'https://equa.live/mint';
+const UNIA_SHARE_BASE_URL = 'https://unia.live/mint';
 
 /**
  * Generates a referral message for sharing
@@ -54,7 +54,7 @@ const EQUA_SHARE_BASE_URL = 'https://equa.live/mint';
  * @returns The formatted referral message
  */
 function generateReferralMessage(pubkeyBase58: string): string {
-  return `Join EQUA Token - A revolutionary token system on Solana with price appreciation! Use my referral: ${pubkeyBase58}\n\nGet started: ${EQUA_SHARE_BASE_URL}`;
+  return `Join UNIA Token - A revolutionary token system on Solana with price appreciation! Use my referral: ${pubkeyBase58}\n\nGet started: ${UNIA_SHARE_BASE_URL}`;
 }
 
 /**
@@ -63,7 +63,7 @@ function generateReferralMessage(pubkeyBase58: string): string {
  * @returns The referral URL with ref parameter
  */
 function generateReferralUrl(pubkeyBase58: string): string {
-  return `${EQUA_SHARE_BASE_URL}?ref=${pubkeyBase58}`;
+  return `${UNIA_SHARE_BASE_URL}?ref=${pubkeyBase58}`;
 }
 
 export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) => {
@@ -147,7 +147,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         const decimals = await getEquaMintDecimals(connection);
         setMintDecimals(decimals);
         
-        // Get referral credits from on-chain (integer count, not EQUA amounts)
+        // Get referral credits from on-chain (integer count, not UNIA amounts)
         if (userAccountPDA) {
           const stats = await getReferralStats(connection, userAccountPDA);
           
@@ -274,10 +274,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   - Total Users: ${globalState.userCount}
   - Tier: ${tierDetails.tierName}
   - Is Elevated: ${tierDetails.isElevated}
-  - User Tier Rate: ${Number(tierDetails.userTierRate) / 1_000_000} EQUA
-  - Prevailing Rate: ${Number(tierDetails.prevailingRate) / 1_000_000} EQUA
+  - User Tier Rate: ${Number(tierDetails.userTierRate) / 1_000_000} UNIA
+  - Prevailing Rate: ${Number(tierDetails.prevailingRate) / 1_000_000} UNIA
   - Limited By: ${tierDetails.limitedBy}
-  - Final Tier Limit: ${tierLimitEqua} EQUA (${amountInBaseUnits} base units)`);
+  - Final Tier Limit: ${tierLimitEqua} UNIA (${amountInBaseUnits} base units)`);
       }
 
       // Call claimBonusMint utility
@@ -294,7 +294,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       // Show success message
       const creditsRemaining = referralCredits - 5;
       setClaimSuccess(
-        `✅ Successfully claimed ${tierLimitEqua} EQUA! ` +
+        `✅ Successfully claimed ${tierLimitEqua} UNIA! ` +
         `${creditsRemaining} credits remaining. You can claim another bonus mint immediately if you have 5+ credits.`
       );
 
@@ -385,14 +385,14 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       {/* Balance Card */}
       <div className="bg-gradient-to-br from-purple-500/30 to-purple-600/30 backdrop-blur-md rounded-2xl p-6 border border-purple-400/50 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-purple-200 text-lg font-medium">Your EQUA Balance</h3>
+          <h3 className="text-purple-200 text-lg font-medium">Your UNIA Balance</h3>
           <Logo size={32} />
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-white text-4xl font-bold" data-testid="equa-balance">
+          <span className="text-white text-4xl font-bold" data-testid="unia-balance">
             {balance > 0 ? formatEquaBalance(balance) : '--'}
           </span>
-          <span className="text-purple-300 text-xl">EQUA</span>
+          <span className="text-purple-300 text-xl">UNIA</span>
         </div>
       </div>
 
@@ -403,14 +403,14 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
         >
           <span className="text-xl">📤</span>
-          Send EQUA
+          Send UNIA
         </button>
         <button
           onClick={() => setShowReceiveModal(true)}
           className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
         >
           <span className="text-xl">📥</span>
-          Receive EQUA
+          Receive UNIA
         </button>
       </div>
 
@@ -570,7 +570,7 @@ const SendModal: FC<SendModalProps> = ({
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [localCurrencyAmount, setLocalCurrencyAmount] = useState('');
-  const [equaPrice, setEquaPrice] = useState<number>(0.01);
+  const [uniaPrice, setUniaPrice] = useState<number>(0.01);
   const [localCurrency, setLocalCurrency] = useState(() => {
     // Detect currency on initialization (runs once, synchronously on first render)
     if (typeof window !== 'undefined') {
@@ -628,7 +628,7 @@ const SendModal: FC<SendModalProps> = ({
     loadCurrencies();
   }, []);
 
-  // Fetch EQUA price based on current transaction count (re-runs when localCurrency changes)
+  // Fetch UNIA price based on current transaction count (re-runs when localCurrency changes)
   useEffect(() => {
     const fetchPrice = async () => {
       setIsLoadingPrice(true);
@@ -638,8 +638,8 @@ const SendModal: FC<SendModalProps> = ({
         // Use the already-initialized localCurrency state
         const currencyCode = localCurrency;
         
-        const priceData = await getEquaPriceMultiFormat(equaPriceUsd, currencyCode, connection);
-        setEquaPrice(priceData.localCurrency);
+        const priceData = await getUniaPriceMultiFormat(equaPriceUsd, currencyCode, connection);
+        setUniaPrice(priceData.localCurrency);
         
         // Log FX metadata for debugging
         console.log(`FX Rate Info: ${currencyCode} = ${priceData.fxRate} (source: ${priceData.fxSource}, age: ${Math.floor((priceData.fxAge || 0) / 3600000)}h)`);
@@ -649,8 +649,8 @@ const SendModal: FC<SendModalProps> = ({
           console.warn(`⚠️ FX rate for ${currencyCode} is stale (${Math.floor((priceData.fxAge || 0) / 3600000)} hours old)`);
         }
       } catch (err) {
-        console.warn('Failed to fetch EQUA price:', err);
-        setEquaPrice(equaPriceUsd);
+        console.warn('Failed to fetch UNIA price:', err);
+        setUniaPrice(equaPriceUsd);
       } finally {
         setIsLoadingPrice(false);
       }
@@ -662,7 +662,7 @@ const SendModal: FC<SendModalProps> = ({
   const handleLocalCurrencyChange = (value: string) => {
     setLocalCurrencyAmount(value);
     
-    // Convert to EQUA
+    // Convert to UNIA
     if (value && !isNaN(parseFloat(value)) && equaPrice > 0) {
       const localAmount = parseFloat(value);
       const equaAmount = localAmount / equaPrice;
@@ -672,7 +672,7 @@ const SendModal: FC<SendModalProps> = ({
     }
   };
 
-  // Handle EQUA amount change
+  // Handle UNIA amount change
   const handleEquaAmountChange = (value: string) => {
     setAmount(value);
     
@@ -916,7 +916,7 @@ const SendModal: FC<SendModalProps> = ({
       // Validate against current balance
       if (amountInBaseUnits > BigInt(currentBalance)) {
         const balanceInEqua = rawToDecimal(currentBalance, mintDecimals);
-        throw new Error(`Insufficient balance. You have ${balanceInEqua.toFixed(6)} EQUA available.`);
+        throw new Error(`Insufficient balance. You have ${balanceInEqua.toFixed(6)} UNIA available.`);
       }
 
       // Get recipient's token account
@@ -1005,7 +1005,7 @@ const SendModal: FC<SendModalProps> = ({
       console.error('Send error:', err);
       
       // Extract detailed error message from SendTransactionError
-      let errorMessage = 'Failed to send EQUA';
+      let errorMessage = 'Failed to send UNIA';
       
       if (err instanceof SendTransactionError) {
         const logs = await err.getLogs(connection);
@@ -1044,7 +1044,7 @@ const SendModal: FC<SendModalProps> = ({
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-white text-xl font-bold flex items-center gap-2">
             <span className="text-2xl">📤</span>
-            Send EQUA
+            Send UNIA
           </h3>
           <button 
             onClick={onClose}
@@ -1252,7 +1252,7 @@ const SendModal: FC<SendModalProps> = ({
             </div>
 
             <div className="mb-4">
-              <label className="block text-purple-200 text-sm mb-2">Amount (EQUA)</label>
+              <label className="block text-purple-200 text-sm mb-2">Amount (UNIA)</label>
               <div className="relative">
                 <input
                   type="number"
@@ -1294,7 +1294,7 @@ const SendModal: FC<SendModalProps> = ({
                   : 'bg-purple-600 hover:bg-purple-700 text-white'
               }`}
             >
-              {isLoading ? '⏳ Sending...' : 'Send EQUA'}
+              {isLoading ? '⏳ Sending...' : 'Send UNIA'}
             </button>
           </>
         )}
@@ -1357,7 +1357,7 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-white text-xl font-bold flex items-center gap-2">
             <span className="text-2xl">📥</span>
-            Receive EQUA
+            Receive UNIA
           </h3>
           <button 
             onClick={onClose}
@@ -1391,7 +1391,7 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
           </div>
 
           <p className="text-purple-200 text-sm mb-4">
-            Scan the QR code or copy your wallet address to receive EQUA tokens
+            Scan the QR code or copy your wallet address to receive UNIA tokens
           </p>
 
           {/* Copy Address Button */}
@@ -1442,13 +1442,13 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
     {
       name: 'Telegram',
       icon: '✈️',
-      url: `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent('Join EQUA Token - A revolutionary token system on Solana! Use my referral: ' + pubkeyBase58)}`,
+      url: `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent('Join UNIA Token - A revolutionary token system on Solana! Use my referral: ' + pubkeyBase58)}`,
       color: 'bg-blue-500 hover:bg-blue-600',
     },
     {
       name: 'Email',
       icon: '📧',
-      url: `mailto:?subject=${encodeURIComponent('Join EQUA Token')}&body=${encodedMessage}`,
+      url: `mailto:?subject=${encodeURIComponent('Join UNIA Token')}&body=${encodedMessage}`,
       color: 'bg-red-500 hover:bg-red-600',
     },
     {
@@ -1483,7 +1483,7 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Join EQUA Token',
+          title: 'Join UNIA Token',
           text: referralMessage,
           url: referralUrl,
         });

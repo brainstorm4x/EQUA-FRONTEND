@@ -37,8 +37,8 @@ import {
   getProgramId, 
   getBusinessRegistryPDA 
 } from './lib/solana-admin';
-import { EquaToken } from './lib/equa_token';
-import idl from './lib/equa_token.json';
+import { UniaToken } from './lib/unia_token';
+import idl from './lib/unia_token.json';
 
 /**
  * CORS headers for API responses
@@ -155,7 +155,7 @@ export const handler: Handler = async (event) => {
       { commitment: 'confirmed' }
     );
 
-    const program = new Program<EquaToken>(
+    const program = new Program<UniaToken>(
       idl as any,
       provider
     );

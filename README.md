@@ -1,10 +1,10 @@
-# EQUA Token Frontend
+# UNIA Token Frontend
 
-Next.js 14 (App Router) + Solana blockchain dApp for minting EQUA tokens with time-locked rewards, referral system, and dynamic pricing.
+Next.js 14 (App Router) + Solana blockchain dApp for minting UNIA tokens with time-locked rewards, referral system, and dynamic pricing.
 
 ## Features
 
-- 🪙 **Token Minting**: Mint EQUA tokens using Token-2022 (SPL Token Extensions)
+- 🪙 **Token Minting**: Mint UNIA tokens using Token-2022 (SPL Token Extensions)
 - 🔐 **Wallet Integration**: Support for Phantom, Solflare, and mobile wallets
 - 📱 **Mobile-First**: Native mobile wallet support via Solana Mobile Wallet Adapter
 - 🎁 **Referral System**: 10-character alphanumeric referral codes with 15-minute TTL
@@ -38,7 +38,7 @@ Next.js 14 (App Router) + Solana blockchain dApp for minting EQUA tokens with ti
 ```bash
 # Clone the repository
 git clone https://github.com/brainstorm4x/EQUA-FRONTEND.git
-cd EQUA-FRONTEND
+cd UNIA-FRONTEND
 
 # Install dependencies (use --legacy-peer-deps due to Solana wallet adapter peer dependencies)
 npm install --legacy-peer-deps
@@ -48,7 +48,7 @@ cp .env.example .env.local
 
 # Configure environment variables
 # - NEXT_PUBLIC_RPC_ENDPOINT: Solana RPC endpoint (devnet/mainnet)
-# - NEXT_PUBLIC_PROGRAM_ID: EQUA program ID
+# - NEXT_PUBLIC_PROGRAM_ID: UNIA program ID
 
 # Run development server
 npm run dev
@@ -58,7 +58,7 @@ The app will be available at `http://localhost:3000`.
 
 ## Mobile Wallet Support
 
-EQUA supports three distinct wallet connection environments:
+UNIA supports three distinct wallet connection environments:
 
 ### Connection Environments
 
@@ -68,7 +68,7 @@ EQUA supports three distinct wallet connection environments:
 - One-click connection without redirects
 
 **2. Mobile In-App Browser** 📱
-- Access EQUA directly from within your wallet app (Phantom/Solflare in-app browser)
+- Access UNIA directly from within your wallet app (Phantom/Solflare in-app browser)
 - Uses the same extension adapters as desktop
 - Wallet is pre-injected via `window.solana`
 - Fastest connection method on mobile
@@ -84,7 +84,7 @@ EQUA supports three distinct wallet connection environments:
 
 #### Option 1: In-App Browser (Recommended)
 1. **Open wallet app** (Phantom or Solflare)
-2. **Use in-app browser** to visit EQUA
+2. **Use in-app browser** to visit UNIA
 3. **Connect instantly** - wallet is already available
 4. **Register and mint** - no redirects needed
 
@@ -95,7 +95,7 @@ EQUA supports three distinct wallet connection environments:
    - Or any Solana Mobile Stack (SMS) compatible wallet
 
 2. **Connect on mobile**:
-   - Visit EQUA in your mobile browser
+   - Visit UNIA in your mobile browser
    - Click **"Select Wallet"**
    - Choose your wallet from the list
    - You'll be redirected to your wallet app (deep link)
@@ -150,7 +150,7 @@ const wallets = [
 - ✅ **Solution**: Use wallet's in-app browser for fastest experience
 - **Alternative**: Install wallet app and use deep linking
   1. Install Phantom or Solflare mobile app
-  2. Open EQUA in Chrome/Safari (not in-app)
+  2. Open UNIA in Chrome/Safari (not in-app)
   3. Wallet adapter will automatically deep link to installed app
   4. Approve transaction in wallet app
   5. Browser will automatically redirect back
@@ -195,7 +195,7 @@ npm test:coverage        # Generate test coverage report
 ### Project Structure
 
 ```
-EQUA-FRONTEND/
+UNIA-FRONTEND/
 ├── app/                    # Next.js App Router pages
 ├── src/
 │   ├── components/         # React components
@@ -206,7 +206,7 @@ EQUA-FRONTEND/
 │   │   ├── program.ts     # Program PDAs and instructions
 │   │   └── constants.ts   # Program ID, seeds, RPC endpoint
 │   ├── utils/             # Utility functions
-│   │   ├── tokenFormat.ts # EQUA token formatting (6 decimals)
+│   │   ├── tokenFormat.ts # UNIA token formatting (6 decimals)
 │   │   └── registration.ts # User tiers and validation
 │   └── hooks/             # React hooks
 ├── __tests__/             # Jest tests
@@ -219,7 +219,7 @@ EQUA-FRONTEND/
 - **`src/providers/WalletProvider.tsx`**: Configures wallet adapters for both desktop and mobile
 - **`src/components/ui/WalletButton.tsx`**: Wallet connection button with timeout handling
 - **`src/lib/program.ts`**: Solana program interaction (PDAs, instructions)
-- **`src/utils/tokenFormat.ts`**: EQUA token amount formatting (6 decimals)
+- **`src/utils/tokenFormat.ts`**: UNIA token amount formatting (6 decimals)
 
 ### Testing
 
@@ -272,7 +272,7 @@ npm run build
 
 3. **Set environment variables**:
    - `NEXT_PUBLIC_RPC_ENDPOINT`: Your Solana RPC endpoint
-   - `NEXT_PUBLIC_PROGRAM_ID`: Your EQUA program ID
+   - `NEXT_PUBLIC_PROGRAM_ID`: Your UNIA program ID
 
 4. **Deploy**:
    - Click "Deploy site"
@@ -282,7 +282,7 @@ npm run build
 
 **Required:**
 - `NEXT_PUBLIC_RPC_ENDPOINT`: Solana RPC endpoint (e.g., `https://api.devnet.solana.com`)
-- `NEXT_PUBLIC_PROGRAM_ID`: EQUA program ID (e.g., `D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw`)
+- `NEXT_PUBLIC_PROGRAM_ID`: UNIA program ID (e.g., `B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2`)
 
 **Optional:**
 - `NODE_ENV`: `development` or `production` (auto-set by Netlify)
@@ -299,13 +299,13 @@ npm run build
 
 **Mobile:**
 1. Install Phantom Mobile or Solflare Mobile app
-2. Visit EQUA on mobile browser
+2. Visit UNIA on mobile browser
 3. Click "Select Wallet" button
 4. You'll be redirected to your wallet app
 5. Approve connection
 6. Return to browser automatically
 
-### Minting EQUA Tokens
+### Minting UNIA Tokens
 
 1. **Connect wallet** (see above)
 2. **Check eligibility**:
@@ -313,7 +313,7 @@ npm run build
    - User 101+: Referral code required
    - Minimum 0.05 SOL balance for transaction fees
 3. **Enter referral code** (if required)
-4. **Click "Mint EQUA"**
+4. **Click "Mint UNIA"**
 5. **Approve transaction** in wallet
 6. **Wait for confirmation** (devnet: ~5-10 seconds, mainnet: ~10-20 seconds)
 7. **Tokens minted!** Check your wallet or user dashboard
@@ -322,12 +322,12 @@ npm run build
 
 Mint rewards decrease as more users join:
 
-- **User #1**: 100,000 EQUA/attempt × 100 attempts
-- **Users #2-10**: 10,000 EQUA/attempt × 100 attempts
-- **Users #11-100**: 1,000 EQUA/attempt × 100 attempts
-- **Users #101-1000**: 100 EQUA/attempt
-- **Users #1001-10000**: 10 EQUA/attempt
-- **Users #10001-100000**: 1 EQUA/attempt
+- **User #1**: 100,000 UNIA/attempt × 100 attempts
+- **Users #2-10**: 10,000 UNIA/attempt × 100 attempts
+- **Users #11-100**: 1,000 UNIA/attempt × 100 attempts
+- **Users #101-1000**: 100 UNIA/attempt
+- **Users #1001-10000**: 10 UNIA/attempt
+- **Users #10001-100000**: 1 UNIA/attempt
 - **Users #100001+**: Continues to decrease logarithmically
 
 ### Referral System
@@ -343,7 +343,7 @@ Mint rewards decrease as more users join:
    - New code generated for each referral
 
 3. **Earn rewards**:
-   - Earn bonus EQUA for successful referrals
+   - Earn bonus UNIA for successful referrals
    - Track referral count in dashboard
 
 ## Contributing
@@ -360,7 +360,7 @@ Contributions welcome! Please follow these guidelines:
 
 - **Always use `npm install --legacy-peer-deps`** (Solana wallet adapter peer dependencies)
 - **Never create `src/app/`** directory (Next.js App Router uses root `app/`)
-- **Always use `tokenFormat.ts`** for EQUA token amounts (6 decimals)
+- **Always use `tokenFormat.ts`** for UNIA token amounts (6 decimals)
 - **Run `npm run typecheck`** before committing
 - **Add tests for new features** (focus on user journeys)
 
@@ -378,8 +378,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/brainstorm4x/EQUA-FRONTEND/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/brainstorm4x/EQUA-FRONTEND/discussions)
+- **Issues**: [GitHub Issues](https://github.com/brainstorm4x/UNIA-FRONTEND/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/brainstorm4x/UNIA-FRONTEND/discussions)
 - **Solana Docs**: [docs.solana.com](https://docs.solana.com)
 - **Mobile Wallet Adapter**: [Solana Mobile Docs](https://docs.solanamobile.com/react-native/wallet_adapter)
 

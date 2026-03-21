@@ -5,10 +5,10 @@
 
 import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
-import { createMintEquaInstruction, createMintTokensInstruction, TOKEN_PROGRAM_ID, PROGRAM_ID } from '@/lib/program';
+import { createMintUniaInstruction, createMintTokensInstruction, TOKEN_PROGRAM_ID, PROGRAM_ID } from '@/lib/program';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 
-describe('createMintEquaInstruction', () => {
+describe('createMintUniaInstruction', () => {
   // Mock public keys for testing (valid base58-encoded addresses)
   const userAccount = new PublicKey('C3r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
   const authority = new PublicKey('G7r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
@@ -16,7 +16,7 @@ describe('createMintEquaInstruction', () => {
   it('should create instruction with correct discriminator', () => {
     const amount = 10_000_000_000; // 10,000 EQUA in base units (6 decimals)
     
-    const instruction = createMintEquaInstruction(
+    const instruction = createMintUniaInstruction(
       userAccount,
       authority,
       amount
@@ -32,7 +32,7 @@ describe('createMintEquaInstruction', () => {
   it('should encode amount correctly as u64 little-endian', () => {
     const amount = 10_000_000_000; // 10,000 EQUA in base units
     
-    const instruction = createMintEquaInstruction(
+    const instruction = createMintUniaInstruction(
       userAccount,
       authority,
       amount
@@ -54,7 +54,7 @@ describe('createMintEquaInstruction', () => {
   it('should have correct account metas in order per IDL', () => {
     const amount = 1_000_000; // 1 EQUA
     
-    const instruction = createMintEquaInstruction(
+    const instruction = createMintUniaInstruction(
       userAccount,
       authority,
       amount
@@ -83,7 +83,7 @@ describe('createMintEquaInstruction', () => {
     ];
 
     testCases.forEach(amount => {
-      const instruction = createMintEquaInstruction(
+      const instruction = createMintUniaInstruction(
         userAccount,
         authority,
         amount

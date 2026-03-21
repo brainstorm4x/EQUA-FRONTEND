@@ -6,7 +6,7 @@
 [build.environment]
   NODE_VERSION = "20.18.0"
   
-[functions."update-eqx-price"]
+[functions."update-unx-price"]
 schedule = "0 * * * *"
 
 [functions."update-fx-rates"]

@@ -116,7 +116,7 @@ export async function createProgram(
   try {
     // Use cached IDL if available
     if (!cachedIdl) {
-      const response = await fetch("/idl/equa_token.json");
+      const response = await fetch("/idl/unia_token.json");
       if (!response.ok) {
         throw new Error("Failed to load IDL: " + response.statusText);
       }
@@ -367,7 +367,7 @@ export async function getMintMetadata(
 }
 
 /**
- * Fetches EQUA mint decimals from on-chain
+ * Fetches UNIA mint decimals from on-chain
  * Returns the expected value (6) as fallback if fetch fails
  * @param connection - Solana RPC connection
  * @returns Decimals value
@@ -377,7 +377,7 @@ export async function getEquaMintDecimals(connection: Connection): Promise<numbe
   const metadata = await getMintMetadata(connection, mintPDA);
   
   if (!metadata) {
-    console.warn('⚠️ Could not fetch EQUA mint decimals, using default (6)');
+    console.warn('⚠️ Could not fetch UNIA mint decimals, using default (6)');
     return 6; // Default to 6 decimals
   }
 
@@ -388,7 +388,7 @@ export async function getEquaMintDecimals(connection: Connection): Promise<numbe
       `This may indicate a configuration issue or wrong mint address.`
     );
   } else {
-    console.log('✅ EQUA mint decimals verified:', metadata.decimals);
+    console.log('✅ UNIA mint decimals verified:', metadata.decimals);
   }
 
   return metadata.decimals;
@@ -469,7 +469,7 @@ export async function verifyMintOwner(
   if (!mintAccountInfo) {
     throw new Error(
       `Mint account ${mintPubkey.toBase58()} does not exist. ` +
-      'The EQUA token mint needs to be created first.'
+      'The UNIA token mint needs to be created first.'
     );
   }
 
@@ -490,7 +490,7 @@ export async function verifyMintOwner(
   if (!mintOwner.equals(token2022PubKey)) {
     throw new Error(
       `❌ Mint owner mismatch.\n` +
-      `EQUA requires Token-2022.\n` +
+      `UNIA requires Token-2022.\n` +
       `Found: ${mintOwner.toBase58()}`
     );
   }
@@ -604,9 +604,9 @@ export function createInitializeUserInstruction(
   return instruction;
 }
 
-// ✅ Create mint_equa instruction (daily minting with cooldown)
-// This is the correct instruction to use for daily EQUA minting
-export function createMintEquaInstruction(
+// ✅ Create mint_unia instruction (daily minting with cooldown)
+// This is the correct instruction to use for daily UNIA minting
+export function createMintUniaInstruction(
   userAccount: PublicKey,
   authority: PublicKey,
   amount: number
@@ -620,7 +620,7 @@ export function createMintEquaInstruction(
   ]);
 
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Building mint_equa instruction:');
+    console.log('🔧 Building mint_unia instruction:');
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Amount (raw base units):', amount);
     console.log('  - Amount BN:', amountBN.toString());
@@ -645,9 +645,9 @@ export function createMintEquaInstruction(
   return instruction;
 }
 
-// ✅ Create mint_equa_tokens instruction (low-level token minting)
-// This is used internally by mint_equa, not for direct daily minting
-export function createMintEquaTokensInstruction(
+// ✅ Create mint_unia_tokens instruction (low-level token minting)
+// This is used internally by mint_unia, not for direct daily minting
+export function createMintUniaTokensInstruction(
   userAccount: PublicKey,
   userTokenAccount: PublicKey,
   mint: PublicKey,
@@ -671,7 +671,7 @@ export function createMintEquaTokensInstruction(
   ]);
 
   if (DEBUG_INSTRUCTIONS) {
-    console.log('🔧 Building mint_equa_tokens instruction:');
+    console.log('🔧 Building mint_unia_tokens instruction:');
     console.log('  - Discriminator:', Array.from(discriminator).join(', '));
     console.log('  - Amount (raw base units):', amount);
     console.log('  - Amount BN:', amountBN.toString());
@@ -701,7 +701,7 @@ export function createMintEquaTokensInstruction(
 }
 
 // ✅ Create mint_tokens instruction (15-account version aligned with backend IDL)
-// This is the correct instruction for daily EQUA minting on the deployed program
+// This is the correct instruction for daily UNIA minting on the deployed program
 // Account order: user_account, user_metadata, global_state, user_token_account, mint, mint_authority, 
 // referrer_account, business_registry, authority, locked_token_account, locked_token_ata, locked_token_pda, 
 // token_program, associated_token_program, system_program
@@ -743,7 +743,7 @@ export function createMintTokensInstruction(
   // Validate critical parameters before building instruction
   // ============================================================================
   
-  // Validate token program is Token-2022 (EQUA requires Token-2022 only)
+  // Validate token program is Token-2022 (UNIA requires Token-2022 only)
   const isToken2022 = tokenProgram.toBase58() === TOKEN_2022_PROGRAM_ADDRESS;
   
   if (!isToken2022) {
@@ -873,7 +873,7 @@ export function createRecordTransactionInstruction(
 }
 
 // ✅ Create transfer_tokens instruction (Anchor IDL-driven for Token-2022)
-// Uses the EQUA program's CPI to transfer_checked, ensuring proper Token-2022 handling
+// Uses the UNIA program's CPI to transfer_checked, ensuring proper Token-2022 handling
 export function createTransferTokensInstruction(
   senderUserAccount: PublicKey,
   senderTokenAccount: PublicKey,
@@ -908,7 +908,7 @@ export function createTransferTokensInstruction(
   // PREFLIGHT ASSERTIONS
   // ============================================================================
   
-  // Validate token program is Token-2022 (EQUA requires Token-2022 only)
+  // Validate token program is Token-2022 (UNIA requires Token-2022 only)
   const isToken2022 = tokenProgram.toBase58() === TOKEN_2022_PROGRAM_ADDRESS;
   
   if (!isToken2022) {
@@ -972,7 +972,7 @@ export function createTransferTokensInstruction(
  * Unlocks tokens after 4-year cliff vesting period (Tiers 1-3 only)
  * 
  * @param authority - User's wallet public key
- * @param mint - EQUA mint PDA
+ * @param mint - UNIA mint PDA
  * @returns TransactionInstruction ready to be added to a transaction
  */
 export function createUnlockTokensInstruction(

@@ -1,13 +1,13 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { EquaToken } from "../equa_token/target/types/equa_token";
+import { UniaToken } from "../unia_token/target/types/unia_token";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 async function main() {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.EquaToken as Program<EquaToken>;
+  const program = anchor.workspace.UniaToken as Program<UniaToken>;
 
   // Derive PDAs
   const [globalState] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -16,7 +16,7 @@ async function main() {
   );
 
   const [mint] = anchor.web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("equa-mint")],
+    [Buffer.from("unia-mint")],
     program.programId
   );
 
