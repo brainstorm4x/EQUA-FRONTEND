@@ -27,7 +27,7 @@ import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRaw 
 import { getUserLocaleCurrency, getPreferredCurrency, setPreferredCurrency, getSavedPreferredCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { fetchFxRates } from '@/utils/fxRateClient';
 import { getUniaPriceMultiFormat } from '@/utils/unxOracle';
-import { EquaPriceCalculator } from '@/utils/priceCalculator';
+import { UniaPriceCalculator } from '@/utils/priceCalculator';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
 import { useUserAccount } from '@/hooks/useUserAccount';
 import { useEquaBalance } from '@/hooks/useEquaBalance';
@@ -633,12 +633,12 @@ const SendModal: FC<SendModalProps> = ({
     const fetchPrice = async () => {
       setIsLoadingPrice(true);
       // Compute price from on-chain transaction count (matches PriceDisplay.tsx pattern)
-      const equaPriceUsd = EquaPriceCalculator.calculatePrice(totalTransactions);
+      const uniaPriceUsd = UniaPriceCalculator.calculatePrice(totalTransactions);
       try {
         // Use the already-initialized localCurrency state
         const currencyCode = localCurrency;
         
-        const priceData = await getUniaPriceMultiFormat(equaPriceUsd, currencyCode, connection);
+        const priceData = await getUniaPriceMultiFormat(uniaPriceUsd, currencyCode, connection);
         setUniaPrice(priceData.localCurrency);
         
         // Log FX metadata for debugging
@@ -650,7 +650,7 @@ const SendModal: FC<SendModalProps> = ({
         }
       } catch (err) {
         console.warn('Failed to fetch UNIA price:', err);
-        setUniaPrice(equaPriceUsd);
+        setUniaPrice(uniaPriceUsd);
       } finally {
         setIsLoadingPrice(false);
       }
