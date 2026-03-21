@@ -663,9 +663,9 @@ const SendModal: FC<SendModalProps> = ({
     setLocalCurrencyAmount(value);
     
     // Convert to UNIA
-    if (value && !isNaN(parseFloat(value)) && equaPrice > 0) {
+    if (value && !isNaN(parseFloat(value)) && uniaPrice > 0) {
       const localAmount = parseFloat(value);
-      const equaAmount = localAmount / equaPrice;
+      const equaAmount = localAmount / uniaPrice;
       setAmount(equaAmount.toFixed(6));
     } else {
       setAmount('');
@@ -677,9 +677,9 @@ const SendModal: FC<SendModalProps> = ({
     setAmount(value);
     
     // Convert to local currency
-    if (value && !isNaN(parseFloat(value)) && equaPrice > 0) {
+    if (value && !isNaN(parseFloat(value)) && uniaPrice > 0) {
       const equaAmount = parseFloat(value);
-      const localAmount = equaAmount * equaPrice;
+      const localAmount = equaAmount * uniaPrice;
       setLocalCurrencyAmount(localAmount.toFixed(2));
     } else {
       setLocalCurrencyAmount('');
