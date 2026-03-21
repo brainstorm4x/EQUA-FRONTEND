@@ -4,7 +4,7 @@ const idlPath = './public/idl/equa_token.json';
 const idl = JSON.parse(fs.readFileSync(idlPath, 'utf8'));
 
 // Add complete type definitions to accounts
-// Note: locked_until field removed per EQUA Whitepaper 2025
+// Note: locked_until field removed per UNIA Whitepaper 2025
 idl.accounts = [
   {
     name: "GlobalState",

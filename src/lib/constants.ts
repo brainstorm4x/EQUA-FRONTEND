@@ -5,13 +5,13 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID as SPL_ASSOCIATED_TOKEN_PROGRAM_ID 
 } from '@solana/spl-token';
 
-// Support both NEXT_PUBLIC_PROGRAM_ID (preferred) and legacy NEXT_PUBLIC_EQUA_PROGRAM_ID
+// Support both NEXT_PUBLIC_PROGRAM_ID (preferred) and legacy NEXT_PUBLIC_UNIA_PROGRAM_ID
 export const PROGRAM_ID = new PublicKey(
-  process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID || 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw'
+  process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID || 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2'
 );
 
 // Token Program Selection
-// CRITICAL: EQUA uses Token-2022 ONLY. Standard SPL Token is not supported.
+// CRITICAL: UNIA uses Token-2022 ONLY. Standard SPL Token is not supported.
 // The backend program is deployed with Token-2022 and all operations require it.
 export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
 
@@ -55,12 +55,12 @@ if (typeof window !== 'undefined') {
 // ============================================================================
 // Token Mint Configuration
 // ============================================================================
-// EQUA token uses 6 decimals (1 EQUA = 1,000,000 base units)
+// UNIA token uses 6 decimals (1 UNIA = 1,000,000 base units)
 // This is the expected decimals value for the on-chain mint account
 export const EQUA_DECIMALS = 6;
 export const EQUA_DECIMAL_MULTIPLIER = Math.pow(10, EQUA_DECIMALS);
 
-// EQUA mint address (derived from PDA in program)
+// UNIA mint address (derived from PDA in program)
 // This will be computed from getMintPDA() but we document the expected value
 // The actual mint decimals should be fetched from on-chain to ensure accuracy
 
@@ -123,7 +123,7 @@ export function getEnvConfigWarnings(): string[] {
 
 // PDA Seeds (must match Rust backend exactly)
 export const GLOBAL_STATE_SEED = 'global-state';
-export const MINT_SEED = 'equa-mint';
+export const MINT_SEED = 'unia-mint';
 export const MINT_AUTHORITY_SEED = 'mint-authority';
 export const USER_ACCOUNT_SEED = 'user-account';
 export const USER_META_SEED = 'user-meta';

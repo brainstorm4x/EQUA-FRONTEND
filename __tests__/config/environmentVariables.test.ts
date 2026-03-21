@@ -39,7 +39,7 @@ describe('Environment Variables', () => {
 
   describe('NEXT_PUBLIC_PROGRAM_ID', () => {
     const originalProgramId = process.env.NEXT_PUBLIC_PROGRAM_ID;
-    const originalLegacyId = process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID;
+    const originalLegacyId = process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID;
 
     afterEach(() => {
       // Restore original values
@@ -49,30 +49,30 @@ describe('Environment Variables', () => {
         delete process.env.NEXT_PUBLIC_PROGRAM_ID;
       }
       if (originalLegacyId !== undefined) {
-        process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID = originalLegacyId;
+        process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID = originalLegacyId;
       } else {
-        delete process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID;
+        delete process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID;
       }
     });
 
     it('should have a default program ID when not set', () => {
       delete process.env.NEXT_PUBLIC_PROGRAM_ID;
-      delete process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID;
+      delete process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID;
       
       // Re-import to get fresh value
       jest.resetModules();
       const { PROGRAM_ID } = require('@/lib/constants');
       
-      expect(PROGRAM_ID.toBase58()).toBe('D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw');
+      expect(PROGRAM_ID.toBase58()).toBe('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
     });
 
     it('should prefer NEXT_PUBLIC_PROGRAM_ID over legacy variable', () => {
       // Use valid Solana public keys for testing
-      const preferredId = 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw';
-      const legacyId = 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw';
+      const preferredId = 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2';
+      const legacyId = 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2';
       
       process.env.NEXT_PUBLIC_PROGRAM_ID = preferredId;
-      process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID = legacyId;
+      process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID = legacyId;
       
       // Re-import to get fresh value
       jest.resetModules();
@@ -83,10 +83,10 @@ describe('Environment Variables', () => {
 
     it('should fall back to legacy variable when preferred is not set', () => {
       // Use valid Solana public key for testing
-      const legacyId = 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw';
+      const legacyId = 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2';
       
       delete process.env.NEXT_PUBLIC_PROGRAM_ID;
-      process.env.NEXT_PUBLIC_EQUA_PROGRAM_ID = legacyId;
+      process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID = legacyId;
       
       // Re-import to get fresh value
       jest.resetModules();

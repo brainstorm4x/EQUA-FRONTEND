@@ -12,7 +12,7 @@ export default function AboutPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <Logo size={40} />
-              <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+              <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
             </Link>
             <nav className="flex items-center gap-6">
               <Link href="/" className="text-purple-200 hover:text-white transition-colors">
@@ -49,7 +49,7 @@ export default function AboutPage() {
                 <Logo size={80} />
               </div>
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                About EQUA
+                About UNIA
               </h1>
               <p className="text-purple-300 text-lg">Building a Fair Economic Layer on Solana</p>
             </div>
@@ -58,17 +58,17 @@ export default function AboutPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Our Mission</h2>
               
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What is EQUA?</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What is UNIA?</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA is a <strong className="text-white">utility-first token</strong> built on the Solana blockchain that creates a fair economic system where value appreciation flows from real use, not speculation or manipulation. Unlike traditional tokens designed for trading, EQUA is fundamentally designed for buying and selling goods and services—creating a genuine economy where everyone benefits from participation.
+                UNIA is a <strong className="text-white">utility-first token</strong> built on the Solana blockchain that creates a fair economic system where value appreciation flows from real use, not speculation or manipulation. Unlike traditional tokens designed for trading, UNIA is fundamentally designed for buying and selling goods and services—creating a genuine economy where everyone benefits from participation.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why We Built EQUA</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why We Built UNIA</h3>
               <p className="text-purple-200 leading-relaxed">
-                In traditional financial systems, people watch their savings lose purchasing power to inflation. With EQUA, the opposite happens: as the ecosystem grows through genuine transactions, token value appreciates. Every action you take—every purchase, every transfer—strengthens the system and rewards those who believe in it.
+                In traditional financial systems, people watch their savings lose purchasing power to inflation. With UNIA, the opposite happens: as the ecosystem grows through genuine transactions, token value appreciates. Every action you take—every purchase, every transfer—strengthens the system and rewards those who believe in it.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                We built EQUA to solve a fundamental problem: most people never get early access to systems that create wealth. By the time an opportunity becomes widely known, most of the compounding benefit has already happened. EQUA changes this with transparent rules and equal access for everyone.
+                We built UNIA to solve a fundamental problem: most people never get early access to systems that create wealth. By the time an opportunity becomes widely known, most of the compounding benefit has already happened. UNIA changes this with transparent rules and equal access for everyone.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Core Principles</h3>
@@ -86,29 +86,29 @@ export default function AboutPage() {
               
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Token Mechanics Overview</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA&apos;s fundamental design principle is elegant: <strong className="text-white">token value appreciation is directly linked to genuine economic activity</strong>. Every time someone uses EQUA to buy something, sell something, or transfer value, the entire network benefits through measurable price appreciation.
+                UNIA&apos;s fundamental design principle is elegant: <strong className="text-white">token value appreciation is directly linked to genuine economic activity</strong>. Every time someone uses UNIA to buy something, sell something, or transfer value, the entire network benefits through measurable price appreciation.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Minting Tiers and Referral System</h3>
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <h4 className="text-lg font-semibold text-white mb-3">User-Based Minting Tiers</h4>
                 <p className="text-purple-200 leading-relaxed mb-3">
-                  EQUA rewards early believers with elevated minting rates that decrease as adoption grows, creating organic scarcity:
+                  UNIA rewards early believers with elevated minting rates that decrease as adoption grows, creating organic scarcity:
                 </p>
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
-                  <li><strong className="text-white">User #1:</strong> 100,000 EQUA per attempt × 100 attempts</li>
-                  <li><strong className="text-white">Users #2-10:</strong> 10,000 EQUA per attempt × 100 attempts</li>
-                  <li><strong className="text-white">Users #11-100:</strong> 1,000 EQUA per attempt × 100 attempts</li>
-                  <li><strong className="text-white">Users #101-1,000:</strong> 100 EQUA per attempt</li>
-                  <li><strong className="text-white">Users #1,001-10,000:</strong> 10 EQUA per attempt</li>
-                  <li><strong className="text-white">Users #10,001+:</strong> Progressively decreasing rates (1 EQUA → 0.1 EQUA → 0.01 EQUA → 0.001 EQUA → 0.0005 EQUA)</li>
+                  <li><strong className="text-white">User #1:</strong> 100,000 UNIA per attempt × 100 attempts</li>
+                  <li><strong className="text-white">Users #2-10:</strong> 10,000 UNIA per attempt × 100 attempts</li>
+                  <li><strong className="text-white">Users #11-100:</strong> 1,000 UNIA per attempt × 100 attempts</li>
+                  <li><strong className="text-white">Users #101-1,000:</strong> 100 UNIA per attempt</li>
+                  <li><strong className="text-white">Users #1,001-10,000:</strong> 10 UNIA per attempt</li>
+                  <li><strong className="text-white">Users #10,001+:</strong> Progressively decreasing rates (1 UNIA → 0.1 UNIA → 0.01 UNIA → 0.001 UNIA → 0.0005 UNIA)</li>
                 </ul>
               </div>
 
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <h4 className="text-lg font-semibold text-white mb-3">Referral Rewards (Credit-Based System)</h4>
                 <p className="text-purple-200 leading-relaxed">
-                  EQUA&apos;s referral system rewards network growth through a merit-based credit system. When someone you refer successfully registers and joins the ecosystem, you earn <strong className="text-white">referral credits</strong> based on their account type:
+                  UNIA&apos;s referral system rewards network growth through a merit-based credit system. When someone you refer successfully registers and joins the ecosystem, you earn <strong className="text-white">referral credits</strong> based on their account type:
                 </p>
                 
                 <div className="bg-purple-500/10 rounded-lg p-4 mt-3 border border-purple-500/20">
@@ -140,19 +140,19 @@ export default function AboutPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Price Appreciation Mechanism</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA uses a <strong className="text-white">9-tier compounding price model</strong> with transparent, predictable growth:
+                UNIA uses a <strong className="text-white">9-tier compounding price model</strong> with transparent, predictable growth:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li><strong className="text-white">Tiers 1-8 (Compounding Phase):</strong> Constant 0.01% growth rate per epoch, compounding on the previous value. Price starts at $0.01 and grows to $500,000 based on transaction volume.</li>
-                <li><strong className="text-white">Tier 9 (Linear Phase):</strong> Once EQUA reaches $500,000 in EQX terms, growth becomes linear at $250 per epoch (1,000 transactions) with a monthly cap of $25,000 to ensure sustainable, predictable growth indefinitely.</li>
+                <li><strong className="text-white">Tier 9 (Linear Phase):</strong> Once UNIA reaches $500,000 in UNX terms, growth becomes linear at $250 per epoch (1,000 transactions) with a monthly cap of $25,000 to ensure sustainable, predictable growth indefinitely.</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Important:</strong> All pricing is denominated in <strong className="text-white">EQX (EQUA Index)</strong>—a diversified basket of currencies (57%), gold (35%), and oil (8%). USD values shown are for convenience only. This protects users from single-currency inflation and economic shocks.
+                <strong className="text-white">Important:</strong> All pricing is denominated in <strong className="text-white">UNX (UNIA Index)</strong>—a diversified basket of currencies (57%), gold (35%), and oil (8%). USD values shown are for convenience only. This protects users from single-currency inflation and economic shocks.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">EQX Basket Oracle</h3>
               <p className="text-purple-200 leading-relaxed">
-                The EQX oracle updates every 4 hours using Hermes/Pyth price feeds, ensuring EQUA&apos;s value stays anchored to real-world economic conditions, not just one nation&apos;s monetary policy. This provides inflation resistance and stability across global economic shocks.
+                The UNX oracle updates every 4 hours using Hermes/Pyth price feeds, ensuring UNIA&apos;s value stays anchored to real-world economic conditions, not just one nation&apos;s monetary policy. This provides inflation resistance and stability across global economic shocks.
               </p>
             </section>
 
@@ -162,7 +162,7 @@ export default function AboutPage() {
               
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Built on Solana Blockchain</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA leverages Solana&apos;s industry-leading performance and low costs to make blockchain accessible to everyone:
+                UNIA leverages Solana&apos;s industry-leading performance and low costs to make blockchain accessible to everyone:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li><strong className="text-white">Sub-second finality:</strong> Transactions complete instantly</li>
@@ -173,7 +173,7 @@ export default function AboutPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">SPL Token-2022 (Token Extensions)</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA uses the latest SPL Token-2022 standard, enabling advanced features like transfer hooks, permanent delegates, and custom metadata that make our utility-first design possible. This is <strong className="text-white">not the standard SPL Token</strong>—it&apos;s the next generation of token infrastructure on Solana.
+                UNIA uses the latest SPL Token-2022 standard, enabling advanced features like transfer hooks, permanent delegates, and custom metadata that make our utility-first design possible. This is <strong className="text-white">not the standard SPL Token</strong>—it&apos;s the next generation of token infrastructure on Solana.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Anchor Framework</h3>
@@ -187,10 +187,10 @@ export default function AboutPage() {
                   <strong className="text-yellow-400">Current Status: Solana Devnet</strong>
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
-                  EQUA is currently deployed on Solana Devnet for testing and community validation. This allows us to refine the mechanics, gather feedback, and ensure everything works flawlessly before mainnet launch.
+                  UNIA is currently deployed on Solana Devnet for testing and community validation. This allows us to refine the mechanics, gather feedback, and ensure everything works flawlessly before mainnet launch.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
-                  <strong className="text-white">Program ID (Devnet):</strong> <code className="text-purple-300 text-sm">D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw</code>
+                  <strong className="text-white">Program ID (Devnet):</strong> <code className="text-purple-300 text-sm">B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2</code>
                 </p>
               </div>
             </section>
@@ -211,12 +211,12 @@ export default function AboutPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Community-Driven Development</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA is built <strong className="text-white">by the community, for the community</strong>. We actively listen to feedback, iterate on improvements, and ensure that every decision serves the long-term health of the ecosystem. Your voice matters—participate in discussions, suggest features, and help shape EQUA&apos;s future.
+                UNIA is built <strong className="text-white">by the community, for the community</strong>. We actively listen to feedback, iterate on improvements, and ensure that every decision serves the long-term health of the ecosystem. Your voice matters—participate in discussions, suggest features, and help shape UNIA&apos;s future.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Open Source Commitment</h3>
               <p className="text-purple-200 leading-relaxed">
-                All of EQUA&apos;s code is open source and available for review, audit, and contribution. Transparency isn&apos;t just a principle—it&apos;s how we build trust.
+                All of UNIA&apos;s code is open source and available for review, audit, and contribution. Transparency isn&apos;t just a principle—it&apos;s how we build trust.
               </p>
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <p className="text-purple-200 leading-relaxed">
@@ -249,14 +249,14 @@ export default function AboutPage() {
               <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-8 border border-purple-500/30 text-center">
                 <h2 className="text-2xl font-bold text-white mb-4">Ready to Get Started?</h2>
                 <p className="text-purple-200 text-lg leading-relaxed mb-6">
-                  Join the EQUA ecosystem today and be part of building a fairer economic future.
+                  Join the UNIA ecosystem today and be part of building a fairer economic future.
                 </p>
                 <div className="flex flex-wrap gap-4 justify-center">
                   <Link
                     href="/mint"
                     className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg"
                   >
-                    Start Minting EQUA →
+                    Start Minting UNIA →
                   </Link>
                   <Link
                     href="/whitepaper"
@@ -270,7 +270,7 @@ export default function AboutPage() {
 
             {/* Footer */}
             <div className="text-center pt-8 border-t border-purple-500/30">
-              <p className="text-2xl font-bold text-white mb-2">EQUA</p>
+              <p className="text-2xl font-bold text-white mb-2">UNIA</p>
               <p className="text-purple-300">Equal Access. Equal Opportunity. Equal Economy.</p>
             </div>
           </article>

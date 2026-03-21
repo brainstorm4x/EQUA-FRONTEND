@@ -3,7 +3,7 @@
  */
 
 import { PublicKey } from '@solana/web3.js';
-import { generateSolanaPayUrl, generateEquaSolanaPayUrl } from '@/utils/solanaPay';
+import { generateSolanaPayUrl, generateUniaSolanaPayUrl } from '@/utils/solanaPay';
 import { TOKEN_PROGRAM_ID } from '@/lib/constants';
 
 describe('Solana Pay URL Generation', () => {
@@ -124,14 +124,14 @@ describe('Solana Pay URL Generation', () => {
     });
   });
 
-  describe('generateEquaSolanaPayUrl', () => {
+  describe('generateUniaSolanaPayUrl', () => {
     it('should generate EQUA-specific URL with Token-2022 program', () => {
-      const url = generateEquaSolanaPayUrl(mockRecipient, mockMint);
+      const url = generateUniaSolanaPayUrl(mockRecipient, mockMint);
       
       expect(url).toContain(`solana:${mockRecipient.toBase58()}`);
       expect(url).toContain(`spl-token=${mockMint.toBase58()}`);
-      expect(url).toContain('label=EQUA+Token');
-      expect(url).toContain('message=Send+EQUA+tokens+%28Token-2022%29');
+      expect(url).toContain('label=UNIA+Token');
+      expect(url).toContain('message=Send+UNIA+tokens+%28Token-2022%29');
       expect(url).toContain(`token-program=${TOKEN_PROGRAM_ID.toBase58()}`);
     });
 
@@ -139,14 +139,14 @@ describe('Solana Pay URL Generation', () => {
       const recipientStr = mockRecipient.toBase58();
       const mintStr = mockMint.toBase58();
       
-      const url = generateEquaSolanaPayUrl(recipientStr, mintStr);
+      const url = generateUniaSolanaPayUrl(recipientStr, mintStr);
       
       expect(url).toContain(`solana:${recipientStr}`);
       expect(url).toContain(`spl-token=${mintStr}`);
     });
 
     it('should always include Token-2022 program ID from constants', () => {
-      const url = generateEquaSolanaPayUrl(mockRecipient, mockMint);
+      const url = generateUniaSolanaPayUrl(mockRecipient, mockMint);
       
       // Should use the TOKEN_PROGRAM_ID from constants
       expect(url).toContain(`token-program=${TOKEN_PROGRAM_ID.toBase58()}`);

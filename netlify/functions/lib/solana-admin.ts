@@ -53,14 +53,14 @@ export function getConnection(): Connection {
 }
 
 /**
- * Get EQUA program ID
+ * Get UNIA program ID
  * 
  * Uses NEXT_PUBLIC_PROGRAM_ID from environment, defaults to known devnet deployment
  * 
  * @returns PublicKey of the EQUA token program
  */
 export function getProgramId(): PublicKey {
-  const programIdStr = process.env.NEXT_PUBLIC_PROGRAM_ID || 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw';
+  const programIdStr = process.env.NEXT_PUBLIC_PROGRAM_ID || 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2';
   return new PublicKey(programIdStr);
 }
 
@@ -68,9 +68,9 @@ export function getProgramId(): PublicKey {
  * Derive BusinessRegistry PDA
  * 
  * PDA Seeds: ["business-registry"]
- * Must match the seed defined in the EQUA backend program
+ * Must match the seed defined in the UNIA backend program
  * 
- * @param programId - The EQUA program ID
+ * @param programId - The UNIA program ID
  * @returns PublicKey of the BusinessRegistry PDA
  */
 export function getBusinessRegistryPDA(programId: PublicKey): PublicKey {

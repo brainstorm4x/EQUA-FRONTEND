@@ -1,6 +1,6 @@
 /**
  * Tests for the Home/Landing Page
- * Validates CTA behavior, navigation, and EQUA Logo display
+ * Validates CTA behavior, navigation, and UNIA Logo display
  */
 
 import React from 'react';
@@ -89,7 +89,7 @@ describe('Home/Landing Page', () => {
       render(<HomePage />);
       
       // Check for main heading
-      expect(screen.getByText('Welcome to EQUA Token')).toBeInTheDocument();
+      expect(screen.getByText('Welcome to UNIA Token')).toBeInTheDocument();
       
       // Check for description
       expect(screen.getByText(/A revolutionary token system/i)).toBeInTheDocument();
@@ -101,7 +101,7 @@ describe('Home/Landing Page', () => {
     it('should display the logo and title in header', () => {
       render(<HomePage />);
       
-      expect(screen.getByText('EQUA Token')).toBeInTheDocument();
+      expect(screen.getByText('UNIA Token')).toBeInTheDocument();
     });
 
     it('should display features section', () => {
@@ -113,19 +113,19 @@ describe('Home/Landing Page', () => {
     });
   });
 
-  describe('EQUA Logo Display', () => {
-    it('should display EQUA Logo in hero section above welcome text', () => {
+  describe('UNIA Logo Display', () => {
+    it('should display UNIA Logo in hero section above welcome text', () => {
       render(<HomePage />);
       
-      // Check for EQUA Logo images (header + hero section)
-      const logos = screen.getAllByAltText('EQUA Logo');
+      // Check for UNIA Logo images (header + hero section)
+      const logos = screen.getAllByAltText('UNIA Logo');
       expect(logos.length).toBeGreaterThanOrEqual(2); // At least header and hero
     });
 
-    it('should display EQUA Logo in header', () => {
+    it('should display UNIA Logo in header', () => {
       render(<HomePage />);
       
-      const logos = screen.getAllByAltText('EQUA Logo');
+      const logos = screen.getAllByAltText('UNIA Logo');
       // Header logo should be 40px (check by style)
       const headerLogo = logos.find(logo => 
         logo.style.height === '40px' || 
@@ -134,10 +134,10 @@ describe('Home/Landing Page', () => {
       expect(headerLogo).toBeInTheDocument();
     });
 
-    it('should display larger EQUA Logo in hero section', () => {
+    it('should display larger UNIA Logo in hero section', () => {
       render(<HomePage />);
       
-      const logos = screen.getAllByAltText('EQUA Logo');
+      const logos = screen.getAllByAltText('UNIA Logo');
       // Hero logo should be 120px (check by style)
       const heroLogo = logos.find(logo => 
         logo.style.height === '120px' ||
@@ -157,16 +157,16 @@ describe('Home/Landing Page', () => {
     it('should use SVG format for all logos', () => {
       render(<HomePage />);
       
-      const logos = screen.getAllByAltText('EQUA Logo');
+      const logos = screen.getAllByAltText('UNIA Logo');
       logos.forEach(logo => {
-        expect(logo).toHaveAttribute('src', '/branding/equa-logo.svg');
+        expect(logo).toHaveAttribute('src', '/branding/unia-logo-dark.svg');
       });
     });
 
     it('should use standard img tags for logos', () => {
       render(<HomePage />);
       
-      const logos = screen.getAllByAltText('EQUA Logo');
+      const logos = screen.getAllByAltText('UNIA Logo');
       logos.forEach(logo => {
         expect(logo.tagName).toBe('IMG');
       });
@@ -215,7 +215,7 @@ describe('Home/Landing Page', () => {
       render(<HomePage />);
       
       // The program ID is displayed in shortened form
-      expect(screen.getByText('GR1Xr...wok7C')).toBeInTheDocument();
+      expect(screen.getByText('B2zocF...kDfx2')).toBeInTheDocument();
     });
   });
 
@@ -239,10 +239,10 @@ describe('Home/Landing Page', () => {
       expect(ctaButton).toHaveTextContent(/get started/i);
     });
 
-    it('should have accessible EQUA Logo images', () => {
+    it('should have accessible UNIA Logo images', () => {
       render(<HomePage />);
       
-      const logos = screen.getAllByRole('img', { name: 'EQUA Logo' });
+      const logos = screen.getAllByRole('img', { name: 'UNIA Logo' });
       expect(logos.length).toBeGreaterThanOrEqual(2);
     });
   });
@@ -251,12 +251,12 @@ describe('Home/Landing Page', () => {
     it('should provide clear path from landing page to mint page', () => {
       render(<HomePage />);
       
-      // User lands on home page and sees EQUA branding
-      const logos = screen.getAllByAltText('EQUA Logo');
+      // User lands on home page and sees UNIA branding
+      const logos = screen.getAllByAltText('UNIA Logo');
       expect(logos.length).toBeGreaterThan(0);
       
       // User sees welcome message
-      expect(screen.getByText('Welcome to EQUA Token')).toBeInTheDocument();
+      expect(screen.getByText('Welcome to UNIA Token')).toBeInTheDocument();
       
       // User can navigate to mint page via CTA button
       const ctaButton = screen.getByTestId('get-started-cta');
@@ -284,7 +284,7 @@ describe('Home/Landing Page', () => {
       jest.clearAllMocks();
     });
 
-    it('should show "Mint EQUA" button for registered users', async () => {
+    it('should show "Mint UNIA" button for registered users', async () => {
       const { useWallet } = require('@solana/wallet-adapter-react');
       const { fetchUserMetadata } = require('@/utils/userMetadata');
       
@@ -304,12 +304,12 @@ describe('Home/Landing Page', () => {
       render(<HomePage />);
       
       // Wait for async check to complete
-      await screen.findByTestId('mint-equa-cta');
+      await screen.findByTestId('mint-unia-cta');
       
-      // Should show "Mint EQUA" link (this is rendered directly in app/page.tsx as a Link, not via GetStartedButton)
-      const mintButton = screen.getByTestId('mint-equa-cta');
+      // Should show "Mint UNIA" link (this is rendered directly in app/page.tsx as a Link, not via GetStartedButton)
+      const mintButton = screen.getByTestId('mint-unia-cta');
       expect(mintButton).toBeInTheDocument();
-      expect(mintButton).toHaveTextContent('Mint EQUA');
+      expect(mintButton).toHaveTextContent('Mint UNIA');
       expect(mintButton).toHaveAttribute('href', '/mint');
       
       // Should NOT show "Get Started" button
@@ -341,8 +341,8 @@ describe('Home/Landing Page', () => {
       const getStartedButton = screen.getByTestId('get-started-cta');
       expect(getStartedButton).toHaveTextContent('Get Started');
       
-      // Should NOT show "Mint EQUA" button
-      expect(screen.queryByTestId('mint-equa-cta')).not.toBeInTheDocument();
+      // Should NOT show "Mint UNIA" button
+      expect(screen.queryByTestId('mint-unia-cta')).not.toBeInTheDocument();
     });
 
     it('should not redirect registered users to mint page', async () => {
@@ -372,13 +372,13 @@ describe('Home/Landing Page', () => {
       render(<HomePage />);
       
       // Wait for async check to complete
-      await screen.findByTestId('mint-equa-cta');
+      await screen.findByTestId('mint-unia-cta');
       
       // Should NOT have called router.push
       expect(mockPush).not.toHaveBeenCalled();
       
       // Page should still be rendered (not redirected)
-      expect(screen.getByText('Welcome to EQUA Token')).toBeInTheDocument();
+      expect(screen.getByText('Welcome to UNIA Token')).toBeInTheDocument();
     });
 
     it('should handle registration check errors gracefully', async () => {
@@ -408,8 +408,8 @@ describe('Home/Landing Page', () => {
       const getStartedButton = screen.getByTestId('get-started-cta');
       expect(getStartedButton).toBeInTheDocument();
       
-      // Should NOT show "Mint EQUA" button
-      expect(screen.queryByTestId('mint-equa-cta')).not.toBeInTheDocument();
+      // Should NOT show "Mint UNIA" button
+      expect(screen.queryByTestId('mint-unia-cta')).not.toBeInTheDocument();
       
       // Should have logged error
       await waitFor(() => {

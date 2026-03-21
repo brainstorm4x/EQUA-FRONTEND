@@ -1,7 +1,7 @@
 /**
- * Netlify API Function: Get EQX Price History
+ * Netlify API Function: Get UNX Price History
  * 
- * On-demand function to query historical EQX prices for charts/analysis
+ * On-demand function to query historical UNX prices for charts/analysis
  * 
  * Query params:
  * - ?from=YYYY-MM-DD (optional, default: 7 days ago)
@@ -10,7 +10,7 @@
  */
 
 import { Handler } from '@netlify/functions';
-import { getEqxHistory, EqxPriceSnapshot } from './lib/blobStorage';
+import { getUnxHistory, UnxPriceSnapshot } from './lib/blobStorage';
 
 // ============================================================================
 // Helper Functions
@@ -38,8 +38,8 @@ function parseDate(dateString: string | undefined, defaultDate: Date): Date {
 /**
  * Aggregate hourly data to daily averages
  */
-function aggregateToDaily(snapshots: EqxPriceSnapshot[]): EqxPriceSnapshot[] {
-  const dailyMap = new Map<string, EqxPriceSnapshot[]>();
+function aggregateToDaily(snapshots: UnxPriceSnapshot[]): UnxPriceSnapshot[] {
+  const dailyMap = new Map<string, UnxPriceSnapshot[]>();
   
   // Group by date
   for (const snapshot of snapshots) {
@@ -53,7 +53,7 @@ function aggregateToDaily(snapshots: EqxPriceSnapshot[]): EqxPriceSnapshot[] {
   }
   
   // Calculate daily averages
-  const dailySnapshots: EqxPriceSnapshot[] = [];
+  const dailySnapshots: UnxPriceSnapshot[] = [];
   
   for (const [dateKey, daySnapshots] of dailyMap) {
     const avgPrice = daySnapshots.reduce((sum, s) => sum + s.price, 0) / daySnapshots.length;
@@ -101,10 +101,10 @@ const handler: Handler = async (event, context) => {
     const toDate = parseDate(params.to, now);
     const interval = params.interval === 'daily' ? 'daily' : 'hourly';
     
-    console.log(`Fetching EQX history from ${fromDate.toISOString()} to ${toDate.toISOString()}, interval: ${interval}`);
+    console.log(`Fetching UNX history from ${fromDate.toISOString()} to ${toDate.toISOString()}, interval: ${interval}`);
     
     // Fetch historical data
-    let snapshots = await getEqxHistory(fromDate, toDate);
+    let snapshots = await getUnxHistory(fromDate, toDate);
     
     // Aggregate to daily if requested
     if (interval === 'daily') {
@@ -138,7 +138,7 @@ const handler: Handler = async (event, context) => {
       }),
     };
   } catch (error) {
-    console.error('Error fetching EQX history:', error);
+    console.error('Error fetching UNX history:', error);
     
     return {
       statusCode: 500,

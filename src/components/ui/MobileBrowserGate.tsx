@@ -9,7 +9,7 @@ import { FC } from 'react';
  * Android/iOS).  Deep-linking to wallet extensions is unreliable in these browsers,
  * so we guide the user toward the two supported paths instead:
  *
- *   1. Download the EQUA Flutter mobile app (available on iOS and Android)
+ *   1. Download the UNIA Flutter mobile app (available on iOS and Android)
  *   2. Switch to a desktop browser with a Phantom or Solflare extension installed
  *
  * This component intentionally does NOT expose any wallet-connection UI.
@@ -25,18 +25,18 @@ export const MobileBrowserGate: FC = () => {
       {/* Headline */}
       <div>
         <h2 className="text-xl font-bold text-white mb-2">
-          EQUA works best on desktop or in our mobile app
+          UNIA works best on desktop or in our mobile app
         </h2>
         <p className="text-purple-300 text-sm leading-relaxed">
           For the best experience, please use a desktop browser with a Phantom or Solflare
-          extension, or download the EQUA app for your phone.
+          extension, or download the UNIA app for your phone.
         </p>
       </div>
 
       {/* App store buttons */}
       <div className="flex flex-col gap-3 w-full">
         <a
-          href="https://apps.apple.com/app/equa"
+          href="https://apps.apple.com/app/unia"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-3 bg-white text-black font-semibold py-3 px-5 rounded-xl transition-opacity hover:opacity-90 text-sm"
@@ -49,7 +49,7 @@ export const MobileBrowserGate: FC = () => {
         </a>
 
         <a
-          href="https://play.google.com/store/apps/details?id=com.equa.app"
+          href="https://play.google.com/store/apps/details?id=com.unia.app"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-5 rounded-xl transition-colors text-sm"

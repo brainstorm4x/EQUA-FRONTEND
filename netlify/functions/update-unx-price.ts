@@ -1,14 +1,14 @@
 /**
- * Netlify Scheduled Function: Update EQX Price Oracle
+ * Netlify Scheduled Function: Update UNX Price Oracle
  * 
  * Schedule: Hourly (0 * * * *)
  * 
  * Tasks:
  * 1. Fetch component prices from Pyth Hermes API
- * 2. Calculate weighted EQX basket price
- * 3. Update on-chain EQX Oracle PDA
+ * 2. Calculate weighted UNX basket price
+ * 3. Update on-chain UNX Oracle PDA
  * 4. Store price snapshot in Netlify Blobs
- * 5. Write EQX snapshot to Turso for long-term performance tracking
+ * 5. Write UNX snapshot to Turso for long-term performance tracking
  */
 
 import { Handler } from '@netlify/functions';
@@ -18,17 +18,17 @@ import bs58 from 'bs58';
 import crypto from 'crypto';
 import { fetchComponentPrices, componentPricesToArray } from './lib/pythPrices';
 import { 
-  getEqxOraclePda, 
+  getUnxOraclePda, 
   floatToFixed, 
   calculateBasketPrice,
   BASKET_COMPONENTS,
   PRECISION,
   validateHash
-} from './lib/eqxOracle';
-import { storeEqxPrice, getLatestFxRates, EqxPriceSnapshot } from './lib/blobStorage';
-import { EquaToken } from './lib/equa_token';
-import idl from './lib/equa_token.json';
-import { storeEqxSnapshotToTurso, SEND_MODAL_CURRENCIES, computeUsdInflationIndexAsync } from './lib/tursoStorage';
+} from './lib/unxOracle';
+import { storeUnxPrice, getLatestFxRates, UnxPriceSnapshot } from './lib/blobStorage';
+import { UniaToken } from './lib/unia_token';
+import idl from './lib/unia_token.json';
+import { storeUnxSnapshotToTurso, SEND_MODAL_CURRENCIES, computeUsdInflationIndexAsync } from './lib/tursoStorage';
 
 // ============================================================================
 // Environment Variable Validation (runs at module load time)
@@ -66,7 +66,7 @@ validateEnvironment();
 
 const SOLANA_RPC_ENDPOINT = process.env.SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
 const SOLANA_NETWORK = process.env.SOLANA_NETWORK || 'devnet';
-const PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PROGRAM_ID || 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw');
+const PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PROGRAM_ID || 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
 
 // ============================================================================
 // Helper Functions
@@ -111,7 +111,7 @@ function hashWeights(): string {
 // ============================================================================
 
 const handler: Handler = async (event, context) => {
-  console.log('Starting EQX price oracle update...');
+  console.log('Starting UNX price oracle update...');
   
   try {
     // 1. Fetch component prices
@@ -129,7 +129,7 @@ const handler: Handler = async (event, context) => {
     console.log(`Calculated basket price: ${basketPrice} USD (${basketPriceFixed} fixed-point)`);
     
     // 3. Update on-chain oracle
-    console.log('Updating on-chain EQX Oracle...');
+    console.log('Updating on-chain UNX Oracle...');
     
     const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
     const wallet = getWalletKeypair();
@@ -142,13 +142,13 @@ const handler: Handler = async (event, context) => {
     );
     
     // Load program
-    const program = new Program<EquaToken>(
+    const program = new Program<UniaToken>(
       idl as any,
       provider
     );
     
     // Get oracle PDA
-    const [oraclePda] = getEqxOraclePda(PROGRAM_ID);
+    const [oraclePda] = getUnxOraclePda(PROGRAM_ID);
     console.log('Oracle PDA:', oraclePda.toString());
     
     // Calculate hashes
@@ -163,8 +163,8 @@ const handler: Handler = async (event, context) => {
     validateHash(weightsHash, 'Weights hash');
     
     // Build update instruction
-    // Note: This requires the update_eqx_price instruction to exist in the IDL
-    // The eqxOracle PDA is auto-derived by Anchor from the seeds defined in the IDL
+    // Note: This requires the update_unx_price instruction to exist in the IDL
+    // The unxOracle PDA is auto-derived by Anchor from the seeds defined in the IDL
     try {
       // Convert types for Anchor
       const priceAsBN = new BN(basketPriceFixed.toString());
@@ -174,7 +174,7 @@ const handler: Handler = async (event, context) => {
       const weightsHashBuffer = Buffer.from(weightsHash, 'hex');
       
       const tx = await program.methods
-        .updateEqxPrice(
+        .updateUnxPrice(
           priceAsBN,
           Array.from(componentHashBuffer),  // Guaranteed [number; 32]
           Array.from(weightsHashBuffer)     // Guaranteed [number; 32]
@@ -196,7 +196,7 @@ const handler: Handler = async (event, context) => {
     // 5. Store price snapshot in blobs (best-effort — non-fatal)
     console.log('Storing price snapshot to Netlify Blobs...');
 
-    const snapshot: EqxPriceSnapshot = {
+    const snapshot: UnxPriceSnapshot = {
       timestamp: Date.now(),
       price: basketPrice,
       priceFixed: basketPriceFixed.toString(),
@@ -209,9 +209,9 @@ const handler: Handler = async (event, context) => {
 
     let blobsWriteSuccess = false;
     try {
-      await storeEqxPrice(snapshot);
+      await storeUnxPrice(snapshot);
       blobsWriteSuccess = true;
-      console.log('✓ EQX price snapshot stored to Netlify Blobs');
+      console.log('✓ UNX price snapshot stored to Netlify Blobs');
     } catch (blobsError) {
       console.warn(
         '⚠ Blobs write failed — snapshot not persisted. ' +
@@ -221,7 +221,7 @@ const handler: Handler = async (event, context) => {
     }
 
     // 6. Write to Turso for long-term performance tracking (best-effort — non-fatal)
-    console.log('Writing EQX price snapshot to Turso...');
+    console.log('Writing UNX price snapshot to Turso...');
     try {
       // Fetch latest FX rates from blobs (already written by update-fx-rates function).
       // Use null-safe fallback so a blob failure does not abort the Turso write.
@@ -262,11 +262,11 @@ const handler: Handler = async (event, context) => {
         }
       }
 
-      const tursoResult = await storeEqxSnapshotToTurso({
+      const tursoResult = await storeUnxSnapshotToTurso({
         timestamp: snapshot.timestamp,
-        eqxPriceUsd: basketPrice,
+        unxPriceUsd: basketPrice,
         equaPriceUsd,
-        equaPriceEqx: basketPrice > 0 ? equaPriceUsd / basketPrice : 0,
+        equaPriceUnx: basketPrice > 0 ? equaPriceUsd / basketPrice : 0,
         currencyPrices,
         components: componentPrices,
         totalTransactions,
@@ -285,7 +285,7 @@ const handler: Handler = async (event, context) => {
       );
     }
 
-    console.log('EQX price oracle update completed');
+    console.log('UNX price oracle update completed');
 
     return {
       statusCode: 200,
@@ -305,7 +305,7 @@ const handler: Handler = async (event, context) => {
       }),
     };
   } catch (error) {
-    console.error('Error updating EQX price oracle:', error);
+    console.error('Error updating UNX price oracle:', error);
     
     return {
       statusCode: 500,

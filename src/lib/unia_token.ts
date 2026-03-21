@@ -1,17 +1,23 @@
-{
-  "address": "D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw",
+/**
+ * Program IDL in camelCase format in order to be used in JS/TS.
+ *
+ * Note that this is only a type helper and is not the actual IDL. The original
+ * IDL can be found at `target/idl/unia_token.json`.
+ */
+export type UniaToken = {
+  "address": "B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2",
   "metadata": {
-    "name": "equa_token",
+    "name": "uniaToken",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Created with Anchor"
   },
   "instructions": [
     {
-      "name": "activate_social_funds",
+      "name": "activateSocialFunds",
       "docs": [
         "Activate social funds (can only be called once after compounding phase ends)",
-        "This is a ONE-TIME action that enables monthly distributions"
+        "This is a ONE-TIME action that enables annual distributions"
       ],
       "discriminator": [
         1,
@@ -25,7 +31,7 @@
       ],
       "accounts": [
         {
-          "name": "social_funds_state",
+          "name": "socialFundsState",
           "writable": true,
           "pda": {
             "seeds": [
@@ -56,7 +62,7 @@
           }
         },
         {
-          "name": "global_state",
+          "name": "globalState",
           "pda": {
             "seeds": [
               {
@@ -87,7 +93,7 @@
       "args": []
     },
     {
-      "name": "add_business_referrer",
+      "name": "addBusinessReferrer",
       "docs": [
         "Add a business referrer to the registry (admin only)"
       ],
@@ -103,7 +109,7 @@
       ],
       "accounts": [
         {
-          "name": "business_registry",
+          "name": "businessRegistry",
           "writable": true,
           "pda": {
             "seeds": [
@@ -136,19 +142,19 @@
           "name": "authority",
           "signer": true,
           "relations": [
-            "business_registry"
+            "businessRegistry"
           ]
         }
       ],
       "args": [
         {
-          "name": "business_referrer",
+          "name": "businessReferrer",
           "type": "pubkey"
         }
       ]
     },
     {
-      "name": "claim_bonus_mint",
+      "name": "claimBonusMint",
       "docs": [
         "Claim a bonus mint attempt by redeeming referral credits",
         "",
@@ -159,9 +165,10 @@
         "- Bonus mints consume elevated_mint_attempts_used",
         "",
         "Monthly Caps:",
-        "- Base cap: 3 bonus mints per calendar month",
         "- Absolute cap: 5 bonus mints per calendar month",
         "- No rollover between months",
+        "",
+        "Cooldown: NO cooldown for bonus mints (cooldown only applies to regular mints)",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
         "Only P2P transfers (transfer_tokens) increment the transaction counter."
@@ -178,7 +185,7 @@
       ],
       "accounts": [
         {
-          "name": "user_account",
+          "name": "userAccount",
           "writable": true,
           "pda": {
             "seeds": [
@@ -207,7 +214,7 @@
           }
         },
         {
-          "name": "user_metadata",
+          "name": "userMetadata",
           "writable": true,
           "pda": {
             "seeds": [
@@ -233,7 +240,7 @@
           }
         },
         {
-          "name": "global_state",
+          "name": "globalState",
           "pda": {
             "seeds": [
               {
@@ -257,7 +264,7 @@
           }
         },
         {
-          "name": "user_token_account",
+          "name": "userTokenAccount",
           "writable": true
         },
         {
@@ -268,9 +275,9 @@
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -283,7 +290,7 @@
           }
         },
         {
-          "name": "mint_authority",
+          "name": "mintAuthority",
           "pda": {
             "seeds": [
               {
@@ -310,1397 +317,14 @@
         },
         {
           "name": "authority",
+          "writable": true,
           "signer": true,
           "relations": [
-            "user_account"
+            "userAccount"
           ]
         },
         {
-          "name": "token_program"
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "claim_referral_rewards",
-      "docs": [
-        "Claim accumulated referral rewards (LEGACY - DEPRECATED)",
-        "",
-        "This instruction is deprecated as of the referral credits update.",
-        "Referral rewards are now stored as credits, not EQUA tokens.",
-        "Use claim_bonus_mint instead to redeem credits for bonus mint attempts.",
-        "",
-        "Note: This instruction does NOT increment GlobalState.total_transactions.",
-        "Only P2P transfers (transfer_tokens) increment the transaction counter."
-      ],
-      "discriminator": [
-        23,
-        112,
-        76,
-        162,
-        157,
-        106,
-        203,
-        246
-      ],
-      "accounts": [
-        {
-          "name": "user_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  115,
-                  101,
-                  114,
-                  45,
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "user_token_account",
-          "writable": true
-        },
-        {
-          "name": "mint",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  113,
-                  117,
-                  97,
-                  45,
-                  109,
-                  105,
-                  110,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "mint_authority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116,
-                  45,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true,
-          "relations": [
-            "user_account"
-          ]
-        },
-        {
-          "name": "token_program"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "create_token_mint",
-      "docs": [
-        "Create the EQUA token mint (call once during deployment)"
-      ],
-      "discriminator": [
-        35,
-        109,
-        237,
-        196,
-        54,
-        218,
-        33,
-        119
-      ],
-      "accounts": [
-        {
-          "name": "mint",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  113,
-                  117,
-                  97,
-                  45,
-                  109,
-                  105,
-                  110,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "mint_authority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116,
-                  45,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "global_state",
-          "writable": true
-        },
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "token_program"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "rent",
-          "address": "SysvarRent111111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "distribute_social_funds",
-      "docs": [
-        "Distribute monthly social funds to all 5 special-purpose accounts",
-        "Can only be called ONCE per calendar month after activation"
-      ],
-      "discriminator": [
-        106,
-        191,
-        242,
-        134,
-        7,
-        58,
-        71,
-        221
-      ],
-      "accounts": [
-        {
-          "name": "social_funds_state",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  115,
-                  111,
-                  99,
-                  105,
-                  97,
-                  108,
-                  45,
-                  102,
-                  117,
-                  110,
-                  100,
-                  115,
-                  45,
-                  115,
-                  116,
-                  97,
-                  116,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "mint",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  113,
-                  117,
-                  97,
-                  45,
-                  109,
-                  105,
-                  110,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "mint_authority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116,
-                  45,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "education_fund_token_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "education_fund_pda"
-              },
-              {
-                "kind": "account",
-                "path": "token_program"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "education_fund_pda",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  100,
-                  117,
-                  99,
-                  97,
-                  116,
-                  105,
-                  111,
-                  110,
-                  45,
-                  102,
-                  117,
-                  110,
-                  100
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "healthcare_fund_token_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "healthcare_fund_pda"
-              },
-              {
-                "kind": "account",
-                "path": "token_program"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "healthcare_fund_pda",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  104,
-                  101,
-                  97,
-                  108,
-                  116,
-                  104,
-                  99,
-                  97,
-                  114,
-                  101,
-                  45,
-                  102,
-                  117,
-                  110,
-                  100
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "research_fund_token_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "research_fund_pda"
-              },
-              {
-                "kind": "account",
-                "path": "token_program"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "research_fund_pda",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  97,
-                  114,
-                  99,
-                  104,
-                  45,
-                  102,
-                  117,
-                  110,
-                  100
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "general_grants_fund_token_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "general_grants_fund_pda"
-              },
-              {
-                "kind": "account",
-                "path": "token_program"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "general_grants_fund_pda",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  101,
-                  110,
-                  101,
-                  114,
-                  97,
-                  108,
-                  45,
-                  103,
-                  114,
-                  97,
-                  110,
-                  116,
-                  115,
-                  45,
-                  102,
-                  117,
-                  110,
-                  100
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "operations_fund_token_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "operations_fund_pda"
-              },
-              {
-                "kind": "account",
-                "path": "token_program"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "operations_fund_pda",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  112,
-                  101,
-                  114,
-                  97,
-                  116,
-                  105,
-                  111,
-                  110,
-                  115,
-                  45,
-                  102,
-                  117,
-                  110,
-                  100
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "associated_token_program",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-        },
-        {
-          "name": "token_program"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "initialize",
-      "docs": [
-        "Initialize global state (call this FIRST in tests)"
-      ],
-      "discriminator": [
-        175,
-        175,
-        109,
-        31,
-        13,
-        152,
-        155,
-        237
-      ],
-      "accounts": [
-        {
-          "name": "global_state",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  115,
-                  116,
-                  97,
-                  116,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "initialize_business_registry",
-      "docs": [
-        "Initialize the business registry (call once during deployment)"
-      ],
-      "discriminator": [
-        151,
-        80,
-        227,
-        76,
-        115,
-        6,
-        7,
-        254
-      ],
-      "accounts": [
-        {
-          "name": "business_registry",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  117,
-                  115,
-                  105,
-                  110,
-                  101,
-                  115,
-                  115,
-                  45,
-                  114,
-                  101,
-                  103,
-                  105,
-                  115,
-                  116,
-                  114,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "initialize_eqx_oracle",
-      "docs": [
-        "Initialize the EQX Oracle (call once during deployment)"
-      ],
-      "discriminator": [
-        64,
-        32,
-        196,
-        225,
-        20,
-        169,
-        225,
-        42
-      ],
-      "accounts": [
-        {
-          "name": "eqx_oracle",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  113,
-                  120,
-                  45,
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "initialize_social_funds",
-      "docs": [
-        "Initialize the social funds state (call once during deployment)"
-      ],
-      "discriminator": [
-        85,
-        33,
-        118,
-        141,
-        242,
-        213,
-        71,
-        206
-      ],
-      "accounts": [
-        {
-          "name": "social_funds_state",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  115,
-                  111,
-                  99,
-                  105,
-                  97,
-                  108,
-                  45,
-                  102,
-                  117,
-                  110,
-                  100,
-                  115,
-                  45,
-                  115,
-                  116,
-                  97,
-                  116,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "initialize_user",
-      "docs": [
-        "Register a new user with account type (Individual/Business) and metadata",
-        "Enforces referral requirement after first 100 users and anti-sybil measures",
-        "",
-        "Note: This instruction does NOT increment GlobalState.total_transactions.",
-        "Only P2P transfers (transfer_tokens) increment the transaction counter."
-      ],
-      "discriminator": [
-        111,
-        17,
-        185,
-        250,
-        60,
-        122,
-        38,
-        254
-      ],
-      "accounts": [
-        {
-          "name": "user_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  115,
-                  101,
-                  114,
-                  45,
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "user_metadata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  115,
-                  101,
-                  114,
-                  45,
-                  109,
-                  101,
-                  116,
-                  97
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "global_state",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  115,
-                  116,
-                  97,
-                  116,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "referral_account",
-          "writable": true
-        },
-        {
-          "name": "referrer_metadata",
-          "writable": true
-        },
-        {
-          "name": "user_token_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "authority"
-              },
-              {
-                "kind": "account",
-                "path": "token_program"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "mint",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  113,
-                  117,
-                  97,
-                  45,
-                  109,
-                  105,
-                  110,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "business_registry",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  117,
-                  115,
-                  105,
-                  110,
-                  101,
-                  115,
-                  115,
-                  45,
-                  114,
-                  101,
-                  103,
-                  105,
-                  115,
-                  116,
-                  114,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "associated_token_program",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-        },
-        {
-          "name": "token_program"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "referral",
-          "type": "pubkey"
-        },
-        {
-          "name": "mint_start",
-          "type": "i64"
-        },
-        {
-          "name": "user_type",
-          "type": "u8"
-        }
-      ]
-    },
-    {
-      "name": "mint_tokens",
-      "docs": [
-        "Mint EQUA tokens with tier limits based on user index",
-        "User #1: 100 attempts at 100,000 EQUA each",
-        "Users #2-10: 100 attempts at 10,000 EQUA each",
-        "Users #11+: Normal limit (1,000 EQUA)",
-        "",
-        "Note: This instruction does NOT increment GlobalState.total_transactions.",
-        "Only P2P transfers (transfer_tokens) increment the transaction counter."
-      ],
-      "discriminator": [
-        59,
-        132,
-        24,
-        246,
-        122,
-        39,
-        8,
-        243
-      ],
-      "accounts": [
-        {
-          "name": "user_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  115,
-                  101,
-                  114,
-                  45,
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "user_metadata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  115,
-                  101,
-                  114,
-                  45,
-                  109,
-                  101,
-                  116,
-                  97
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "global_state",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  115,
-                  116,
-                  97,
-                  116,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "user_token_account",
-          "writable": true
-        },
-        {
-          "name": "mint",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  113,
-                  117,
-                  97,
-                  45,
-                  109,
-                  105,
-                  110,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "mint_authority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116,
-                  45,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "referrer_account",
-          "docs": [
-            "NOTE: Must be writable. When no referrer exists, pass user's own account as self-reference"
-          ],
-          "writable": true
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "locked_token_account",
+          "name": "lockedTokenAccount",
           "docs": [
             "Locked token account PDA (only for tiers 1-3)"
           ],
@@ -1733,7 +357,7 @@
           }
         },
         {
-          "name": "locked_token_ata",
+          "name": "lockedTokenAta",
           "docs": [
             "Associated token account for locked tokens"
           ],
@@ -1742,11 +366,11 @@
             "seeds": [
               {
                 "kind": "account",
-                "path": "locked_token_pda"
+                "path": "lockedTokenPda"
               },
               {
                 "kind": "account",
-                "path": "token_program"
+                "path": "tokenProgram"
               },
               {
                 "kind": "account",
@@ -1793,7 +417,7 @@
           }
         },
         {
-          "name": "locked_token_pda",
+          "name": "lockedTokenPda",
           "pda": {
             "seeds": [
               {
@@ -1822,14 +446,14 @@
           }
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         },
         {
-          "name": "associated_token_program",
+          "name": "associatedTokenProgram",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -1841,146 +465,30 @@
       ]
     },
     {
-      "name": "record_transaction",
+      "name": "claimReferralRewards",
       "docs": [
-        "Record a transaction for price tracking",
+        "Claim accumulated referral rewards (LEGACY - DEPRECATED)",
         "",
-        "Note: This is a utility instruction for testing/simulation purposes.",
-        "In production, the primary transaction counter is incremented by transfer_tokens.",
-        "This allows off-chain systems to simulate transaction counts for price calculations."
+        "This instruction is deprecated as of the referral credits update.",
+        "Referral rewards are now stored as credits, not UNIA tokens.",
+        "Use claim_bonus_mint instead to redeem credits for bonus mint attempts.",
+        "",
+        "Note: This instruction does NOT increment GlobalState.total_transactions.",
+        "Only P2P transfers (transfer_tokens) increment the transaction counter."
       ],
       "discriminator": [
-        134,
-        39,
-        187,
-        220,
-        192,
-        43,
-        119,
-        10
+        23,
+        112,
+        76,
+        162,
+        157,
+        106,
+        203,
+        246
       ],
       "accounts": [
         {
-          "name": "global_state",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  115,
-                  116,
-                  97,
-                  116,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "remove_business_referrer",
-      "docs": [
-        "Remove a business referrer from the registry (admin only)"
-      ],
-      "discriminator": [
-        160,
-        152,
-        102,
-        113,
-        219,
-        128,
-        159,
-        117
-      ],
-      "accounts": [
-        {
-          "name": "business_registry",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  117,
-                  115,
-                  105,
-                  110,
-                  101,
-                  115,
-                  115,
-                  45,
-                  114,
-                  101,
-                  103,
-                  105,
-                  115,
-                  116,
-                  114,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true,
-          "relations": [
-            "business_registry"
-          ]
-        }
-      ],
-      "args": [
-        {
-          "name": "business_referrer",
-          "type": "pubkey"
-        }
-      ]
-    },
-    {
-      "name": "transfer_tokens",
-      "docs": [
-        "Transfer EQUA tokens between users (P2P)",
-        "",
-        "This is the PRIMARY instruction that increments GlobalState.total_transactions.",
-        "The counter tracks peer-to-peer user transfers for price appreciation calculations.",
-        "",
-        "Operations that do NOT increment the counter:",
-        "- mint_tokens (token creation/minting)",
-        "- initialize_user (user registration)",
-        "- claim_referral_rewards (reward claims)",
-        "",
-        "Note: record_transaction() is a separate utility instruction for testing/simulation"
-      ],
-      "discriminator": [
-        54,
-        180,
-        238,
-        175,
-        74,
-        85,
-        126,
-        188
-      ],
-      "accounts": [
-        {
-          "name": "sender_user_account",
+          "name": "userAccount",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2003,25 +511,13 @@
               },
               {
                 "kind": "account",
-                "path": "sender_authority"
+                "path": "authority"
               }
             ]
           }
         },
         {
-          "name": "sender_token_account",
-          "writable": true
-        },
-        {
-          "name": "recipient_user_account",
-          "docs": [
-            "Recipient's user account - caller must provide the correct PDA for recipient's wallet",
-            "Validation: Must be a valid UserAccount (Anchor checks discriminator and deserialization)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "recipient_token_account",
+          "name": "userTokenAccount",
           "writable": true
         },
         {
@@ -2032,9 +528,9 @@
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -2047,7 +543,7 @@
           }
         },
         {
-          "name": "mint_authority",
+          "name": "mintAuthority",
           "pda": {
             "seeds": [
               {
@@ -2073,7 +569,659 @@
           }
         },
         {
-          "name": "global_state",
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "userAccount"
+          ]
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "createTokenMint",
+      "docs": [
+        "Create the UNIA token mint (call once during deployment)"
+      ],
+      "discriminator": [
+        35,
+        109,
+        237,
+        196,
+        54,
+        218,
+        33,
+        119
+      ],
+      "accounts": [
+        {
+          "name": "mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  110,
+                  105,
+                  97,
+                  45,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "globalState",
+          "writable": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "distributeSocialFunds",
+      "docs": [
+        "Distribute annual social funds to all 5 special-purpose accounts",
+        "Can only be called ONCE per calendar year, in January, after activation"
+      ],
+      "discriminator": [
+        106,
+        191,
+        242,
+        134,
+        7,
+        58,
+        71,
+        221
+      ],
+      "accounts": [
+        {
+          "name": "socialFundsState",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  111,
+                  99,
+                  105,
+                  97,
+                  108,
+                  45,
+                  102,
+                  117,
+                  110,
+                  100,
+                  115,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  110,
+                  105,
+                  97,
+                  45,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "educationFundTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "educationFundPda"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "educationFundPda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  100,
+                  117,
+                  99,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  102,
+                  117,
+                  110,
+                  100
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "healthcareFundTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "healthcareFundPda"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "healthcareFundPda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  101,
+                  97,
+                  108,
+                  116,
+                  104,
+                  99,
+                  97,
+                  114,
+                  101,
+                  45,
+                  102,
+                  117,
+                  110,
+                  100
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "researchFundTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "researchFundPda"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "researchFundPda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  97,
+                  114,
+                  99,
+                  104,
+                  45,
+                  102,
+                  117,
+                  110,
+                  100
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "generalGrantsFundTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "generalGrantsFundPda"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "generalGrantsFundPda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  101,
+                  110,
+                  101,
+                  114,
+                  97,
+                  108,
+                  45,
+                  103,
+                  114,
+                  97,
+                  110,
+                  116,
+                  115,
+                  45,
+                  102,
+                  117,
+                  110,
+                  100
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "operationsFundTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "operationsFundPda"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "operationsFundPda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  112,
+                  101,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  115,
+                  45,
+                  102,
+                  117,
+                  110,
+                  100
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize",
+      "docs": [
+        "Initialize global state (call this FIRST in tests)"
+      ],
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "globalState",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2098,11 +1246,761 @@
           }
         },
         {
-          "name": "sender_authority",
+          "name": "authority",
+          "writable": true,
           "signer": true
         },
         {
-          "name": "token_program"
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initializeBusinessRegistry",
+      "docs": [
+        "Initialize the business registry (call once during deployment)"
+      ],
+      "discriminator": [
+        151,
+        80,
+        227,
+        76,
+        115,
+        6,
+        7,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "businessRegistry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  115,
+                  105,
+                  110,
+                  101,
+                  115,
+                  115,
+                  45,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initializeEqxOracle",
+      "docs": [
+        "Initialize the UNX Oracle (call once during deployment)"
+      ],
+      "discriminator": [
+        64,
+        32,
+        196,
+        225,
+        20,
+        169,
+        225,
+        42
+      ],
+      "accounts": [
+        {
+          "name": "unxOracle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  110,
+                  120,
+                  45,
+                  111,
+                  114,
+                  97,
+                  99,
+                  108,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initializeSocialFunds",
+      "docs": [
+        "Initialize the social funds state (call once during deployment)"
+      ],
+      "discriminator": [
+        85,
+        33,
+        118,
+        141,
+        242,
+        213,
+        71,
+        206
+      ],
+      "accounts": [
+        {
+          "name": "socialFundsState",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  111,
+                  99,
+                  105,
+                  97,
+                  108,
+                  45,
+                  102,
+                  117,
+                  110,
+                  100,
+                  115,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initializeUser",
+      "docs": [
+        "Register a new user with account type (Individual/Business) and metadata",
+        "Enforces referral requirement after first 100 users and anti-sybil measures",
+        "",
+        "Note: This instruction does NOT increment GlobalState.total_transactions.",
+        "Only P2P transfers (transfer_tokens) increment the transaction counter."
+      ],
+      "discriminator": [
+        111,
+        17,
+        185,
+        250,
+        60,
+        122,
+        38,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "userAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "userMetadata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "globalState",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "referralAccount",
+          "writable": true
+        },
+        {
+          "name": "referrerMetadata",
+          "writable": true
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "mint",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  110,
+                  105,
+                  97,
+                  45,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "businessRegistry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  115,
+                  105,
+                  110,
+                  101,
+                  115,
+                  115,
+                  45,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "referral",
+          "type": "pubkey"
+        },
+        {
+          "name": "mintStart",
+          "type": "i64"
+        },
+        {
+          "name": "userType",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "mintTokens",
+      "docs": [
+        "Mint UNIA tokens with tier limits based on user index",
+        "User #1: 100 attempts at 100,000 UNIA each",
+        "Users #2-10: 100 attempts at 10,000 UNIA each",
+        "Users #11+: Normal limit (1,000 UNIA)",
+        "",
+        "Cooldown: 24-hour cooldown enforced between regular mints",
+        "",
+        "Note: This instruction does NOT increment GlobalState.total_transactions.",
+        "Only P2P transfers (transfer_tokens) increment the transaction counter."
+      ],
+      "discriminator": [
+        59,
+        132,
+        24,
+        246,
+        122,
+        39,
+        8,
+        243
+      ],
+      "accounts": [
+        {
+          "name": "userAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "userMetadata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "globalState",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  110,
+                  105,
+                  97,
+                  45,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "referrerAccount",
+          "docs": [
+            "NOTE: Must be writable. When no referrer exists, pass user's own account as self-reference"
+          ],
+          "writable": true
+        },
+        {
+          "name": "businessRegistry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  115,
+                  105,
+                  110,
+                  101,
+                  115,
+                  115,
+                  45,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "lockedTokenAccount",
+          "docs": [
+            "Locked token account PDA (only for tiers 1-3)"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lockedTokenAta",
+          "docs": [
+            "Associated token account for locked tokens"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "lockedTokenPda"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "lockedTokenPda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -2113,7 +2011,279 @@
       ]
     },
     {
-      "name": "unlock_tokens",
+      "name": "recordTransaction",
+      "docs": [
+        "Record a transaction for price tracking",
+        "",
+        "Note: This is a utility instruction for testing/simulation purposes.",
+        "In production, the primary transaction counter is incremented by transfer_tokens.",
+        "This allows off-chain systems to simulate transaction counts for price calculations."
+      ],
+      "discriminator": [
+        134,
+        39,
+        187,
+        220,
+        192,
+        43,
+        119,
+        10
+      ],
+      "accounts": [
+        {
+          "name": "globalState",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "removeBusinessReferrer",
+      "docs": [
+        "Remove a business referrer from the registry (admin only)"
+      ],
+      "discriminator": [
+        160,
+        152,
+        102,
+        113,
+        219,
+        128,
+        159,
+        117
+      ],
+      "accounts": [
+        {
+          "name": "businessRegistry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  115,
+                  105,
+                  110,
+                  101,
+                  115,
+                  115,
+                  45,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "businessRegistry"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "businessReferrer",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "transferTokens",
+      "docs": [
+        "Transfer UNIA tokens between users (P2P)",
+        "",
+        "This is the PRIMARY instruction that increments GlobalState.total_transactions.",
+        "The counter tracks peer-to-peer user transfers for price appreciation calculations.",
+        "",
+        "Operations that do NOT increment the counter:",
+        "- mint_tokens (token creation/minting)",
+        "- initialize_user (user registration)",
+        "- claim_referral_rewards (reward claims)",
+        "",
+        "Note: record_transaction() is a separate utility instruction for testing/simulation"
+      ],
+      "discriminator": [
+        54,
+        180,
+        238,
+        175,
+        74,
+        85,
+        126,
+        188
+      ],
+      "accounts": [
+        {
+          "name": "senderUserAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "senderAuthority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "senderTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "recipientUserAccount",
+          "docs": [
+            "Recipient's user account - caller must provide the correct PDA for recipient's wallet",
+            "Validation: Must be a valid UserAccount (Anchor checks discriminator and deserialization)"
+          ],
+          "writable": true
+        },
+        {
+          "name": "recipientTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  110,
+                  105,
+                  97,
+                  45,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "globalState",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "senderAuthority",
+          "signer": true
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "unlockTokens",
       "docs": [
         "Unlock tokens after 4-year cliff vesting period",
         "",
@@ -2133,7 +2303,7 @@
       ],
       "accounts": [
         {
-          "name": "locked_token_account",
+          "name": "lockedTokenAccount",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2163,11 +2333,11 @@
           }
         },
         {
-          "name": "locked_token_ata",
+          "name": "lockedTokenAta",
           "writable": true
         },
         {
-          "name": "locked_token_pda",
+          "name": "lockedTokenPda",
           "pda": {
             "seeds": [
               {
@@ -2196,7 +2366,7 @@
           }
         },
         {
-          "name": "user_token_account",
+          "name": "userTokenAccount",
           "writable": true
         },
         {
@@ -2207,9 +2377,9 @@
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -2225,19 +2395,19 @@
           "name": "authority",
           "signer": true,
           "relations": [
-            "locked_token_account"
+            "lockedTokenAccount"
           ]
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": []
     },
     {
-      "name": "update_eqx_price",
+      "name": "updateEqxPrice",
       "docs": [
-        "Update the EQX Oracle price (admin only)",
+        "Update the UNX Oracle price (admin only)",
         "All basket calculations occur OFF-CHAIN. This instruction only stores the final price.",
         "",
         "# Arguments",
@@ -2257,15 +2427,15 @@
       ],
       "accounts": [
         {
-          "name": "eqx_oracle",
+          "name": "unxOracle",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
+                  117,
+                  110,
                   120,
                   45,
                   111,
@@ -2286,11 +2456,11 @@
       ],
       "args": [
         {
-          "name": "eqx_price",
+          "name": "eqxPrice",
           "type": "u64"
         },
         {
-          "name": "component_prices_hash",
+          "name": "componentPricesHash",
           "type": {
             "array": [
               "u8",
@@ -2299,7 +2469,7 @@
           }
         },
         {
-          "name": "weights_hash",
+          "name": "weightsHash",
           "type": {
             "array": [
               "u8",
@@ -2312,7 +2482,7 @@
   ],
   "accounts": [
     {
-      "name": "BusinessRegistry",
+      "name": "businessRegistry",
       "discriminator": [
         177,
         43,
@@ -2325,7 +2495,7 @@
       ]
     },
     {
-      "name": "EqxOracle",
+      "name": "unxOracle",
       "discriminator": [
         31,
         243,
@@ -2338,7 +2508,7 @@
       ]
     },
     {
-      "name": "GlobalState",
+      "name": "globalState",
       "discriminator": [
         163,
         46,
@@ -2351,7 +2521,7 @@
       ]
     },
     {
-      "name": "LockedTokenAccount",
+      "name": "lockedTokenAccount",
       "discriminator": [
         3,
         186,
@@ -2364,7 +2534,7 @@
       ]
     },
     {
-      "name": "SocialFundsState",
+      "name": "socialFundsState",
       "discriminator": [
         70,
         6,
@@ -2377,7 +2547,7 @@
       ]
     },
     {
-      "name": "UserAccount",
+      "name": "userAccount",
       "discriminator": [
         211,
         33,
@@ -2390,7 +2560,7 @@
       ]
     },
     {
-      "name": "UserMetadata",
+      "name": "userMetadata",
       "discriminator": [
         157,
         214,
@@ -2406,223 +2576,248 @@
   "errors": [
     {
       "code": 6000,
-      "name": "UserCountOverflow",
+      "name": "userCountOverflow",
       "msg": "User count overflowed the maximum u32 value. The maximum number of users has been reached."
     },
     {
       "code": 6001,
-      "name": "MintOverflow",
+      "name": "mintOverflow",
       "msg": "Minted amount overflow. The total minted amount would exceed u64::MAX."
     },
     {
       "code": 6002,
-      "name": "TransactionOverflow",
+      "name": "transactionOverflow",
       "msg": "Transaction count overflow. The total transactions would exceed u64::MAX."
     },
     {
       "code": 6003,
-      "name": "RewardOverflow",
+      "name": "rewardOverflow",
       "msg": "Referral reward overflow. The referral rewards would exceed u64::MAX."
     },
     {
       "code": 6004,
-      "name": "InsufficientBalance",
+      "name": "insufficientBalance",
       "msg": "Insufficient balance for transfer. Check your token account balance before attempting transfer."
     },
     {
       "code": 6005,
-      "name": "ReferralRequired",
+      "name": "referralRequired",
       "msg": "Referral is required for user registration after the first 100 users. Please provide a valid referrer's public key."
     },
     {
       "code": 6006,
-      "name": "InvalidReferralAccount",
+      "name": "invalidReferralAccount",
       "msg": "Invalid referral account - account does not exist or is not a valid user. Ensure the referrer has already registered."
     },
     {
       "code": 6007,
-      "name": "MintAmountExceedsTierLimit",
-      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 EQUA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 EQUA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 EQUA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M+): 0.001 EQUA."
+      "name": "mintAmountExceedsTierLimit",
+      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 UNIA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 UNIA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 UNIA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M-100M): 0.001 EQUA; Tier 10 (#100M-1B): 0.0001 EQUA; Tier 11 (#1B+): 0.00001 EQUA"
     },
     {
       "code": 6008,
-      "name": "InsufficientSolBalance",
-      "msg": "Insufficient SOL balance for registration (anti-sybil measure). Minimum required: 0.05 SOL. Please ensure your wallet has sufficient SOL balance."
+      "name": "insufficientSolBalance",
+      "msg": "Insufficient SOL balance for registration (anti-sybil measure). Minimum required: 0.01 SOL. Please ensure your wallet has sufficient SOL balance."
     },
     {
       "code": 6009,
-      "name": "RapidReferralSequence",
+      "name": "rapidReferralSequence",
       "msg": "Too rapid referral sequence - wait a few slots before referring another user. This anti-sybil measure prevents automated mass registrations."
     },
     {
       "code": 6010,
-      "name": "InvalidPdaDerivation",
+      "name": "invalidPdaDerivation",
       "msg": "Account validation failed: The provided account does not match the expected PDA derivation. Check that you're using the correct seeds and program ID."
     },
     {
       "code": 6011,
-      "name": "InvalidAssociatedTokenAccount",
-      "msg": "Missing or invalid Associated Token Account (ATA). Ensure the ATA is initialized for the EQUA mint with Token-2022 program. Use getAssociatedTokenAddressSync() to derive the correct address."
+      "name": "invalidAssociatedTokenAccount",
+      "msg": "Missing or invalid Associated Token Account (ATA). Ensure the ATA is initialized for the UNIA mint with Token-2022 program. Use getAssociatedTokenAddressSync() to derive the correct address."
     },
     {
       "code": 6012,
-      "name": "InvalidAccountOwner",
+      "name": "invalidAccountOwner",
       "msg": "Account ownership validation failed. The account must be owned by this program. Check that the provided account is a valid program account."
     },
     {
       "code": 6013,
-      "name": "InvalidAccountDiscriminator",
+      "name": "invalidAccountDiscriminator",
       "msg": "Account discriminator mismatch. The account data does not match the expected account type. Ensure you're providing the correct account for this instruction."
     },
     {
       "code": 6014,
-      "name": "InvalidUserAccountPda",
+      "name": "invalidUserAccountPda",
       "msg": "User account PDA derivation failed. Expected seeds: ['user-account', authority.key()]. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6015,
-      "name": "InvalidUserMetadataPda",
+      "name": "invalidUserMetadataPda",
       "msg": "User metadata PDA derivation failed. Expected seeds: ['user-meta', authority.key()]. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6016,
-      "name": "InvalidGlobalStatePda",
+      "name": "invalidGlobalStatePda",
       "msg": "Global state PDA derivation failed. Expected seeds: ['global-state']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6017,
-      "name": "InvalidMintPda",
-      "msg": "Mint PDA derivation failed. Expected seeds: ['equa-mint']. Ensure you're deriving the PDA correctly on the client side."
+      "name": "invalidMintPda",
+      "msg": "Mint PDA derivation failed. Expected seeds: ['unia-mint']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6018,
-      "name": "InvalidMintAuthorityPda",
+      "name": "invalidMintAuthorityPda",
       "msg": "Mint authority PDA derivation failed. Expected seeds: ['mint-authority']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6019,
-      "name": "InsufficientReferralRewards",
+      "name": "insufficientReferralRewards",
       "msg": "Insufficient referral rewards. No rewards available to claim."
     },
     {
       "code": 6020,
-      "name": "UnauthorizedBusinessRegistryAccess",
+      "name": "unauthorizedBusinessRegistryAccess",
       "msg": "Unauthorized access to business registry. Only the registry authority can manage business referrers."
     },
     {
       "code": 6021,
-      "name": "BusinessReferrerAlreadyExists",
+      "name": "businessReferrerAlreadyExists",
       "msg": "Business referrer already exists in the registry."
     },
     {
       "code": 6022,
-      "name": "ReferralEventsOverflow",
+      "name": "referralEventsOverflow",
       "msg": "Referral events count overflow. The referral events counter has reached its maximum value."
     },
     {
       "code": 6023,
-      "name": "InvalidBusinessRegistryOwner",
+      "name": "invalidBusinessRegistryOwner",
       "msg": "Invalid business registry owner. The business registry must be owned by this program."
     },
     {
       "code": 6024,
-      "name": "InvalidBusinessRegistryData",
+      "name": "invalidBusinessRegistryData",
       "msg": "Invalid business registry data. The business registry account data is corrupted or invalid."
     },
     {
       "code": 6025,
-      "name": "UnauthorizedEqxOracleUpdate",
+      "name": "unauthorizedEqxOracleUpdate",
       "msg": "Unauthorized EQX oracle update. Only the oracle authority can update prices."
     },
     {
       "code": 6026,
-      "name": "InvalidEqxPrice",
+      "name": "invalidEqxPrice",
       "msg": "Invalid EQX price. Price must be greater than zero."
     },
     {
       "code": 6027,
-      "name": "InvalidEqxHashes",
+      "name": "invalidEqxHashes",
       "msg": "Invalid EQX hashes. Component prices and weights hashes must not be all zeros."
     },
     {
       "code": 6028,
-      "name": "InvalidEqxOraclePda",
-      "msg": "EQX Oracle PDA derivation failed. Expected seeds: ['eqx-oracle']. Ensure you're deriving the PDA correctly on the client side."
+      "name": "invalidEqxOraclePda",
+      "msg": "UNX Oracle PDA derivation failed. Expected seeds: ['unx-oracle']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6029,
-      "name": "InvalidSocialFundsStatePda",
+      "name": "invalidSocialFundsStatePda",
       "msg": "Social Funds State PDA derivation failed. Expected seeds: ['social-funds-state']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6030,
-      "name": "SocialFundsNotActivated",
+      "name": "socialFundsNotActivated",
       "msg": "Social funds have not been activated yet. Activation can only occur after the compounding phase ends."
     },
     {
       "code": 6031,
-      "name": "SocialFundsAlreadyActivated",
+      "name": "socialFundsAlreadyActivated",
       "msg": "Social funds have already been activated. Activation is a one-time operation."
     },
     {
       "code": 6032,
-      "name": "UnauthorizedSocialFundsOperation",
+      "name": "unauthorizedSocialFundsOperation",
       "msg": "Unauthorized social funds operation. Only the social funds authority can perform this action."
     },
     {
       "code": 6033,
-      "name": "CompoundingNotComplete",
+      "name": "compoundingNotComplete",
       "msg": "Compounding phase has not ended yet. Social funds can only be activated after compounding completes."
     },
     {
       "code": 6034,
-      "name": "MonthlyDistributionAlreadyExecuted",
-      "msg": "Monthly distribution already executed for this calendar month. Distributions are limited to once per calendar month."
+      "name": "annualDistributionAlreadyExecuted",
+      "msg": "Annual distribution already executed for this calendar year. Distributions are limited to once per calendar year on January 1st."
     },
     {
       "code": 6035,
-      "name": "InvalidTimestamp",
-      "msg": "Invalid timestamp. Timestamp must be a valid positive Unix timestamp (after January 1, 1970)."
+      "name": "annualDistributionNotJanuary",
+      "msg": "Social fund distributions can only be executed in January. Please wait until January of the next year."
     },
     {
       "code": 6036,
-      "name": "LegacyReferralRewardsDeprecated",
-      "msg": "Legacy referral rewards functionality is deprecated. Referral rewards are now stored as credits. Use claim_bonus_mint to redeem credits for bonus mint attempts."
+      "name": "invalidTimestamp",
+      "msg": "Invalid timestamp. Timestamp must be a valid positive Unix timestamp (after January 1, 1970)."
     },
     {
       "code": 6037,
-      "name": "InsufficientReferralCredits",
-      "msg": "Insufficient referral credits. You need at least 5 credits to claim a bonus mint attempt."
+      "name": "legacyReferralRewardsDeprecated",
+      "msg": "Legacy referral rewards functionality is deprecated. Referral rewards are now stored as credits. Use claim_bonus_mint to redeem credits for bonus mint attempts."
     },
     {
       "code": 6038,
-      "name": "MonthlyBonusMintCapReached",
-      "msg": "Monthly bonus mint cap reached. You have reached the maximum of 5 bonus mints per calendar month."
+      "name": "insufficientReferralCredits",
+      "msg": "Insufficient referral credits. You need at least 5 credits to claim a bonus mint attempt."
     },
     {
       "code": 6039,
-      "name": "BonusMintOverflow",
-      "msg": "Bonus mint overflow. The bonus mint counter has reached its maximum value."
+      "name": "monthlyBonusMintCapReached",
+      "msg": "Monthly bonus mint cap reached. You have reached the maximum of 5 bonus mints per calendar month."
     },
     {
       "code": 6040,
-      "name": "LockPeriodNotExpired",
-      "msg": "Lock period has not expired yet. Tokens can only be unlocked after the 4-year cliff vesting period."
+      "name": "bonusMintOverflow",
+      "msg": "Bonus mint overflow. The bonus mint counter has reached its maximum value."
     },
     {
       "code": 6041,
-      "name": "AlreadyUnlocked",
-      "msg": "Tokens have already been unlocked. This operation can only be performed once."
+      "name": "lockPeriodNotExpired",
+      "msg": "Lock period has not expired yet. Tokens can only be unlocked after the 4-year cliff vesting period."
     },
     {
       "code": 6042,
-      "name": "TimestampOverflow",
+      "name": "alreadyUnlocked",
+      "msg": "Tokens have already been unlocked. This operation can only be performed once."
+    },
+    {
+      "code": 6043,
+      "name": "timestampOverflow",
       "msg": "Timestamp overflow. The calculated unlock timestamp exceeds the maximum representable value."
+    },
+    {
+      "code": 6044,
+      "name": "mintingCooldownNotExpired",
+      "msg": "Minting cooldown has not expired. You must wait 24 hours between regular mints."
+    },
+    {
+      "code": 6045,
+      "name": "businessRegistryNotInitialized",
+      "msg": "Business registry is not initialized. Initialize the registry before registering business users."
+    },
+    {
+      "code": 6046,
+      "name": "businessRegistryFull",
+      "msg": "Business registry is full. Maximum capacity of 100 business referrers reached."
+    },
+    {
+      "code": 6047,
+      "name": "invalidUserType",
+      "msg": "Invalid user type. User type must be 0 (Individual) or 1 (Business)."
     }
   ],
   "types": [
     {
-      "name": "BusinessRegistry",
+      "name": "businessRegistry",
       "docs": [
         "Business Registry for tracking business-type referrers",
         "PDA Seeds: [b\"business-registry\"]"
@@ -2635,7 +2830,7 @@
             "type": "pubkey"
           },
           {
-            "name": "business_referrers",
+            "name": "businessReferrers",
             "type": {
               "vec": "pubkey"
             }
@@ -2644,10 +2839,10 @@
       }
     },
     {
-      "name": "EqxOracle",
+      "name": "unxOracle",
       "docs": [
-        "EQX Oracle PDA Account",
-        "Seeds: [b\"eqx-oracle\"]"
+        "UNX Oracle PDA Account",
+        "Seeds: [b\"unx-oracle\"]"
       ],
       "type": {
         "kind": "struct",
@@ -2660,21 +2855,21 @@
             "type": "u64"
           },
           {
-            "name": "last_updated",
+            "name": "lastUpdated",
             "docs": [
               "Timestamp when price was last updated"
             ],
             "type": "i64"
           },
           {
-            "name": "last_updated_slot",
+            "name": "lastUpdatedSlot",
             "docs": [
               "Slot when price was last updated"
             ],
             "type": "u64"
           },
           {
-            "name": "component_prices_hash",
+            "name": "componentPricesHash",
             "docs": [
               "Hash of basket component prices used in off-chain calculation (for auditability)"
             ],
@@ -2686,7 +2881,7 @@
             }
           },
           {
-            "name": "weights_hash",
+            "name": "weightsHash",
             "docs": [
               "Hash of basket weights used in off-chain calculation (for auditability)"
             ],
@@ -2715,47 +2910,47 @@
       }
     },
     {
-      "name": "GlobalState",
+      "name": "globalState",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "user_count",
+            "name": "userCount",
             "type": "u32"
           },
           {
-            "name": "total_transactions",
+            "name": "totalTransactions",
             "type": "u64"
           },
           {
-            "name": "current_epoch",
+            "name": "currentEpoch",
             "type": "u64"
           },
           {
-            "name": "compounding_complete",
+            "name": "compoundingComplete",
             "type": "bool"
           },
           {
-            "name": "last_epoch_update_time",
+            "name": "lastEpochUpdateTime",
             "type": "i64"
           },
           {
-            "name": "token_mint",
+            "name": "tokenMint",
             "type": "pubkey"
           },
           {
-            "name": "min_sol_balance",
+            "name": "minSolBalance",
             "type": "u64"
           },
           {
-            "name": "min_slot_gap_for_referrals",
+            "name": "minSlotGapForReferrals",
             "type": "u64"
           }
         ]
       }
     },
     {
-      "name": "LockedTokenAccount",
+      "name": "lockedTokenAccount",
       "docs": [
         "Locked token account storing locked tokens per user",
         "PDA Seeds: [b\"locked-tokens\", authority.key()]"
@@ -2768,28 +2963,28 @@
             "type": "pubkey"
           },
           {
-            "name": "locked_amount",
+            "name": "lockedAmount",
             "type": "u64"
           },
           {
-            "name": "lock_start_timestamp",
+            "name": "lockStartTimestamp",
             "type": "i64"
           },
           {
-            "name": "unlock_timestamp",
+            "name": "unlockTimestamp",
             "type": "i64"
           },
           {
-            "name": "is_unlocked",
+            "name": "isUnlocked",
             "type": "bool"
           }
         ]
       }
     },
     {
-      "name": "SocialFundsState",
+      "name": "socialFundsState",
       "docs": [
-        "Social Funds State for tracking activation and monthly distribution",
+        "Social Funds State for tracking activation and annual distribution",
         "PDA Seeds: [b\"social-funds-state\"]",
         "Activated only after compounding phase ends"
       ],
@@ -2801,15 +2996,15 @@
             "type": "bool"
           },
           {
-            "name": "activation_timestamp",
+            "name": "activationTimestamp",
             "type": "i64"
           },
           {
-            "name": "last_distribution_year",
+            "name": "lastDistributionYear",
             "type": "u32"
           },
           {
-            "name": "last_distribution_month",
+            "name": "lastDistributionMonth",
             "type": "u32"
           },
           {
@@ -2820,7 +3015,7 @@
       }
     },
     {
-      "name": "UserAccount",
+      "name": "userAccount",
       "docs": [
         "User account storing registration and minting data",
         "PDA Seeds: [b\"user-account\", authority.key()]",
@@ -2838,38 +3033,38 @@
             "type": "pubkey"
           },
           {
-            "name": "token_account",
+            "name": "tokenAccount",
             "type": "pubkey"
           },
           {
-            "name": "minted_amount",
+            "name": "mintedAmount",
             "type": "u64"
           },
           {
-            "name": "mint_start",
+            "name": "mintStart",
             "type": "i64"
           },
           {
-            "name": "referral_rewards",
+            "name": "referralRewards",
             "type": "u64"
           },
           {
-            "name": "last_mint_time",
+            "name": "lastMintTime",
             "type": "i64"
           },
           {
-            "name": "referral_type",
+            "name": "referralType",
             "type": "u8"
           },
           {
-            "name": "referral_events_count",
+            "name": "referralEventsCount",
             "type": "u32"
           }
         ]
       }
     },
     {
-      "name": "UserMetadata",
+      "name": "userMetadata",
       "docs": [
         "User metadata stored in a separate PDA",
         "Seeds: [b\"user-meta\", authority.key()]"
@@ -2878,31 +3073,31 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "user_account",
+            "name": "userAccount",
             "type": "pubkey"
           },
           {
-            "name": "user_type",
+            "name": "userType",
             "type": "u8"
           },
           {
-            "name": "user_index",
+            "name": "userIndex",
             "type": "u32"
           },
           {
-            "name": "elevated_mint_attempts_used",
+            "name": "elevatedMintAttemptsUsed",
             "type": "u32"
           },
           {
-            "name": "kyc_verified",
+            "name": "kycVerified",
             "type": "bool"
           },
           {
-            "name": "captcha_passed",
+            "name": "captchaPassed",
             "type": "bool"
           },
           {
-            "name": "device_fingerprint",
+            "name": "deviceFingerprint",
             "type": {
               "array": [
                 "u8",
@@ -2911,11 +3106,11 @@
             }
           },
           {
-            "name": "last_referral_slot",
+            "name": "lastReferralSlot",
             "type": "u64"
           },
           {
-            "name": "referrals_made",
+            "name": "referralsMade",
             "type": "u32"
           },
           {
@@ -2923,19 +3118,19 @@
             "type": "u8"
           },
           {
-            "name": "bonus_mints_this_month",
+            "name": "bonusMintsThisMonth",
             "type": "u8"
           },
           {
-            "name": "last_bonus_mint_year",
+            "name": "lastBonusMintYear",
             "type": "u32"
           },
           {
-            "name": "last_bonus_mint_month",
+            "name": "lastBonusMintMonth",
             "type": "u32"
           }
         ]
       }
     }
   ]
-}
+};

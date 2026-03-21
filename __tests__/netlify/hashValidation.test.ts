@@ -2,14 +2,14 @@
  * Tests for hash validation in Netlify functions
  * 
  * Note: We use a local implementation of validateHash instead of importing from
- * netlify/functions/lib/eqxOracle because that file has Solana dependencies
+ * netlify/functions/lib/unxOracle because that file has Solana dependencies
  * that complicate Jest configuration. The implementation is identical.
  */
 
 import crypto from 'crypto';
 
 describe('Hash Validation', () => {
-  // Local implementation of validateHash (matches netlify/functions/lib/eqxOracle.ts)
+  // Local implementation of validateHash (matches netlify/functions/lib/unxOracle.ts)
   function validateHash(hash: string, name: string): void {
     const buffer = Buffer.from(hash, 'hex');
     if (buffer.length !== 32) {
@@ -112,7 +112,7 @@ describe('Hash Validation', () => {
       const mockEnv = {
         SOLANA_WALLET_PRIVATE_KEY: 'test-key',
         SOLANA_RPC_ENDPOINT: 'https://api.devnet.solana.com',
-        NEXT_PUBLIC_PROGRAM_ID: 'D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw',
+        NEXT_PUBLIC_PROGRAM_ID: 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2',
       };
       
       const missing = required.filter(key => !mockEnv[key as keyof typeof mockEnv]);

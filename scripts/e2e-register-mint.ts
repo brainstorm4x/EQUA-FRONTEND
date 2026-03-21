@@ -40,7 +40,7 @@ import {
   getUserMetadataPDA,
   getBusinessRegistryPDA,
   createInitializeUserInstruction,
-  createMintEquaInstruction,
+  createMintUniaInstruction,
   createMintTokensInstruction,
   getSPLTokenBalance,
 } from '../src/lib/program';

@@ -1,8 +1,8 @@
 /**
- * Tests for WalletDashboard EQUA price calculation fix
+ * Tests for WalletDashboard UNIA price calculation fix
  * 
- * Issue: Send Modal was using a hardcoded DEFAULT_EQUA_PRICE_USD = 0.01 constant
- * which would show incorrect prices if EQUA has appreciated beyond $0.01.
+ * Issue: Send Modal was using a hardcoded DEFAULT_UNIA_PRICE_USD = 0.01 constant
+ * which would show incorrect prices if UNIA has appreciated beyond $0.01.
  * 
  * Fix: Price is now computed via EquaPriceCalculator.calculatePrice(totalTransactions)
  * matching the pattern used in PriceDisplay.tsx.
@@ -12,13 +12,13 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { EquaPriceCalculator } from '../../src/utils/priceCalculator';
 
-describe('WalletDashboard - EQUA Price Calculation Fix', () => {
+describe('WalletDashboard - UNIA Price Calculation Fix', () => {
   const walletDashboardPath = join(__dirname, '../../src/components/WalletDashboard.tsx');
   const sourceCode = readFileSync(walletDashboardPath, 'utf-8');
 
-  it('should NOT have a hardcoded DEFAULT_EQUA_PRICE_USD constant', () => {
+  it('should NOT have a hardcoded DEFAULT_UNIA_PRICE_USD constant', () => {
     // The constant must be removed to prevent stale-price fallback risk
-    expect(sourceCode).not.toMatch(/const DEFAULT_EQUA_PRICE_USD/);
+    expect(sourceCode).not.toMatch(/const DEFAULT_UNIA_PRICE_USD/);
   });
 
   it('should import EquaPriceCalculator from priceCalculator', () => {
@@ -32,7 +32,7 @@ describe('WalletDashboard - EQUA Price Calculation Fix', () => {
 
   it('should use the calculated price as the catch-block fallback', () => {
     // The catch block must use the computed equaPriceUsd, not a hardcoded value
-    expect(sourceCode).toMatch(/setEquaPrice\(equaPriceUsd\)/);
+    expect(sourceCode).toMatch(/setUniaPrice\(equaPriceUsd\)/);
   });
 
   it('should return $0.01 from EquaPriceCalculator when totalTransactions is 0', () => {
@@ -41,25 +41,25 @@ describe('WalletDashboard - EQUA Price Calculation Fix', () => {
     expect(price).toBe(0.01);
   });
 
-  it('should calculate correct EQUA-to-INR conversion', () => {
+  it('should calculate correct UNIA-to-INR conversion', () => {
     // Given: price from calculator at 0 txns = 0.01 USD and FX rate = 90.77
     const equaPriceUsd = EquaPriceCalculator.calculatePrice(0);
     const fxRateInr = 90.77;
 
-    // When: Calculate EQUA price in INR
+    // When: Calculate UNIA price in INR
     const equaPriceInr = equaPriceUsd * fxRateInr;
 
-    // Then: 1 EQUA should equal 0.9077 INR (not 90.77)
+    // Then: 1 UNIA should equal 0.9077 INR (not 90.77)
     expect(equaPriceInr).toBeCloseTo(0.9077, 4);
     expect(equaPriceInr).not.toBe(90.77);
   });
 
-  it('should convert INR to EQUA correctly', () => {
-    // Given: 1 EQUA = 0.9077 INR
+  it('should convert INR to UNIA correctly', () => {
+    // Given: 1 UNIA = 0.9077 INR
     const equaPriceInr = 0.9077;
     const localAmount = 90.77; // INR input
 
-    // When: Convert INR to EQUA (equaAmount = localAmount / equaPrice)
+    // When: Convert INR to UNIA (equaAmount = localAmount / equaPrice)
     const equaAmount = localAmount / equaPriceInr;
 
     // Then: Should get 100 EQUA
@@ -67,7 +67,7 @@ describe('WalletDashboard - EQUA Price Calculation Fix', () => {
   });
 
   it('should convert EQUA to INR correctly', () => {
-    // Given: 1 EQUA = 0.9077 INR
+    // Given: 1 UNIA = 0.9077 INR
     const equaPriceInr = 0.9077;
     const equaAmount = 100; // EQUA input
 

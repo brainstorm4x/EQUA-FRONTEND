@@ -2,12 +2,12 @@
  * Program IDL in camelCase format in order to be used in JS/TS.
  *
  * Note that this is only a type helper and is not the actual IDL. The original
- * IDL can be found at `target/idl/equa_token.json`.
+ * IDL can be found at `target/idl/unia_token.json`.
  */
-export type EquaToken = {
-  "address": "D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw",
+export type UniaToken = {
+  "address": "B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2",
   "metadata": {
-    "name": "equaToken",
+    "name": "uniaToken",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Created with Anchor"
@@ -275,9 +275,9 @@ export type EquaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -470,7 +470,7 @@ export type EquaToken = {
         "Claim accumulated referral rewards (LEGACY - DEPRECATED)",
         "",
         "This instruction is deprecated as of the referral credits update.",
-        "Referral rewards are now stored as credits, not EQUA tokens.",
+        "Referral rewards are now stored as credits, not UNIA tokens.",
         "Use claim_bonus_mint instead to redeem credits for bonus mint attempts.",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
@@ -528,9 +528,9 @@ export type EquaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -584,7 +584,7 @@ export type EquaToken = {
     {
       "name": "createTokenMint",
       "docs": [
-        "Create the EQUA token mint (call once during deployment)"
+        "Create the UNIA token mint (call once during deployment)"
       ],
       "discriminator": [
         35,
@@ -605,9 +605,9 @@ export type EquaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -724,9 +724,9 @@ export type EquaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -1318,7 +1318,7 @@ export type EquaToken = {
     {
       "name": "initializeEqxOracle",
       "docs": [
-        "Initialize the EQX Oracle (call once during deployment)"
+        "Initialize the UNX Oracle (call once during deployment)"
       ],
       "discriminator": [
         64,
@@ -1332,15 +1332,15 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "eqxOracle",
+          "name": "unxOracle",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
+                  117,
+                  110,
                   120,
                   45,
                   111,
@@ -1602,9 +1602,9 @@ export type EquaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -1676,10 +1676,10 @@ export type EquaToken = {
     {
       "name": "mintTokens",
       "docs": [
-        "Mint EQUA tokens with tier limits based on user index",
-        "User #1: 100 attempts at 100,000 EQUA each",
-        "Users #2-10: 100 attempts at 10,000 EQUA each",
-        "Users #11+: Normal limit (1,000 EQUA)",
+        "Mint UNIA tokens with tier limits based on user index",
+        "User #1: 100 attempts at 100,000 UNIA each",
+        "Users #2-10: 100 attempts at 10,000 UNIA each",
+        "Users #11+: Normal limit (1,000 UNIA)",
         "",
         "Cooldown: 24-hour cooldown enforced between regular mints",
         "",
@@ -1788,9 +1788,9 @@ export type EquaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -2126,7 +2126,7 @@ export type EquaToken = {
     {
       "name": "transferTokens",
       "docs": [
-        "Transfer EQUA tokens between users (P2P)",
+        "Transfer UNIA tokens between users (P2P)",
         "",
         "This is the PRIMARY instruction that increments GlobalState.total_transactions.",
         "The counter tracks peer-to-peer user transfers for price appreciation calculations.",
@@ -2202,9 +2202,9 @@ export type EquaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -2377,9 +2377,9 @@ export type EquaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -2407,7 +2407,7 @@ export type EquaToken = {
     {
       "name": "updateEqxPrice",
       "docs": [
-        "Update the EQX Oracle price (admin only)",
+        "Update the UNX Oracle price (admin only)",
         "All basket calculations occur OFF-CHAIN. This instruction only stores the final price.",
         "",
         "# Arguments",
@@ -2427,15 +2427,15 @@ export type EquaToken = {
       ],
       "accounts": [
         {
-          "name": "eqxOracle",
+          "name": "unxOracle",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
+                  117,
+                  110,
                   120,
                   45,
                   111,
@@ -2495,7 +2495,7 @@ export type EquaToken = {
       ]
     },
     {
-      "name": "eqxOracle",
+      "name": "unxOracle",
       "discriminator": [
         31,
         243,
@@ -2612,7 +2612,7 @@ export type EquaToken = {
     {
       "code": 6007,
       "name": "mintAmountExceedsTierLimit",
-      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 EQUA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 EQUA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 EQUA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M-100M): 0.001 EQUA; Tier 10 (#100M-1B): 0.0001 EQUA; Tier 11 (#1B+): 0.00001 EQUA"
+      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 UNIA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 UNIA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 UNIA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M-100M): 0.001 EQUA; Tier 10 (#100M-1B): 0.0001 EQUA; Tier 11 (#1B+): 0.00001 EQUA"
     },
     {
       "code": 6008,
@@ -2632,7 +2632,7 @@ export type EquaToken = {
     {
       "code": 6011,
       "name": "invalidAssociatedTokenAccount",
-      "msg": "Missing or invalid Associated Token Account (ATA). Ensure the ATA is initialized for the EQUA mint with Token-2022 program. Use getAssociatedTokenAddressSync() to derive the correct address."
+      "msg": "Missing or invalid Associated Token Account (ATA). Ensure the ATA is initialized for the UNIA mint with Token-2022 program. Use getAssociatedTokenAddressSync() to derive the correct address."
     },
     {
       "code": 6012,
@@ -2662,7 +2662,7 @@ export type EquaToken = {
     {
       "code": 6017,
       "name": "invalidMintPda",
-      "msg": "Mint PDA derivation failed. Expected seeds: ['equa-mint']. Ensure you're deriving the PDA correctly on the client side."
+      "msg": "Mint PDA derivation failed. Expected seeds: ['unia-mint']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6018,
@@ -2717,7 +2717,7 @@ export type EquaToken = {
     {
       "code": 6028,
       "name": "invalidEqxOraclePda",
-      "msg": "EQX Oracle PDA derivation failed. Expected seeds: ['eqx-oracle']. Ensure you're deriving the PDA correctly on the client side."
+      "msg": "UNX Oracle PDA derivation failed. Expected seeds: ['unx-oracle']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6029,
@@ -2839,10 +2839,10 @@ export type EquaToken = {
       }
     },
     {
-      "name": "eqxOracle",
+      "name": "unxOracle",
       "docs": [
-        "EQX Oracle PDA Account",
-        "Seeds: [b\"eqx-oracle\"]"
+        "UNX Oracle PDA Account",
+        "Seeds: [b\"unx-oracle\"]"
       ],
       "type": {
         "kind": "struct",

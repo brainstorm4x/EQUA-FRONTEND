@@ -12,7 +12,7 @@ export default function MerchantsPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <Logo size={40} />
-              <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+              <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
             </Link>
             <nav className="flex items-center gap-6">
               <Link href="/" className="text-purple-200 hover:text-white transition-colors">
@@ -49,7 +49,7 @@ export default function MerchantsPage() {
                 Message for Merchants
               </h1>
               <p className="text-purple-300 text-xl">
-                Why Should You Accept EQUA—Even Just Once a Day?
+                Why Should You Accept UNIA—Even Just Once a Day?
               </p>
             </div>
 
@@ -62,7 +62,7 @@ export default function MerchantsPage() {
                 </h2>
                 <p className="text-purple-200 leading-relaxed text-lg">
                   Every new financial technology started with &quot;just one customer.&quot;
-                  EQUA lets you be early, with zero risk required.
+                  UNIA lets you be early, with zero risk required.
                 </p>
               </div>
             </section>
@@ -75,10 +75,10 @@ export default function MerchantsPage() {
                   Small Change, Big Opportunity
                 </h2>
                 <p className="text-purple-200 leading-relaxed">
-                  Just one EQUA payment a day connects your shop to a global, digital network—without you needing to change how you do business.
+                  Just one UNIA payment a day connects your shop to a global, digital network—without you needing to change how you do business.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-4 bg-purple-500/20 p-4 rounded-lg">
-                  <strong className="text-white">The first time you accept EQUA, you&apos;re not just getting paid:</strong> you&apos;re opening a gateway to new customers, new markets, and new rewards.
+                  <strong className="text-white">The first time you accept UNIA, you&apos;re not just getting paid:</strong> you&apos;re opening a gateway to new customers, new markets, and new rewards.
                 </p>
               </div>
             </section>
@@ -91,10 +91,10 @@ export default function MerchantsPage() {
                   Appreciation That Works for You
                 </h2>
                 <p className="text-purple-200 leading-relaxed">
-                  With EQUA, every transaction helps the entire system grow—including what you hold.
+                  With UNIA, every transaction helps the entire system grow—including what you hold.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-4">
-                  <strong className="text-white">Your first EQUA could be your foot in the door</strong> for potential appreciation as the network increases activity.
+                  <strong className="text-white">Your first UNIA could be your foot in the door</strong> for potential appreciation as the network increases activity.
                 </p>
                 <p className="text-green-300 text-sm mt-4 italic">
                   (More real transactions = more value for everyone—including you.)
@@ -116,7 +116,7 @@ export default function MerchantsPage() {
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="text-xl">✓</span>
-                    <span>Get listed on local &quot;EQUA-friendly&quot; maps and discoverability engines.</span>
+                    <span>Get listed on local &quot;UNIA-friendly&quot; maps and discoverability engines.</span>
                   </li>
                 </ul>
               </div>
@@ -130,7 +130,7 @@ export default function MerchantsPage() {
                   No Pressure, No Commitment
                 </h2>
                 <p className="text-purple-200 leading-relaxed">
-                  <strong className="text-white">Try it:</strong> Accept EQUA for just one sale a day (or one outgoing payment if you pay vendors)—see the results for yourself.
+                  <strong className="text-white">Try it:</strong> Accept UNIA for just one sale a day (or one outgoing payment if you pay vendors)—see the results for yourself.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-4">
                   Convert back to fiat any time—no need to commit more than you&apos;re comfortable with.
@@ -151,7 +151,7 @@ export default function MerchantsPage() {
                 <ul className="list-none space-y-3 text-purple-200">
                   <li className="flex items-start gap-3">
                     <span className="text-green-400 text-xl">✓</span>
-                    <span>If the EQUA network grows, your daily small acceptance could bring big upside over time.</span>
+                    <span>If the UNIA network grows, your daily small acceptance could bring big upside over time.</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="text-blue-400 text-xl">✓</span>
@@ -169,7 +169,7 @@ export default function MerchantsPage() {
                   Zero Cost, Zero Hassle
                 </h2>
                 <p className="text-purple-200 leading-relaxed mb-4">
-                  Setting up EQUA payment is as easy as downloading a wallet app—no special device, no paperwork, no long-term lock-in.
+                  Setting up UNIA payment is as easy as downloading a wallet app—no special device, no paperwork, no long-term lock-in.
                 </p>
                 <div className="flex flex-wrap gap-4 mt-4">
                   <span className="bg-green-500/20 text-green-300 px-4 py-2 rounded-full text-sm font-medium">
@@ -190,20 +190,20 @@ export default function MerchantsPage() {
               <div className="bg-white/5 rounded-xl p-6 border border-purple-500/20">
                 <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
                   <span className="text-3xl">📋</span>
-                  Simple Steps: Try EQUA Today
+                  Simple Steps: Try UNIA Today
                 </h2>
                 <div className="space-y-4">
                   <div className="flex items-start gap-4 bg-purple-500/10 p-4 rounded-xl">
                     <span className="bg-purple-600 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">1</span>
-                    <p className="text-purple-200">Download the EQUA wallet or compatible crypto wallet.</p>
+                    <p className="text-purple-200">Download the UNIA wallet or compatible crypto wallet.</p>
                   </div>
                   <div className="flex items-start gap-4 bg-purple-500/10 p-4 rounded-xl">
                     <span className="bg-purple-600 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">2</span>
-                    <p className="text-purple-200">Display your EQUA address or QR code.</p>
+                    <p className="text-purple-200">Display your UNIA address or QR code.</p>
                   </div>
                   <div className="flex items-start gap-4 bg-purple-500/10 p-4 rounded-xl">
                     <span className="bg-purple-600 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">3</span>
-                    <p className="text-purple-200">Accept or send just one EQUA transaction per day—even a tiny amount.</p>
+                    <p className="text-purple-200">Accept or send just one UNIA transaction per day—even a tiny amount.</p>
                   </div>
                   <div className="flex items-start gap-4 bg-purple-500/10 p-4 rounded-xl">
                     <span className="bg-purple-600 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">4</span>
@@ -221,7 +221,7 @@ export default function MerchantsPage() {
                   You don&apos;t have to change everything—sometimes, <strong className="text-yellow-400">just one step is enough to open the door to something big.</strong>
                 </p>
                 <p className="text-purple-200 text-lg leading-relaxed mt-4">
-                  EQUA works quietly in the background for you with every transaction.
+                  UNIA works quietly in the background for you with every transaction.
                 </p>
               </div>
             </section>
@@ -231,7 +231,7 @@ export default function MerchantsPage() {
               <div className="flex justify-center">
                 <Logo size={60} />
               </div>
-              <p className="text-2xl font-bold text-white mb-2 mt-4">EQUA</p>
+              <p className="text-2xl font-bold text-white mb-2 mt-4">UNIA</p>
               <p className="text-purple-300">Equal Access. Equal Opportunity. Equal Economy.</p>
             </div>
           </article>
@@ -242,7 +242,7 @@ export default function MerchantsPage() {
               href="/mint"
               className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg"
             >
-              Get Started with EQUA →
+              Get Started with UNIA →
             </Link>
           </div>
         </div>

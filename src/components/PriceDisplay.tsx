@@ -5,7 +5,7 @@ import { useConnection } from '@solana/wallet-adapter-react';
 import { EquaPriceCalculator, PriceTier, formatEquaPrice } from '@/utils/priceCalculator';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import { getUserLocaleCurrency, formatLocalCurrency, formatLocalCurrencyDynamic } from '@/utils/localeCurrency';
-import { getEquaPriceMultiFormat, formatEQXPrice, MultiFormatEquaPrice } from '@/utils/eqxOracle';
+import { getUniaPriceMultiFormat, formatUNXPrice, MultiFormatUniaPrice } from '@/utils/unxOracle';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
 
 
@@ -14,10 +14,10 @@ interface PriceDisplayProps {
   showStats?: boolean;
 }
 
-// EQX-related fields for price display
-interface EqxPriceData {
-  eqxPrice: number;
-  eqxValue: number;
+// UNX-related fields for price display
+interface UnxPriceData {
+  unxPrice: number;
+  unxValue: number;
   priceSource: 'on-chain-oracle';
   fxRate?: number;
   fxSource?: string;
@@ -25,9 +25,9 @@ interface EqxPriceData {
   fxIsStale?: boolean;
 }
 
-const DEFAULT_EQX_DATA: EqxPriceData = {
-  eqxPrice: 0.01,
-  eqxValue: 1.0,
+const DEFAULT_UNX_DATA: UnxPriceData = {
+  unxPrice: 0.01,
+  unxValue: 1.0,
   priceSource: 'on-chain-oracle',
   fxRate: 1.0,
   fxSource: 'static',
@@ -41,7 +41,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
   const { connection } = useConnection();
   
   const [localCurrency, setLocalCurrency] = useState<string>('USD');
-  const [eqxData, setEqxData] = useState<EqxPriceData>(DEFAULT_EQX_DATA);
+  const [unxData, setEqxData] = useState<UnxPriceData>(DEFAULT_UNX_DATA);
   const [currentPrice, setCurrentPrice] = useState<number>(0.01);
   const [currentTier, setCurrentTier] = useState<PriceTier>('tier1');
   const [mintingRate, setMintingRate] = useState<string>('100,000');
@@ -71,20 +71,20 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
       : '100';
     setMintingRate(rate);
     
-    // Fetch EQX price data
+    // Fetch UNX price data
     const fetchEqxPrice = async () => {
       const currencyCode = getUserLocaleCurrency();
-      let eqxPriceData: MultiFormatEquaPrice;
+      let unxPriceData: MultiFormatUniaPrice;
       try {
-        eqxPriceData = await getEquaPriceMultiFormat(price, currencyCode, connection);
-      } catch (eqxError) {
-        console.warn('Error fetching EQX price, using defaults:', eqxError);
-        eqxPriceData = {
-          eqx: price,
+        unxPriceData = await getUniaPriceMultiFormat(price, currencyCode, connection);
+      } catch (unxError) {
+        console.warn('Error fetching UNX price, using defaults:', unxError);
+        unxPriceData = {
+          unx: price,
           usd: price,
           localCurrency: price,
           localCurrencyCode: currencyCode,
-          eqxValue: 1.0,
+          unxValue: 1.0,
           source: 'on-chain-oracle',
           fxRate: 1.0,
           fxSource: 'static',
@@ -94,13 +94,13 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
       }
       
       setEqxData({
-        eqxPrice: eqxPriceData.eqx,
-        eqxValue: eqxPriceData.eqxValue,
-        priceSource: eqxPriceData.source,
-        fxRate: eqxPriceData.fxRate,
-        fxSource: eqxPriceData.fxSource,
-        fxAge: eqxPriceData.fxAge,
-        fxIsStale: eqxPriceData.fxIsStale,
+        unxPrice: unxPriceData.unx,
+        unxValue: unxPriceData.unxValue,
+        priceSource: unxPriceData.source,
+        fxRate: unxPriceData.fxRate,
+        fxSource: unxPriceData.fxSource,
+        fxAge: unxPriceData.fxAge,
+        fxIsStale: unxPriceData.fxIsStale,
       });
     };
     
@@ -148,9 +148,9 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
       <div className={`grid ${showStats ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'} gap-6`}>
         <div>
           <p className="text-purple-200 text-sm mb-2">Current EQUA Price</p>
-          {/* EQX Price (Primary) */}
-          <p className="text-yellow-300 text-2xl font-bold" data-testid="eqx-price">
-            {formatEQXPrice(eqxData.eqxPrice)}
+          {/* UNX Price (Primary) */}
+          <p className="text-yellow-300 text-2xl font-bold" data-testid="unx-price">
+            {formatUNXPrice(unxData.unxPrice)}
           </p>
           {/* USD Price */}
           <p className="text-white text-lg font-semibold mt-1" data-testid="current-price">
@@ -160,9 +160,9 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           {localCurrency !== 'USD' && (
             <div className="mt-1">
               <p className="text-green-300 text-sm" data-testid="local-currency-price">
-                ≈ {formatLocalCurrencyDynamic(currentPrice, localCurrency, eqxData.fxRate || 1)}
+                ≈ {formatLocalCurrencyDynamic(currentPrice, localCurrency, unxData.fxRate || 1)}
                 {/* Add stale indicator only when exchange rate data is genuinely outdated */}
-                {eqxData.fxIsStale && (
+                {unxData.fxIsStale && (
                   <span className="text-orange-300 text-xs ml-1" title="Exchange rate may be outdated (>24h old)">
                     (stale)
                   </span>
@@ -170,12 +170,12 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
               </p>
               
               {/* Staleness warning - KEEP THIS */}
-              {eqxData.fxIsStale && (
+              {unxData.fxIsStale && (
                 <p className="text-yellow-400 text-xs flex items-center gap-1 mt-1">
                   <span>⚠️</span>
                   <span>
-                    Exchange rate is {Math.floor((eqxData.fxAge || 0) / (60 * 60 * 1000))}h old
-                    {eqxData.fxSource === 'fallback' && ' (using fallback rate)'}
+                    Exchange rate is {Math.floor((unxData.fxAge || 0) / (60 * 60 * 1000))}h old
+                    {unxData.fxSource === 'fallback' && ' (using fallback rate)'}
                   </span>
                 </p>
               )}
@@ -183,7 +183,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           )}
           <p className="text-purple-300 text-xs mt-1" data-testid="price-source">
             <span className="ml-2 text-purple-400">
-              ({eqxData.priceSource === 'on-chain-oracle' ? '🟢 On-Chain' : '⚪ Fallback'})
+              ({unxData.priceSource === 'on-chain-oracle' ? '🟢 On-Chain' : '⚪ Fallback'})
             </span>
           </p>
         </div>

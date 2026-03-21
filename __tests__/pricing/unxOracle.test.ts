@@ -1,14 +1,14 @@
 /**
- * Tests for EQX Oracle - On-Chain Oracle Integration
+ * Tests for UNX Oracle - On-Chain Oracle Integration
  * 
- * Tests the on-chain EQX oracle integration and multi-format price conversions.
+ * Tests the on-chain UNX oracle integration and multi-format price conversions.
  */
 
 import { Connection } from '@solana/web3.js';
 import {
-  getEquaPriceMultiFormat,
-  formatEQXPrice,
-} from '@/utils/eqxOracle';
+  getUniaPriceMultiFormat,
+  formatUNXPrice,
+} from '@/utils/unxOracle';
 
 // Mock Connection
 const mockConnection = {
@@ -30,7 +30,7 @@ jest.mock('@/utils/fxRateClient', () => ({
 jest.mock('@coral-xyz/anchor', () => ({
   Program: jest.fn().mockImplementation(() => ({
     account: {
-      eqxOracle: {
+      unxOracle: {
         fetch: jest.fn().mockResolvedValue({
           price: { toString: () => '100000000' }, // 1.0 in fixed-point (1e8 precision)
           lastUpdated: { toString: () => Date.now().toString() },
@@ -47,25 +47,25 @@ jest.mock('@coral-xyz/anchor', () => ({
   Wallet: jest.fn(),
 }));
 
-describe('EQX Oracle', () => {
+describe('UNX Oracle', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe('Currency Conversion', () => {
     it('should get multi-format price for USD', async () => {
-      const price = await getEquaPriceMultiFormat(0.01, 'USD', mockConnection);
+      const price = await getUniaPriceMultiFormat(0.01, 'USD', mockConnection);
       
       expect(price.usd).toBe(0.01);
       expect(price.localCurrency).toBe(0.01);
       expect(price.localCurrencyCode).toBe('USD');
-      expect(price.eqx).toBeGreaterThan(0);
-      expect(price.eqxValue).toBeGreaterThan(0);
+      expect(price.unx).toBeGreaterThan(0);
+      expect(price.unxValue).toBeGreaterThan(0);
       expect(price.source).toBe('on-chain-oracle');
     });
 
     it('should get multi-format price for EUR', async () => {
-      const price = await getEquaPriceMultiFormat(0.01, 'EUR', mockConnection);
+      const price = await getUniaPriceMultiFormat(0.01, 'EUR', mockConnection);
       
       expect(price.usd).toBe(0.01);
       expect(price.localCurrency).toBeCloseTo(0.01 * 0.92, 6);
@@ -79,7 +79,7 @@ describe('EQX Oracle', () => {
     });
 
     it('should get multi-format price for INR', async () => {
-      const price = await getEquaPriceMultiFormat(0.01, 'INR', mockConnection);
+      const price = await getUniaPriceMultiFormat(0.01, 'INR', mockConnection);
       
       expect(price.usd).toBe(0.01);
       expect(price.localCurrencyCode).toBe('INR');
@@ -90,7 +90,7 @@ describe('EQX Oracle', () => {
     });
 
     it('should include FX metadata in multi-format price', async () => {
-      const price = await getEquaPriceMultiFormat(0.01, 'EUR', mockConnection);
+      const price = await getUniaPriceMultiFormat(0.01, 'EUR', mockConnection);
       
       // Verify FX metadata fields exist
       expect(price.fxRate).toBeDefined();
@@ -107,26 +107,26 @@ describe('EQX Oracle', () => {
     });
   });
 
-  describe('EQX Price Formatting', () => {
+  describe('UNX Price Formatting', () => {
     it('should format very small prices in exponential notation', () => {
-      expect(formatEQXPrice(0.00001)).toMatch(/e/);
+      expect(formatUNXPrice(0.00001)).toMatch(/e/);
     });
 
     it('should format small prices with 6 decimal places', () => {
-      const formatted = formatEQXPrice(0.001234);
+      const formatted = formatUNXPrice(0.001234);
       expect(formatted).toContain('0.001234');
-      expect(formatted).toContain('EQX');
+      expect(formatted).toContain('UNX');
     });
 
     it('should format normal prices with 4 decimal places', () => {
-      const formatted = formatEQXPrice(1.2345);
+      const formatted = formatUNXPrice(1.2345);
       expect(formatted).toContain('1.2345');
-      expect(formatted).toContain('EQX');
+      expect(formatted).toContain('UNX');
     });
 
     it('should format large prices with locale formatting', () => {
-      const formatted = formatEQXPrice(1234567.89);
-      expect(formatted).toContain('EQX');
+      const formatted = formatUNXPrice(1234567.89);
+      expect(formatted).toContain('UNX');
     });
   });
 });
