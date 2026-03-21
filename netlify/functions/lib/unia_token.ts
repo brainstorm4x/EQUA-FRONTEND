@@ -275,9 +275,9 @@ export type UniaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -470,7 +470,7 @@ export type UniaToken = {
         "Claim accumulated referral rewards (LEGACY - DEPRECATED)",
         "",
         "This instruction is deprecated as of the referral credits update.",
-        "Referral rewards are now stored as credits, not EQUA tokens.",
+        "Referral rewards are now stored as credits, not UNIA tokens.",
         "Use claim_bonus_mint instead to redeem credits for bonus mint attempts.",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
@@ -528,9 +528,9 @@ export type UniaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -584,7 +584,7 @@ export type UniaToken = {
     {
       "name": "createTokenMint",
       "docs": [
-        "Create the EQUA token mint (call once during deployment)"
+        "Create the UNIA token mint (call once during deployment)"
       ],
       "discriminator": [
         35,
@@ -605,9 +605,9 @@ export type UniaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -724,9 +724,9 @@ export type UniaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -1339,8 +1339,8 @@ export type UniaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
+                  117,
+                  110,
                   120,
                   45,
                   111,
@@ -1602,9 +1602,9 @@ export type UniaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -1676,10 +1676,10 @@ export type UniaToken = {
     {
       "name": "mintTokens",
       "docs": [
-        "Mint EQUA tokens with tier limits based on user index",
-        "User #1: 100 attempts at 100,000 EQUA each",
-        "Users #2-10: 100 attempts at 10,000 EQUA each",
-        "Users #11+: Normal limit (1,000 EQUA)",
+        "Mint UNIA tokens with tier limits based on user index",
+        "User #1: 100 attempts at 100,000 UNIA each",
+        "Users #2-10: 100 attempts at 10,000 UNIA each",
+        "Users #11+: Normal limit (1,000 UNIA)",
         "",
         "Cooldown: 24-hour cooldown enforced between regular mints",
         "",
@@ -1788,9 +1788,9 @@ export type UniaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -2126,7 +2126,7 @@ export type UniaToken = {
     {
       "name": "transferTokens",
       "docs": [
-        "Transfer EQUA tokens between users (P2P)",
+        "Transfer UNIA tokens between users (P2P)",
         "",
         "This is the PRIMARY instruction that increments GlobalState.total_transactions.",
         "The counter tracks peer-to-peer user transfers for price appreciation calculations.",
@@ -2202,9 +2202,9 @@ export type UniaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -2377,9 +2377,9 @@ export type UniaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
                   117,
+                  110,
+                  105,
                   97,
                   45,
                   109,
@@ -2434,8 +2434,8 @@ export type UniaToken = {
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  113,
+                  117,
+                  110,
                   120,
                   45,
                   111,
@@ -2612,7 +2612,7 @@ export type UniaToken = {
     {
       "code": 6007,
       "name": "mintAmountExceedsTierLimit",
-      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 EQUA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 EQUA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 EQUA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M-100M): 0.001 EQUA; Tier 10 (#100M-1B): 0.0001 EQUA; Tier 11 (#1B+): 0.00001 EQUA"
+      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 UNIA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 UNIA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 UNIA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M-100M): 0.001 EQUA; Tier 10 (#100M-1B): 0.0001 EQUA; Tier 11 (#1B+): 0.00001 EQUA"
     },
     {
       "code": 6008,
@@ -2632,7 +2632,7 @@ export type UniaToken = {
     {
       "code": 6011,
       "name": "invalidAssociatedTokenAccount",
-      "msg": "Missing or invalid Associated Token Account (ATA). Ensure the ATA is initialized for the EQUA mint with Token-2022 program. Use getAssociatedTokenAddressSync() to derive the correct address."
+      "msg": "Missing or invalid Associated Token Account (ATA). Ensure the ATA is initialized for the UNIA mint with Token-2022 program. Use getAssociatedTokenAddressSync() to derive the correct address."
     },
     {
       "code": 6012,

@@ -25,7 +25,7 @@ async function main() {
     program.programId
   );
 
-  console.log("Creating EQUA token mint with Token-2022 program...");
+  console.log("Creating UNIA token mint with Token-2022 program...");
   console.log("Mint PDA:", mint.toBase58());
   console.log("Mint Authority:", mintAuthority.toBase58());
   console.log("Token Program:", TOKEN_2022_PROGRAM_ID.toBase58());

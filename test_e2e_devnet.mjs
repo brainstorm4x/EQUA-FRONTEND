@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * End-to-End Integration Test for EQUA Token on Devnet
+ * End-to-End Integration Test for UNIA Token on Devnet
  * 
  * This script verifies:
  * 1. Program deployment status
@@ -370,7 +370,7 @@ function generateRecommendations(results) {
 
 async function main() {
   console.log(`\n${colors.cyan}╔${'═'.repeat(78)}╗`);
-  console.log(`║  EQUA Token - End-to-End Devnet Integration Test${' '.repeat(28)}║`);
+  console.log(`║  UNIA Token - End-to-End Devnet Integration Test${' '.repeat(28)}║`);
   console.log(`╚${'═'.repeat(78)}╝${colors.reset}\n`);
   
   info(`RPC Endpoint: ${RPC_ENDPOINT}`);

@@ -20,7 +20,7 @@ test.describe('Cooldown Enforcement', () => {
     await page.waitForLoadState('networkidle');
     
     // Look for mint button (only visible for registered users not on cooldown)
-    const mintButton = page.locator('button:has-text("Claim Daily EQUA")');
+    const mintButton = page.locator('button:has-text("Claim Daily UNIA")');
     
     const isVisible = await mintButton.isVisible({ timeout: 5000 }).catch(() => false);
     
@@ -74,7 +74,7 @@ test.describe('Cooldown Enforcement', () => {
     await page.waitForLoadState('networkidle');
     
     // Look for mint button
-    const mintButton = page.locator('button:has-text("Claim Daily EQUA")');
+    const mintButton = page.locator('button:has-text("Claim Daily UNIA")');
     
     const isVisible = await mintButton.isVisible({ timeout: 5000 }).catch(() => false);
     
@@ -120,7 +120,7 @@ test.describe('Cooldown Enforcement', () => {
     await page.waitForLoadState('networkidle');
     
     // Look for mint button
-    const mintButton = page.locator('button:has-text("Claim Daily EQUA")');
+    const mintButton = page.locator('button:has-text("Claim Daily UNIA")');
     
     const isVisible = await mintButton.isVisible({ timeout: 5000 }).catch(() => false);
     
@@ -154,7 +154,7 @@ test.describe('Cooldown Enforcement', () => {
     await newPage.waitForLoadState('networkidle');
     
     // The mint button in the new tab should also be disabled due to in-flight lock
-    const newMintButton = newPage.locator('button:has-text("Claim Daily EQUA")');
+    const newMintButton = newPage.locator('button:has-text("Claim Daily UNIA")');
     
     // Wait a moment for localStorage to sync
     await newPage.waitForTimeout(500);
@@ -221,10 +221,10 @@ test.describe('Cooldown Enforcement', () => {
     await expect(readyMessage).toBeVisible();
     
     // Verify claim message
-    await expect(page.locator('text=/Claim your.*EQUA/i')).toBeVisible();
+    await expect(page.locator('text=/Claim your.*UNIA/i')).toBeVisible();
     
     // Verify mint button is enabled
-    const mintButton = page.locator('button:has-text("Claim Daily EQUA")');
+    const mintButton = page.locator('button:has-text("Claim Daily UNIA")');
     await expect(mintButton).toBeEnabled();
     
     // Verify button has correct styling (green background)
