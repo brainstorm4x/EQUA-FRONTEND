@@ -240,6 +240,55 @@ export function getUserLocaleCurrency(): string {
   }
 }
 
+const PREFERRED_CURRENCY_KEY = 'equa_preferred_currency';
+
+/**
+ * Get user's preferred currency.
+ * Priority: localStorage saved preference → auto-detected from locale/timezone
+ */
+export function getPreferredCurrency(): string {
+  if (typeof window === 'undefined') return 'USD';
+  try {
+    const saved = localStorage.getItem(PREFERRED_CURRENCY_KEY);
+    if (saved && saved.length === 3) return saved;
+  } catch {}
+  return getUserLocaleCurrency();
+}
+
+/**
+ * Save user's preferred currency to localStorage
+ */
+export function setPreferredCurrency(currencyCode: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(PREFERRED_CURRENCY_KEY, currencyCode);
+  } catch {}
+}
+
+/**
+ * Clear saved currency preference (revert to auto-detection)
+ */
+export function clearPreferredCurrency(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(PREFERRED_CURRENCY_KEY);
+  } catch {}
+}
+
+/**
+ * Get the raw saved currency preference (without auto-detection fallback).
+ * Returns null if no preference has been saved.
+ */
+export function getSavedPreferredCurrency(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const saved = localStorage.getItem(PREFERRED_CURRENCY_KEY);
+    return saved && saved.length === 3 ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Formats a price in local currency
  * 

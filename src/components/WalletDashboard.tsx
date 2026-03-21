@@ -24,7 +24,8 @@ import {
 import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRaw } from '@/utils/tokenFormat';
-import { getUserLocaleCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
+import { getUserLocaleCurrency, getPreferredCurrency, setPreferredCurrency, getSavedPreferredCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
+import { fetchFxRates } from '@/utils/fxRateClient';
 import { getEquaPriceMultiFormat } from '@/utils/eqxOracle';
 import { EquaPriceCalculator } from '@/utils/priceCalculator';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
@@ -573,10 +574,13 @@ const SendModal: FC<SendModalProps> = ({
   const [localCurrency, setLocalCurrency] = useState(() => {
     // Detect currency on initialization (runs once, synchronously on first render)
     if (typeof window !== 'undefined') {
-      return getUserLocaleCurrency();
+      return getPreferredCurrency();
     }
     return 'USD'; // SSR fallback
   });
+  const [allCurrencies, setAllCurrencies] = useState<string[]>([]);
+  const [currencySearch, setCurrencySearch] = useState('');
+  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -593,7 +597,38 @@ const SendModal: FC<SendModalProps> = ({
   // Fetch totalTransactions from GlobalState for accurate price calculation
   const { totalTransactions } = useGlobalStateStats();
 
-  // Fetch EQUA price based on current transaction count (re-runs when totalTransactions changes)
+  // Resolve currency symbol dynamically for any currency code
+  const getCurrencySymbol = (code: string): string => {
+    if (DEFAULT_RATES[code]) return DEFAULT_RATES[code].symbol;
+    try {
+      const parts = new Intl.NumberFormat('en', { style: 'currency', currency: code }).formatToParts(0);
+      const symbolPart = parts.find(p => p.type === 'currency');
+      return symbolPart?.value || code;
+    } catch {
+      return code;
+    }
+  };
+
+  // Fetch all available currencies from FX rates API
+  useEffect(() => {
+    const loadCurrencies = async () => {
+      try {
+        const fxData = await fetchFxRates();
+        const detected = getUserLocaleCurrency();
+        const codes = Object.keys(fxData.rates).sort();
+        // Pin detected currency at top, followed by alphabetically sorted rest
+        const pinned = codes.filter(c => c === detected);
+        const rest = codes.filter(c => c !== detected);
+        setAllCurrencies([...pinned, ...rest]);
+      } catch {
+        // Fallback to DEFAULT_RATES keys
+        setAllCurrencies(Object.keys(DEFAULT_RATES).sort());
+      }
+    };
+    loadCurrencies();
+  }, []);
+
+  // Fetch EQUA price based on current transaction count (re-runs when localCurrency changes)
   useEffect(() => {
     const fetchPrice = async () => {
       setIsLoadingPrice(true);
@@ -1099,9 +1134,107 @@ const SendModal: FC<SendModalProps> = ({
             </div>
 
             <div className="mb-4">
-              <label className="block text-purple-200 text-sm mb-2">
-                Amount ({DEFAULT_RATES[localCurrency]?.symbol || '$'} {localCurrency})
-              </label>
+              {/* Currency selector */}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-purple-200 text-sm">
+                  Amount ({getCurrencySymbol(localCurrency)} {localCurrency})
+                </span>
+                <div className="relative">
+                  <button
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={showCurrencyDropdown}
+                    aria-label="Select currency"
+                    onClick={() => { setShowCurrencyDropdown(v => !v); setCurrencySearch(''); }}
+                    className="flex items-center gap-1 bg-purple-700/60 hover:bg-purple-600/60 border border-purple-500/50 rounded-lg px-2 py-1 text-white text-xs font-medium transition-colors"
+                  >
+                    <span>{localCurrency}</span>
+                    <span className="text-purple-300">{showCurrencyDropdown ? '▲' : '▼'}</span>
+                  </button>
+                  {showCurrencyDropdown && (
+                    <div
+                      role="listbox"
+                      aria-label="Currency list"
+                      className="absolute right-0 top-full mt-1 w-52 max-h-60 overflow-y-auto bg-purple-900 border border-purple-500 rounded-xl shadow-2xl z-50"
+                    >
+                      <div className="sticky top-0 bg-purple-900 p-2 border-b border-purple-700">
+                        <input
+                          type="text"
+                          value={currencySearch}
+                          onChange={e => setCurrencySearch(e.target.value)}
+                          placeholder="Search currency..."
+                          aria-label="Search currencies"
+                          autoFocus
+                          className="w-full bg-purple-800/60 border border-purple-600 rounded-lg px-2 py-1 text-white text-xs placeholder-purple-400 focus:outline-none focus:border-purple-400"
+                        />
+                      </div>
+                      {(() => {
+                        const detectedCurrency = getUserLocaleCurrency();
+                        const savedPref = getSavedPreferredCurrency();
+                        const filtered = allCurrencies.length > 0
+                          ? allCurrencies.filter(c =>
+                              c.toLowerCase().includes(currencySearch.toLowerCase())
+                            )
+                          : Object.keys(DEFAULT_RATES)
+                              .sort()
+                              .filter(c => c.toLowerCase().includes(currencySearch.toLowerCase()));
+                        if (filtered.length === 0) {
+                          return <p className="text-purple-400 text-xs text-center py-3">No currencies found</p>;
+                        }
+                        return filtered.map(code => {
+                          const isSelected = code === localCurrency;
+                          const isAutoDetected = code === detectedCurrency && !savedPref;
+                          const isSavedDefault = code === savedPref;
+                          return (
+                            <button
+                              key={code}
+                              role="option"
+                              aria-selected={isSelected}
+                              type="button"
+                              onClick={() => {
+                                setLocalCurrency(code);
+                                setShowCurrencyDropdown(false);
+                                setCurrencySearch('');
+                                // Reset amount fields when currency changes
+                                setLocalCurrencyAmount('');
+                                setAmount('');
+                              }}
+                              className={`w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-purple-700/60 transition-colors ${
+                                isSelected ? 'bg-purple-700/80 text-white font-bold' : 'text-purple-100'
+                              }`}
+                            >
+                              <span className="flex items-center gap-1">
+                                <span className="font-mono w-8 shrink-0">{code}</span>
+                                <span className="text-purple-400">{getCurrencySymbol(code)}</span>
+                                {isAutoDetected && (
+                                  <span className="text-purple-400 text-[10px]">(auto)</span>
+                                )}
+                              </span>
+                              {isSavedDefault && (
+                                <span title="Saved default" className="text-yellow-400 text-[10px]">★</span>
+                              )}
+                            </button>
+                          );
+                        });
+                      })()}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* "Set as default" link shown when selected currency differs from saved preference */}
+              {localCurrency !== getSavedPreferredCurrency() && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreferredCurrency(localCurrency);
+                    // Force a re-render to update the ★ indicator
+                    setLocalCurrency(c => c);
+                  }}
+                  className="text-purple-400 hover:text-yellow-300 text-xs mb-2 underline transition-colors"
+                >
+                  ★ Set {localCurrency} as default
+                </button>
+              )}
               <div className="relative">
                 <input
                   type="number"
