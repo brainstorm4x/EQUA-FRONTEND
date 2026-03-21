@@ -857,9 +857,9 @@ export default function WhitepaperPage() {
               </p>
             </section>
 
-            {/* Part V.5 - Social Purpose Accounts */}
+            {/* Part V - Social Purpose Accounts */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V.5: Social Purpose Accounts—Generosity Through Restraint</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V: Social Purpose Accounts—Generosity Through Restraint</h2>
               
               <p className="text-purple-200 leading-relaxed">
                 EQUA is designed to create value for everyone—not just token holders. Once the terminal phase is reached and price growth stabilizes, the protocol activates <strong className="text-white">five social purpose accounts</strong> that distribute EQUA annually to support education, healthcare, research, grants, and operations.
@@ -966,7 +966,7 @@ export default function WhitepaperPage() {
 
             {/* Part V.6 - Annual Distribution Safety */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V.6: Annual Distribution Safety—Predictability Over Speed</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Annual Distribution Safety—Predictability Over Speed</h2>
               
               <p className="text-purple-200 leading-relaxed">
                 Social purpose distributions occur <strong className="text-white">exactly once per calendar year, in January</strong>. Not daily. Not per transaction. Not based on volume. Once per year, on a predictable schedule.
