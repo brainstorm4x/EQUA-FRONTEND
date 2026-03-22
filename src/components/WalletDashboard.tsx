@@ -680,7 +680,7 @@ const SendModal: FC<SendModalProps> = ({
     if (value && !isNaN(parseFloat(value)) && uniaPrice > 0) {
       const equaAmount = parseFloat(value);
       const localAmount = equaAmount * uniaPrice;
-      setLocalCurrencyAmount(localAmount.toFixed(2));
+      setLocalCurrencyAmount(localAmount.toFixed(6));
     } else {
       setLocalCurrencyAmount('');
     }
@@ -1240,9 +1240,9 @@ const SendModal: FC<SendModalProps> = ({
                   type="number"
                   value={localCurrencyAmount}
                   onChange={(e) => handleLocalCurrencyChange(e.target.value)}
-                  placeholder="0.00"
+                  placeholder="0.000000"
                   min="0"
-                  step="0.01"
+                  step="0.000001"
                   className="w-full bg-white/10 border-2 border-purple-500/30 rounded-xl px-4 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:border-purple-500"
                 />
               </div>
@@ -1258,7 +1258,7 @@ const SendModal: FC<SendModalProps> = ({
                   type="number"
                   value={amount}
                   onChange={(e) => handleEquaAmountChange(e.target.value)}
-                  placeholder="0.00"
+                  placeholder="0.000000"
                   min="0"
                   step="0.000001"
                   className="w-full bg-white/10 border-2 border-purple-500/30 rounded-xl px-4 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:border-purple-500"
