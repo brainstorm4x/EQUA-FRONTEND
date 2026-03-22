@@ -6,7 +6,7 @@
  * Tasks:
  * 1. Fetch yesterday's hourly rows from the unx_price_snapshots Turso table.
  * 2. Compute daily OHLC values for the UNIA price and the UNX basket close.
- * 3. Compute "$100 held" comparison metrics (equaHoldingValue, usdHoldingValue,
+ * 3. Compute "$100 held" comparison metrics (uniaHoldingValue, usdHoldingValue,
  *    advantagePerHundred) using the very first snapshot as the baseline.
  * 4. Write a row to the unx_daily_performance table (idempotent via INSERT OR REPLACE).
  * 5. Run Netlify Blobs housekeeping (delete snapshots older than 30 days).
@@ -83,10 +83,10 @@ const handler: Handler = async (): Promise<{ statusCode: number; body: string }>
   const firstRow = rows[0];
   const lastRow = rows[rows.length - 1];
 
-  const equaPriceOpen = firstRow.equaPriceUsd;
-  const equaPriceClose = lastRow.equaPriceUsd;
-  const equaPriceHigh = Math.max(...rows.map((r) => r.equaPriceUsd));
-  const equaPriceLow = Math.min(...rows.map((r) => r.equaPriceUsd));
+  const uniaPriceOpen = firstRow.uniaPriceUsd;
+  const uniaPriceClose = lastRow.uniaPriceUsd;
+  const uniaPriceHigh = Math.max(...rows.map((r) => r.uniaPriceUsd));
+  const uniaPriceLow = Math.min(...rows.map((r) => r.uniaPriceUsd));
   const unxBasketClose = lastRow.unxPriceUsd;
   const usdInflationIndex = lastRow.usdInflationIndex;
 
@@ -96,11 +96,11 @@ const handler: Handler = async (): Promise<{ statusCode: number; body: string }>
   // ------------------------------------------------------------------
   // Compute "$100 held" metrics using the very first snapshot as baseline
   // ------------------------------------------------------------------
-  let firstEverEquaPrice = equaPriceOpen;
+  let firstEverUniaPrice = uniaPriceOpen;
   try {
     const earliest = await getEarliestSnapshot();
-    if (earliest && earliest.equaPriceUsd > 0) {
-      firstEverEquaPrice = earliest.equaPriceUsd;
+    if (earliest && earliest.uniaPriceUsd > 0) {
+      firstEverUniaPrice = earliest.uniaPriceUsd;
     }
   } catch (err) {
     console.warn(
@@ -109,23 +109,23 @@ const handler: Handler = async (): Promise<{ statusCode: number; body: string }>
     );
   }
 
-  const equaHoldingValue =
-    firstEverEquaPrice > 0 ? BASELINE_INVESTMENT_USD * (equaPriceClose / firstEverEquaPrice) : BASELINE_INVESTMENT_USD;
+  const uniaHoldingValue =
+    firstEverUniaPrice > 0 ? BASELINE_INVESTMENT_USD * (uniaPriceClose / firstEverUniaPrice) : BASELINE_INVESTMENT_USD;
   const usdHoldingValue = usdInflationIndex > 0 ? BASELINE_INVESTMENT_USD / usdInflationIndex : BASELINE_INVESTMENT_USD;
-  const advantagePerHundred = equaHoldingValue - usdHoldingValue;
+  const advantagePerHundred = uniaHoldingValue - usdHoldingValue;
 
   // ------------------------------------------------------------------
   // Write daily performance record
   // ------------------------------------------------------------------
   const writeResult = await storeDailyPerformance({
     date: dateStr,
-    equaPriceOpen,
-    equaPriceClose,
-    equaPriceHigh,
-    equaPriceLow,
+    uniaPriceOpen,
+    uniaPriceClose,
+    uniaPriceHigh,
+    uniaPriceLow,
     unxBasketClose,
     usdInflationIndex,
-    equaHoldingValue,
+    uniaHoldingValue,
     usdHoldingValue,
     advantagePerHundred,
     hourlyDataPoints: rows.length,
@@ -149,7 +149,7 @@ const handler: Handler = async (): Promise<{ statusCode: number; body: string }>
 
   console.log(
     `snapshot-daily-performance: done — ${dateStr} | ` +
-      `equaHolding=$${equaHoldingValue.toFixed(2)} ` +
+      `uniaHolding=$${uniaHoldingValue.toFixed(2)} ` +
       `usdHolding=$${usdHoldingValue.toFixed(2)} ` +
       `advantage=$${advantagePerHundred.toFixed(2)} ` +
       `rows=${rows.length}`
@@ -159,7 +159,7 @@ const handler: Handler = async (): Promise<{ statusCode: number; body: string }>
     statusCode: 200,
     body: JSON.stringify({
       date: dateStr,
-      equaHoldingValue,
+      uniaHoldingValue,
       usdHoldingValue,
       advantagePerHundred,
       hourlyDataPoints: rows.length,

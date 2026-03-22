@@ -248,25 +248,25 @@ const handler: Handler = async (event, context) => {
 
       // Calculate UNIA price in USD from the tier-based formula.
       const { UniaPriceCalculator } = await import('../../src/utils/priceCalculator');
-      const equaPriceUsd = UniaPriceCalculator.calculatePrice(totalTransactions);
+      const uniaPriceUsd = UniaPriceCalculator.calculatePrice(totalTransactions);
 
       // Build UNIA price map for all 16 send-modal currencies.
       // Rates in fxRates.rates are expressed as "1 USD = X <currency>".
       const currencyPrices: Record<string, number> = {};
       for (const currency of SEND_MODAL_CURRENCIES) {
         if (currency === 'USD') {
-          currencyPrices['USD'] = equaPriceUsd;
+          currencyPrices['USD'] = uniaPriceUsd;
         } else {
           const rate = fxRates?.rates?.[currency];
-          currencyPrices[currency] = rate != null ? equaPriceUsd * rate : equaPriceUsd;
+          currencyPrices[currency] = rate != null ? uniaPriceUsd * rate : uniaPriceUsd;
         }
       }
 
       const tursoResult = await storeUnxSnapshotToTurso({
         timestamp: snapshot.timestamp,
         unxPriceUsd: basketPrice,
-        equaPriceUsd,
-        equaPriceUnx: basketPrice > 0 ? equaPriceUsd / basketPrice : 0,
+        uniaPriceUsd,
+        uniaPriceUnx: basketPrice > 0 ? uniaPriceUsd / basketPrice : 0,
         currencyPrices,
         components: componentPrices,
         totalTransactions,
