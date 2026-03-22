@@ -1,0 +1,60 @@
+{
+  "version": "5",
+  "remote": {
+    "https://edge.netlify.com/": "fd941d61d88673d5f28aab283fb86fcc50f08a3bc80ee5470498fcfa88c65cfb",
+    "https://edge.netlify.com/bootstrap/config.ts": "6a2ce0e544e15e8f8883a5c18da5948e37fd0f2619f68cb31f3af53c51817025",
+    "https://edge.netlify.com/bootstrap/context.ts": "e97240232121e2f369f6546ce961490f34d961ea1ea54be3ff09633e3f08373f",
+    "https://edge.netlify.com/bootstrap/cookie.ts": "8b0baae708989ca183c6f3b4ab3d029e6abcbc2e43f93edeb0ff447b3bbc3a05",
+    "https://edge.netlify.com/bootstrap/edge_function.ts": "b8253e86aa83c67341f5cfedeba5049d77fbf84dcab7eceff7566b7728ae9b39",
+    "https://edge.netlify.com/bootstrap/globals/types.ts": "eaa6148ded3121d8dee62dd91c86e7fe76601df0f3ca8d7962243a30f4c8935f"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@coral-xyz/anchor@0.32.1",
+        "npm:@libsql/client@0.17",
+        "npm:@netlify/blobs@^8.1.0",
+        "npm:@netlify/functions@^2.8.2",
+        "npm:@playwright/test@^1.57.0",
+        "npm:@solana-mobile/wallet-adapter-mobile@^2.2.5",
+        "npm:@solana/spl-token@~0.4.14",
+        "npm:@solana/wallet-adapter-base@~0.9.23",
+        "npm:@solana/wallet-adapter-react-ui@~0.9.35",
+        "npm:@solana/wallet-adapter-react@~0.15.35",
+        "npm:@solana/wallet-adapter-wallets@~0.19.32",
+        "npm:@solana/web3.js@^1.98.0",
+        "npm:@tanstack/react-query@5.56.2",
+        "npm:@testing-library/dom@^10.4.1",
+        "npm:@testing-library/jest-dom@^6.9.1",
+        "npm:@testing-library/react@^16.3.0",
+        "npm:@types/bn.js@^5.2.0",
+        "npm:@types/jest@30",
+        "npm:@types/node@20",
+        "npm:@types/qrcode@^1.5.6",
+        "npm:@types/react-dom@^18.3.0",
+        "npm:@types/react@^18.3.1",
+        "npm:autoprefixer@10.4.20",
+        "npm:axios@^1.7.7",
+        "npm:bs58@5",
+        "npm:clsx@2.1.1",
+        "npm:date-fns@^4.1.0",
+        "npm:eslint-config-next@14.2.33",
+        "npm:eslint@8.57.0",
+        "npm:jest-environment-jsdom@^30.2.0",
+        "npm:jest@^30.2.0",
+        "npm:jsqr@^1.4.0",
+        "npm:next@14.2.33",
+        "npm:pino-pretty@^13.1.2",
+        "npm:postcss@8.4.47",
+        "npm:qrcode@^1.5.4",
+        "npm:react-dom@18.3.1",
+        "npm:react@18.3.1",
+        "npm:tailwindcss@3.4.14",
+        "npm:ts-jest@^29.4.5",
+        "npm:typescript@5.6.3",
+        "npm:zod@3.23.8",
+        "npm:zustand@4.5.2"
+      ]
+    }
+  }
+}

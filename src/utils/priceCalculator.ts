@@ -613,3 +613,6 @@ export function formatUniaPrice(price: number): string {
     maximumFractionDigits: 2
   })}`;
 }
+
+// Backward-compatible alias for tests and any code still using the old name
+export { UniaPriceCalculator as EquaPriceCalculator };
