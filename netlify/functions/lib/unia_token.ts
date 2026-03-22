@@ -1316,57 +1316,6 @@ export type UniaToken = {
       "args": []
     },
     {
-      "name": "initializeUnxOracle",
-      "docs": [
-        "Initialize the UNX Oracle (call once during deployment)"
-      ],
-      "discriminator": [
-        64,
-        32,
-        196,
-        225,
-        20,
-        169,
-        225,
-        42
-      ],
-      "accounts": [
-        {
-          "name": "unxOracle",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  110,
-                  120,
-                  45,
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "initializeSocialFunds",
       "docs": [
         "Initialize the social funds state (call once during deployment)"
@@ -1407,6 +1356,57 @@ export type UniaToken = {
                   116,
                   97,
                   116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initializeUnxOracle",
+      "docs": [
+        "Initialize the UNX Oracle (call once during deployment)"
+      ],
+      "discriminator": [
+        86,
+        221,
+        156,
+        129,
+        21,
+        157,
+        47,
+        127
+      ],
+      "accounts": [
+        {
+          "name": "unxOracle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  110,
+                  120,
+                  45,
+                  111,
+                  114,
+                  97,
+                  99,
+                  108,
                   101
                 ]
               }
@@ -2416,14 +2416,14 @@ export type UniaToken = {
         "* `weights_hash` - Hash of weights used in off-chain calculation"
       ],
       "discriminator": [
-        185,
-        36,
-        232,
-        110,
-        74,
-        175,
-        56,
-        237
+        0,
+        109,
+        121,
+        69,
+        140,
+        228,
+        116,
+        109
       ],
       "accounts": [
         {
@@ -2495,19 +2495,6 @@ export type UniaToken = {
       ]
     },
     {
-      "name": "unxOracle",
-      "discriminator": [
-        31,
-        243,
-        80,
-        126,
-        98,
-        77,
-        106,
-        77
-      ]
-    },
-    {
       "name": "globalState",
       "discriminator": [
         163,
@@ -2544,6 +2531,19 @@ export type UniaToken = {
         186,
         232,
         185
+      ]
+    },
+    {
+      "name": "unxOracle",
+      "discriminator": [
+        72,
+        131,
+        105,
+        78,
+        127,
+        19,
+        89,
+        168
       ]
     },
     {
@@ -2839,77 +2839,6 @@ export type UniaToken = {
       }
     },
     {
-      "name": "unxOracle",
-      "docs": [
-        "UNX Oracle PDA Account",
-        "Seeds: [b\"unx-oracle\"]"
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "price",
-            "docs": [
-              "Final UNX price in fixed-point (1e8 precision)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "lastUpdated",
-            "docs": [
-              "Timestamp when price was last updated"
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "lastUpdatedSlot",
-            "docs": [
-              "Slot when price was last updated"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "componentPricesHash",
-            "docs": [
-              "Hash of basket component prices used in off-chain calculation (for auditability)"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "weightsHash",
-            "docs": [
-              "Hash of basket weights used in off-chain calculation (for auditability)"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "authority",
-            "docs": [
-              "Authority that can update the oracle (admin)"
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "version",
-            "docs": [
-              "Version number for governance tracking"
-            ],
-            "type": "u32"
-          }
-        ]
-      }
-    },
-    {
       "name": "globalState",
       "type": {
         "kind": "struct",
@@ -3010,6 +2939,77 @@ export type UniaToken = {
           {
             "name": "authority",
             "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unxOracle",
+      "docs": [
+        "UNX Oracle PDA Account",
+        "Seeds: [b\"unx-oracle\"]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "docs": [
+              "Final UNX price in fixed-point (1e8 precision)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "lastUpdated",
+            "docs": [
+              "Timestamp when price was last updated"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "lastUpdatedSlot",
+            "docs": [
+              "Slot when price was last updated"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "componentPricesHash",
+            "docs": [
+              "Hash of basket component prices used in off-chain calculation (for auditability)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "weightsHash",
+            "docs": [
+              "Hash of basket weights used in off-chain calculation (for auditability)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "Authority that can update the oracle (admin)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "version",
+            "docs": [
+              "Version number for governance tracking"
+            ],
+            "type": "u32"
           }
         ]
       }

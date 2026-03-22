@@ -11,7 +11,7 @@
       "name": "activate_social_funds",
       "docs": [
         "Activate social funds (can only be called once after compounding phase ends)",
-        "This is a ONE-TIME action that enables monthly distributions"
+        "This is a ONE-TIME action that enables annual distributions"
       ],
       "discriminator": [
         1,
@@ -159,9 +159,10 @@
         "- Bonus mints consume elevated_mint_attempts_used",
         "",
         "Monthly Caps:",
-        "- Base cap: 3 bonus mints per calendar month",
         "- Absolute cap: 5 bonus mints per calendar month",
         "- No rollover between months",
+        "",
+        "Cooldown: NO cooldown for bonus mints (cooldown only applies to regular mints)",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
         "Only P2P transfers (transfer_tokens) increment the transaction counter."
@@ -310,13 +311,144 @@
         },
         {
           "name": "authority",
+          "writable": true,
           "signer": true,
           "relations": [
             "user_account"
           ]
         },
         {
+          "name": "locked_token_account",
+          "docs": [
+            "Locked token account PDA (only for tiers 1-3)"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "locked_token_ata",
+          "docs": [
+            "Associated token account for locked tokens"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "locked_token_pda"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "locked_token_pda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107,
+                  101,
+                  100,
+                  45,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
           "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -533,8 +665,8 @@
     {
       "name": "distribute_social_funds",
       "docs": [
-        "Distribute monthly social funds to all 5 special-purpose accounts",
-        "Can only be called ONCE per calendar month after activation"
+        "Distribute annual social funds to all 5 special-purpose accounts",
+        "Can only be called ONCE per calendar year, in January, after activation"
       ],
       "discriminator": [
         106,
@@ -1178,57 +1310,6 @@
       "args": []
     },
     {
-      "name": "initialize_eqx_oracle",
-      "docs": [
-        "Initialize the UNX Oracle (call once during deployment)"
-      ],
-      "discriminator": [
-        64,
-        32,
-        196,
-        225,
-        20,
-        169,
-        225,
-        42
-      ],
-      "accounts": [
-        {
-          "name": "eqx_oracle",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  110,
-                  120,
-                  45,
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "initialize_social_funds",
       "docs": [
         "Initialize the social funds state (call once during deployment)"
@@ -1269,6 +1350,57 @@
                   116,
                   97,
                   116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_unx_oracle",
+      "docs": [
+        "Initialize the UNX Oracle (call once during deployment)"
+      ],
+      "discriminator": [
+        86,
+        221,
+        156,
+        129,
+        21,
+        157,
+        47,
+        127
+      ],
+      "accounts": [
+        {
+          "name": "unx_oracle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  110,
+                  120,
+                  45,
+                  111,
+                  114,
+                  97,
+                  99,
+                  108,
                   101
                 ]
               }
@@ -1480,6 +1612,7 @@
         },
         {
           "name": "business_registry",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -1541,6 +1674,8 @@
         "User #1: 100 attempts at 100,000 UNIA each",
         "Users #2-10: 100 attempts at 10,000 UNIA each",
         "Users #11+: Normal limit (1,000 UNIA)",
+        "",
+        "Cooldown: 24-hour cooldown enforced between regular mints",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
         "Only P2P transfers (transfer_tokens) increment the transaction counter."
@@ -1693,6 +1828,35 @@
             "NOTE: Must be writable. When no referrer exists, pass user's own account as self-reference"
           ],
           "writable": true
+        },
+        {
+          "name": "business_registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  115,
+                  105,
+                  110,
+                  101,
+                  115,
+                  115,
+                  45,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "authority",
@@ -2235,29 +2399,29 @@
       "args": []
     },
     {
-      "name": "update_eqx_price",
+      "name": "update_unx_price",
       "docs": [
         "Update the UNX Oracle price (admin only)",
         "All basket calculations occur OFF-CHAIN. This instruction only stores the final price.",
         "",
         "# Arguments",
-        "* `eqx_price` - Final EQX price in fixed-point format (1e8 precision)",
+        "* `unx_price` - Final UNX price in fixed-point format (1e8 precision)",
         "* `component_prices_hash` - Hash of component prices used in off-chain calculation",
         "* `weights_hash` - Hash of weights used in off-chain calculation"
       ],
       "discriminator": [
-        185,
-        36,
-        232,
-        110,
-        74,
-        175,
-        56,
-        237
+        0,
+        109,
+        121,
+        69,
+        140,
+        228,
+        116,
+        109
       ],
       "accounts": [
         {
-          "name": "eqx_oracle",
+          "name": "unx_oracle",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2286,7 +2450,7 @@
       ],
       "args": [
         {
-          "name": "eqx_price",
+          "name": "unx_price",
           "type": "u64"
         },
         {
@@ -2322,19 +2486,6 @@
         164,
         169,
         191
-      ]
-    },
-    {
-      "name": "EqxOracle",
-      "discriminator": [
-        31,
-        243,
-        80,
-        126,
-        98,
-        77,
-        106,
-        77
       ]
     },
     {
@@ -2374,6 +2525,19 @@
         186,
         232,
         185
+      ]
+    },
+    {
+      "name": "UnxOracle",
+      "discriminator": [
+        72,
+        131,
+        105,
+        78,
+        127,
+        19,
+        89,
+        168
       ]
     },
     {
@@ -2442,12 +2606,12 @@
     {
       "code": 6007,
       "name": "MintAmountExceedsTierLimit",
-      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 UNIA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 UNIA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 UNIA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 UNIA; Tier 5 (#1,001-10,000): 10 UNIA; Tier 6 (#10,001-100,000): 1 UNIA; Tier 7 (#100,001-1M): 0.1 UNIA; Tier 8 (#1M-10M): 0.01 UNIA; Tier 9 (#10M+): 0.001 EQUA."
+      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 UNIA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 UNIA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 UNIA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 UNIA; Tier 5 (#1,001-10,000): 10 UNIA; Tier 6 (#10,001-100,000): 1 UNIA; Tier 7 (#100,001-1M): 0.1 UNIA; Tier 8 (#1M-10M): 0.01 UNIA; Tier 9 (#10M-100M): 0.001 UNIA; Tier 10 (#100M-1B): 0.0001 UNIA; Tier 11 (#1B+): 0.00001 UNIA"
     },
     {
       "code": 6008,
       "name": "InsufficientSolBalance",
-      "msg": "Insufficient SOL balance for registration (anti-sybil measure). Minimum required: 0.05 SOL. Please ensure your wallet has sufficient SOL balance."
+      "msg": "Insufficient SOL balance for registration (anti-sybil measure). Minimum required: 0.01 SOL. Please ensure your wallet has sufficient SOL balance."
     },
     {
       "code": 6009,
@@ -2531,22 +2695,22 @@
     },
     {
       "code": 6025,
-      "name": "UnauthorizedEqxOracleUpdate",
-      "msg": "Unauthorized EQX oracle update. Only the oracle authority can update prices."
+      "name": "UnauthorizedUnxOracleUpdate",
+      "msg": "Unauthorized UNX oracle update. Only the oracle authority can update prices."
     },
     {
       "code": 6026,
-      "name": "InvalidEqxPrice",
-      "msg": "Invalid EQX price. Price must be greater than zero."
+      "name": "InvalidUnxPrice",
+      "msg": "Invalid UNX price. Price must be greater than zero."
     },
     {
       "code": 6027,
-      "name": "InvalidEqxHashes",
-      "msg": "Invalid EQX hashes. Component prices and weights hashes must not be all zeros."
+      "name": "InvalidUnxHashes",
+      "msg": "Invalid UNX hashes. Component prices and weights hashes must not be all zeros."
     },
     {
       "code": 6028,
-      "name": "InvalidEqxOraclePda",
+      "name": "InvalidUnxOraclePda",
       "msg": "UNX Oracle PDA derivation failed. Expected seeds: ['unx-oracle']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
@@ -2576,48 +2740,73 @@
     },
     {
       "code": 6034,
-      "name": "MonthlyDistributionAlreadyExecuted",
-      "msg": "Monthly distribution already executed for this calendar month. Distributions are limited to once per calendar month."
+      "name": "AnnualDistributionAlreadyExecuted",
+      "msg": "Annual distribution already executed for this calendar year. Distributions are limited to once per calendar year on January 1st."
     },
     {
       "code": 6035,
+      "name": "AnnualDistributionNotJanuary",
+      "msg": "Social fund distributions can only be executed in January. Please wait until January of the next year."
+    },
+    {
+      "code": 6036,
       "name": "InvalidTimestamp",
       "msg": "Invalid timestamp. Timestamp must be a valid positive Unix timestamp (after January 1, 1970)."
     },
     {
-      "code": 6036,
+      "code": 6037,
       "name": "LegacyReferralRewardsDeprecated",
       "msg": "Legacy referral rewards functionality is deprecated. Referral rewards are now stored as credits. Use claim_bonus_mint to redeem credits for bonus mint attempts."
     },
     {
-      "code": 6037,
+      "code": 6038,
       "name": "InsufficientReferralCredits",
       "msg": "Insufficient referral credits. You need at least 5 credits to claim a bonus mint attempt."
     },
     {
-      "code": 6038,
+      "code": 6039,
       "name": "MonthlyBonusMintCapReached",
       "msg": "Monthly bonus mint cap reached. You have reached the maximum of 5 bonus mints per calendar month."
     },
     {
-      "code": 6039,
+      "code": 6040,
       "name": "BonusMintOverflow",
       "msg": "Bonus mint overflow. The bonus mint counter has reached its maximum value."
     },
     {
-      "code": 6040,
+      "code": 6041,
       "name": "LockPeriodNotExpired",
       "msg": "Lock period has not expired yet. Tokens can only be unlocked after the 4-year cliff vesting period."
     },
     {
-      "code": 6041,
+      "code": 6042,
       "name": "AlreadyUnlocked",
       "msg": "Tokens have already been unlocked. This operation can only be performed once."
     },
     {
-      "code": 6042,
+      "code": 6043,
       "name": "TimestampOverflow",
       "msg": "Timestamp overflow. The calculated unlock timestamp exceeds the maximum representable value."
+    },
+    {
+      "code": 6044,
+      "name": "MintingCooldownNotExpired",
+      "msg": "Minting cooldown has not expired. You must wait 24 hours between regular mints."
+    },
+    {
+      "code": 6045,
+      "name": "BusinessRegistryNotInitialized",
+      "msg": "Business registry is not initialized. Initialize the registry before registering business users."
+    },
+    {
+      "code": 6046,
+      "name": "BusinessRegistryFull",
+      "msg": "Business registry is full. Maximum capacity of 100 business referrers reached."
+    },
+    {
+      "code": 6047,
+      "name": "InvalidUserType",
+      "msg": "Invalid user type. User type must be 0 (Individual) or 1 (Business)."
     }
   ],
   "types": [
@@ -2639,77 +2828,6 @@
             "type": {
               "vec": "pubkey"
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "EqxOracle",
-      "docs": [
-        "UNX Oracle PDA Account",
-        "Seeds: [b\"unx-oracle\"]"
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "price",
-            "docs": [
-              "Final EQX price in fixed-point (1e8 precision)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "last_updated",
-            "docs": [
-              "Timestamp when price was last updated"
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "last_updated_slot",
-            "docs": [
-              "Slot when price was last updated"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "component_prices_hash",
-            "docs": [
-              "Hash of basket component prices used in off-chain calculation (for auditability)"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "weights_hash",
-            "docs": [
-              "Hash of basket weights used in off-chain calculation (for auditability)"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "authority",
-            "docs": [
-              "Authority that can update the oracle (admin)"
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "version",
-            "docs": [
-              "Version number for governance tracking"
-            ],
-            "type": "u32"
           }
         ]
       }
@@ -2789,7 +2907,7 @@
     {
       "name": "SocialFundsState",
       "docs": [
-        "Social Funds State for tracking activation and monthly distribution",
+        "Social Funds State for tracking activation and annual distribution",
         "PDA Seeds: [b\"social-funds-state\"]",
         "Activated only after compounding phase ends"
       ],
@@ -2815,6 +2933,77 @@
           {
             "name": "authority",
             "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UnxOracle",
+      "docs": [
+        "UNX Oracle PDA Account",
+        "Seeds: [b\"unx-oracle\"]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "docs": [
+              "Final UNX price in fixed-point (1e8 precision)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_updated",
+            "docs": [
+              "Timestamp when price was last updated"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "last_updated_slot",
+            "docs": [
+              "Slot when price was last updated"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "component_prices_hash",
+            "docs": [
+              "Hash of basket component prices used in off-chain calculation (for auditability)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "weights_hash",
+            "docs": [
+              "Hash of basket weights used in off-chain calculation (for auditability)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "Authority that can update the oracle (admin)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "version",
+            "docs": [
+              "Version number for governance tracking"
+            ],
+            "type": "u32"
           }
         ]
       }
