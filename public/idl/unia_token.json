@@ -1310,57 +1310,6 @@
       "args": []
     },
     {
-      "name": "initialize_unx_oracle",
-      "docs": [
-        "Initialize the UNX Oracle (call once during deployment)"
-      ],
-      "discriminator": [
-        64,
-        32,
-        196,
-        225,
-        20,
-        169,
-        225,
-        42
-      ],
-      "accounts": [
-        {
-          "name": "unx_oracle",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  110,
-                  120,
-                  45,
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "initialize_social_funds",
       "docs": [
         "Initialize the social funds state (call once during deployment)"
@@ -1401,6 +1350,57 @@
                   116,
                   97,
                   116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_unx_oracle",
+      "docs": [
+        "Initialize the UNX Oracle (call once during deployment)"
+      ],
+      "discriminator": [
+        86,
+        221,
+        156,
+        129,
+        21,
+        157,
+        47,
+        127
+      ],
+      "accounts": [
+        {
+          "name": "unx_oracle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  110,
+                  120,
+                  45,
+                  111,
+                  114,
+                  97,
+                  99,
+                  108,
                   101
                 ]
               }
@@ -2405,19 +2405,19 @@
         "All basket calculations occur OFF-CHAIN. This instruction only stores the final price.",
         "",
         "# Arguments",
-        "* `unx_price` - Final EQX price in fixed-point format (1e8 precision)",
+        "* `unx_price` - Final UNX price in fixed-point format (1e8 precision)",
         "* `component_prices_hash` - Hash of component prices used in off-chain calculation",
         "* `weights_hash` - Hash of weights used in off-chain calculation"
       ],
       "discriminator": [
-        185,
-        36,
-        232,
-        110,
-        74,
-        175,
-        56,
-        237
+        0,
+        109,
+        121,
+        69,
+        140,
+        228,
+        116,
+        109
       ],
       "accounts": [
         {
@@ -2489,19 +2489,6 @@
       ]
     },
     {
-      "name": "EqxOracle",
-      "discriminator": [
-        31,
-        243,
-        80,
-        126,
-        98,
-        77,
-        106,
-        77
-      ]
-    },
-    {
       "name": "GlobalState",
       "discriminator": [
         163,
@@ -2538,6 +2525,19 @@
         186,
         232,
         185
+      ]
+    },
+    {
+      "name": "UnxOracle",
+      "discriminator": [
+        72,
+        131,
+        105,
+        78,
+        127,
+        19,
+        89,
+        168
       ]
     },
     {
@@ -2695,22 +2695,22 @@
     },
     {
       "code": 6025,
-      "name": "UnauthorizedEqxOracleUpdate",
-      "msg": "Unauthorized EQX oracle update. Only the oracle authority can update prices."
+      "name": "UnauthorizedUnxOracleUpdate",
+      "msg": "Unauthorized UNX oracle update. Only the oracle authority can update prices."
     },
     {
       "code": 6026,
-      "name": "InvalidEqxPrice",
-      "msg": "Invalid EQX price. Price must be greater than zero."
+      "name": "InvalidUnxPrice",
+      "msg": "Invalid UNX price. Price must be greater than zero."
     },
     {
       "code": 6027,
-      "name": "InvalidEqxHashes",
-      "msg": "Invalid EQX hashes. Component prices and weights hashes must not be all zeros."
+      "name": "InvalidUnxHashes",
+      "msg": "Invalid UNX hashes. Component prices and weights hashes must not be all zeros."
     },
     {
       "code": 6028,
-      "name": "InvalidEqxOraclePda",
+      "name": "InvalidUnxOraclePda",
       "msg": "UNX Oracle PDA derivation failed. Expected seeds: ['unx-oracle']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
@@ -2833,77 +2833,6 @@
       }
     },
     {
-      "name": "EqxOracle",
-      "docs": [
-        "UNX Oracle PDA Account",
-        "Seeds: [b\"unx-oracle\"]"
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "price",
-            "docs": [
-              "Final EQX price in fixed-point (1e8 precision)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "last_updated",
-            "docs": [
-              "Timestamp when price was last updated"
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "last_updated_slot",
-            "docs": [
-              "Slot when price was last updated"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "component_prices_hash",
-            "docs": [
-              "Hash of basket component prices used in off-chain calculation (for auditability)"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "weights_hash",
-            "docs": [
-              "Hash of basket weights used in off-chain calculation (for auditability)"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "authority",
-            "docs": [
-              "Authority that can update the oracle (admin)"
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "version",
-            "docs": [
-              "Version number for governance tracking"
-            ],
-            "type": "u32"
-          }
-        ]
-      }
-    },
-    {
       "name": "GlobalState",
       "type": {
         "kind": "struct",
@@ -3004,6 +2933,77 @@
           {
             "name": "authority",
             "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UnxOracle",
+      "docs": [
+        "UNX Oracle PDA Account",
+        "Seeds: [b\"unx-oracle\"]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "docs": [
+              "Final UNX price in fixed-point (1e8 precision)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_updated",
+            "docs": [
+              "Timestamp when price was last updated"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "last_updated_slot",
+            "docs": [
+              "Slot when price was last updated"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "component_prices_hash",
+            "docs": [
+              "Hash of basket component prices used in off-chain calculation (for auditability)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "weights_hash",
+            "docs": [
+              "Hash of basket weights used in off-chain calculation (for auditability)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "Authority that can update the oracle (admin)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "version",
+            "docs": [
+              "Version number for governance tracking"
+            ],
+            "type": "u32"
           }
         ]
       }
