@@ -169,7 +169,7 @@ export async function getUnxHistory(
  * 
  * @returns Latest UNX price snapshot or null if not found
  */
-export async function getLatestEqxPrice(): Promise<UnxPriceSnapshot | null> {
+export async function getLatestUnxPrice(): Promise<UnxPriceSnapshot | null> {
   try {
     const store = getUnxPriceStore();
     
@@ -196,7 +196,7 @@ export async function getLatestEqxPrice(): Promise<UnxPriceSnapshot | null> {
     
     return JSON.parse(data) as UnxPriceSnapshot;
   } catch (error) {
-    console.error('Error fetching latest EQX price:', error);
+    console.error('Error fetching latest UNX price:', error);
     return null;
   }
 }
@@ -257,7 +257,7 @@ export async function getLatestFxRates(): Promise<FxRateData | null> {
  * 
  * Call this periodically (e.g., daily via scheduled function)
  */
-export async function cleanupOldEqxPrices(): Promise<void> {
+export async function cleanupOldUnxPrices(): Promise<void> {
   const store = getUnxPriceStore();
   const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
   
@@ -278,7 +278,7 @@ export async function cleanupOldEqxPrices(): Promise<void> {
     
     console.log(`Cleaned up ${deletedCount} old UNX price snapshots`);
   } catch (error) {
-    console.error('Error cleaning up old EQX prices:', error);
+    console.error('Error cleaning up old UNX prices:', error);
   }
 }
 

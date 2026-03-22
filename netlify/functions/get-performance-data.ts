@@ -1,8 +1,8 @@
 /**
- * Netlify API Function: Get EQX Performance Data
+ * Netlify API Function: Get UNX Performance Data
  *
- * On-demand function to serve EQUA/EQX performance history from Turso,
- * including a computed summary comparing EQUA appreciation vs USD inflation.
+ * On-demand function to serve UNIA/UNX performance history from Turso,
+ * including a computed summary comparing UNIA appreciation vs USD inflation.
  *
  * Query params:
  * - ?from=YYYY-MM-DD        (optional, default: 30 days ago)
@@ -13,9 +13,9 @@
 
 import { Handler, HandlerResponse } from '@netlify/functions';
 import {
-  getEqxPerformanceHistory,
+  getUnxPerformanceHistory,
   getDailyPerformance,
-  EqxPerformanceRow,
+  UnxPerformanceRow,
   DailyPerformanceRow,
   SEND_MODAL_CURRENCIES,
 } from './lib/tursoStorage';
@@ -62,11 +62,11 @@ function utcDateKey(d: Date): string {
 }
 
 /**
- * Aggregate hourly EqxPerformanceRow records to daily averages.
+ * Aggregate hourly UnxPerformanceRow records to daily averages.
  * Groups by UTC date of `recordedAt`; averages all numeric fields.
  */
-function aggregateToDaily(rows: EqxPerformanceRow[]): EqxPerformanceRow[] {
-  const dailyMap = new Map<string, EqxPerformanceRow[]>();
+function aggregateToDaily(rows: UnxPerformanceRow[]): UnxPerformanceRow[] {
+  const dailyMap = new Map<string, UnxPerformanceRow[]>();
 
   for (const row of rows) {
     const key = utcDateKey(new Date(row.recordedAt));
@@ -74,12 +74,12 @@ function aggregateToDaily(rows: EqxPerformanceRow[]): EqxPerformanceRow[] {
     dailyMap.get(key)!.push(row);
   }
 
-  const dailyRows: EqxPerformanceRow[] = [];
+  const dailyRows: UnxPerformanceRow[] = [];
 
   for (const [key, dayRows] of dailyMap) {
     const n = dayRows.length;
     // Average a numeric field across the day's rows, treating null as 0.
-    const avg = (field: keyof EqxPerformanceRow) =>
+    const avg = (field: keyof UnxPerformanceRow) =>
       dayRows.reduce((sum, r) => sum + ((r[field] as number) ?? 0), 0) / n;
 
     const last = dayRows[dayRows.length - 1];
@@ -92,7 +92,7 @@ function aggregateToDaily(rows: EqxPerformanceRow[]): EqxPerformanceRow[] {
       equaPriceLocal: dayRows.every((r) => r.equaPriceLocal == null)
         ? null
         : avg('equaPriceLocal'),
-      eqxPriceUsd: avg('eqxPriceUsd'),
+      unxPriceUsd: avg('unxPriceUsd'),
       usdInflationIndex: avg('usdInflationIndex'),
       equaPurchasingPower: avg('equaPurchasingPower'),
       source: last.source,
@@ -103,9 +103,9 @@ function aggregateToDaily(rows: EqxPerformanceRow[]): EqxPerformanceRow[] {
 }
 
 /**
- * EqxPerformanceRow annotated with "$100 held" comparison values.
+ * UnxPerformanceRow annotated with "$100 held" comparison values.
  */
-type AnnotatedPerformanceRow = EqxPerformanceRow & {
+type AnnotatedPerformanceRow = UnxPerformanceRow & {
   equaHoldingValue: number;
   usdHoldingValue: number;
   advantagePerHundred: number;
@@ -114,7 +114,7 @@ type AnnotatedPerformanceRow = EqxPerformanceRow & {
 /**
  * Compute the response summary from the first and last data points.
  */
-function computeSummary(rows: EqxPerformanceRow[]) {
+function computeSummary(rows: UnxPerformanceRow[]) {
   if (rows.length === 0) {
     return {
       equaPriceChange: 0,
@@ -123,7 +123,7 @@ function computeSummary(rows: EqxPerformanceRow[]) {
       equaVsUsdAdvantage: 0,
       currentEquaPriceUsd: 0,
       currentEquaPriceLocal: null as number | null,
-      currentEqxPriceUsd: 0,
+      currentUnxPriceUsd: 0,
       dataPoints: 0,
       equaHoldingValue: 100,
       usdHoldingValue: 100,
@@ -177,7 +177,7 @@ function computeSummary(rows: EqxPerformanceRow[]) {
     equaVsUsdAdvantage,
     currentEquaPriceUsd: last.equaPriceUsd,
     currentEquaPriceLocal: last.equaPriceLocal,
-    currentEqxPriceUsd: last.eqxPriceUsd,
+    currentUnxPriceUsd: last.unxPriceUsd,
     dataPoints: rows.length,
     equaHoldingValue,
     usdHoldingValue,
@@ -190,7 +190,7 @@ function computeSummary(rows: EqxPerformanceRow[]) {
  * Annotate each row with "$100 held" comparison values.
  * The first row in the slice is used as the baseline ($100 invested).
  */
-function addHoldingValues(rows: EqxPerformanceRow[]): AnnotatedPerformanceRow[] {
+function addHoldingValues(rows: UnxPerformanceRow[]): AnnotatedPerformanceRow[] {
   if (rows.length === 0) return [];
 
   const firstEquaPrice = rows[0].equaPriceUsd;
@@ -260,11 +260,11 @@ const handler: Handler = async (event): Promise<HandlerResponse> => {
     // ------------------------------------------------------------------
     // Fetch from Turso
     // ------------------------------------------------------------------
-    let rows = await getEqxPerformanceHistory(fromDate, toDate, currency);
+    let rows = await getUnxPerformanceHistory(fromDate, toDate, currency);
 
     // ------------------------------------------------------------------
     // Aggregate to daily if requested.
-    // Prefer the pre-computed eqx_daily_performance table when available;
+    // Prefer the pre-computed unx_daily_performance table when available;
     // fall back to on-the-fly aggregation for backward compatibility.
     // ------------------------------------------------------------------
     let dailyRows: DailyPerformanceRow[] = [];
@@ -272,7 +272,7 @@ const handler: Handler = async (event): Promise<HandlerResponse> => {
       try {
         dailyRows = await getDailyPerformance(fromDate, toDate);
       } catch (dailyErr) {
-        // The eqx_daily_performance table may not exist yet on first deploy.
+        // The unx_daily_performance table may not exist yet on first deploy.
         // Log the error and fall back to on-the-fly aggregation.
         console.warn(
           'getDailyPerformance failed (falling back to on-the-fly aggregation):',
@@ -283,14 +283,14 @@ const handler: Handler = async (event): Promise<HandlerResponse> => {
     }
 
     if (interval === 'daily' && dailyRows.length > 0) {
-      // Map DailyPerformanceRow → EqxPerformanceRow-compatible shape so the
+      // Map DailyPerformanceRow → UnxPerformanceRow-compatible shape so the
       // rest of the pipeline (computeSummary, addHoldingValues) works unchanged.
       rows = dailyRows.map((d) => ({
         timestamp: d.timestamp,
         recordedAt: d.recordedAt,
         equaPriceUsd: d.equaPriceClose,
         equaPriceLocal: null,
-        eqxPriceUsd: d.eqxBasketClose,
+        unxPriceUsd: d.unxBasketClose,
         usdInflationIndex: d.usdInflationIndex,
         equaPurchasingPower: d.equaPriceClose / d.usdInflationIndex,
         source: d.source,

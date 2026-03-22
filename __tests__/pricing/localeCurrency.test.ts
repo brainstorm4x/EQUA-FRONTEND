@@ -2,7 +2,7 @@
  * Tests for Local Currency Utilities
  * 
  * Validates that users from different locales get the correct
- * local currency for EQUA price display.
+ * local currency for UNIA price display.
  */
 
 import {

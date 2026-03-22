@@ -67,7 +67,7 @@ export interface ComponentInfo {
 
 /**
  * UNX basket composition (7 components)
- * Source: brainstorm4x/EQUA backend (post PR #71)
+ * Source: brainstorm4x/UNIA backend (post PR #71)
  */
 export const BASKET_COMPONENTS: ComponentInfo[] = [
   { id: BasketComponent.USDUSD, name: 'USD/USD', weight: 0.23 },

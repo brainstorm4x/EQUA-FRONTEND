@@ -60,7 +60,7 @@ jest.mock('@/components/ui/WalletButton', () => ({
 }));
 
 jest.mock('@/components/Logo', () => ({
-  Logo: ({ size }: any) => <div data-testid="logo" style={{ width: size, height: size }}>EQUA</div>,
+  Logo: ({ size }: any) => <div data-testid="logo" style={{ width: size, height: size }}>UNIA</div>,
 }));
 
 // Import after mocks

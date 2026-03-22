@@ -37,7 +37,7 @@ Next.js 14 (App Router) + Solana blockchain dApp for minting UNIA tokens with ti
 
 ```bash
 # Clone the repository
-git clone https://github.com/brainstorm4x/EQUA-FRONTEND.git
+git clone https://github.com/brainstorm4x/UNIA-FRONTEND.git
 cd UNIA-FRONTEND
 
 # Install dependencies (use --legacy-peer-deps due to Solana wallet adapter peer dependencies)

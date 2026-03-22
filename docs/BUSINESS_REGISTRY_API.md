@@ -1,8 +1,8 @@
-# EQUA Business Registry API Documentation
+# UNIA Business Registry API Documentation
 
 ## Overview
 
-The EQUA Business Registry API provides serverless Netlify functions for managing business referrers in the on-chain BusinessRegistry account. These endpoints are admin-only backend infrastructure and do not modify the frontend UI.
+The UNIA Business Registry API provides serverless Netlify functions for managing business referrers in the on-chain BusinessRegistry account. These endpoints are admin-only backend infrastructure and do not modify the frontend UI.
 
 ## Table of Contents
 
@@ -65,7 +65,7 @@ Add these variables in the Netlify dashboard under **Site Settings > Environment
 
 1. `ADMIN_PRIVATE_KEY` - Your admin private key (base58 encoded)
 2. `NEXT_PUBLIC_RPC_URL` - Solana RPC endpoint
-3. `NEXT_PUBLIC_PROGRAM_ID` - EQUA program ID
+3. `NEXT_PUBLIC_PROGRAM_ID` - UNIA program ID
 
 ---
 
@@ -425,7 +425,7 @@ Potential improvements for future PRs:
 
 For issues or questions:
 
-- **Backend Issues:** Check the EQUA backend repository
+- **Backend Issues:** Check the UNIA backend repository
 - **Frontend Issues:** Open an issue in this repository
 - **Security Concerns:** Contact the team privately (do not open public issues)
 
@@ -433,4 +433,4 @@ For issues or questions:
 
 ## License
 
-Same as the main EQUA project.
+Same as the main UNIA project.

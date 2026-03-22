@@ -174,7 +174,7 @@ export default function HomePage() {
                 - Individual referrals: 1 credit per successful registration
                 - Business referrals: 2 credits per successful registration
                 - Credits are redeemable for bonus minting attempts (5 credits = 1 bonus mint)
-                - Backend source: brainstorm4x/EQUA repo - programs/equa_token/src/lib.rs (lines 765-790)
+                - Backend source: brainstorm4x/UNIA repo - programs/equa_token/src/lib.rs (lines 765-790)
                 - Frontend implementation: src/utils/referralRewards.ts (getReferralCredits)
             */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">

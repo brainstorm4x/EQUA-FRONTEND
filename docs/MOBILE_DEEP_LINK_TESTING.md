@@ -10,7 +10,7 @@
 
 ### Test Steps
 
-1. **Open EQUA in mobile browser**
+1. **Open UNIA in mobile browser**
    - Navigate to https://equa-frontend.netlify.app
    - Open browser DevTools (Chrome Remote Debugging)
 
@@ -36,7 +36,7 @@
    - Wait for confirmation
 
 6. **Return to Browser**
-   - Browser should automatically return to EQUA
+   - Browser should automatically return to UNIA
    - **CRITICAL CHECK:** Page should detect pending transaction
 
 7. **Check Console After Return**

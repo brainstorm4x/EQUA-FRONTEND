@@ -1275,7 +1275,7 @@ const SendModal: FC<SendModalProps> = ({
                 </button>
               </div>
               <p className="text-purple-400 text-xs mt-1">
-                Available: {formatEquaBalance(balance, mintDecimals)} EQUA
+                Available: {formatEquaBalance(balance, mintDecimals)} UNIA
               </p>
             </div>
 

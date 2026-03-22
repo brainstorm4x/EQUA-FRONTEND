@@ -29,11 +29,11 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 export const FALLBACK_ANNUAL_CPI_RATE = 0.032;
 
 /**
- * EQUA genesis timestamp (Unix ms), mirrored from tursoStorage.ts to avoid
+ * UNIA genesis timestamp (Unix ms), mirrored from tursoStorage.ts to avoid
  * a circular import. Reads from env var; falls back to 2025-01-01T00:00:00Z.
  */
-const GENESIS_TIMESTAMP_MS: number = process.env.EQUA_GENESIS_TIMESTAMP
-  ? parseInt(process.env.EQUA_GENESIS_TIMESTAMP, 10)
+const GENESIS_TIMESTAMP_MS: number = process.env.UNIA_GENESIS_TIMESTAMP
+  ? parseInt(process.env.UNIA_GENESIS_TIMESTAMP, 10)
   : new Date('2025-01-01T00:00:00Z').getTime();
 
 // ============================================================================
@@ -191,7 +191,7 @@ function annualRateToHourlyFactor(annualRate: number): number {
 /**
  * Compute the USD inflation index using real FRED CPI data.
  *
- * The index starts at 1.0 at EQUA genesis and compounds hourly using the
+ * The index starts at 1.0 at UNIA genesis and compounds hourly using the
  * real annualized CPI rate fetched from FRED. Falls back to the hardcoded
  * 3.2% rate (same as the synchronous `computeUsdInflationIndex()`) if FRED
  * data is unavailable for any reason.

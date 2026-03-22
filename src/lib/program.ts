@@ -503,7 +503,7 @@ export async function verifyMintOwner(
 
 
 // ✅ Create initialize_user instruction (UPDATED for 12 accounts + user_type)
-// Note: locked_until field removed per EQUA Whitepaper 2025
+// Note: locked_until field removed per UNIA Whitepaper 2025
 export function createInitializeUserInstruction(
   userAccount: PublicKey,
   userMetadata: PublicKey,
@@ -748,7 +748,7 @@ export function createMintTokensInstruction(
   
   if (!isToken2022) {
     const errorMsg = 
-      `❌ CRITICAL: Invalid token program - EQUA requires Token-2022!\n` +
+      `❌ CRITICAL: Invalid token program - UNIA requires Token-2022!\n` +
       `  Expected: ${TOKEN_2022_PROGRAM_ADDRESS} (Token-2022)\n` +
       `  Got: ${tokenProgram.toBase58()}\n` +
       `  This indicates a configuration error. Check TOKEN_PROGRAM_ID in constants.ts.`;
@@ -913,7 +913,7 @@ export function createTransferTokensInstruction(
   
   if (!isToken2022) {
     const errorMsg = 
-      `❌ CRITICAL: Invalid token program - EQUA requires Token-2022!\n` +
+      `❌ CRITICAL: Invalid token program - UNIA requires Token-2022!\n` +
       `  Expected: ${TOKEN_2022_PROGRAM_ADDRESS} (Token-2022)\n` +
       `  Got: ${tokenProgram.toBase58()}\n` +
       `  This indicates a configuration error. Check TOKEN_PROGRAM_ID in constants.ts.`;

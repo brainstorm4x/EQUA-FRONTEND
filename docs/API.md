@@ -1,8 +1,8 @@
-# EQUA Frontend - API Documentation
+# UNIA Frontend - API Documentation
 
 ## Overview
 
-EQUA Frontend provides serverless API functions for real-time pricing data and historical analysis.
+UNIA Frontend provides serverless API functions for real-time pricing data and historical analysis.
 
 ## API Endpoints
 
@@ -12,11 +12,11 @@ All API endpoints are served via Netlify Functions at:
 https://[your-site].netlify.app/.netlify/functions/[function-name]
 ```
 
-### 1. Get EQX Price History
+### 1. Get UNX Price History
 
-Retrieve historical EQX (EQUA Index) prices for charts and analysis.
+Retrieve historical UNX (UNIA Index) prices for charts and analysis.
 
-**Endpoint:** `GET /get-eqx-history`
+**Endpoint:** `GET /get-unx-history`
 
 **Query Parameters:**
 
@@ -30,10 +30,10 @@ Retrieve historical EQX (EQUA Index) prices for charts and analysis.
 
 ```bash
 # Last 7 days (hourly)
-GET /.netlify/functions/get-eqx-history
+GET /.netlify/functions/get-unx-history
 
 # Specific date range (daily)
-GET /.netlify/functions/get-eqx-history?from=2026-01-01&to=2026-01-08&interval=daily
+GET /.netlify/functions/get-unx-history?from=2026-01-01&to=2026-01-08&interval=daily
 ```
 
 **Response:**
@@ -105,12 +105,12 @@ GET /.netlify/functions/get-fx-rates
 
 Both data sources are updated hourly via Netlify Scheduled Functions:
 
-- **EQX Prices:** Updated at minute 0 of every hour
+- **UNX Prices:** Updated at minute 0 of every hour
 - **FX Rates:** Updated at minute 0 of every hour
 
 ### Data Sources
 
-- **EQX Prices:** Pyth Network Hermes API (real-time oracle data)
+- **UNX Prices:** Pyth Network Hermes API (real-time oracle data)
 - **FX Rates:** ExchangeRate-API (daily updates)
 
 ## Frontend Integration
@@ -120,13 +120,13 @@ Both data sources are updated hourly via Netlify Scheduled Functions:
 ```typescript
 import { useEffect, useState } from 'react';
 
-function EqxPriceChart() {
+function UnxPriceChart() {
   const [history, setHistory] = useState(null);
 
   useEffect(() => {
     async function fetchHistory() {
       const response = await fetch(
-        '/.netlify/functions/get-eqx-history?from=2026-01-01&to=2026-01-08&interval=daily'
+        '/.netlify/functions/get-unx-history?from=2026-01-01&to=2026-01-08&interval=daily'
       );
       const data = await response.json();
       setHistory(data);
@@ -138,7 +138,7 @@ function EqxPriceChart() {
 
   return (
     <div>
-      <h2>EQX Price History</h2>
+      <h2>UNX Price History</h2>
       <ul>
         {history.data.map((point, i) => (
           <li key={i}>
@@ -173,7 +173,7 @@ console.log(`100 USD = ${eurAmount.toFixed(2)} EUR`);
 
 ### 3. Get Performance Data
 
-Retrieve EQUA/EQX performance history with a computed summary comparing EQUA price appreciation against USD purchasing-power loss.
+Retrieve UNIA/UNX performance history with a computed summary comparing UNIA price appreciation against USD purchasing-power loss.
 
 **Endpoint:** `GET /get-performance-data`
 
@@ -208,7 +208,7 @@ GET /.netlify/functions/get-performance-data?from=2025-12-09&to=2026-01-08&curre
       "recordedAt": "2026-01-08T13:00:00.000Z",
       "equaPriceUsd": 0.010003,
       "equaPriceLocal": 0.84,
-      "eqxPriceUsd": 933.12,
+      "unxPriceUsd": 933.12,
       "usdInflationIndex": 1.00038,
       "equaPurchasingPower": 0.009999,
       "source": "hermes"
@@ -221,7 +221,7 @@ GET /.netlify/functions/get-performance-data?from=2025-12-09&to=2026-01-08&curre
     "equaVsUsdAdvantage": 3.38,
     "currentEquaPriceUsd": 0.010003,
     "currentEquaPriceLocal": 0.84,
-    "currentEqxPriceUsd": 933.12,
+    "currentUnxPriceUsd": 933.12,
     "dataPoints": 720
   },
   "currency": "INR",
@@ -240,9 +240,9 @@ GET /.netlify/functions/get-performance-data?from=2025-12-09&to=2026-01-08&curre
 | `equaPriceChangePercent` | Relative change as a percentage |
 | `usdPurchasingPowerLoss` | `(1 − 1/lastInflationIndex) × 100` |
 | `equaVsUsdAdvantage` | `equaPriceChangePercent + usdPurchasingPowerLoss` |
-| `currentEquaPriceUsd` | Latest EQUA price in USD |
-| `currentEquaPriceLocal` | Latest EQUA price in the requested currency |
-| `currentEqxPriceUsd` | Latest EQX basket price in USD |
+| `currentEquaPriceUsd` | Latest UNIA price in USD |
+| `currentEquaPriceLocal` | Latest UNIA price in the requested currency |
+| `currentUnxPriceUsd` | Latest UNX basket price in USD |
 | `dataPoints` | Number of rows returned |
 
 > **Real CPI data:** The `usdInflationIndex` and `usdPurchasingPowerLoss` fields use real US CPI data
@@ -299,7 +299,7 @@ Free tier limits (Netlify):
 
 ## Support
 
-For issues or questions, open an issue on [GitHub](https://github.com/brainstorm4x/EQUA-FRONTEND).
+For issues or questions, open an issue on [GitHub](https://github.com/brainstorm4x/UNIA-FRONTEND).
 
 ---
 

@@ -58,7 +58,7 @@ describe('Hash Validation', () => {
     it('should convert valid hash to number array of length 32', () => {
       const validHash = crypto.createHash('sha256').update('test').digest('hex');
       
-      // This is what we do in update-eqx-price.ts
+      // This is what we do in update-unx-price.ts
       const componentHashBuffer = Buffer.from(validHash, 'hex');
       const componentHashArray = Array.from(componentHashBuffer);
       

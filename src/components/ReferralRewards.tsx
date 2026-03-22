@@ -128,10 +128,10 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       );
 
       // Convert bigint to number for transaction (safe for tier limits which are well below MAX_SAFE_INTEGER)
-      // Largest tier limit is 100,000 EQUA = 100_000_000_000 base units << Number.MAX_SAFE_INTEGER (2^53 - 1)
+      // Largest tier limit is 100,000 UNIA = 100_000_000_000 base units << Number.MAX_SAFE_INTEGER (2^53 - 1)
       const amountInBaseUnits = Number(tierLimitBaseUnits);
       
-      // Convert to decimal EQUA for display (rawToDecimal handles the conversion)
+      // Convert to decimal UNIA for display (rawToDecimal handles the conversion)
       const amountInEqua = rawToDecimal(tierLimitBaseUnits);
 
       if (process.env.NODE_ENV === 'development') {
@@ -159,7 +159,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       // Note: credits is guaranteed non-null because button is only enabled when hasCredits is true
       const creditsRemaining = credits! - CREDITS_REQUIRED_FOR_BONUS_MINT;
       setSuccessMessage(
-        `✅ Successfully claimed ${amountInEqua} EQUA! ` +
+        `✅ Successfully claimed ${amountInEqua} UNIA! ` +
         `${creditsRemaining} credits remaining. You can claim another bonus mint immediately if you have 5+ credits.`
       );
 

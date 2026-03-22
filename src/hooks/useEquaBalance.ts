@@ -1,7 +1,7 @@
 /**
  * useEquaBalance Hook
  * 
- * Provides real-time EQUA token balance for the connected wallet.
+ * Provides real-time UNIA token balance for the connected wallet.
  * Subscribes to SPL token account changes to update balance automatically.
  */
 
@@ -48,7 +48,7 @@ export interface UseEquaBalanceResult {
 }
 
 /**
- * Hook to fetch and subscribe to EQUA token balance
+ * Hook to fetch and subscribe to UNIA token balance
  * 
  * @returns Balance data and utility functions
  */
@@ -108,7 +108,7 @@ export function useEquaBalance(): UseEquaBalanceResult {
         setIsLoading(false);
       }
     } catch (err: any) {
-      console.error('Error fetching EQUA balance:', err);
+      console.error('Error fetching UNIA balance:', err);
       if (isMountedRef.current) {
         setError(err.message || 'Failed to fetch balance');
         setBalance(0);

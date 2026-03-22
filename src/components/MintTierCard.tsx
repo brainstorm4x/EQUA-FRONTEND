@@ -256,7 +256,7 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
         <div className="bg-black/20 rounded-xl p-4">
           <p className="text-purple-300 text-sm mb-1">Max per Attempt</p>
           <p className="text-white text-2xl font-bold">
-            {tier.equaPerAttempt.toLocaleString()} EQUA
+            {tier.equaPerAttempt.toLocaleString()} UNIA
           </p>
         </div>
         
@@ -290,7 +290,7 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
             <div>
               <p className="text-orange-300 text-sm">Locked Amount</p>
               <p className="text-white text-xl font-bold">
-                {lockedBalance.toLocaleString()} EQUA
+                {lockedBalance.toLocaleString()} UNIA
               </p>
             </div>
             <div>
@@ -387,7 +387,7 @@ export const MintScheduleCard: FC<MintScheduleCardProps> = ({ className }) => {
               <p className={`font-bold ${index < 2 ? 'text-yellow-400' : 'text-white'}`}>
                 {tier.equaPerAttempt.toLocaleString()}
               </p>
-              <p className="text-purple-300 text-sm">EQUA/attempt</p>
+              <p className="text-purple-300 text-sm">UNIA/attempt</p>
             </div>
           </div>
         ))}

@@ -87,12 +87,12 @@ export interface TursoUnxSnapshot {
   unxPriceUsd: number;
   /** UNIA token price in USD (from tier-based formula) */
   equaPriceUsd: number;
-  /** UNIA price expressed in EQX units (= equaPriceUsd / unxPriceUsd) */
+  /** UNIA price expressed in UNX units (= equaPriceUsd / unxPriceUsd) */
   equaPriceUnx: number;
   /** UNIA price in each of the 16 send-modal currencies */
   currencyPrices: Record<string, number>;
   /**
-   * Raw EQX basket component prices in XXX/USD format (USD in denominator).
+   * Raw UNX basket component prices in XXX/USD format (USD in denominator).
    * Note: field names use the corrected XXX/USD convention, but the
    * corresponding SQL columns retain the original names (comp_usdeur, etc.)
    * to avoid a breaking schema migration.
@@ -170,9 +170,9 @@ export async function initTursoSchema(
       timestamp             INTEGER NOT NULL,
       recorded_at           TEXT NOT NULL,
       source                TEXT NOT NULL,
-      eqx_price_usd         REAL NOT NULL,
+      unx_price_usd         REAL NOT NULL,
       equa_price_usd        REAL NOT NULL,
-      equa_price_eqx        REAL NOT NULL,
+      equa_price_unx        REAL NOT NULL,
       equa_price_usd_val    REAL,
       equa_price_eur        REAL,
       equa_price_gbp        REAL,
@@ -204,11 +204,11 @@ export async function initTursoSchema(
   `);
 
   await client.execute(`
-    CREATE INDEX IF NOT EXISTS idx_eqx_timestamp ON unx_price_snapshots(timestamp DESC)
+    CREATE INDEX IF NOT EXISTS idx_unx_timestamp ON unx_price_snapshots(timestamp DESC)
   `);
 
   await client.execute(`
-    CREATE INDEX IF NOT EXISTS idx_eqx_recorded_at ON unx_price_snapshots(recorded_at)
+    CREATE INDEX IF NOT EXISTS idx_unx_recorded_at ON unx_price_snapshots(recorded_at)
   `);
 
   await client.execute(`
@@ -219,7 +219,7 @@ export async function initTursoSchema(
       equa_price_close      REAL NOT NULL,
       equa_price_high       REAL NOT NULL,
       equa_price_low        REAL NOT NULL,
-      eqx_basket_close      REAL NOT NULL,
+      unx_basket_close      REAL NOT NULL,
       usd_inflation_index   REAL NOT NULL,
       equa_holding_value    REAL NOT NULL,
       usd_holding_value     REAL NOT NULL,
@@ -270,9 +270,9 @@ export async function storeUnxSnapshotToTurso(
           timestamp,
           recorded_at,
           source,
-          eqx_price_usd,
+          unx_price_usd,
           equa_price_usd,
-          equa_price_eqx,
+          equa_price_unx,
           equa_price_usd_val,
           equa_price_eur,
           equa_price_gbp,
@@ -341,7 +341,7 @@ export async function storeUnxSnapshotToTurso(
     });
 
     console.log(
-      `✓ EQX snapshot written to Turso — timestamp: ${snap.timestamp}, ` +
+      `✓ UNX snapshot written to Turso — timestamp: ${snap.timestamp}, ` +
       `equaPriceUsd: ${snap.equaPriceUsd}`
     );
 
@@ -358,9 +358,9 @@ export async function storeUnxSnapshotToTurso(
 // ============================================================================
 
 /**
- * Performance history row returned by getEqxPerformanceHistory.
+ * Performance history row returned by getUnxPerformanceHistory.
  */
-export interface EqxPerformanceRow {
+export interface UnxPerformanceRow {
   timestamp: number;
   recordedAt: string;
   equaPriceUsd: number;
@@ -372,18 +372,18 @@ export interface EqxPerformanceRow {
 }
 
 /**
- * Query EQX performance history from Turso.
+ * Query UNX performance history from Turso.
  *
  * @param from - Start of the query window (inclusive)
  * @param to - End of the query window (inclusive)
  * @param currency - One of the 16 send-modal currency codes. Defaults to USD.
  * @returns Array of performance rows ordered by ascending timestamp
  */
-export async function getEqxPerformanceHistory(
+export async function getUnxPerformanceHistory(
   from: Date,
   to: Date,
   currency?: string
-): Promise<EqxPerformanceRow[]> {
+): Promise<UnxPerformanceRow[]> {
   const client = getTursoClient();
 
   // Determine which currency column to return as the local price
@@ -399,7 +399,7 @@ export async function getEqxPerformanceHistory(
         recorded_at,
         equa_price_usd,
         ${localCol} AS equa_price_local,
-        eqx_price_usd,
+        unx_price_usd,
         usd_inflation_index,
         equa_purchasing_power,
         source
@@ -415,7 +415,7 @@ export async function getEqxPerformanceHistory(
     recordedAt: row['recorded_at'] as string,
     equaPriceUsd: row['equa_price_usd'] as number,
     equaPriceLocal: row['equa_price_local'] as number | null,
-    unxPriceUsd: row['eqx_price_usd'] as number,
+    unxPriceUsd: row['unx_price_usd'] as number,
     usdInflationIndex: row['usd_inflation_index'] as number,
     equaPurchasingPower: row['equa_purchasing_power'] as number,
     source: row['source'] as string,
@@ -432,20 +432,20 @@ export async function getEqxPerformanceHistory(
 export interface TursoDailyPerformance {
   /** Date of the record in YYYY-MM-DD format */
   date: string;
-  /** EQUA price at the first hourly snapshot of the day */
+  /** UNIA price at the first hourly snapshot of the day */
   equaPriceOpen: number;
-  /** EQUA price at the last hourly snapshot of the day */
+  /** UNIA price at the last hourly snapshot of the day */
   equaPriceClose: number;
-  /** Highest EQUA price seen during the day */
+  /** Highest UNIA price seen during the day */
   equaPriceHigh: number;
-  /** Lowest EQUA price seen during the day */
+  /** Lowest UNIA price seen during the day */
   equaPriceLow: number;
   /** UNX basket price at the last hourly snapshot of the day */
-  eqxBasketClose: number;
+  unxBasketClose: number;
   /** USD inflation index at the last hourly snapshot of the day */
   usdInflationIndex: number;
   /**
-   * Current value of a $100 EQUA holding (relative to the first-ever snapshot).
+   * Current value of a $100 UNIA holding (relative to the first-ever snapshot).
    * Formula: 100 * (equaPriceClose / firstEverEquaPrice)
    */
   equaHoldingValue: number;
@@ -500,7 +500,7 @@ export async function storeDailyPerformance(
           equa_price_close,
           equa_price_high,
           equa_price_low,
-          eqx_basket_close,
+          unx_basket_close,
           usd_inflation_index,
           equa_holding_value,
           usd_holding_value,
@@ -515,7 +515,7 @@ export async function storeDailyPerformance(
         record.equaPriceClose,
         record.equaPriceHigh,
         record.equaPriceLow,
-        record.eqxBasketClose,
+        record.unxBasketClose,
         record.usdInflationIndex,
         record.equaHoldingValue,
         record.usdHoldingValue,
@@ -562,7 +562,7 @@ export async function getDailyPerformance(
         equa_price_close,
         equa_price_high,
         equa_price_low,
-        eqx_basket_close,
+        unx_basket_close,
         usd_inflation_index,
         equa_holding_value,
         usd_holding_value,
@@ -586,7 +586,7 @@ export async function getDailyPerformance(
       equaPriceClose: row['equa_price_close'] as number,
       equaPriceHigh: row['equa_price_high'] as number,
       equaPriceLow: row['equa_price_low'] as number,
-      eqxBasketClose: row['eqx_basket_close'] as number,
+      unxBasketClose: row['unx_basket_close'] as number,
       usdInflationIndex: row['usd_inflation_index'] as number,
       equaHoldingValue: row['equa_holding_value'] as number,
       usdHoldingValue: row['usd_holding_value'] as number,
@@ -607,7 +607,7 @@ export async function getDailyPerformance(
  *
  * @returns The earliest snapshot row, or null if the table is empty
  */
-export async function getEarliestSnapshot(): Promise<EqxPerformanceRow | null> {
+export async function getEarliestSnapshot(): Promise<UnxPerformanceRow | null> {
   const client = getTursoClient();
 
   const result = await client.execute(`
@@ -616,7 +616,7 @@ export async function getEarliestSnapshot(): Promise<EqxPerformanceRow | null> {
       recorded_at,
       equa_price_usd,
       equa_price_usd_val AS equa_price_local,   -- USD value column; no local currency conversion needed here
-      eqx_price_usd,
+      unx_price_usd,
       usd_inflation_index,
       equa_purchasing_power,
       source
@@ -633,7 +633,7 @@ export async function getEarliestSnapshot(): Promise<EqxPerformanceRow | null> {
     recordedAt: row['recorded_at'] as string,
     equaPriceUsd: row['equa_price_usd'] as number,
     equaPriceLocal: row['equa_price_local'] as number | null,
-    unxPriceUsd: row['eqx_price_usd'] as number,
+    unxPriceUsd: row['unx_price_usd'] as number,
     usdInflationIndex: row['usd_inflation_index'] as number,
     equaPurchasingPower: row['equa_purchasing_power'] as number,
     source: row['source'] as string,

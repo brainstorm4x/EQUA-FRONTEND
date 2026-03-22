@@ -57,8 +57,8 @@ if (typeof window !== 'undefined') {
 // ============================================================================
 // UNIA token uses 6 decimals (1 UNIA = 1,000,000 base units)
 // This is the expected decimals value for the on-chain mint account
-export const EQUA_DECIMALS = 6;
-export const EQUA_DECIMAL_MULTIPLIER = Math.pow(10, EQUA_DECIMALS);
+export const UNIA_DECIMALS = 6;
+export const UNIA_DECIMAL_MULTIPLIER = Math.pow(10, UNIA_DECIMALS);
 
 // UNIA mint address (derived from PDA in program)
 // This will be computed from getMintPDA() but we document the expected value

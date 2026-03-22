@@ -10,7 +10,7 @@ This PR implements serverless Netlify functions for managing the BusinessRegistr
 - **`netlify/functions/lib/solana-admin.ts`** (82 lines)
   - `getAdminKeypair()` - Loads admin private key from environment (base58 encoded)
   - `getConnection()` - Creates Solana RPC connection
-  - `getProgramId()` - Returns EQUA program ID from environment
+  - `getProgramId()` - Returns UNIA program ID from environment
   - `getBusinessRegistryPDA()` - Derives BusinessRegistry PDA using seed `"business-registry"`
 
 ### 2. API Endpoints
@@ -61,7 +61,7 @@ This PR implements serverless Netlify functions for managing the BusinessRegistr
 ✅ Uses Anchor framework for type-safe instruction building
 ✅ PDA derivation matches backend exactly (seed: "business-registry")
 ✅ Proper account deserialization (discriminator + authority + vec)
-✅ Follows existing Netlify function patterns (update-eqx-price.ts)
+✅ Follows existing Netlify function patterns (update-unx-price.ts)
 
 ### Developer Experience
 ✅ Comprehensive inline documentation
@@ -123,7 +123,7 @@ All required dependencies already present in `package.json`:
 ## Backend Integration Notes
 
 ### IDL Requirements
-The implementation uses the `add_business_referrer` and `remove_business_referrer` instructions from the EQUA backend IDL:
+The implementation uses the `add_business_referrer` and `remove_business_referrer` instructions from the UNIA backend IDL:
 
 **Discriminators:**
 - `add_business_referrer`: `[110, 7, 225, 205, 126, 199, 112, 219]`
@@ -195,7 +195,7 @@ Potential improvements for future PRs:
 
 ## References
 
-- **Backend Program:** brainstorm4x/EQUA (Anchor program)
+- **Backend Program:** brainstorm4x/UNIA (Anchor program)
 - **Program ID:** `D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw`
 - **Network:** Solana Devnet
 - **Documentation:** `docs/BUSINESS_REGISTRY_API.md`

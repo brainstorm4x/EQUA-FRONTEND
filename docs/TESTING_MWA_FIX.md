@@ -6,7 +6,7 @@ This guide helps verify the Mobile Wallet Adapter fix for the "Signature verific
 ## Prerequisites
 - Mobile device (iOS or Android)
 - Phantom mobile app installed
-- Access to the EQUA frontend (https://equa-frontend.netlify.app)
+- Access to the UNIA frontend (https://equa-frontend.netlify.app)
 
 ## Test Scenarios
 

@@ -41,7 +41,7 @@
  * The blockchain is the single source of truth for all transaction counts and statistics.
  * 
  * Legacy functionality (deprecated):
- * - Tracks EQUA token transfers using localStorage only (local testing only)
+ * - Tracks UNIA token transfers using localStorage only (local testing only)
  * - Optional analytics logging (non-authoritative)
  */
 

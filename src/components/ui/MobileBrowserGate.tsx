@@ -5,7 +5,7 @@ import { FC } from 'react';
 /**
  * Mobile Browser Gate
  *
- * Shown when the user visits EQUA from a mobile external browser (Chrome/Safari on
+ * Shown when the user visits UNIA from a mobile external browser (Chrome/Safari on
  * Android/iOS).  Deep-linking to wallet extensions is unreliable in these browsers,
  * so we guide the user toward the two supported paths instead:
  *

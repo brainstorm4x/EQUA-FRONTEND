@@ -150,7 +150,7 @@ export const NetworkDiagnosticsBanner: FC<NetworkDiagnosticsBannerProps> = ({ cl
         <p className="text-red-200 text-xs">
           <span className="font-medium">Need help?</span> Check the{' '}
           <a
-            href="https://github.com/brainstorm4x/EQUA-FRONTEND/blob/main/docs/TROUBLESHOOTING.md"
+            href="https://github.com/brainstorm4x/UNIA-FRONTEND/blob/main/docs/TROUBLESHOOTING.md"
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-red-100"

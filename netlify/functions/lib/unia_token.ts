@@ -1316,7 +1316,7 @@ export type UniaToken = {
       "args": []
     },
     {
-      "name": "initializeEqxOracle",
+      "name": "initializeUnxOracle",
       "docs": [
         "Initialize the UNX Oracle (call once during deployment)"
       ],
@@ -2405,13 +2405,13 @@ export type UniaToken = {
       "args": []
     },
     {
-      "name": "updateEqxPrice",
+      "name": "updateUnxPrice",
       "docs": [
         "Update the UNX Oracle price (admin only)",
         "All basket calculations occur OFF-CHAIN. This instruction only stores the final price.",
         "",
         "# Arguments",
-        "* `eqx_price` - Final EQX price in fixed-point format (1e8 precision)",
+        "* `unx_price` - Final UNX price in fixed-point format (1e8 precision)",
         "* `component_prices_hash` - Hash of component prices used in off-chain calculation",
         "* `weights_hash` - Hash of weights used in off-chain calculation"
       ],
@@ -2456,7 +2456,7 @@ export type UniaToken = {
       ],
       "args": [
         {
-          "name": "eqxPrice",
+          "name": "unxPrice",
           "type": "u64"
         },
         {
@@ -2612,7 +2612,7 @@ export type UniaToken = {
     {
       "code": 6007,
       "name": "mintAmountExceedsTierLimit",
-      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 UNIA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 UNIA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 UNIA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 EQUA; Tier 5 (#1,001-10,000): 10 EQUA; Tier 6 (#10,001-100,000): 1 EQUA; Tier 7 (#100,001-1M): 0.1 EQUA; Tier 8 (#1M-10M): 0.01 EQUA; Tier 9 (#10M-100M): 0.001 EQUA; Tier 10 (#100M-1B): 0.0001 EQUA; Tier 11 (#1B+): 0.00001 EQUA"
+      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 UNIA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 UNIA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 UNIA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 UNIA; Tier 5 (#1,001-10,000): 10 UNIA; Tier 6 (#10,001-100,000): 1 UNIA; Tier 7 (#100,001-1M): 0.1 UNIA; Tier 8 (#1M-10M): 0.01 UNIA; Tier 9 (#10M-100M): 0.001 UNIA; Tier 10 (#100M-1B): 0.0001 UNIA; Tier 11 (#1B+): 0.00001 UNIA"
     },
     {
       "code": 6008,
@@ -2701,22 +2701,22 @@ export type UniaToken = {
     },
     {
       "code": 6025,
-      "name": "unauthorizedEqxOracleUpdate",
-      "msg": "Unauthorized EQX oracle update. Only the oracle authority can update prices."
+      "name": "unauthorizedUnxOracleUpdate",
+      "msg": "Unauthorized UNX oracle update. Only the oracle authority can update prices."
     },
     {
       "code": 6026,
-      "name": "invalidEqxPrice",
-      "msg": "Invalid EQX price. Price must be greater than zero."
+      "name": "invalidUnxPrice",
+      "msg": "Invalid UNX price. Price must be greater than zero."
     },
     {
       "code": 6027,
-      "name": "invalidEqxHashes",
-      "msg": "Invalid EQX hashes. Component prices and weights hashes must not be all zeros."
+      "name": "invalidUnxHashes",
+      "msg": "Invalid UNX hashes. Component prices and weights hashes must not be all zeros."
     },
     {
       "code": 6028,
-      "name": "invalidEqxOraclePda",
+      "name": "invalidUnxOraclePda",
       "msg": "UNX Oracle PDA derivation failed. Expected seeds: ['unx-oracle']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
@@ -2850,7 +2850,7 @@ export type UniaToken = {
           {
             "name": "price",
             "docs": [
-              "Final EQX price in fixed-point (1e8 precision)"
+              "Final UNX price in fixed-point (1e8 precision)"
             ],
             "type": "u64"
           },

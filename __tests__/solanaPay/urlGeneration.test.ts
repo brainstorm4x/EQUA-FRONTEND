@@ -125,7 +125,7 @@ describe('Solana Pay URL Generation', () => {
   });
 
   describe('generateUniaSolanaPayUrl', () => {
-    it('should generate EQUA-specific URL with Token-2022 program', () => {
+    it('should generate UNIA-specific URL with Token-2022 program', () => {
       const url = generateUniaSolanaPayUrl(mockRecipient, mockMint);
       
       expect(url).toContain(`solana:${mockRecipient.toBase58()}`);

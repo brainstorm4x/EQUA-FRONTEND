@@ -189,38 +189,38 @@ describe('locked-tokens utilities', () => {
 
   describe('calculateLockSplit', () => {
     it('should return Tier 1 split for user #1', () => {
-      const totalAmount = new BN(100_000_000_000); // 100,000 EQUA
+      const totalAmount = new BN(100_000_000_000); // 100,000 UNIA
       const { unlocked, locked } = calculateLockSplit(1, totalAmount);
       
-      expect(unlocked.toNumber()).toBe(100_000_000); // 100 EQUA
-      expect(locked.toNumber()).toBe(99_900_000_000); // 99,900 EQUA
+      expect(unlocked.toNumber()).toBe(100_000_000); // 100 UNIA
+      expect(locked.toNumber()).toBe(99_900_000_000); // 99,900 UNIA
     });
 
     it('should return Tier 2 split for users #2-10', () => {
-      const totalAmount = new BN(10_000_000_000); // 10,000 EQUA
+      const totalAmount = new BN(10_000_000_000); // 10,000 UNIA
       
       for (let userIndex = 2; userIndex <= 10; userIndex++) {
         const { unlocked, locked } = calculateLockSplit(userIndex, totalAmount);
         
-        expect(unlocked.toNumber()).toBe(100_000_000); // 100 EQUA
-        expect(locked.toNumber()).toBe(9_900_000_000); // 9,900 EQUA
+        expect(unlocked.toNumber()).toBe(100_000_000); // 100 UNIA
+        expect(locked.toNumber()).toBe(9_900_000_000); // 9,900 UNIA
       }
     });
 
     it('should return Tier 3 split for users #11-100', () => {
-      const totalAmount = new BN(1_000_000_000); // 1,000 EQUA
+      const totalAmount = new BN(1_000_000_000); // 1,000 UNIA
       
       // Test a few representative users
       [11, 50, 100].forEach(userIndex => {
         const { unlocked, locked } = calculateLockSplit(userIndex, totalAmount);
         
-        expect(unlocked.toNumber()).toBe(100_000_000); // 100 EQUA
-        expect(locked.toNumber()).toBe(900_000_000); // 900 EQUA
+        expect(unlocked.toNumber()).toBe(100_000_000); // 100 UNIA
+        expect(locked.toNumber()).toBe(900_000_000); // 900 UNIA
       });
     });
 
     it('should return no locking for users #101+', () => {
-      const totalAmount = new BN(100_000_000); // 100 EQUA
+      const totalAmount = new BN(100_000_000); // 100 UNIA
       
       // Test users in different tiers
       [101, 500, 1000, 10000].forEach(userIndex => {
@@ -232,7 +232,7 @@ describe('locked-tokens utilities', () => {
     });
 
     it('should respect total amount parameter for non-locked tiers', () => {
-      const totalAmount = new BN(50_000_000); // 50 EQUA
+      const totalAmount = new BN(50_000_000); // 50 UNIA
       const { unlocked, locked } = calculateLockSplit(200, totalAmount);
       
       expect(unlocked.toNumber()).toBe(50_000_000);

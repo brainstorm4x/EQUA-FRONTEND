@@ -35,9 +35,9 @@ Successfully integrated the token locking mechanism UI for displaying locked/unl
 **Lock Split Logic:**
 | Tier | User # | Unlocked | Locked | Lock % |
 |------|--------|----------|--------|--------|
-| 1 | 1 | 100 EQUA | 99,900 EQUA | 99.9% |
-| 2 | 2-10 | 100 EQUA | 9,900 EQUA | 99% |
-| 3 | 11-100 | 100 EQUA | 900 EQUA | 90% |
+| 1 | 1 | 100 UNIA | 99,900 UNIA | 99.9% |
+| 2 | 2-10 | 100 UNIA | 9,900 UNIA | 99% |
+| 3 | 11-100 | 100 UNIA | 900 UNIA | 90% |
 | 4-9 | 101+ | All unlocked | 0 | 0% |
 
 ### 3. `__tests__/locked-tokens.test.ts` (NEW)
@@ -291,7 +291,7 @@ NEXT_PUBLIC_NETWORK=devnet
 
 ## Minting Tier Alignment (Post-PR #70)
 
-### Backend Changes (EQUA Repository - brainstorm4x/EQUA PR #70)
+### Backend Changes (UNIA Repository - brainstorm4x/UNIA PR #70)
 - ✅ **Tier 10 removed** - Tier 9 now unlimited (users #10,000,001+)
 - ✅ **Min(user_tier_rate, prevailing_rate) logic** - All users mint at lower of their tier or prevailing rate
 - ✅ **Amount-based locking** - Locking % determined by minting amount, not user index
@@ -301,18 +301,18 @@ NEXT_PUBLIC_NETWORK=devnet
 - ✅ Removed Tier 10 from `ELEVATED_MINT_TIERS` in `src/utils/registration.ts`
 - ✅ Removed Tier 10 from `MINT_SLOTS` in `src/utils/minting.ts`
 - ✅ Updated Tier 9 to have unlimited upper bound (`maxUser: Infinity`)
-- ✅ Updated Tier 9 rate from 0.0005 to 0.001 EQUA per attempt
+- ✅ Updated Tier 9 rate from 0.0005 to 0.001 UNIA per attempt
 - ✅ Updated error messages in `src/lib/equa_token.ts` to remove Tier 10 references
 - ✅ Updated error messages in `public/idl/equa_token.json` to remove Tier 10 references
 - ✅ Updated test expectations to validate Tier 9 unlimited behavior
 
 ### Tier Table (Corrected - Aligned with Backend)
 
-| Tier | User # | EQUA/Attempt | Elevated Attempts | Locked % (Amount-Based) |
+| Tier | User # | UNIA/Attempt | Elevated Attempts | Locked % (Amount-Based) |
 |------|--------|--------------|-------------------|-------------------------|
-| 1 | 1 | 100,000 | 100 | 99.9% (if minting 100k EQUA) |
-| 2 | 2-10 | 10,000 | 100 | 99% (if minting 10k EQUA) |
-| 3 | 11-100 | 1,000 | 100 | 90% (if minting 1k EQUA) |
+| 1 | 1 | 100,000 | 100 | 99.9% (if minting 100k UNIA) |
+| 2 | 2-10 | 10,000 | 100 | 99% (if minting 10k UNIA) |
+| 3 | 11-100 | 1,000 | 100 | 90% (if minting 1k UNIA) |
 | 4 | 101-1,000 | 100 | 0 | 0% |
 | 5 | 1,001-10,000 | 10 | 0 | 0% |
 | 6 | 10,001-100,000 | 1 | 0 | 0% |

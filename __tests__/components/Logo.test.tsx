@@ -10,7 +10,7 @@ import { Logo } from '@/components/Logo';
 
 describe('Logo Component', () => {
   describe('Basic Rendering', () => {
-    it('should render the EQUA logo image', () => {
+    it('should render the UNIA logo image', () => {
       render(<Logo />);
       
       const logo = screen.getByAltText('UNIA Logo');

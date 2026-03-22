@@ -13,7 +13,7 @@ interface PerformanceRow {
   recordedAt: string;
   equaPriceUsd: number;
   equaPriceLocal: number | null;
-  eqxPriceUsd: number;
+  unxPriceUsd: number;
   usdInflationIndex: number;
   equaPurchasingPower: number;
   source: string;
@@ -30,7 +30,7 @@ interface PerformanceSummary {
   equaVsUsdAdvantage: number;
   currentEquaPriceUsd: number;
   currentEquaPriceLocal: number | null;
-  currentEqxPriceUsd: number;
+  currentUnxPriceUsd: number;
   dataPoints: number;
   // "$100 held" comparison fields
   equaHoldingValue: number;
@@ -75,7 +75,7 @@ function fmtLocal(n: number | null | undefined, currency: string): string {
   return n.toFixed(6) + ' ' + currency;
 }
 
-function fmtEqx(n: number | null | undefined): string {
+function fmtUnx(n: number | null | undefined): string {
   if (n == null) return '—';
   return '$' + n.toFixed(2);
 }
@@ -193,7 +193,7 @@ export default function PerformancePage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <Logo size={40} />
-              <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+              <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
             </Link>
             <nav className="flex items-center gap-6">
               <Link href="/" className="text-purple-200 hover:text-white transition-colors">
@@ -227,9 +227,9 @@ export default function PerformancePage() {
 
           {/* Hero */}
           <div className="text-center mb-4">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">EQUA Performance</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">UNIA Performance</h2>
             <p className="text-purple-300 text-lg">
-              See how EQX helps EQUA retain purchasing power compared to traditional currencies
+              See how UNX helps UNIA retain purchasing power compared to traditional currencies
             </p>
           </div>
 
@@ -300,20 +300,20 @@ export default function PerformancePage() {
           {summary && !loading && !error && (
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30">
               <p className="text-center text-purple-200 text-sm mb-1">
-                If you invested $100 in EQUA vs $100 in USD
+                If you invested $100 in UNIA vs $100 in USD
               </p>
               <p className="text-center text-purple-400 text-xs mb-6">
                 over the last {summary.holdingPeriodLabel}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                {/* EQUA card */}
+                {/* UNIA card */}
                 <div className={`rounded-xl p-5 border text-center ${
                   summary.equaHoldingValue >= 100
                     ? 'border-green-500/40 bg-green-900/20'
                     : 'border-red-500/40 bg-red-900/20'
                 }`}>
-                  <p className="text-purple-200 text-sm mb-1">💰 $100 in EQUA</p>
+                  <p className="text-purple-200 text-sm mb-1">💰 $100 in UNIA</p>
                   <p className="text-purple-300 text-xs mb-3">Now worth:</p>
                   <p className={`text-3xl font-bold ${
                     summary.equaHoldingValue >= 100 ? 'text-green-400' : 'text-red-400'
@@ -346,7 +346,7 @@ export default function PerformancePage() {
                 <p className={`text-lg font-semibold ${
                   summary.advantagePerHundred >= 0 ? 'text-yellow-400' : 'text-red-400'
                 }`}>
-                  EQUA preserved{' '}
+                  UNIA preserved{' '}
                   <span className="font-bold">
                     {fmtAdvantage(summary.advantagePerHundred)}
                   </span>{' '}
@@ -391,16 +391,16 @@ export default function PerformancePage() {
                   <thead>
                     <tr className="border-b border-purple-500/30 bg-purple-900/40">
                       <th className="px-4 py-3 text-left text-purple-300 font-medium whitespace-nowrap">Date</th>
-                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">$100 EQUA →</th>
+                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">$100 UNIA →</th>
                       <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">$100 USD →</th>
-                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">EQUA Advantage</th>
-                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">EQX Basket</th>
+                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">UNIA Advantage</th>
+                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">UNX Basket</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.map((row, idx) => {
                       const prev = idx > 0 ? data[idx - 1] : null;
-                      // Color rows by whether the EQUA advantage is growing or shrinking.
+                      // Color rows by whether the UNIA advantage is growing or shrinking.
                       // First row has no comparison point — use neutral colour.
                       const advantageDelta =
                         prev != null
@@ -429,7 +429,7 @@ export default function PerformancePage() {
                           <td className={`px-4 py-3 text-right font-mono whitespace-nowrap ${
                             row.advantagePerHundred >= 0 ? 'text-yellow-400' : 'text-red-400'
                           }`}>{fmtAdvantage(row.advantagePerHundred)}</td>
-                          <td className="px-4 py-3 text-right text-purple-200 font-mono whitespace-nowrap">{fmtEqx(row.eqxPriceUsd)}</td>
+                          <td className="px-4 py-3 text-right text-purple-200 font-mono whitespace-nowrap">{fmtUnx(row.unxPriceUsd)}</td>
                         </tr>
                       );
                     })}
@@ -438,15 +438,15 @@ export default function PerformancePage() {
               </div>
               <div className="px-4 py-3 border-t border-purple-500/30 text-purple-400 text-xs">
                 {data.length} data point{data.length !== 1 ? 's' : ''} •{' '}
-                <span className="text-green-400">Green rows</span> = EQUA advantage growing •{' '}
-                <span className="text-red-400">Red rows</span> = EQUA advantage declining
+                <span className="text-green-400">Green rows</span> = UNIA advantage growing •{' '}
+                <span className="text-red-400">Red rows</span> = UNIA advantage declining
               </div>
             </div>
           )}
 
           {/* Footer */}
           <div className="text-center pt-8 border-t border-purple-500/30">
-            <p className="text-2xl font-bold text-white mb-2">EQUA</p>
+            <p className="text-2xl font-bold text-white mb-2">UNIA</p>
             <p className="text-purple-300">Equal Access. Equal Opportunity. Equal Economy.</p>
           </div>
 

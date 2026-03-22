@@ -57,7 +57,7 @@ export function getConnection(): Connection {
  * 
  * Uses NEXT_PUBLIC_PROGRAM_ID from environment, defaults to known devnet deployment
  * 
- * @returns PublicKey of the EQUA token program
+ * @returns PublicKey of the UNIA token program
  */
 export function getProgramId(): PublicKey {
   const programIdStr = process.env.NEXT_PUBLIC_PROGRAM_ID || 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2';

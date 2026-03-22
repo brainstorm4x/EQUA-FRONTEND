@@ -8,7 +8,7 @@
  * 1. saveTransactionState() before wallet.signTransaction()
  * 2. User deep links to wallet app
  * 3. User approves/rejects
- * 4. Browser returns to EQUA
+ * 4. Browser returns to UNIA
  * 5. restoreTransactionState() on page mount
  * 6. clearTransactionState() on completion or error
  */

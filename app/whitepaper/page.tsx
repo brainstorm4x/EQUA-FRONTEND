@@ -456,7 +456,7 @@ export default function WhitepaperPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Confidence in Every Transaction</h3>
               <p className="text-purple-200 leading-relaxed">
-                Because exchange rates update in real-time from Hermes/Pyth oracle feeds (every hour for EQX components, continuously for local currencies), you always know you&apos;re getting fair value.
+                Because exchange rates update in real-time from Hermes/Pyth oracle feeds (every hour for UNX components, continuously for local currencies), you always know you&apos;re getting fair value.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 No hidden markups. No surprise conversions. No &quot;platform fees&quot; that quietly drain your balance.
@@ -481,7 +481,7 @@ export default function WhitepaperPage() {
                 Crypto has struggled with real-world adoption because it asks people to change how they think about money. UNIA takes the opposite approach: <strong className="text-white">we change the interface, not the user</strong>.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                You think in your currency. You transact the way you always have—scan, confirm, send. The difference is that the money you&apos;re using appreciates with the network, protects against inflation through EQX diversification, and rewards genuine use instead of speculation.
+                You think in your currency. You transact the way you always have—scan, confirm, send. The difference is that the money you&apos;re using appreciates with the network, protects against inflation through UNX diversification, and rewards genuine use instead of speculation.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 That&apos;s the promise: <strong className="text-white">cryptocurrency that feels like money, not like gambling</strong>.
@@ -541,7 +541,7 @@ export default function WhitepaperPage() {
                   <strong className="text-white">Why This Mechanism?</strong> Every single transaction counts. Precise appreciation rewards the earliest believers and network builders.
                 </p>
                 <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in EQX - USD shown for convenience)
+                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -564,7 +564,7 @@ export default function WhitepaperPage() {
                   <strong className="text-white">Why This Mechanism?</strong> Constant growth rate maintains transparency and fairness as the network gains traction.
                 </p>
                 <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in EQX - USD shown for convenience)
+                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -587,7 +587,7 @@ export default function WhitepaperPage() {
                   <strong className="text-white">Why This Mechanism?</strong> Larger epochs reflect growing transaction volume. Constant growth rate ensures predictability.
                 </p>
                 <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in EQX - USD shown for convenience)
+                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -610,7 +610,7 @@ export default function WhitepaperPage() {
                   <strong className="text-white">Why This Mechanism?</strong> Network is becoming established. Compounding continues to reward all holders equally.
                 </p>
                 <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in EQX - USD shown for convenience)
+                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -633,7 +633,7 @@ export default function WhitepaperPage() {
                   <strong className="text-white">Why This Mechanism?</strong> Even larger epochs reflect substantial transaction volume. Constant 0.01% rate ensures fairness.
                 </p>
                 <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in EQX - USD shown for convenience)
+                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -656,7 +656,7 @@ export default function WhitepaperPage() {
                   <strong className="text-white">Why This Mechanism?</strong> Sustained compounding rewards long-term holders. Constant rate maintains transparency.
                 </p>
                 <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in EQX - USD shown for convenience)
+                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -679,7 +679,7 @@ export default function WhitepaperPage() {
                   <strong className="text-white">Why This Mechanism?</strong> Large epoch sizes reflect massive transaction volume. Constant 0.01% ensures predictability at scale.
                 </p>
                 <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in EQX - USD shown for convenience)
+                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -702,7 +702,7 @@ export default function WhitepaperPage() {
                   <strong className="text-white">Why This Mechanism?</strong> Final compounding tier before transition. Reaches $500,000 sustainably.
                 </p>
                 <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in EQX - USD shown for convenience)
+                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -712,8 +712,8 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Start:</strong> After price reaches ~$500,000 USD</p>
-                    <p><strong className="text-white">Mechanism:</strong> 250 EQX per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Monthly Cap:</strong> 25,000 EQX maximum increase</p>
+                    <p><strong className="text-white">Mechanism:</strong> 250 UNX per epoch (1,000 transactions)</p>
+                    <p><strong className="text-white">Monthly Cap:</strong> 25,000 UNX maximum increase</p>
                   </div>
                   <div>
                     <p><strong className="text-white">End Price:</strong> Forever growing</p>
@@ -722,10 +722,10 @@ export default function WhitepaperPage() {
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear 250 EQX/epoch (0.05% of 500,000 EQX) provides steady appreciation. The 25,000 EQX/month cap ensures stability while maintaining good returns.
+                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear 250 UNX/epoch (0.05% of 500,000 UNX) provides steady appreciation. The 25,000 UNX/month cap ensures stability while maintaining good returns.
                 </p>
                 <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in EQX - USD shown for convenience)
+                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -801,7 +801,7 @@ export default function WhitepaperPage() {
                     <tr>
                       <td className="p-3">9</td>
                       <td className="p-3">1,000</td>
-                      <td className="p-3">250 EQX</td>
+                      <td className="p-3">250 UNX</td>
                       <td className="p-3">500k → ∞</td>
                       <td className="p-3">Linear</td>
                     </tr>
@@ -812,14 +812,14 @@ export default function WhitepaperPage() {
                 </p>
               </div>
 
-              {/* EQX vs USD Clarification */}
+              {/* UNX vs USD Clarification */}
               <div className="bg-yellow-500/10 rounded-xl p-6 mt-8 border border-yellow-500/30">
-                <h4 className="text-lg font-bold text-yellow-400 mb-3">⚠️ Important: EQX vs USD</h4>
+                <h4 className="text-lg font-bold text-yellow-400 mb-3">⚠️ Important: UNX vs USD</h4>
                 <p className="text-purple-200 leading-relaxed">
                   <strong className="text-white">All price appreciation is calculated in UNX (UNIA Index), not USD.</strong> UNX is a diversified basket of 7 components: 57% major currencies, 35% gold, and 8% oil. The USD values shown throughout this whitepaper are <strong className="text-white">approximate equivalents for convenience only</strong>—actual pricing on-chain is denominated in UNX.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
-                  This means that when the whitepaper says &quot;Tier 1: $0.01 to $0.1,&quot; it actually means <strong className="text-white">&quot;0.01 to 0.1 EQX&quot;</strong>, with USD values calculated dynamically based on the current EQX/USD exchange rate (updated every hour from Hermes/Pyth price feeds).
+                  This means that when the whitepaper says &quot;Tier 1: $0.01 to $0.1,&quot; it actually means <strong className="text-white">&quot;0.01 to 0.1 UNX&quot;</strong>, with USD values calculated dynamically based on the current UNX/USD exchange rate (updated every hour from Hermes/Pyth price feeds).
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3 italic">
                   <strong className="text-white">Why this matters:</strong> UNX provides inflation resistance and stability by spreading risk across multiple global anchors. Your UNIA holdings appreciate in UNX terms—USD is just one of many components affecting UNX&apos;s value.
@@ -827,9 +827,9 @@ export default function WhitepaperPage() {
               </div>
             </section>
 
-            {/* Part V - EQX Pricing Model */}
+            {/* Part V - UNX Pricing Model */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V: EQX—The True Pricing Foundation</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V: UNX—The True Pricing Foundation</h2>
               
               <p className="text-purple-200 leading-relaxed">
                 UNIA&apos;s value is not denominated in US dollars. Instead, it is measured in <strong className="text-white">UNX (UNIA Index)</strong>—a diversified basket of major currencies, gold, and essential commodities. USD is shown only as a <strong className="text-white">display convenience</strong>, not as the underlying pricing anchor.
@@ -838,15 +838,15 @@ export default function WhitepaperPage() {
                 This fundamental design choice means UNIA holders are not forced to trust the fate of any one government, central bank, or market. Your value is spread across the real world economy.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why EQX Matters</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why UNX Matters</h3>
               <p className="text-purple-200 leading-relaxed">
                 People don&apos;t live in abstract charts; they live in rent, groceries, school fees, and medicines. When a single currency weakens, it quietly steals from all of those things at once. If UNIA&apos;s value were tied only to USD, anyone saving in UNIA would still be exposed to the long, slow erosion of that one currency&apos;s purchasing power.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">EQX changes that</strong>: it spreads risk across multiple real-world anchors so that your effort today still means something tomorrow, even if one nation&apos;s money stumbles.
+                <strong className="text-white">UNX changes that</strong>: it spreads risk across multiple real-world anchors so that your effort today still means something tomorrow, even if one nation&apos;s money stumbles.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What EQX Is</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What UNX Is</h3>
               <p className="text-purple-200 leading-relaxed">
                 UNX (UNIA Index) is a weighted reference basket composed of:
               </p>
@@ -859,13 +859,13 @@ export default function WhitepaperPage() {
                 <strong className="text-white">7-Component Design:</strong> The basket was optimized from 10 to 7 components in January 2026 to improve oracle efficiency while maintaining robust diversification across currencies, precious metals, and commodities.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                UNIA does not require users to hold these assets directly. Instead, the system uses EQX as a <strong className="text-white">pricing lens</strong>: when the protocol calculates UNIA&apos;s fair value, it references this basket rather than any single currency.
+                UNIA does not require users to hold these assets directly. Instead, the system uses UNX as a <strong className="text-white">pricing lens</strong>: when the protocol calculates UNIA&apos;s fair value, it references this basket rather than any single currency.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 <strong className="text-white">USD values displayed in the interface are for convenience only.</strong> They help you understand how much buying power you have in common terms, but they are <em>not</em> the actual pricing mechanism. The underlying value is always denominated in UNX.
               </p>
 
-              {/* EQX Basket Composition */}
+              {/* UNX Basket Composition */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
                 <h4 className="text-lg font-bold text-yellow-400 mb-4">UNX (UNIA Index) Basket Composition (7 Components)</h4>
                 <div className="grid md:grid-cols-3 gap-4">
@@ -896,7 +896,7 @@ export default function WhitepaperPage() {
                   </div>
                 </div>
                 <p className="text-purple-300 text-sm mt-4 italic">
-                  <strong className="text-white">Updated Jan 2026:</strong> EQX basket optimized to 7 components for oracle efficiency while maintaining diversification. Weights sum to 100% (verified on-chain).
+                  <strong className="text-white">Updated Jan 2026:</strong> UNX basket optimized to 7 components for oracle efficiency while maintaining diversification. Weights sum to 100% (verified on-chain).
                 </p>
               </div>
 
@@ -909,7 +909,7 @@ export default function WhitepaperPage() {
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">Inflation Resistance Built In</h4>
               <p className="text-purple-200 leading-relaxed">
-                In many countries, people are hit twice: their local currency weakens, and their savings in a &quot;strong&quot; foreign currency can also be eroded by inflation in that foreign country. By anchoring UNIA&apos;s value to EQX—a blend of global value signals—the system reduces the chance that one political decision or one central bank&apos;s policy quietly eats away years of someone&apos;s work.
+                In many countries, people are hit twice: their local currency weakens, and their savings in a &quot;strong&quot; foreign currency can also be eroded by inflation in that foreign country. By anchoring UNIA&apos;s value to UNX—a blend of global value signals—the system reduces the chance that one political decision or one central bank&apos;s policy quietly eats away years of someone&apos;s work.
               </p>
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">Designed Against Speculation</h4>
@@ -931,7 +931,7 @@ export default function WhitepaperPage() {
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
                 <li>The more UNIA is used, the more it appreciates in UNX terms.</li>
-                <li>The more the world changes, the more EQX helps UNIA stay connected to what actually matters—what your money can buy.</li>
+                <li>The more the world changes, the more UNX helps UNIA stay connected to what actually matters—what your money can buy.</li>
                 <li>USD is just one component of many, and you are never at the mercy of USD alone.</li>
               </ul>
 

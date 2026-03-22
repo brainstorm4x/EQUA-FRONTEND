@@ -17,14 +17,14 @@ import {
 
 describe('Registration Utilities', () => {
   describe('getUserMintTier', () => {
-    it('should return correct tier for User #1 (100,000 EQUA per attempt)', () => {
+    it('should return correct tier for User #1 (100,000 UNIA per attempt)', () => {
       const tier = getUserMintTier(1);
       expect(tier).not.toBeNull();
       expect(tier?.equaPerAttempt).toBe(100000);
       expect(tier?.elevatedAttempts).toBe(100);
     });
 
-    it('should return correct tier for Users #2-10 (10,000 EQUA per attempt)', () => {
+    it('should return correct tier for Users #2-10 (10,000 UNIA per attempt)', () => {
       for (let userNum = 2; userNum <= 10; userNum++) {
         const tier = getUserMintTier(userNum);
         expect(tier).not.toBeNull();
@@ -33,7 +33,7 @@ describe('Registration Utilities', () => {
       }
     });
 
-    it('should return correct tier for Users #11-100 (1,000 EQUA per attempt)', () => {
+    it('should return correct tier for Users #11-100 (1,000 UNIA per attempt)', () => {
       for (const userNum of [11, 50, 100]) {
         const tier = getUserMintTier(userNum);
         expect(tier).not.toBeNull();
@@ -42,7 +42,7 @@ describe('Registration Utilities', () => {
       }
     });
 
-    it('should return correct tier for Users #101-1000 (100 EQUA per attempt, no elevated)', () => {
+    it('should return correct tier for Users #101-1000 (100 UNIA per attempt, no elevated)', () => {
       for (const userNum of [101, 500, 1000]) {
         const tier = getUserMintTier(userNum);
         expect(tier).not.toBeNull();
@@ -51,7 +51,7 @@ describe('Registration Utilities', () => {
       }
     });
 
-    it('should return correct tier for Users #1001-10000 (10 EQUA per attempt)', () => {
+    it('should return correct tier for Users #1001-10000 (10 UNIA per attempt)', () => {
       for (const userNum of [1001, 5000, 10000]) {
         const tier = getUserMintTier(userNum);
         expect(tier).not.toBeNull();
@@ -60,7 +60,7 @@ describe('Registration Utilities', () => {
       }
     });
 
-    it('should return correct tier for Users #10001-100000 (1 EQUA per attempt)', () => {
+    it('should return correct tier for Users #10001-100000 (1 UNIA per attempt)', () => {
       for (const userNum of [10001, 50000, 100000]) {
         const tier = getUserMintTier(userNum);
         expect(tier).not.toBeNull();
@@ -69,7 +69,7 @@ describe('Registration Utilities', () => {
       }
     });
 
-    it('should return correct tier for Users #100001-1000000 (0.1 EQUA per attempt)', () => {
+    it('should return correct tier for Users #100001-1000000 (0.1 UNIA per attempt)', () => {
       for (const userNum of [100001, 500000, 1000000]) {
         const tier = getUserMintTier(userNum);
         expect(tier).not.toBeNull();
@@ -78,7 +78,7 @@ describe('Registration Utilities', () => {
       }
     });
 
-    it('should return correct tier for Users #1000001-10000000 (0.01 EQUA per attempt)', () => {
+    it('should return correct tier for Users #1000001-10000000 (0.01 UNIA per attempt)', () => {
       for (const userNum of [1000001, 5000000, 10000000]) {
         const tier = getUserMintTier(userNum);
         expect(tier).not.toBeNull();

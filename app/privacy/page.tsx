@@ -12,7 +12,7 @@ export default function PrivacyPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <Logo size={40} />
-              <h1 className="text-2xl font-bold text-white">EQUA Token</h1>
+              <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
             </Link>
             <nav className="flex items-center gap-6">
               <Link href="/" className="text-purple-200 hover:text-white transition-colors">
@@ -56,16 +56,16 @@ export default function PrivacyPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Introduction</h2>
               <p className="text-purple-200 leading-relaxed">
-                At EQUA, we are committed to protecting your privacy while operating on a public blockchain. This Privacy Policy explains how we handle information in our decentralized ecosystem.
+                At UNIA, we are committed to protecting your privacy while operating on a public blockchain. This Privacy Policy explains how we handle information in our decentralized ecosystem.
               </p>
               <div className="bg-blue-500/10 rounded-xl p-6 mt-4 border border-blue-500/30">
                 <p className="text-purple-200 leading-relaxed">
-                  <strong className="text-white">Blockchain Transparency:</strong> EQUA operates on the Solana blockchain, which is public and transparent by design. All transactions and wallet addresses are permanently recorded on the blockchain and are publicly viewable.
+                  <strong className="text-white">Blockchain Transparency:</strong> UNIA operates on the Solana blockchain, which is public and transparent by design. All transactions and wallet addresses are permanently recorded on the blockchain and are publicly viewable.
                 </p>
               </div>
               <div className="bg-green-500/10 rounded-xl p-6 mt-4 border border-green-500/30">
                 <p className="text-purple-200 leading-relaxed">
-                  <strong className="text-white">No Personal Data Collection:</strong> We do not collect, store, or process any personal information such as names, email addresses, phone numbers, or physical addresses. EQUA is entirely wallet-based.
+                  <strong className="text-white">No Personal Data Collection:</strong> We do not collect, store, or process any personal information such as names, email addresses, phone numbers, or physical addresses. UNIA is entirely wallet-based.
                 </p>
               </div>
             </section>
@@ -80,8 +80,8 @@ export default function PrivacyPage() {
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li><strong className="text-white">Wallet Addresses:</strong> Your Solana wallet address is publicly visible on the blockchain</li>
-                <li><strong className="text-white">Transaction History:</strong> All EQUA minting, transfers, and transactions are permanently recorded on-chain</li>
-                <li><strong className="text-white">Token Balances:</strong> Your EQUA token balance is publicly queryable via Solana Explorer or RPC endpoints</li>
+                <li><strong className="text-white">Transaction History:</strong> All UNIA minting, transfers, and transactions are permanently recorded on-chain</li>
+                <li><strong className="text-white">Token Balances:</strong> Your UNIA token balance is publicly queryable via Solana Explorer or RPC endpoints</li>
                 <li><strong className="text-white">Referral Relationships:</strong> Referral connections between users are stored on-chain for reward distribution</li>
                 <li><strong className="text-white">Minting Attempts:</strong> The number of minting attempts and cooldown periods are tracked on-chain</li>
               </ul>
@@ -99,7 +99,7 @@ export default function PrivacyPage() {
                 <li>IP addresses or device identifiers (beyond standard web server logs)</li>
                 <li>Location data or geolocation tracking</li>
                 <li>Social media profiles or third-party account connections</li>
-                <li>Payment information (EQUA operates entirely on-chain)</li>
+                <li>Payment information (UNIA operates entirely on-chain)</li>
               </ul>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Cookies and Local Storage</h3>
@@ -125,7 +125,7 @@ export default function PrivacyPage() {
                 All on-chain data is used exclusively for smart contract functionality:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li>Processing EQUA token minting and transfers</li>
+                <li>Processing UNIA token minting and transfers</li>
                 <li>Calculating and distributing referral rewards</li>
                 <li>Enforcing cooldown periods and minting limits</li>
                 <li>Tracking transaction volume for price appreciation calculations</li>
@@ -138,7 +138,7 @@ export default function PrivacyPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">No Advertising or Tracking</h3>
               <p className="text-purple-200 leading-relaxed">
-                EQUA does not use your data for advertising, marketing, or behavioral tracking. We do not integrate with ad networks or analytics platforms that profile users.
+                UNIA does not use your data for advertising, marketing, or behavioral tracking. We do not integrate with ad networks or analytics platforms that profile users.
               </p>
             </section>
 
@@ -149,7 +149,7 @@ export default function PrivacyPage() {
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">On-Chain Data (Solana Blockchain)</h3>
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <p className="text-purple-200 leading-relaxed">
-                  <strong className="text-white">Storage Location:</strong> All EQUA user data is stored on the Solana blockchain, which is a decentralized, distributed ledger maintained by thousands of independent validators worldwide.
+                  <strong className="text-white">Storage Location:</strong> All UNIA user data is stored on the Solana blockchain, which is a decentralized, distributed ledger maintained by thousands of independent validators worldwide.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
                   <strong className="text-white">Data Immutability:</strong> Blockchain data is immutable and cannot be deleted, modified, or censored. This is a fundamental characteristic of blockchain technology.
@@ -161,7 +161,7 @@ export default function PrivacyPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">No Centralized Database</h3>
               <p className="text-purple-200 leading-relaxed">
-                <strong className="text-white">EQUA does not operate a centralized user database.</strong> There are no servers storing your personal information, transaction history, or account details. Everything is on-chain.
+                <strong className="text-white">UNIA does not operate a centralized user database.</strong> There are no servers storing your personal information, transaction history, or account details. Everything is on-chain.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Optional Local Browser Storage</h3>
@@ -186,7 +186,7 @@ export default function PrivacyPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">No Account Deletion Needed</h3>
               <p className="text-purple-200 leading-relaxed">
-                Because EQUA uses wallet-based authentication, there are no &quot;accounts&quot; to delete. Simply disconnect your wallet from our website to stop interacting with the protocol.
+                Because UNIA uses wallet-based authentication, there are no &quot;accounts&quot; to delete. Simply disconnect your wallet from our website to stop interacting with the protocol.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4 italic">
                 <strong className="text-white">Note:</strong> On-chain data (transactions, balances) will remain on the Solana blockchain permanently, as this is a fundamental characteristic of blockchain technology.
@@ -194,7 +194,7 @@ export default function PrivacyPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">View Your Data on Solana Explorer</h3>
               <p className="text-purple-200 leading-relaxed">
-                You can view all your on-chain EQUA data at any time using Solana Explorer:
+                You can view all your on-chain UNIA data at any time using Solana Explorer:
               </p>
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <a 
@@ -234,7 +234,7 @@ export default function PrivacyPage() {
                 <li><strong className="text-white">Other Wallets:</strong> Please consult your wallet provider&apos;s privacy documentation</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                EQUA does not control or have access to data collected by wallet providers.
+                UNIA does not control or have access to data collected by wallet providers.
               </p>
             </section>
 
@@ -242,7 +242,7 @@ export default function PrivacyPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Children&apos;s Privacy</h2>
               <p className="text-purple-200 leading-relaxed">
-                EQUA does not knowingly collect information from users under the age of 13. Our services are not directed at children, and we do not intentionally gather personal data from anyone under 13 years of age.
+                UNIA does not knowingly collect information from users under the age of 13. Our services are not directed at children, and we do not intentionally gather personal data from anyone under 13 years of age.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 If you believe a child under 13 has provided information to us, please contact us via GitHub, and we will take appropriate steps.
@@ -269,7 +269,7 @@ export default function PrivacyPage() {
               </p>
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <a 
-                  href="https://github.com/brainstorm4x/EQUA-FRONTEND/commits/main/app/privacy/page.tsx" 
+                  href="https://github.com/brainstorm4x/UNIA-FRONTEND/commits/main/app/privacy/page.tsx" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-purple-300 hover:text-purple-100 underline"
@@ -289,23 +289,23 @@ export default function PrivacyPage() {
                 <p className="text-purple-200 leading-relaxed">
                   <strong className="text-white">GitHub Repository:</strong><br />
                   <a 
-                    href="https://github.com/brainstorm4x/EQUA" 
+                    href="https://github.com/brainstorm4x/UNIA" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-purple-300 hover:text-purple-100 underline"
                   >
-                    https://github.com/brainstorm4x/EQUA
+                    https://github.com/brainstorm4x/UNIA
                   </a>
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
                   <strong className="text-white">Issue Tracker for Privacy Questions:</strong><br />
                   <a 
-                    href="https://github.com/brainstorm4x/EQUA/issues" 
+                    href="https://github.com/brainstorm4x/UNIA/issues" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-purple-300 hover:text-purple-100 underline"
                   >
-                    https://github.com/brainstorm4x/EQUA/issues
+                    https://github.com/brainstorm4x/UNIA/issues
                   </a>
                 </p>
               </div>
@@ -316,7 +316,7 @@ export default function PrivacyPage() {
 
             {/* Footer */}
             <div className="text-center pt-8 border-t border-purple-500/30">
-              <p className="text-2xl font-bold text-white mb-2">EQUA</p>
+              <p className="text-2xl font-bold text-white mb-2">UNIA</p>
               <p className="text-purple-300">Equal Access. Equal Opportunity. Equal Economy.</p>
               <p className="text-purple-400 text-sm mt-4">Last Updated: January 2026</p>
             </div>

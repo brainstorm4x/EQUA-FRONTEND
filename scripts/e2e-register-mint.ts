@@ -1,10 +1,10 @@
 /**
- * E2E Test Script for EQUA Registration and Minting
+ * E2E Test Script for UNIA Registration and Minting
  * 
- * This script performs an end-to-end test of the EQUA token system:
+ * This script performs an end-to-end test of the UNIA token system:
  * 1. Verifies global state and mint PDA exist
  * 2. Performs user registration with self-referral
- * 3. Mints 1000 EQUA tokens using new 7-account mint_tokens instruction
+ * 3. Mints 1000 UNIA tokens using new 7-account mint_tokens instruction
  * 4. Logs all instruction metas and results
  * 
  * Usage: npx ts-node scripts/e2e-register-mint.ts
@@ -48,7 +48,7 @@ import { formatEquaRaw } from '../src/utils/tokenFormat';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '../src/utils/pda-helpers';
 
 async function main() {
-  console.log('🚀 Starting E2E Test: EQUA Registration & Minting\n');
+  console.log('🚀 Starting E2E Test: UNIA Registration & Minting\n');
   
   // Initialize connection
   const connection = new Connection(RPC_ENDPOINT, 'confirmed');
@@ -205,8 +205,8 @@ async function main() {
     process.exit(1);
   }
   
-  // Step 6: Mint 1000 EQUA using new 15-account mint_tokens instruction
-  console.log('\n🔍 Step 6: Minting 1000 EQUA...');
+  // Step 6: Mint 1000 UNIA using new 15-account mint_tokens instruction
+  console.log('\n🔍 Step 6: Minting 1000 UNIA...');
   console.log('  User Metadata PDA:', userMetadataPDA.toBase58());
   
   // Derive locked token PDAs
@@ -231,7 +231,7 @@ async function main() {
     TOKEN_PROGRAM_ID,              // token_program
     ASSOCIATED_TOKEN_PROGRAM_ID,   // associated_token_program
     SystemProgram.programId,       // system_program
-    1000_000000                    // 1000 EQUA with 6 decimals
+    1000_000000                    // 1000 UNIA with 6 decimals
   );
   
   console.log('\n🧪 Mint Instruction Metas (15-account mint_tokens):');
@@ -268,21 +268,21 @@ async function main() {
   
   const finalBalance = await getSPLTokenBalance(connection, userTokenAccount);
   const formattedBalance = formatEquaRaw(finalBalance, { trimTrailingZeros: true });
-  console.log(`✅ Final balance: ${formattedBalance} EQUA (raw: ${finalBalance})`);
+  console.log(`✅ Final balance: ${formattedBalance} UNIA (raw: ${finalBalance})`);
   
-  // Compare raw amount (should be >= 1,000,000,000 for 1000 EQUA)
+  // Compare raw amount (should be >= 1,000,000,000 for 1000 UNIA)
   if (finalBalance >= 1_000_000_000) {
     console.log('\n🎉 E2E Test PASSED! Registration and minting successful.');
   } else {
-    console.log(`\n⚠️  E2E Test WARNING: Expected at least 1,000,000,000 raw units (1000 EQUA), got ${finalBalance} (${formattedBalance} EQUA)`);
+    console.log(`\n⚠️  E2E Test WARNING: Expected at least 1,000,000,000 raw units (1000 UNIA), got ${finalBalance} (${formattedBalance} UNIA)`);
   }
   
   console.log('\n📊 Test Summary:');
   console.log('  ✅ Global state verified');
   console.log('  ✅ Mint verified');
   console.log('  ✅ User registered (self-referral)');
-  console.log('  ✅ 1000 EQUA minted');
-  console.log('  ✅ Final balance:', formattedBalance, 'EQUA');
+  console.log('  ✅ 1000 UNIA minted');
+  console.log('  ✅ Final balance:', formattedBalance, 'UNIA');
 }
 
 main().catch(err => {

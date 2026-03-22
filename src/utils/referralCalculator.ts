@@ -1,5 +1,5 @@
 /**
- * EQUA Token Referral Reward Calculator
+ * UNIA Token Referral Reward Calculator
  * 
  * Calculates referral rewards as integer credits awarded on registration:
  * - Individual referrals: 1 credit per successful registration
@@ -24,9 +24,9 @@ export const INDIVIDUAL_REFERRAL_PERCENT = 1;  // 1% for referring individuals
 // @deprecated Use BUSINESS_CREDIT_AWARD instead. Will be removed in next major version.
 export const BUSINESS_REFERRAL_PERCENT = 2;    // 2% for referring businesses
 
-// EQUA token decimals (6 decimals)
-const EQUA_DECIMALS = 6;
-const EQUA_DECIMAL_MULTIPLIER = 10 ** EQUA_DECIMALS; // 1_000_000
+// UNIA token decimals (6 decimals)
+const UNIA_DECIMALS = 6;
+const UNIA_DECIMAL_MULTIPLIER = 10 ** UNIA_DECIMALS; // 1_000_000
 
 export interface ReferralRewardInfo {
   userIndex: number;
@@ -59,13 +59,13 @@ export interface CreditBasedRewardInfo {
  * @deprecated Use CreditBasedRewardInfo instead. Will be removed in next major version.
  */
 export interface PercentageBasedRewardInfo {
-  /** The amount of EQUA being minted by the referee (in base units / Gajbhiyes) */
+  /** The amount of UNIA being minted by the referee (in base units / Gajbhiyes) */
   mintAmount: number;
   /** The type of account being referred */
   accountType: AccountType;
   /** The referral percentage applied (1% for individuals, 2% for businesses) */
   referralPercent: number;
-  /** The calculated reward in human-readable EQUA tokens */
+  /** The calculated reward in human-readable UNIA tokens */
   rewardAmount: number;
   /** The calculated reward in base units (Gajbhiyes) - 9 decimals precision */
   rewardAmountRaw: bigint;
@@ -129,7 +129,7 @@ export class ReferralRewardCalculator {
    * This is the primary reward calculation method for the new percentage-based system
    * 
    * @deprecated Use calculateCreditReward instead. Will be removed in next major version.
-   * @param mintAmount - The amount of EQUA being minted by the referee (in base units)
+   * @param mintAmount - The amount of UNIA being minted by the referee (in base units)
    * @param accountType - The type of account being referred ('individual' or 'business')
    * @returns PercentageBasedRewardInfo with calculated reward
    */
@@ -144,7 +144,7 @@ export class ReferralRewardCalculator {
     // Use integer arithmetic to avoid floating-point precision issues
     // Calculate: (mintAmount * referralPercent) / 100
     const rewardAmountRaw = BigInt(Math.floor(mintAmount)) * BigInt(referralPercent) / 100n;
-    const rewardAmount = Number(rewardAmountRaw) / EQUA_DECIMAL_MULTIPLIER;
+    const rewardAmount = Number(rewardAmountRaw) / UNIA_DECIMAL_MULTIPLIER;
 
     return {
       mintAmount,
@@ -168,21 +168,21 @@ export class ReferralRewardCalculator {
     let description: string;
     
     if (userIndex <= 100) {
-      defaultMintAmount = 100_000 * EQUA_DECIMAL_MULTIPLIER; // 100,000 EQUA for early adopters
+      defaultMintAmount = 100_000 * UNIA_DECIMAL_MULTIPLIER; // 100,000 UNIA for early adopters
       description = "Early Adopter Referral";
     } else if (userIndex <= 1_000) {
-      defaultMintAmount = 10_000 * EQUA_DECIMAL_MULTIPLIER; // 10,000 EQUA for pioneers
+      defaultMintAmount = 10_000 * UNIA_DECIMAL_MULTIPLIER; // 10,000 UNIA for pioneers
       description = "Pioneer Referral";
     } else if (userIndex <= 10_000) {
-      defaultMintAmount = 1_000 * EQUA_DECIMAL_MULTIPLIER; // 1,000 EQUA for community builders
+      defaultMintAmount = 1_000 * UNIA_DECIMAL_MULTIPLIER; // 1,000 UNIA for community builders
       description = "Community Builder Referral";
     } else {
-      defaultMintAmount = 100 * EQUA_DECIMAL_MULTIPLIER; // 100 EQUA for standard users
+      defaultMintAmount = 100 * UNIA_DECIMAL_MULTIPLIER; // 100 UNIA for standard users
       description = "Standard Referral";
     }
 
     const rewardAmountRaw = BigInt(Math.floor(defaultMintAmount * referralPercent / 100));
-    const rewardAmount = Number(rewardAmountRaw) / EQUA_DECIMAL_MULTIPLIER;
+    const rewardAmount = Number(rewardAmountRaw) / UNIA_DECIMAL_MULTIPLIER;
 
     return {
       userIndex,
@@ -212,7 +212,7 @@ export class ReferralRewardCalculator {
       (sum, info) => sum + info.rewardAmountRaw,
       0n
     );
-    const totalReward = Number(totalRewardRaw) / EQUA_DECIMAL_MULTIPLIER;
+    const totalReward = Number(totalRewardRaw) / UNIA_DECIMAL_MULTIPLIER;
 
     return {
       totalReward,
@@ -225,7 +225,7 @@ export class ReferralRewardCalculator {
    * Format reward amount for display
    */
   static formatReward(rewardAmountRaw: bigint): string {
-    return `${formatEquaRaw(Number(rewardAmountRaw), { trimTrailingZeros: true })} EQUA`;
+    return `${formatEquaRaw(Number(rewardAmountRaw), { trimTrailingZeros: true })} UNIA`;
   }
 
   /**
@@ -233,14 +233,14 @@ export class ReferralRewardCalculator {
    */
   static fromRaw(rawAmount: bigint | number): number {
     const raw = typeof rawAmount === 'bigint' ? rawAmount : BigInt(rawAmount);
-    return Number(raw) / EQUA_DECIMAL_MULTIPLIER;
+    return Number(raw) / UNIA_DECIMAL_MULTIPLIER;
   }
 
   /**
    * Convert human-readable to raw amount
    */
   static toRaw(amount: number): bigint {
-    return BigInt(Math.floor(amount * EQUA_DECIMAL_MULTIPLIER));
+    return BigInt(Math.floor(amount * UNIA_DECIMAL_MULTIPLIER));
   }
 
   /**

@@ -547,7 +547,7 @@ export default function MintPage() {
           if (tokenAccountInfo) {
             const amount = new anchor.BN(tokenAccountInfo.data.slice(64, 72), 'le');
             tokenBalanceRaw = amount.toNumber();
-            console.log('📊 Token account balance (raw):', tokenBalanceRaw, '(formatted:', formatEquaBalance(tokenBalanceRaw), 'EQUA)');
+            console.log('📊 Token account balance (raw):', tokenBalanceRaw, '(formatted:', formatEquaBalance(tokenBalanceRaw), 'UNIA)');
           } else {
             console.log('📊 Token account does not exist yet');
           }
@@ -1666,7 +1666,7 @@ export default function MintPage() {
       const equaAmount = userTier.equaPerAttempt;
       const mintAmount = decimalToRaw(equaAmount); // Convert to base units using utility
       
-      console.log(`🪙 Minting ${equaAmount.toLocaleString()} EQUA (${mintAmount.toLocaleString()} base units) for user #${userMetadata.user_index} (tier: ${userTier.minUser}-${userTier.maxUser})`);
+      console.log(`🪙 Minting ${equaAmount.toLocaleString()} UNIA (${mintAmount.toLocaleString()} base units) for user #${userMetadata.user_index} (tier: ${userTier.minUser}-${userTier.maxUser})`);
       
       // Verify mint authority PDA is correct
       console.log('🔍 Verifying mint authority PDA...');
@@ -2285,7 +2285,7 @@ export default function MintPage() {
                         <>
                           <p className="text-green-100 text-3xl font-bold mb-2">✅ Ready to mint!</p>
                           <p className="text-green-200 text-lg">
-                            Claim your {userMetadata && getUserMintTier(userMetadata.user_index)?.equaPerAttempt.toLocaleString() || '...'} EQUA
+                            Claim your {userMetadata && getUserMintTier(userMetadata.user_index)?.equaPerAttempt.toLocaleString() || '...'} UNIA
                           </p>
                         </>
                       ) : (

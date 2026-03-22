@@ -5,7 +5,7 @@ import { PublicKey } from '@solana/web3.js';
  * Seeds: [b"locked-tokens", authority.key()]
  * 
  * @param authority - The user's wallet public key
- * @param programId - The EQUA token program ID
+ * @param programId - The UNIA token program ID
  * @returns [PDA address, bump seed]
  */
 export function getLockedTokenAccountPda(
@@ -24,7 +24,7 @@ export function getLockedTokenAccountPda(
  * Same derivation as getLockedTokenAccountPda (they are the same PDA)
  * 
  * @param authority - The user's wallet public key
- * @param programId - The EQUA token program ID
+ * @param programId - The UNIA token program ID
  * @returns PDA address
  */
 export function getLockedTokenPda(
@@ -40,7 +40,7 @@ export function getLockedTokenPda(
  * Owner: locked_token_pda (not user wallet)
  * 
  * @param lockedTokenPda - The locked token PDA (from getLockedTokenPda)
- * @param mint - The EQUA mint address
+ * @param mint - The UNIA mint address
  * @param tokenProgramId - Token-2022 program ID
  * @returns ATA address
  */

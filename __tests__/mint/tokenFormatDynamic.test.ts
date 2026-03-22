@@ -15,24 +15,24 @@ import {
 describe('Token Format with Dynamic Decimals', () => {
   describe('formatEquaRaw with different decimals', () => {
     it('should format with 6 decimals (default)', () => {
-      const raw = 1_000_000; // 1 EQUA with 6 decimals
+      const raw = 1_000_000; // 1 UNIA with 6 decimals
       expect(formatEquaRaw(raw)).toMatch(/1\.0/);
       expect(formatEquaRaw(raw, { tokenDecimals: 6 })).toMatch(/1\.0/);
     });
 
     it('should format with 9 decimals', () => {
-      const raw = 1_000_000_000; // 1 EQUA with 9 decimals
+      const raw = 1_000_000_000; // 1 UNIA with 9 decimals
       expect(formatEquaRaw(raw, { tokenDecimals: 9 })).toMatch(/1\.0/);
     });
 
     it('should handle small amounts with 6 decimals', () => {
-      const raw = 123_456; // 0.123456 EQUA with 6 decimals
+      const raw = 123_456; // 0.123456 UNIA with 6 decimals
       const formatted = formatEquaRaw(raw, { tokenDecimals: 6 });
       expect(formatted).toMatch(/0\.123456/);
     });
 
     it('should handle large amounts with 6 decimals', () => {
-      const raw = 100_000_000_000; // 100,000 EQUA with 6 decimals
+      const raw = 100_000_000_000; // 100,000 UNIA with 6 decimals
       const formatted = formatEquaRaw(raw, { tokenDecimals: 6, useGrouping: true });
       expect(formatted).toContain('100,000');
     });
@@ -144,7 +144,7 @@ describe('Token Format with Dynamic Decimals', () => {
     });
 
     it('should show appropriate decimals for fractional amounts', () => {
-      const formatted = formatEquaBalance(1_234_567, 6); // 1.234567 EQUA
+      const formatted = formatEquaBalance(1_234_567, 6); // 1.234567 UNIA
       expect(formatted).toContain('1.234567');
     });
   });
@@ -180,7 +180,7 @@ describe('Token Format with Dynamic Decimals', () => {
     });
 
     it('should show impact on transfer amounts', () => {
-      // User wants to send 1 EQUA
+      // User wants to send 1 UNIA
       const desiredAmount = 1;
       
       // With correct decimals (6): 1,000,000 base units

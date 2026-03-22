@@ -91,7 +91,7 @@ describe('Referral Rewards Utilities', () => {
 
   describe('getReferralRewardsBalance', () => {
     it('should return referral rewards balance from account data (LEGACY stored value)', async () => {
-      // Create mock account data with referral_rewards = 1000000 (1 EQUA with 6 decimals)
+      // Create mock account data with referral_rewards = 1000000 (1 UNIA with 6 decimals)
       const mockAccountData = Buffer.alloc(136); // Correct size: no locked_until field
       mockAccountData.writeUInt8(0, 0); // discriminator
       
@@ -138,13 +138,13 @@ describe('Referral Rewards Utilities', () => {
 
   describe('formatReferralRewards', () => {
     it('should format rewards with 6 decimals', () => {
-      const rewards = new BN(1000000); // 1 EQUA
+      const rewards = new BN(1000000); // 1 UNIA
       const result = formatReferralRewards(rewards);
       expect(result).toBe('1.000000');
     });
 
     it('should handle fractional amounts correctly', () => {
-      const rewards = new BN(1234567); // 1.234567 EQUA
+      const rewards = new BN(1234567); // 1.234567 UNIA
       const result = formatReferralRewards(rewards);
       expect(result).toBe('1.234567');
     });
@@ -156,13 +156,13 @@ describe('Referral Rewards Utilities', () => {
     });
 
     it('should handle large amounts', () => {
-      const rewards = new BN(1000000000000); // 1,000,000 EQUA
+      const rewards = new BN(1000000000000); // 1,000,000 UNIA
       const result = formatReferralRewards(rewards);
       expect(result).toBe('1000000.000000');
     });
 
     it('should pad remainder with leading zeros', () => {
-      const rewards = new BN(100001); // 0.100001 EQUA
+      const rewards = new BN(100001); // 0.100001 UNIA
       const result = formatReferralRewards(rewards);
       expect(result).toBe('0.100001');
     });
@@ -398,13 +398,13 @@ describe('Referral Rewards Utilities', () => {
       // Write authority at offset 8
       referredPubkey1.toBuffer().copy(accountData1, 8);
       // Write minted_amount at offset 104
-      accountData1.writeBigUInt64LE(BigInt(100_000_000), 104); // 100 EQUA
+      accountData1.writeBigUInt64LE(BigInt(100_000_000), 104); // 100 UNIA
 
       const accountData2 = Buffer.alloc(136);
       // Write authority at offset 8
       referredPubkey2.toBuffer().copy(accountData2, 8);
       // Write minted_amount at offset 104
-      accountData2.writeBigUInt64LE(BigInt(200_000_000), 104); // 200 EQUA
+      accountData2.writeBigUInt64LE(BigInt(200_000_000), 104); // 200 UNIA
 
       mockConnection.getAccountInfo
         .mockResolvedValueOnce({
@@ -425,8 +425,8 @@ describe('Referral Rewards Utilities', () => {
       const result = await computeReferralRewards(mockConnection, testReferrerPubkey);
 
       expect(result).not.toBeNull();
-      // Total minted: 300 EQUA = 300_000_000 base units
-      // 1% reward = 3 EQUA = 3_000_000 base units
+      // Total minted: 300 UNIA = 300_000_000 base units
+      // 1% reward = 3 UNIA = 3_000_000 base units
       expect(result?.toString()).toBe('3000000');
     });
 

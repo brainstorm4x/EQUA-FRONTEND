@@ -177,7 +177,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
         <div className="text-6xl mb-4">📝</div>
         <h3 className="text-2xl font-bold text-white mb-2">Register Account</h3>
         <p className="text-purple-200">
-          Create your on-chain user account to start minting EQUA tokens
+          Create your on-chain user account to start minting UNIA tokens
         </p>
       </div>
 

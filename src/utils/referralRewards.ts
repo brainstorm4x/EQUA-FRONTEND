@@ -102,7 +102,7 @@ export async function getReferralRewardsBalance(
  * Get referral credits from backend UserAccount
  * 
  * Reads the authoritative `referral_rewards` field which contains
- * integer credit count (NOT EQUA token amounts).
+ * integer credit count (NOT UNIA token amounts).
  * 
  * @param connection - Solana connection
  * @param userAccountPubkey - User account PDA public key (NOT authority pubkey)
@@ -334,7 +334,7 @@ export async function getReferredUsersDetails(
  * 
  * @param connection Solana connection
  * @param wallet Wallet adapter with signTransaction and publicKey
- * @param amount Amount of EQUA tokens to mint (in base units, 6 decimals)
+ * @param amount Amount of UNIA tokens to mint (in base units, 6 decimals)
  * @returns Transaction signature on success
  * @throws Error on validation failure or transaction error
  */

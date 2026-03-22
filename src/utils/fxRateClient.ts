@@ -1,7 +1,7 @@
 /**
  * FX Rate Client - Real-Time Exchange Rate Fetching
  *
- * Fetches FX rates from the EQUA Netlify function (get-fx-rates),
+ * Fetches FX rates from the UNIA Netlify function (get-fx-rates),
  * which reads blob-stored rates updated hourly by the update-fx-rates scheduled function.
  * NEVER calls ExchangeRate-API directly from the browser.
  * Provides 4-layer fallback chain for maximum reliability:

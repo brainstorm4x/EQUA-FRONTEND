@@ -232,7 +232,7 @@ const handler: Handler = async (event, context) => {
         console.warn('Could not fetch FX rates for Turso snapshot, currency prices will default to USD:', fxErr);
       }
 
-      // Best-effort: fetch on-chain totalTransactions to determine EQUA USD price tier.
+      // Best-effort: fetch on-chain totalTransactions to determine UNIA USD price tier.
       // Defaults to 0 (initial price tier) if the fetch fails.
       let totalTransactions = 0;
       try {
@@ -246,11 +246,11 @@ const handler: Handler = async (event, context) => {
         console.warn('Could not fetch totalTransactions for Turso snapshot, defaulting to 0:', txFetchErr);
       }
 
-      // Calculate EQUA price in USD from the tier-based formula.
-      const { EquaPriceCalculator } = await import('../../src/utils/priceCalculator');
-      const equaPriceUsd = EquaPriceCalculator.calculatePrice(totalTransactions);
+      // Calculate UNIA price in USD from the tier-based formula.
+      const { UniaPriceCalculator } = await import('../../src/utils/priceCalculator');
+      const equaPriceUsd = UniaPriceCalculator.calculatePrice(totalTransactions);
 
-      // Build EQUA price map for all 16 send-modal currencies.
+      // Build UNIA price map for all 16 send-modal currencies.
       // Rates in fxRates.rates are expressed as "1 USD = X <currency>".
       const currencyPrices: Record<string, number> = {};
       for (const currency of SEND_MODAL_CURRENCIES) {

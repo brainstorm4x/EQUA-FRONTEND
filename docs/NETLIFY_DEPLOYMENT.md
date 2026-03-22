@@ -1,26 +1,26 @@
 # Netlify Scheduled Functions Deployment Guide
 
-This document provides instructions for deploying and configuring the EQX Oracle and FX Rate update jobs on Netlify.
+This document provides instructions for deploying and configuring the UNX Oracle and FX Rate update jobs on Netlify.
 
 ## Overview
 
-The EQUA Frontend uses Netlify Scheduled Functions to maintain real-time pricing data:
+The UNIA Frontend uses Netlify Scheduled Functions to maintain real-time pricing data:
 
-- **`update-eqx-price`** - Updates the on-chain EQX Oracle and stores historical prices (runs hourly)
+- **`update-unx-price`** - Updates the on-chain UNX Oracle and stores historical prices (runs hourly)
 - **`update-fx-rates`** - Fetches and stores foreign exchange rates (runs hourly)
 - **`snapshot-daily-performance`** - Consolidates hourly data into daily records with "$100 held" metrics (runs daily at midnight UTC)
-- **`get-eqx-history`** - API endpoint for querying historical EQX prices
+- **`get-unx-history`** - API endpoint for querying historical UNX prices
 - **`get-fx-rates`** - API endpoint for querying latest FX rates
 
 ## Architecture
 
 ### Scheduled Functions (Backend)
 
-1. **`netlify/functions/update-eqx-price.ts`**
+1. **`netlify/functions/update-unx-price.ts`**
    - Schedule: `0 * * * *` (hourly at minute 0)
    - Fetches component prices from Pyth Hermes API
-   - Calculates weighted EQX basket price
-   - Updates on-chain EQX Oracle PDA (if instruction available)
+   - Calculates weighted UNX basket price
+   - Updates on-chain UNX Oracle PDA (if instruction available)
    - Stores price snapshot in Netlify Blobs
 
 2. **`netlify/functions/update-fx-rates.ts`**
@@ -30,19 +30,19 @@ The EQUA Frontend uses Netlify Scheduled Functions to maintain real-time pricing
 
 3. **`netlify/functions/snapshot-daily-performance.ts`**
    - Schedule: `0 0 * * *` (daily at 00:00 UTC)
-   - Reads yesterday's hourly rows from the `eqx_price_snapshots` Turso table
-   - Computes OHLC values for EQUA price and the EQX basket close
+   - Reads yesterday's hourly rows from the `unx_price_snapshots` Turso table
+   - Computes OHLC values for UNIA price and the UNX basket close
    - Computes "$100 held" comparison metrics:
-     - `equaHoldingValue`: value of a $100 EQUA holding since the first-ever snapshot
+     - `equaHoldingValue`: value of a $100 UNIA holding since the first-ever snapshot
      - `usdHoldingValue`: value of a $100 USD holding after inflation (`100 / inflationIndex`)
      - `advantagePerHundred`: `equaHoldingValue − usdHoldingValue`
-   - Writes a row to the `eqx_daily_performance` Turso table (idempotent)
+   - Writes a row to the `unx_daily_performance` Turso table (idempotent)
    - Runs Netlify Blobs housekeeping (deletes snapshots older than 30 days)
 
 ### On-Demand API Functions
 
-3. **`netlify/functions/get-eqx-history.ts`**
-   - Query historical EQX prices for charts/analysis
+3. **`netlify/functions/get-unx-history.ts`**
+   - Query historical UNX prices for charts/analysis
    - Query params: `?from=YYYY-MM-DD&to=YYYY-MM-DD&interval=hourly|daily`
 
 4. **`netlify/functions/get-fx-rates.ts`**
@@ -55,7 +55,7 @@ The EQUA Frontend uses Netlify Scheduled Functions to maintain real-time pricing
 
 1. Log in to [Netlify](https://app.netlify.com/)
 2. Click "Add new site" → "Import an existing project"
-3. Connect to GitHub and select `brainstorm4x/EQUA-FRONTEND`
+3. Connect to GitHub and select `brainstorm4x/UNIA-FRONTEND`
 4. Choose the branch to deploy (e.g., `main`)
 
 ### 2. Configure Build Settings
@@ -82,7 +82,7 @@ In **Netlify Dashboard → Site Settings → Environment Variables**, add:
 |----------|-------------|---------|------------|
 | `SOLANA_RPC_ENDPOINT` | Solana RPC endpoint | `https://api.devnet.solana.com` | Use public endpoint or get from Helius/Alchemy |
 | `SOLANA_NETWORK` | Network name | `devnet` | `devnet`, `testnet`, or `mainnet-beta` |
-| `NEXT_PUBLIC_PROGRAM_ID` | EQUA program ID | `D158AFttmz...` | From `Anchor.toml` in backend repo |
+| `NEXT_PUBLIC_PROGRAM_ID` | UNIA program ID | `D158AFttmz...` | From `Anchor.toml` in backend repo |
 | `SOLANA_WALLET_PRIVATE_KEY` | Admin wallet private key (base58) | `5x7k9...` | See "Generate Admin Wallet" below |
 
 #### Optional Variables
@@ -139,10 +139,10 @@ If not provided, functions will use the free tier endpoint with lower rate limit
 
 Check the **Functions** tab in Netlify Dashboard:
 
-- ✅ `update-eqx-price` (scheduled)
+- ✅ `update-unx-price` (scheduled)
 - ✅ `update-fx-rates` (scheduled)
 - ✅ `snapshot-daily-performance` (scheduled)
-- ✅ `get-eqx-history` (on-demand)
+- ✅ `get-unx-history` (on-demand)
 - ✅ `get-fx-rates` (on-demand)
 
 ### 8. Monitor Function Logs
@@ -170,11 +170,11 @@ netlify login
 netlify link
 
 # Invoke scheduled functions manually
-netlify functions:invoke update-eqx-price
+netlify functions:invoke update-unx-price
 netlify functions:invoke update-fx-rates
 
 # Test API functions
-netlify functions:invoke get-eqx-history --queryStringParameters "from=2026-01-01&to=2026-01-08"
+netlify functions:invoke get-unx-history --queryStringParameters "from=2026-01-01&to=2026-01-08"
 netlify functions:invoke get-fx-rates
 ```
 
@@ -183,11 +183,11 @@ netlify functions:invoke get-fx-rates
 After deployment, test the API endpoints:
 
 ```bash
-# Get EQX history (last 7 days)
-curl "https://[your-site].netlify.app/.netlify/functions/get-eqx-history"
+# Get UNX history (last 7 days)
+curl "https://[your-site].netlify.app/.netlify/functions/get-unx-history"
 
-# Get EQX history (specific date range)
-curl "https://[your-site].netlify.app/.netlify/functions/get-eqx-history?from=2026-01-01&to=2026-01-08&interval=daily"
+# Get UNX history (specific date range)
+curl "https://[your-site].netlify.app/.netlify/functions/get-unx-history?from=2026-01-01&to=2026-01-08&interval=daily"
 
 # Get latest FX rates
 curl "https://[your-site].netlify.app/.netlify/functions/get-fx-rates"
@@ -197,10 +197,10 @@ curl "https://[your-site].netlify.app/.netlify/functions/get-fx-rates"
 
 The functions use Netlify Blobs for persistent storage:
 
-### Store: `eqx-prices`
+### Store: `unx-prices`
 
 - **Key format:** `YYYY-MM-DD-HH` (hourly snapshots)
-- **Value:** JSON object with EQX price data
+- **Value:** JSON object with UNX price data
 
 ### Store: `fx-rates`
 
@@ -297,13 +297,13 @@ npm install --legacy-peer-deps @netlify/functions @netlify/blobs bs58
 1. Verify `netlify.toml` has correct schedule syntax
 2. Check function logs for errors in Netlify Dashboard
 3. Ensure all required environment variables are set
-4. Manually invoke function to test: `netlify functions:invoke update-eqx-price`
+4. Manually invoke function to test: `netlify functions:invoke update-unx-price`
 
 ### On-Chain Oracle Update Fails
 
-**Error:** `update_eqx_oracle instruction not found`
+**Error:** `update_unx_oracle instruction not found`
 
-**Solution:** This is expected if the Solana program doesn't have the `update_eqx_oracle` instruction yet. The function will continue and store data to blobs only.
+**Solution:** This is expected if the Solana program doesn't have the `update_unx_oracle` instruction yet. The function will continue and store data to blobs only.
 
 ### Pyth Hermes API Fails (General)
 
@@ -321,7 +321,7 @@ npm install --legacy-peer-deps @netlify/functions @netlify/blobs bs58
 
 ## API Response Formats
 
-### GET /get-eqx-history
+### GET /get-unx-history
 
 ```json
 {
@@ -369,11 +369,11 @@ npm install --legacy-peer-deps @netlify/functions @netlify/blobs bs58
 
 ## Frontend Integration
 
-### Example: Display EQX Chart
+### Example: Display UNX Chart
 
 ```typescript
 // Fetch historical data
-const response = await fetch('/.netlify/functions/get-eqx-history?from=2026-01-01&to=2026-01-08');
+const response = await fetch('/.netlify/functions/get-unx-history?from=2026-01-01&to=2026-01-08');
 const data = await response.json();
 
 // Render chart (using Chart.js, Recharts, etc.)
@@ -415,7 +415,7 @@ console.log('GBP to USD:', data.rates.GBP);
 
 This deployment replaces the GitHub Actions workflows:
 
-- ~~`.github/workflows/update-eqx-price.yml`~~ → `netlify/functions/update-eqx-price.ts`
+- ~~`.github/workflows/update-unx-price.yml`~~ → `netlify/functions/update-unx-price.ts`
 - ~~`.github/workflows/update-fx-rates.yml`~~ → `netlify/functions/update-fx-rates.ts`
 
 **Benefits:**
@@ -432,7 +432,7 @@ For issues or questions:
 
 1. Check Netlify function logs
 2. Review this documentation
-3. Open an issue on GitHub: `brainstorm4x/EQUA-FRONTEND`
+3. Open an issue on GitHub: `brainstorm4x/UNIA-FRONTEND`
 
 ---
 

@@ -6,10 +6,10 @@
  */
 
 // UNIA token decimals - imported from centralized config for consistency
-import { EQUA_DECIMALS } from '@/lib/constants';
+import { UNIA_DECIMALS } from '@/lib/constants';
 
 /**
- * Name of the smallest unit of EQUA
+ * Name of the smallest unit of UNIA
  */
 export const SMALLEST_UNIT_NAME = 'Gajbhiye';
 export const SMALLEST_UNIT_NAME_PLURAL = 'Gajbhiyes';
@@ -52,10 +52,10 @@ export function formatEquaRaw(
   options: FormatOptions = {}
 ): string {
   const {
-    decimals = EQUA_DECIMALS,
+    decimals = UNIA_DECIMALS,
     trimTrailingZeros = false,
     useGrouping = true,
-    tokenDecimals = EQUA_DECIMALS,
+    tokenDecimals = UNIA_DECIMALS,
   } = options;
 
   // Convert to number if string or bigint
@@ -97,7 +97,7 @@ export function formatEquaRaw(
  * formatEquaBalance(1_500_000) // "1.5" (fractional, shows needed decimals)
  * formatEquaBalance(123_456) // "0.123456" (small amount, shows all decimals)
  */
-export function formatEquaBalance(rawAmount: number | string | bigint, tokenDecimals: number = EQUA_DECIMALS): string {
+export function formatEquaBalance(rawAmount: number | string | bigint, tokenDecimals: number = UNIA_DECIMALS): string {
   // Convert to number if string or bigint
   const amount = typeof rawAmount === 'bigint' 
     ? Number(rawAmount) 
@@ -151,7 +151,7 @@ export function formatEquaBalance(rawAmount: number | string | bigint, tokenDeci
  * floating point arithmetic. For precise financial calculations, consider using a
  * decimal library. However, for typical token amounts, the precision is sufficient.
  */
-export function parseEquaFormatted(formattedAmount: string, tokenDecimals: number = EQUA_DECIMALS): number {
+export function parseEquaFormatted(formattedAmount: string, tokenDecimals: number = UNIA_DECIMALS): number {
   // Remove any grouping separators (commas)
   const cleaned = formattedAmount.replace(/,/g, '');
   const tokenAmount = parseFloat(cleaned);
@@ -166,7 +166,7 @@ export function parseEquaFormatted(formattedAmount: string, tokenDecimals: numbe
 }
 
 /**
- * Converts raw UNIA amount (in Gajbhiyes) to a number (decimal EQUA form)
+ * Converts raw UNIA amount (in Gajbhiyes) to a number (decimal UNIA form)
  * 
  * @param rawAmount - The raw token amount in base units (Gajbhiyes)
  * @param tokenDecimals - Token decimals (defaults to 6)
@@ -181,7 +181,7 @@ export function parseEquaFormatted(formattedAmount: string, tokenDecimals: numbe
  * amounts above ~9 billion UNIA tokens (in raw base units) may lose precision.
  * For typical individual holdings, this is more than sufficient.
  */
-export function rawToDecimal(rawAmount: number | string | bigint, tokenDecimals: number = EQUA_DECIMALS): number {
+export function rawToDecimal(rawAmount: number | string | bigint, tokenDecimals: number = UNIA_DECIMALS): number {
   const amount = typeof rawAmount === 'bigint' 
     ? Number(rawAmount) 
     : typeof rawAmount === 'string'
@@ -197,9 +197,9 @@ export function rawToDecimal(rawAmount: number | string | bigint, tokenDecimals:
 }
 
 /**
- * Converts a decimal EQUA amount to raw base units (Gajbhiyes)
+ * Converts a decimal UNIA amount to raw base units (Gajbhiyes)
  * 
- * @param decimalAmount - Token amount as a decimal number (EQUA)
+ * @param decimalAmount - Token amount as a decimal number (UNIA)
  * @param tokenDecimals - Token decimals (defaults to 6)
  * @returns Raw token amount in base units (Gajbhiyes)
  * 
@@ -211,7 +211,7 @@ export function rawToDecimal(rawAmount: number | string | bigint, tokenDecimals:
  * within reasonable ranges, the precision is sufficient. Very large or very precise
  * values may have minor rounding discrepancies due to IEEE 754 floating point arithmetic.
  */
-export function decimalToRaw(decimalAmount: number, tokenDecimals: number = EQUA_DECIMALS): number {
+export function decimalToRaw(decimalAmount: number, tokenDecimals: number = UNIA_DECIMALS): number {
   if (isNaN(decimalAmount) || !isFinite(decimalAmount)) {
     return 0;
   }
@@ -233,7 +233,7 @@ export function decimalToRaw(decimalAmount: number, tokenDecimals: number = EQUA
  * parseDecimalStringToRaw("0.123456", 6) // 123456n
  * parseDecimalStringToRaw("100", 6) // 100000000n
  */
-export function parseDecimalStringToRaw(decimalString: string, tokenDecimals: number = EQUA_DECIMALS): bigint | null {
+export function parseDecimalStringToRaw(decimalString: string, tokenDecimals: number = UNIA_DECIMALS): bigint | null {
   try {
     // Remove whitespace and validate
     const cleaned = decimalString.trim();
@@ -279,8 +279,8 @@ export function getSmallestUnitName(amount: number): string {
 }
 
 /**
- * Get the number of decimals for EQUA token
+ * Get the number of decimals for UNIA token
  */
 export function getEquaDecimals(): number {
-  return EQUA_DECIMALS;
+  return UNIA_DECIMALS;
 }

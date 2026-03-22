@@ -56,7 +56,7 @@ describe('UserAccount Parsing Updates', () => {
       tokenAccountBytes.copy(buffer, USER_ACCOUNT_OFFSETS.TOKEN_ACCOUNT);
       
       // Minted amount (8 bytes, u64)
-      const mintedAmount = 1000000000; // 1 EQUA (with 6 decimals)
+      const mintedAmount = 1000000000; // 1 UNIA (with 6 decimals)
       buffer.writeBigUInt64LE(BigInt(mintedAmount), USER_ACCOUNT_OFFSETS.MINTED_AMOUNT);
       
       // Mint start (8 bytes, i64)
@@ -64,7 +64,7 @@ describe('UserAccount Parsing Updates', () => {
       buffer.writeBigInt64LE(BigInt(mintStart), USER_ACCOUNT_OFFSETS.MINT_START);
       
       // Referral rewards (8 bytes, u64)
-      const referralRewards = 500000000; // 0.5 EQUA
+      const referralRewards = 500000000; // 0.5 UNIA
       buffer.writeBigUInt64LE(BigInt(referralRewards), USER_ACCOUNT_OFFSETS.REFERRAL_REWARDS);
       
       // Last mint time (8 bytes, i64)

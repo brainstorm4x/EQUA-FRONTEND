@@ -2,16 +2,16 @@
 
 ## What Was Implemented
 
-This PR migrates the EQX Oracle and FX Rate update jobs from GitHub Actions to Netlify Scheduled Functions, providing:
+This PR migrates the UNX Oracle and FX Rate update jobs from GitHub Actions to Netlify Scheduled Functions, providing:
 
 ✅ **4 Netlify Functions:**
-- `update-eqx-price` (scheduled, runs hourly)
+- `update-unx-price` (scheduled, runs hourly)
 - `update-fx-rates` (scheduled, runs hourly)
-- `get-eqx-history` (on-demand API)
+- `get-unx-history` (on-demand API)
 - `get-fx-rates` (on-demand API)
 
 ✅ **5 Shared Utility Modules:**
-- `lib/eqxOracle.ts` - EQX Oracle integration
+- `lib/unxOracle.ts` - UNX Oracle integration
 - `lib/equa_token.ts` - Anchor program types
 - `lib/equa_token.json` - Anchor program IDL
 - `lib/pythPrices.ts` - Pyth Hermes API client
@@ -30,7 +30,7 @@ This PR migrates the EQX Oracle and FX Rate update jobs from GitHub Actions to N
 ### Step 1: Connect to Netlify
 1. Go to https://app.netlify.com/
 2. Click "Add new site" → "Import an existing project"
-3. Connect GitHub and select `brainstorm4x/EQUA-FRONTEND`
+3. Connect GitHub and select `brainstorm4x/UNIA-FRONTEND`
 4. Branch: `main` (after merge)
 
 ### Step 2: Set Environment Variables
@@ -67,17 +67,17 @@ netlify login
 netlify link
 
 # Manually invoke functions
-netlify functions:invoke update-eqx-price
+netlify functions:invoke update-unx-price
 netlify functions:invoke update-fx-rates
-netlify functions:invoke get-eqx-history
+netlify functions:invoke get-unx-history
 netlify functions:invoke get-fx-rates
 ```
 
 ## API Endpoints (After Deployment)
 
 ```
-# Get EQX price history
-GET https://[your-site].netlify.app/.netlify/functions/get-eqx-history
+# Get UNX price history
+GET https://[your-site].netlify.app/.netlify/functions/get-unx-history
     ?from=2026-01-01&to=2026-01-08&interval=daily
 
 # Get latest FX rates
@@ -117,12 +117,12 @@ tsconfig.json                             # UPDATED - Exclude netlify/
 tsconfig.functions.json                   # NEW - Functions TypeScript config
 .gitignore                                # UPDATED - Netlify artifacts
 netlify/functions/
-  ├── update-eqx-price.ts                 # NEW - Scheduled function
+  ├── update-unx-price.ts                 # NEW - Scheduled function
   ├── update-fx-rates.ts                  # NEW - Scheduled function
-  ├── get-eqx-history.ts                  # NEW - API function
+  ├── get-unx-history.ts                  # NEW - API function
   ├── get-fx-rates.ts                     # NEW - API function
   └── lib/
-      ├── eqxOracle.ts                    # COPIED from src/utils/
+      ├── unxOracle.ts                    # COPIED from src/utils/
       ├── equa_token.ts                   # COPIED from src/lib/
       ├── equa_token.json                 # COPIED from public/idl/
       ├── pythPrices.ts                   # NEW - Pyth API client
@@ -139,7 +139,7 @@ __tests__/pricing/fxRateClient.test.ts    # FIXED - Syntax error
 2. ✅ Confirm blob storage contains data after first run
 3. ✅ Test API endpoints with curl/Postman
 4. 🔜 Integrate API endpoints in frontend for charts
-5. 🔜 Add EQX price chart component
+5. 🔜 Add UNX price chart component
 6. 🔜 Add currency conversion display
 
 ---

@@ -4,21 +4,21 @@
  * Schedule: 0 0 * * * (daily at 00:00 UTC)
  *
  * Tasks:
- * 1. Fetch yesterday's hourly rows from the eqx_price_snapshots Turso table.
- * 2. Compute daily OHLC values for the EQUA price and the EQX basket close.
+ * 1. Fetch yesterday's hourly rows from the unx_price_snapshots Turso table.
+ * 2. Compute daily OHLC values for the UNIA price and the UNX basket close.
  * 3. Compute "$100 held" comparison metrics (equaHoldingValue, usdHoldingValue,
  *    advantagePerHundred) using the very first snapshot as the baseline.
- * 4. Write a row to the eqx_daily_performance table (idempotent via INSERT OR REPLACE).
+ * 4. Write a row to the unx_daily_performance table (idempotent via INSERT OR REPLACE).
  * 5. Run Netlify Blobs housekeeping (delete snapshots older than 30 days).
  */
 
 import { Handler } from '@netlify/functions';
 import {
-  getEqxPerformanceHistory,
+  getUnxPerformanceHistory,
   getEarliestSnapshot,
   storeDailyPerformance,
 } from './lib/tursoStorage';
-import { cleanupOldEqxPrices } from './lib/blobStorage';
+import { cleanupOldUnxPrices } from './lib/blobStorage';
 
 // Initial investment amount used as the baseline for "$100 held" calculations.
 const BASELINE_INVESTMENT_USD = 100;
@@ -63,7 +63,7 @@ const handler: Handler = async (): Promise<{ statusCode: number; body: string }>
   // ------------------------------------------------------------------
   let rows;
   try {
-    rows = await getEqxPerformanceHistory(yesterdayStart, yesterdayEnd);
+    rows = await getUnxPerformanceHistory(yesterdayStart, yesterdayEnd);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('snapshot-daily-performance: failed to fetch hourly rows:', msg);
@@ -87,7 +87,7 @@ const handler: Handler = async (): Promise<{ statusCode: number; body: string }>
   const equaPriceClose = lastRow.equaPriceUsd;
   const equaPriceHigh = Math.max(...rows.map((r) => r.equaPriceUsd));
   const equaPriceLow = Math.min(...rows.map((r) => r.equaPriceUsd));
-  const eqxBasketClose = lastRow.eqxPriceUsd;
+  const unxBasketClose = lastRow.unxPriceUsd;
   const usdInflationIndex = lastRow.usdInflationIndex;
 
   // Determine source label (use 'hermes' if any row came from hermes, else 'fallback')
@@ -123,7 +123,7 @@ const handler: Handler = async (): Promise<{ statusCode: number; body: string }>
     equaPriceClose,
     equaPriceHigh,
     equaPriceLow,
-    eqxBasketClose,
+    unxBasketClose,
     usdInflationIndex,
     equaHoldingValue,
     usdHoldingValue,
@@ -173,7 +173,7 @@ const handler: Handler = async (): Promise<{ statusCode: number; body: string }>
 
 async function runCleanup(): Promise<void> {
   try {
-    await cleanupOldEqxPrices();
+    await cleanupOldUnxPrices();
   } catch (err) {
     // Cleanup is best-effort — never let it fail the function
     console.warn(

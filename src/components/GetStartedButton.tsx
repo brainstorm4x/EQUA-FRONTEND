@@ -22,7 +22,7 @@ const REGISTRATION_EVENT_KEY = 'equa_registration_complete';
  * 
  * - Unconnected wallet: Shows "Get Started →" (links to /mint)
  * - Connected but not registered: Shows "Get Started →" (links to /mint for registration)
- * - Connected and registered: Shows "Mint EQUA →" (links to /mint for minting)
+ * - Connected and registered: Shows "Mint UNIA →" (links to /mint for minting)
  * 
  * Registration is checked ON-CHAIN ONLY (no database lookup).
  * Uses local keypair + on-chain account verification.
@@ -144,7 +144,7 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
       return 'Loading...';
     }
     if (connected && isRegistered) {
-      return 'Mint EQUA →';
+      return 'Mint UNIA →';
     }
     return 'Get Started →';
   };

@@ -1,7 +1,7 @@
 /**
  * Pyth Hermes API Integration
  * 
- * Fetches real-time price data for EQX basket components from Pyth Network's Hermes API.
+ * Fetches real-time price data for UNX basket components from Pyth Network's Hermes API.
  * Provides fallback to hardcoded prices if API fails.
  */
 

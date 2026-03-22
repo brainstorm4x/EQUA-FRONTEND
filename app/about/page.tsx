@@ -150,7 +150,7 @@ export default function AboutPage() {
                 <strong className="text-white">Important:</strong> All pricing is denominated in <strong className="text-white">UNX (UNIA Index)</strong>—a diversified basket of currencies (57%), gold (35%), and oil (8%). USD values shown are for convenience only. This protects users from single-currency inflation and economic shocks.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">EQX Basket Oracle</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">UNX Basket Oracle</h3>
               <p className="text-purple-200 leading-relaxed">
                 The UNX oracle updates every 4 hours using Hermes/Pyth price feeds, ensuring UNIA&apos;s value stays anchored to real-world economic conditions, not just one nation&apos;s monetary policy. This provides inflation resistance and stability across global economic shocks.
               </p>
@@ -222,23 +222,23 @@ export default function AboutPage() {
                 <p className="text-purple-200 leading-relaxed">
                   <strong className="text-white">GitHub Repository:</strong><br />
                   <a 
-                    href="https://github.com/brainstorm4x/EQUA" 
+                    href="https://github.com/brainstorm4x/UNIA" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-purple-300 hover:text-purple-100 underline"
                   >
-                    https://github.com/brainstorm4x/EQUA
+                    https://github.com/brainstorm4x/UNIA
                   </a>
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
                   <strong className="text-white">Frontend Repository:</strong><br />
                   <a 
-                    href="https://github.com/brainstorm4x/EQUA-FRONTEND" 
+                    href="https://github.com/brainstorm4x/UNIA-FRONTEND" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-purple-300 hover:text-purple-100 underline"
                   >
-                    https://github.com/brainstorm4x/EQUA-FRONTEND
+                    https://github.com/brainstorm4x/UNIA-FRONTEND
                   </a>
                 </p>
               </div>

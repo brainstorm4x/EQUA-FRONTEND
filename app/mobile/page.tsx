@@ -6,7 +6,7 @@ import { Logo } from '@/components/Logo';
 /**
  * Dedicated Mobile Browser Landing Page
  *
- * Shown when a user visits the EQUA site from a mobile external browser
+ * Shown when a user visits the UNIA site from a mobile external browser
  * (Chrome / Safari on Android / iOS).  Deep-linking to Solana wallet
  * extensions is unreliable in these environments, so we guide the user toward
  * the two supported paths:

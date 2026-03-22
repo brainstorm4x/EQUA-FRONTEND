@@ -92,7 +92,7 @@ describe('Fix verification tests', () => {
       
       // We can't directly access the const, but we can verify the module loads
       expect(unxOracle).toBeDefined();
-      // getEQXPriceData was renamed to getUniaPriceMultiFormat
+      // getUNXPriceData was renamed to getUniaPriceMultiFormat
       expect(unxOracle.getUniaPriceMultiFormat).toBeDefined();
       
       // The correct endpoint should be used internally

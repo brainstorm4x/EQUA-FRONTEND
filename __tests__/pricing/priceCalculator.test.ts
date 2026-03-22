@@ -1,5 +1,5 @@
 /**
- * Tests for the EQUA Price Calculator
+ * Tests for the UNIA Price Calculator
  * Validates the nine-tier price appreciation model
  * 
  * New 9-Tier Model:

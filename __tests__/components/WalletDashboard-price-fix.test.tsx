@@ -62,16 +62,16 @@ describe('WalletDashboard - UNIA Price Calculation Fix', () => {
     // When: Convert INR to UNIA (equaAmount = localAmount / equaPrice)
     const equaAmount = localAmount / equaPriceInr;
 
-    // Then: Should get 100 EQUA
+    // Then: Should get 100 UNIA
     expect(equaAmount).toBeCloseTo(100, 2);
   });
 
-  it('should convert EQUA to INR correctly', () => {
+  it('should convert UNIA to INR correctly', () => {
     // Given: 1 UNIA = 0.9077 INR
     const equaPriceInr = 0.9077;
-    const equaAmount = 100; // EQUA input
+    const equaAmount = 100; // UNIA input
 
-    // When: Convert EQUA to INR (localAmount = equaAmount * equaPrice)
+    // When: Convert UNIA to INR (localAmount = equaAmount * equaPrice)
     const localAmount = equaAmount * equaPriceInr;
 
     // Then: Should get 90.77 INR
