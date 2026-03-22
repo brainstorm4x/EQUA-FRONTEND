@@ -1191,7 +1191,7 @@ export default function WhitepaperPage() {
                 This is not a zero-sum game where one person&apos;s gain is another&apos;s loss. This is a system where <strong className="text-white">everyone wins when the network thrives</strong>.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-8 mb-3">Equal Access, Equal Opportunity, Equal Economy</h3>
+              <h3 className="text-xl font-semibold text-white mt-8 mb-3">Powered by People, Not Capital</h3>
               <p className="text-purple-200 leading-relaxed">
                 UNIA&apos;s narrative emerges from a simple observation: <strong className="text-white">most people never get early access to systems that create wealth.</strong> By the time an opportunity becomes widely known, most of the compounding benefit has already happened.
               </p>
@@ -1274,7 +1274,8 @@ export default function WhitepaperPage() {
             {/* Footer */}
             <div className="text-center pt-8 border-t border-purple-500/30">
               <p className="text-2xl font-bold text-white mb-2">UNIA</p>
-              <p className="text-purple-300">Equal Access. Equal Opportunity. Equal Economy.</p>
+              <p className="text-purple-300">Powered by People, Not Capital</p>
+              <p className="text-purple-300 text-sm">People Powered Value</p>
               <p className="text-purple-400 text-sm mt-4">Last Updated: March 2026</p>
             </div>
           </article>

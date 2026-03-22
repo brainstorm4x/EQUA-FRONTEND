@@ -271,7 +271,7 @@ export default function AboutPage() {
             {/* Footer */}
             <div className="text-center pt-8 border-t border-purple-500/30">
               <p className="text-2xl font-bold text-white mb-2">UNIA</p>
-              <p className="text-purple-300">Equal Access. Equal Opportunity. Equal Economy.</p>
+              <p className="text-purple-300">Powered by People, Not Capital</p>
             </div>
           </article>
         </div>

@@ -232,7 +232,7 @@ export default function MerchantsPage() {
                 <Logo size={60} />
               </div>
               <p className="text-2xl font-bold text-white mb-2 mt-4">UNIA</p>
-              <p className="text-purple-300">Equal Access. Equal Opportunity. Equal Economy.</p>
+              <p className="text-purple-300">Powered by People, Not Capital</p>
             </div>
           </article>
 

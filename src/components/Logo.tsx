@@ -16,7 +16,7 @@ interface LogoProps {
 export function Logo({ className = '', size = 40, priority = false }: LogoProps) {
   return (
     <img 
-      src="/branding/unia-logo-dark.svg"
+      src="/branding/unia-logo-light.svg"
       alt="UNIA Logo"
       className={className}
       style={{ 
