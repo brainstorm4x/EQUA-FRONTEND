@@ -86,15 +86,15 @@ function aggregateToDaily(rows: UnxPerformanceRow[]): UnxPerformanceRow[] {
     dailyRows.push({
       timestamp: new Date(key + 'T00:00:00.000Z').getTime(),
       recordedAt: key + 'T00:00:00.000Z',
-      equaPriceUsd: avg('equaPriceUsd'),
-      // equaPriceLocal may be null; treat null as 0 for the average then
+      uniaPriceUsd: avg('uniaPriceUsd'),
+      // uniaPriceLocal may be null; treat null as 0 for the average then
       // restore null if all rows had null (no local currency column matched).
-      equaPriceLocal: dayRows.every((r) => r.equaPriceLocal == null)
+      uniaPriceLocal: dayRows.every((r) => r.uniaPriceLocal == null)
         ? null
-        : avg('equaPriceLocal'),
+        : avg('uniaPriceLocal'),
       unxPriceUsd: avg('unxPriceUsd'),
       usdInflationIndex: avg('usdInflationIndex'),
-      equaPurchasingPower: avg('equaPurchasingPower'),
+      uniaPurchasingPower: avg('uniaPurchasingPower'),
       source: last.source,
     });
   }
@@ -106,7 +106,7 @@ function aggregateToDaily(rows: UnxPerformanceRow[]): UnxPerformanceRow[] {
  * UnxPerformanceRow annotated with "$100 held" comparison values.
  */
 type AnnotatedPerformanceRow = UnxPerformanceRow & {
-  equaHoldingValue: number;
+  uniaHoldingValue: number;
   usdHoldingValue: number;
   advantagePerHundred: number;
 };
@@ -117,15 +117,15 @@ type AnnotatedPerformanceRow = UnxPerformanceRow & {
 function computeSummary(rows: UnxPerformanceRow[]) {
   if (rows.length === 0) {
     return {
-      equaPriceChange: 0,
-      equaPriceChangePercent: 0,
+      uniaPriceChange: 0,
+      uniaPriceChangePercent: 0,
       usdPurchasingPowerLoss: 0,
-      equaVsUsdAdvantage: 0,
-      currentEquaPriceUsd: 0,
-      currentEquaPriceLocal: null as number | null,
+      uniaVsUsdAdvantage: 0,
+      currentUniaPriceUsd: 0,
+      currentUniaPriceLocal: null as number | null,
       currentUnxPriceUsd: 0,
       dataPoints: 0,
-      equaHoldingValue: 100,
+      uniaHoldingValue: 100,
       usdHoldingValue: 100,
       advantagePerHundred: 0,
       holdingPeriodLabel: '0 days',
@@ -135,25 +135,25 @@ function computeSummary(rows: UnxPerformanceRow[]) {
   const first = rows[0];
   const last = rows[rows.length - 1];
 
-  const equaPriceChange = last.equaPriceUsd - first.equaPriceUsd;
-  const equaPriceChangePercent =
-    first.equaPriceUsd !== 0
-      ? ((last.equaPriceUsd - first.equaPriceUsd) / first.equaPriceUsd) * 100
+  const uniaPriceChange = last.uniaPriceUsd - first.uniaPriceUsd;
+  const uniaPriceChangePercent =
+    first.uniaPriceUsd !== 0
+      ? ((last.uniaPriceUsd - first.uniaPriceUsd) / first.uniaPriceUsd) * 100
       : 0;
   const usdPurchasingPowerLoss =
     last.usdInflationIndex > 0
       ? (1 - 1 / last.usdInflationIndex) * 100
       : 0;
-  const equaVsUsdAdvantage = equaPriceChangePercent + usdPurchasingPowerLoss;
+  const uniaVsUsdAdvantage = uniaPriceChangePercent + usdPurchasingPowerLoss;
 
   // "$100 held" metrics — baseline is the first row in the selected range
-  const equaHoldingValue =
-    first.equaPriceUsd > 0 ? 100 * (last.equaPriceUsd / first.equaPriceUsd) : 100;
+  const uniaHoldingValue =
+    first.uniaPriceUsd > 0 ? 100 * (last.uniaPriceUsd / first.uniaPriceUsd) : 100;
   const usdHoldingValue =
     last.usdInflationIndex > 0
       ? 100 * (first.usdInflationIndex / last.usdInflationIndex)
       : 100;
-  const advantagePerHundred = equaHoldingValue - usdHoldingValue;
+  const advantagePerHundred = uniaHoldingValue - usdHoldingValue;
 
   // Human-readable holding period label
   const daysElapsed = Math.round(
@@ -171,15 +171,15 @@ function computeSummary(rows: UnxPerformanceRow[]) {
       : `${(daysElapsed / 365).toFixed(1)} years`;
 
   return {
-    equaPriceChange,
-    equaPriceChangePercent,
+    uniaPriceChange,
+    uniaPriceChangePercent,
     usdPurchasingPowerLoss,
-    equaVsUsdAdvantage,
-    currentEquaPriceUsd: last.equaPriceUsd,
-    currentEquaPriceLocal: last.equaPriceLocal,
+    uniaVsUsdAdvantage,
+    currentUniaPriceUsd: last.uniaPriceUsd,
+    currentUniaPriceLocal: last.uniaPriceLocal,
     currentUnxPriceUsd: last.unxPriceUsd,
     dataPoints: rows.length,
-    equaHoldingValue,
+    uniaHoldingValue,
     usdHoldingValue,
     advantagePerHundred,
     holdingPeriodLabel,
@@ -193,21 +193,21 @@ function computeSummary(rows: UnxPerformanceRow[]) {
 function addHoldingValues(rows: UnxPerformanceRow[]): AnnotatedPerformanceRow[] {
   if (rows.length === 0) return [];
 
-  const firstEquaPrice = rows[0].equaPriceUsd;
+  const firstUniaPrice = rows[0].uniaPriceUsd;
   const firstInflationIndex = rows[0].usdInflationIndex;
 
   return rows.map((row) => {
-    const equaHoldingValue =
-      firstEquaPrice > 0 ? 100 * (row.equaPriceUsd / firstEquaPrice) : 100;
+    const uniaHoldingValue =
+      firstUniaPrice > 0 ? 100 * (row.uniaPriceUsd / firstUniaPrice) : 100;
     const usdHoldingValue =
       row.usdInflationIndex > 0
         ? 100 * (firstInflationIndex / row.usdInflationIndex)
         : 100;
     return {
       ...row,
-      equaHoldingValue,
+      uniaHoldingValue,
       usdHoldingValue,
-      advantagePerHundred: equaHoldingValue - usdHoldingValue,
+      advantagePerHundred: uniaHoldingValue - usdHoldingValue,
     };
   });
 }
@@ -288,11 +288,11 @@ const handler: Handler = async (event): Promise<HandlerResponse> => {
       rows = dailyRows.map((d) => ({
         timestamp: d.timestamp,
         recordedAt: d.recordedAt,
-        equaPriceUsd: d.equaPriceClose,
-        equaPriceLocal: null,
+        uniaPriceUsd: d.uniaPriceClose,
+        uniaPriceLocal: null,
         unxPriceUsd: d.unxBasketClose,
         usdInflationIndex: d.usdInflationIndex,
-        equaPurchasingPower: d.equaPriceClose / d.usdInflationIndex,
+        uniaPurchasingPower: d.uniaPriceClose / d.usdInflationIndex,
         source: d.source,
       }));
     } else if (interval === 'daily') {

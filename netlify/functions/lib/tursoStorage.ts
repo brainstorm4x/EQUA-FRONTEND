@@ -86,9 +86,9 @@ export interface TursoUnxSnapshot {
   /** UNX basket value in USD (e.g. ~933.0) */
   unxPriceUsd: number;
   /** UNIA token price in USD (from tier-based formula) */
-  equaPriceUsd: number;
-  /** UNIA price expressed in UNX units (= equaPriceUsd / unxPriceUsd) */
-  equaPriceUnx: number;
+  uniaPriceUsd: number;
+  /** UNIA price expressed in UNX units (= uniaPriceUsd / unxPriceUsd) */
+  uniaPriceUnx: number;
   /** UNIA price in each of the 16 send-modal currencies */
   currencyPrices: Record<string, number>;
   /**
@@ -171,24 +171,24 @@ export async function initTursoSchema(
       recorded_at           TEXT NOT NULL,
       source                TEXT NOT NULL,
       unx_price_usd         REAL NOT NULL,
-      equa_price_usd        REAL NOT NULL,
-      equa_price_unx        REAL NOT NULL,
-      equa_price_usd_val    REAL,
-      equa_price_eur        REAL,
-      equa_price_gbp        REAL,
-      equa_price_inr        REAL,
-      equa_price_jpy        REAL,
-      equa_price_cny        REAL,
-      equa_price_krw        REAL,
-      equa_price_brl        REAL,
-      equa_price_mxn        REAL,
-      equa_price_aud        REAL,
-      equa_price_cad        REAL,
-      equa_price_chf        REAL,
-      equa_price_ngn        REAL,
-      equa_price_zar        REAL,
-      equa_price_aed        REAL,
-      equa_price_sgd        REAL,
+      unia_price_usd        REAL NOT NULL,
+      unia_price_unx        REAL NOT NULL,
+      unia_price_usd_val    REAL,
+      unia_price_eur        REAL,
+      unia_price_gbp        REAL,
+      unia_price_inr        REAL,
+      unia_price_jpy        REAL,
+      unia_price_cny        REAL,
+      unia_price_krw        REAL,
+      unia_price_brl        REAL,
+      unia_price_mxn        REAL,
+      unia_price_aud        REAL,
+      unia_price_cad        REAL,
+      unia_price_chf        REAL,
+      unia_price_ngn        REAL,
+      unia_price_zar        REAL,
+      unia_price_aed        REAL,
+      unia_price_sgd        REAL,
       comp_xauusd           REAL,
       comp_usdeur           REAL,
       comp_usdcny           REAL,
@@ -198,7 +198,7 @@ export async function initTursoSchema(
       comp_usdusd           REAL,
       total_transactions    INTEGER,
       usd_inflation_index   REAL NOT NULL DEFAULT 1.0,
-      equa_purchasing_power REAL,
+      unia_purchasing_power REAL,
       UNIQUE(timestamp)
     )
   `);
@@ -215,13 +215,13 @@ export async function initTursoSchema(
     CREATE TABLE IF NOT EXISTS unx_daily_performance (
       id                    INTEGER PRIMARY KEY AUTOINCREMENT,
       date                  TEXT NOT NULL,
-      equa_price_open       REAL NOT NULL,
-      equa_price_close      REAL NOT NULL,
-      equa_price_high       REAL NOT NULL,
-      equa_price_low        REAL NOT NULL,
+      unia_price_open       REAL NOT NULL,
+      unia_price_close      REAL NOT NULL,
+      unia_price_high       REAL NOT NULL,
+      unia_price_low        REAL NOT NULL,
       unx_basket_close      REAL NOT NULL,
       usd_inflation_index   REAL NOT NULL,
-      equa_holding_value    REAL NOT NULL,
+      unia_holding_value    REAL NOT NULL,
       usd_holding_value     REAL NOT NULL,
       advantage_per_hundred REAL NOT NULL,
       hourly_data_points    INTEGER NOT NULL,
@@ -233,6 +233,79 @@ export async function initTursoSchema(
   await client.execute(`
     CREATE INDEX IF NOT EXISTS idx_daily_perf_date ON unx_daily_performance(date DESC)
   `);
+
+  await migrateTursoColumns(client);
+}
+
+/**
+ * Idempotent migration: rename all `equa_*` columns to `unia_*` in the two
+ * Turso tables.  Each ALTER is wrapped in its own try/catch so columns that
+ * have already been renamed (or never existed with the old name) are silently
+ * skipped.  Safe to run on every invocation.
+ *
+ * Note: SQLite does not support parameterized column names in ALTER TABLE
+ * statements.  All column names below are hard-coded string literals from a
+ * closed allowlist, so there is no SQL-injection risk.
+ *
+ * @param client - Turso libSQL client
+ */
+async function migrateTursoColumns(
+  client: ReturnType<typeof createClient>
+): Promise<void> {
+  const snapshotRenames: [string, string][] = [
+    ['equa_price_usd',        'unia_price_usd'],
+    ['equa_price_unx',        'unia_price_unx'],
+    ['equa_price_usd_val',    'unia_price_usd_val'],
+    ['equa_price_eur',        'unia_price_eur'],
+    ['equa_price_gbp',        'unia_price_gbp'],
+    ['equa_price_inr',        'unia_price_inr'],
+    ['equa_price_jpy',        'unia_price_jpy'],
+    ['equa_price_cny',        'unia_price_cny'],
+    ['equa_price_krw',        'unia_price_krw'],
+    ['equa_price_brl',        'unia_price_brl'],
+    ['equa_price_mxn',        'unia_price_mxn'],
+    ['equa_price_aud',        'unia_price_aud'],
+    ['equa_price_cad',        'unia_price_cad'],
+    ['equa_price_chf',        'unia_price_chf'],
+    ['equa_price_ngn',        'unia_price_ngn'],
+    ['equa_price_zar',        'unia_price_zar'],
+    ['equa_price_aed',        'unia_price_aed'],
+    ['equa_price_sgd',        'unia_price_sgd'],
+    ['equa_purchasing_power', 'unia_purchasing_power'],
+  ];
+
+  const dailyRenames: [string, string][] = [
+    ['equa_price_open',    'unia_price_open'],
+    ['equa_price_close',   'unia_price_close'],
+    ['equa_price_high',    'unia_price_high'],
+    ['equa_price_low',     'unia_price_low'],
+    ['equa_holding_value', 'unia_holding_value'],
+  ];
+
+  for (const [oldCol, newCol] of snapshotRenames) {
+    try {
+      await client.execute(
+        `ALTER TABLE unx_price_snapshots RENAME COLUMN ${oldCol} TO ${newCol}`
+      );
+    } catch (err) {
+      // Expected when the column was already renamed on a previous invocation.
+      // Log at debug level so genuine unexpected errors remain visible in logs.
+      const msg = err instanceof Error ? err.message : String(err);
+      console.debug(`migrateTursoColumns: skipping unx_price_snapshots.${oldCol} → ${newCol} (${msg})`);
+    }
+  }
+
+  for (const [oldCol, newCol] of dailyRenames) {
+    try {
+      await client.execute(
+        `ALTER TABLE unx_daily_performance RENAME COLUMN ${oldCol} TO ${newCol}`
+      );
+    } catch (err) {
+      // Expected when the column was already renamed on a previous invocation.
+      const msg = err instanceof Error ? err.message : String(err);
+      console.debug(`migrateTursoColumns: skipping unx_daily_performance.${oldCol} → ${newCol} (${msg})`);
+    }
+  }
 }
 
 // ============================================================================
@@ -258,7 +331,7 @@ export async function storeUnxSnapshotToTurso(
     const usdInflationIndex =
       snap.usdInflationIndex ?? computeUsdInflationIndex(snap.timestamp);
 
-    const equaPurchasingPower = snap.equaPriceUsd / usdInflationIndex;
+    const uniaPurchasingPower = snap.uniaPriceUsd / usdInflationIndex;
 
     const recordedAt = new Date(snap.timestamp).toISOString();
     const cp = snap.currencyPrices;
@@ -271,24 +344,24 @@ export async function storeUnxSnapshotToTurso(
           recorded_at,
           source,
           unx_price_usd,
-          equa_price_usd,
-          equa_price_unx,
-          equa_price_usd_val,
-          equa_price_eur,
-          equa_price_gbp,
-          equa_price_inr,
-          equa_price_jpy,
-          equa_price_cny,
-          equa_price_krw,
-          equa_price_brl,
-          equa_price_mxn,
-          equa_price_aud,
-          equa_price_cad,
-          equa_price_chf,
-          equa_price_ngn,
-          equa_price_zar,
-          equa_price_aed,
-          equa_price_sgd,
+          unia_price_usd,
+          unia_price_unx,
+          unia_price_usd_val,
+          unia_price_eur,
+          unia_price_gbp,
+          unia_price_inr,
+          unia_price_jpy,
+          unia_price_cny,
+          unia_price_krw,
+          unia_price_brl,
+          unia_price_mxn,
+          unia_price_aud,
+          unia_price_cad,
+          unia_price_chf,
+          unia_price_ngn,
+          unia_price_zar,
+          unia_price_aed,
+          unia_price_sgd,
           comp_xauusd,
           comp_usdeur,
           comp_usdcny,
@@ -298,7 +371,7 @@ export async function storeUnxSnapshotToTurso(
           comp_usdusd,
           total_transactions,
           usd_inflation_index,
-          equa_purchasing_power
+          unia_purchasing_power
         ) VALUES (
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
@@ -309,8 +382,8 @@ export async function storeUnxSnapshotToTurso(
         recordedAt,
         snap.source,
         snap.unxPriceUsd,
-        snap.equaPriceUsd,
-        snap.equaPriceUnx,
+        snap.uniaPriceUsd,
+        snap.uniaPriceUnx,
         cp['USD'] ?? null,
         cp['EUR'] ?? null,
         cp['GBP'] ?? null,
@@ -336,13 +409,13 @@ export async function storeUnxSnapshotToTurso(
         co.USDUSD ?? null,
         snap.totalTransactions ?? null,
         usdInflationIndex,
-        equaPurchasingPower,
+        uniaPurchasingPower,
       ],
     });
 
     console.log(
       `✓ UNX snapshot written to Turso — timestamp: ${snap.timestamp}, ` +
-      `equaPriceUsd: ${snap.equaPriceUsd}`
+      `uniaPriceUsd: ${snap.uniaPriceUsd}`
     );
 
     return { success: true };
@@ -363,11 +436,11 @@ export async function storeUnxSnapshotToTurso(
 export interface UnxPerformanceRow {
   timestamp: number;
   recordedAt: string;
-  equaPriceUsd: number;
-  equaPriceLocal: number | null;
+  uniaPriceUsd: number;
+  uniaPriceLocal: number | null;
   unxPriceUsd: number;
   usdInflationIndex: number;
-  equaPurchasingPower: number;
+  uniaPurchasingPower: number;
   source: string;
 }
 
@@ -389,19 +462,19 @@ export async function getUnxPerformanceHistory(
   // Determine which currency column to return as the local price
   const localCol: string =
     currency && SEND_MODAL_CURRENCIES.includes(currency.toUpperCase())
-      ? `equa_price_${currency.toLowerCase()}`
-      : 'equa_price_usd_val';
+      ? `unia_price_${currency.toLowerCase()}`
+      : 'unia_price_usd_val';
 
   const result = await client.execute({
     sql: `
       SELECT
         timestamp,
         recorded_at,
-        equa_price_usd,
-        ${localCol} AS equa_price_local,
+        unia_price_usd,
+        ${localCol} AS unia_price_local,
         unx_price_usd,
         usd_inflation_index,
-        equa_purchasing_power,
+        unia_purchasing_power,
         source
       FROM unx_price_snapshots
       WHERE timestamp >= ? AND timestamp <= ?
@@ -413,11 +486,11 @@ export async function getUnxPerformanceHistory(
   return result.rows.map((row) => ({
     timestamp: row['timestamp'] as number,
     recordedAt: row['recorded_at'] as string,
-    equaPriceUsd: row['equa_price_usd'] as number,
-    equaPriceLocal: row['equa_price_local'] as number | null,
+    uniaPriceUsd: row['unia_price_usd'] as number,
+    uniaPriceLocal: row['unia_price_local'] as number | null,
     unxPriceUsd: row['unx_price_usd'] as number,
     usdInflationIndex: row['usd_inflation_index'] as number,
-    equaPurchasingPower: row['equa_purchasing_power'] as number,
+    uniaPurchasingPower: row['unia_purchasing_power'] as number,
     source: row['source'] as string,
   }));
 }
@@ -433,28 +506,28 @@ export interface TursoDailyPerformance {
   /** Date of the record in YYYY-MM-DD format */
   date: string;
   /** UNIA price at the first hourly snapshot of the day */
-  equaPriceOpen: number;
+  uniaPriceOpen: number;
   /** UNIA price at the last hourly snapshot of the day */
-  equaPriceClose: number;
+  uniaPriceClose: number;
   /** Highest UNIA price seen during the day */
-  equaPriceHigh: number;
+  uniaPriceHigh: number;
   /** Lowest UNIA price seen during the day */
-  equaPriceLow: number;
+  uniaPriceLow: number;
   /** UNX basket price at the last hourly snapshot of the day */
   unxBasketClose: number;
   /** USD inflation index at the last hourly snapshot of the day */
   usdInflationIndex: number;
   /**
    * Current value of a $100 UNIA holding (relative to the first-ever snapshot).
-   * Formula: 100 * (equaPriceClose / firstEverEquaPrice)
+   * Formula: 100 * (uniaPriceClose / firstEverUniaPrice)
    */
-  equaHoldingValue: number;
+  uniaHoldingValue: number;
   /**
    * Current value of a $100 USD holding after inflation.
    * Formula: 100 / usdInflationIndex  (index starts at 1.0 at genesis)
    */
   usdHoldingValue: number;
-  /** equaHoldingValue − usdHoldingValue */
+  /** uniaHoldingValue − usdHoldingValue */
   advantagePerHundred: number;
   /** Number of hourly data points that contributed to this record */
   hourlyDataPoints: number;
@@ -496,13 +569,13 @@ export async function storeDailyPerformance(
       sql: `
         INSERT OR REPLACE INTO unx_daily_performance (
           date,
-          equa_price_open,
-          equa_price_close,
-          equa_price_high,
-          equa_price_low,
+          unia_price_open,
+          unia_price_close,
+          unia_price_high,
+          unia_price_low,
           unx_basket_close,
           usd_inflation_index,
-          equa_holding_value,
+          unia_holding_value,
           usd_holding_value,
           advantage_per_hundred,
           hourly_data_points,
@@ -511,13 +584,13 @@ export async function storeDailyPerformance(
       `,
       args: [
         record.date,
-        record.equaPriceOpen,
-        record.equaPriceClose,
-        record.equaPriceHigh,
-        record.equaPriceLow,
+        record.uniaPriceOpen,
+        record.uniaPriceClose,
+        record.uniaPriceHigh,
+        record.uniaPriceLow,
         record.unxBasketClose,
         record.usdInflationIndex,
-        record.equaHoldingValue,
+        record.uniaHoldingValue,
         record.usdHoldingValue,
         record.advantagePerHundred,
         record.hourlyDataPoints,
@@ -558,13 +631,13 @@ export async function getDailyPerformance(
     sql: `
       SELECT
         date,
-        equa_price_open,
-        equa_price_close,
-        equa_price_high,
-        equa_price_low,
+        unia_price_open,
+        unia_price_close,
+        unia_price_high,
+        unia_price_low,
         unx_basket_close,
         usd_inflation_index,
-        equa_holding_value,
+        unia_holding_value,
         usd_holding_value,
         advantage_per_hundred,
         hourly_data_points,
@@ -582,13 +655,13 @@ export async function getDailyPerformance(
       date,
       timestamp: new Date(date + 'T00:00:00.000Z').getTime(),
       recordedAt: date + 'T00:00:00.000Z',
-      equaPriceOpen: row['equa_price_open'] as number,
-      equaPriceClose: row['equa_price_close'] as number,
-      equaPriceHigh: row['equa_price_high'] as number,
-      equaPriceLow: row['equa_price_low'] as number,
+      uniaPriceOpen: row['unia_price_open'] as number,
+      uniaPriceClose: row['unia_price_close'] as number,
+      uniaPriceHigh: row['unia_price_high'] as number,
+      uniaPriceLow: row['unia_price_low'] as number,
       unxBasketClose: row['unx_basket_close'] as number,
       usdInflationIndex: row['usd_inflation_index'] as number,
-      equaHoldingValue: row['equa_holding_value'] as number,
+      uniaHoldingValue: row['unia_holding_value'] as number,
       usdHoldingValue: row['usd_holding_value'] as number,
       advantagePerHundred: row['advantage_per_hundred'] as number,
       hourlyDataPoints: row['hourly_data_points'] as number,
@@ -614,11 +687,11 @@ export async function getEarliestSnapshot(): Promise<UnxPerformanceRow | null> {
     SELECT
       timestamp,
       recorded_at,
-      equa_price_usd,
-      equa_price_usd_val AS equa_price_local,   -- USD value column; no local currency conversion needed here
+      unia_price_usd,
+      unia_price_usd_val AS unia_price_local,   -- USD value column; no local currency conversion needed here
       unx_price_usd,
       usd_inflation_index,
-      equa_purchasing_power,
+      unia_purchasing_power,
       source
     FROM unx_price_snapshots
     ORDER BY timestamp ASC
@@ -631,11 +704,11 @@ export async function getEarliestSnapshot(): Promise<UnxPerformanceRow | null> {
   return {
     timestamp: row['timestamp'] as number,
     recordedAt: row['recorded_at'] as string,
-    equaPriceUsd: row['equa_price_usd'] as number,
-    equaPriceLocal: row['equa_price_local'] as number | null,
+    uniaPriceUsd: row['unia_price_usd'] as number,
+    uniaPriceLocal: row['unia_price_local'] as number | null,
     unxPriceUsd: row['unx_price_usd'] as number,
     usdInflationIndex: row['usd_inflation_index'] as number,
-    equaPurchasingPower: row['equa_purchasing_power'] as number,
+    uniaPurchasingPower: row['unia_purchasing_power'] as number,
     source: row['source'] as string,
   };
 }
