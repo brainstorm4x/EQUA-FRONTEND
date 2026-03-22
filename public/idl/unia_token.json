@@ -1310,7 +1310,7 @@
       "args": []
     },
     {
-      "name": "initialize_eqx_oracle",
+      "name": "initialize_unx_oracle",
       "docs": [
         "Initialize the UNX Oracle (call once during deployment)"
       ],
@@ -1326,7 +1326,7 @@
       ],
       "accounts": [
         {
-          "name": "eqx_oracle",
+          "name": "unx_oracle",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2399,13 +2399,13 @@
       "args": []
     },
     {
-      "name": "update_eqx_price",
+      "name": "update_unx_price",
       "docs": [
         "Update the UNX Oracle price (admin only)",
         "All basket calculations occur OFF-CHAIN. This instruction only stores the final price.",
         "",
         "# Arguments",
-        "* `eqx_price` - Final EQX price in fixed-point format (1e8 precision)",
+        "* `unx_price` - Final EQX price in fixed-point format (1e8 precision)",
         "* `component_prices_hash` - Hash of component prices used in off-chain calculation",
         "* `weights_hash` - Hash of weights used in off-chain calculation"
       ],
@@ -2421,7 +2421,7 @@
       ],
       "accounts": [
         {
-          "name": "eqx_oracle",
+          "name": "unx_oracle",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2450,7 +2450,7 @@
       ],
       "args": [
         {
-          "name": "eqx_price",
+          "name": "unx_price",
           "type": "u64"
         },
         {
