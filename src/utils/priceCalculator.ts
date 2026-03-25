@@ -598,7 +598,7 @@ export function getCurrentUniaPrice(
 /**
  * Format UNIA price for display
  * - Shows $0.01 for base price (no extra decimals)
- * - Shows 4 decimal places for prices under $1
+ * - Shows 6 decimal places for prices under $1
  * - Shows 2 decimal places for prices $1 and above
  */
 export function formatUniaPrice(price: number): string {
@@ -606,7 +606,7 @@ export function formatUniaPrice(price: number): string {
     return '$0.01';
   }
   if (price < 1) {
-    return `$${price.toFixed(4)}`;
+    return `$${price.toFixed(6)}`;
   }
   return `$${price.toLocaleString(undefined, {
     minimumFractionDigits: 2,
