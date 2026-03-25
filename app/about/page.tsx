@@ -152,7 +152,7 @@ export default function AboutPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">UNX Basket Oracle</h3>
               <p className="text-purple-200 leading-relaxed">
-                The UNX oracle updates every 4 hours using Hermes/Pyth price feeds, ensuring UNIA&apos;s value stays anchored to real-world economic conditions, not just one nation&apos;s monetary policy. This provides inflation resistance and stability across global economic shocks.
+                The UNX oracle updates every hour using Hermes/Pyth price feeds, ensuring UNIA&apos;s value stays anchored to real-world economic conditions, not just one nation&apos;s monetary policy. This provides inflation resistance and stability across global economic shocks.
               </p>
             </section>
 

@@ -325,14 +325,14 @@ export function formatLocalCurrencyDynamic(
     return new Intl.NumberFormat(undefined, {
       style: 'currency',
       currency: currencyCode,
-      minimumFractionDigits: localPrice < 1 ? 4 : 2,
-      maximumFractionDigits: localPrice < 1 ? 4 : 2,
+      minimumFractionDigits: localPrice < 1 ? 6 : 2,
+      maximumFractionDigits: localPrice < 1 ? 6 : 2,
     }).format(localPrice);
   } catch {
     // Fallback: use symbol from DEFAULT_RATES if available, otherwise use currency code
     const currencyInfo = DEFAULT_RATES[currencyCode];
     const symbol = currencyInfo ? currencyInfo.symbol : DEFAULT_RATES.USD.symbol;
-    const formatted = localPrice.toFixed(localPrice < 1 ? 4 : 2);
+    const formatted = localPrice.toFixed(localPrice < 1 ? 6 : 2);
     return `${symbol}${formatted}`;
   }
 }

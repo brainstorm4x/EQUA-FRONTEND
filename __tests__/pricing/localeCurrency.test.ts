@@ -244,10 +244,10 @@ describe('Local Currency Utilities', () => {
       expect(result).toMatch(/₹870\.00/);
     });
 
-    it('should format small prices with 4 decimal places', () => {
+    it('should format small prices with 6 decimal places', () => {
       // $0.01 * 1 = $0.01
       const result = formatLocalCurrency(0.01, 'USD');
-      expect(result).toMatch(/\$0\.0100/);
+      expect(result).toMatch(/\$0\.010000/);
     });
 
     it('should use USD as fallback for unknown currency', () => {
