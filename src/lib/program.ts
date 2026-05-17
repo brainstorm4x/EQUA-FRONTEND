@@ -1,6 +1,6 @@
 import { Connection, PublicKey, TransactionInstruction, SystemProgram } from "@solana/web3.js";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
-import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { getAssociatedTokenAddressSync } from './spl-token-inline';
 import {
   PROGRAM_ID,
   TOKEN_PROGRAM_ID,

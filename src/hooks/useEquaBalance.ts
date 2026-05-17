@@ -10,7 +10,7 @@ import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey, AccountInfo } from '@solana/web3.js';
 import {
   getAssociatedTokenAddressSync,
-} from '@solana/spl-token';
+} from '@/lib/spl-token-inline';
 import { getMintPDA, getSPLTokenBalance, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@/lib/program';
 import { RPC_ENDPOINT } from '@/lib/constants';
 import * as anchor from '@coral-xyz/anchor';

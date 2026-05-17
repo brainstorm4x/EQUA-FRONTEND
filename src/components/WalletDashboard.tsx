@@ -3,10 +3,10 @@
 import { FC, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey, Transaction, SystemProgram, SendTransactionError } from '@solana/web3.js';
-import { 
-  getAssociatedTokenAddressSync, 
+import {
+  getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
-} from '@solana/spl-token';
+} from '@/lib/spl-token-inline';
 import { BN } from '@coral-xyz/anchor';
 import { 
   getMintPDA, 

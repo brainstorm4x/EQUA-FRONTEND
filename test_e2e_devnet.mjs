@@ -11,15 +11,53 @@
  * 6. Token Program ID consistency (Standard Token vs Token-2022)
  */
 
-import { PublicKey, Connection, Keypair, Transaction, SystemProgram } from '@solana/web3.js';
-import { 
-  TOKEN_PROGRAM_ID, 
-  TOKEN_2022_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddressSync,
-  createAssociatedTokenAccountInstruction,
-} from '@solana/spl-token';
+import { PublicKey, Connection, Keypair, Transaction, SystemProgram, TransactionInstruction } from '@solana/web3.js';
 import BN from 'bn.js';
+
+// Inlined SPL Token constants + ATA helpers (replaces @solana/spl-token to drop
+// the bigint-buffer dependency chain, GHSA-3gc7-fjrx-p6mg).
+const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+const TOKEN_2022_PROGRAM_ID = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb');
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
+
+function getAssociatedTokenAddressSync(
+  mint,
+  owner,
+  allowOwnerOffCurve = false,
+  programId = TOKEN_PROGRAM_ID,
+  associatedTokenProgramId = ASSOCIATED_TOKEN_PROGRAM_ID,
+) {
+  if (!allowOwnerOffCurve && !PublicKey.isOnCurve(owner.toBuffer())) {
+    throw new Error('TokenOwnerOffCurveError');
+  }
+  const [address] = PublicKey.findProgramAddressSync(
+    [owner.toBuffer(), programId.toBuffer(), mint.toBuffer()],
+    associatedTokenProgramId,
+  );
+  return address;
+}
+
+function createAssociatedTokenAccountInstruction(
+  payer,
+  associatedToken,
+  owner,
+  mint,
+  programId = TOKEN_PROGRAM_ID,
+  associatedTokenProgramId = ASSOCIATED_TOKEN_PROGRAM_ID,
+) {
+  return new TransactionInstruction({
+    keys: [
+      { pubkey: payer, isSigner: true, isWritable: true },
+      { pubkey: associatedToken, isSigner: false, isWritable: true },
+      { pubkey: owner, isSigner: false, isWritable: false },
+      { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: programId, isSigner: false, isWritable: false },
+    ],
+    programId: associatedTokenProgramId,
+    data: Buffer.alloc(0),
+  });
+}
 
 // Constants from the frontend
 const PROGRAM_ID = new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
@@ -245,13 +283,13 @@ async function checkFrontendConstants() {
     
     // Check which token program is exported (look for export statements specifically)
     const exportMatch = constantsContent.match(/export\s+(?:const\s+)?(?:{[^}]*TOKEN_PROGRAM_ID[^}]*}|TOKEN_PROGRAM_ID)/);
-    const importMatch = constantsContent.match(/import\s+{[^}]*TOKEN_(?:2022_)?PROGRAM_ID[^}]*}\s+from\s+['"]@solana\/spl-token['"]/);
-    
+    const importMatch = constantsContent.match(/import\s+{[^}]*TOKEN_(?:2022_)?PROGRAM_ID[^}]*}\s+from\s+['"]\.\/spl-token-inline['"]/);
+
     if (importMatch) {
       if (importMatch[0].includes('TOKEN_2022_PROGRAM_ID')) {
-        warning('Frontend imports TOKEN_2022_PROGRAM_ID from @solana/spl-token');
+        info('Frontend imports TOKEN_2022_PROGRAM_ID from ./spl-token-inline');
       } else {
-        info('Frontend imports TOKEN_PROGRAM_ID from @solana/spl-token (Standard Token)');
+        info('Frontend imports TOKEN_PROGRAM_ID from ./spl-token-inline (Standard Token)');
       }
     }
     
@@ -348,13 +386,13 @@ function generateRecommendations(results) {
   if (mint?.correctTokenProgram) {
     if (mint.correctTokenProgram.equals(TOKEN_PROGRAM_ID)) {
       success('✅ Configuration Check: Standard SPL Token Program');
-      info('Frontend should use TOKEN_PROGRAM_ID from @solana/spl-token');
+      info('Frontend should use TOKEN_PROGRAM_ID from @/lib/spl-token-inline');
       info('This matches the current constants.ts configuration');
     } else if (mint.correctTokenProgram.equals(TOKEN_2022_PROGRAM_ID)) {
       warning('⚠️  Configuration Check: Token-2022 detected');
       error('Frontend constants.ts currently uses Standard Token Program');
       error('ACTION REQUIRED: Update constants.ts to use TOKEN_2022_PROGRAM_ID');
-      info('Change import to: import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token"');
+      info('Change import to: import { TOKEN_2022_PROGRAM_ID } from "@/lib/spl-token-inline"');
       info('Change export to: export const TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;');
     }
   }

@@ -1,9 +1,10 @@
+/* Import Solana Wallet Adapter UI styles */
+/* @import must precede other CSS rules (Turbopack/lightningcss enforces the spec strictly). */
+@import '@solana/wallet-adapter-react-ui/styles.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import Solana Wallet Adapter UI styles */
-@import '@solana/wallet-adapter-react-ui/styles.css';
 
 /* ============================================================================
    PERFORMANCE OPTIMIZATION: Critical CSS & CSS Containment

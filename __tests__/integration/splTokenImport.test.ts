@@ -1,12 +1,10 @@
 /**
- * Integration test to verify @solana/spl-token imports work correctly
- * 
- * This test ensures that getAssociatedTokenAddressSync and other SPL token
- * functions are properly imported and available for use after adding
- * transpilePackages configuration to next.config.js.
- * 
- * Related issue: "getAssociatedTokenAddressSync is not a function" error
- * Fix: Added @solana/spl-token to transpilePackages in next.config.js
+ * Integration test for the inlined spl-token module (@/lib/spl-token-inline).
+ *
+ * After dropping @solana/spl-token entirely (Option 3 from the security
+ * review), the encoder / pubkey-derivation surface is reimplemented locally.
+ * This test pins the shape of that surface so it stays compatible with the
+ * historical @solana/spl-token v0.4 API the codebase was written against.
  */
 
 import { PublicKey } from '@solana/web3.js';
@@ -14,7 +12,7 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
+} from '@/lib/spl-token-inline';
 
 describe('SPL Token Imports', () => {
   it('should successfully import getAssociatedTokenAddressSync', () => {

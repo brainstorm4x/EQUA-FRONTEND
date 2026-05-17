@@ -1,7 +1,10 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { UniaToken } from "../unia_token/target/types/unia_token";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+
+const TOKEN_2022_PROGRAM_ID = new anchor.web3.PublicKey(
+  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+);
 
 async function main() {
   const provider = anchor.AnchorProvider.env();

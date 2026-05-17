@@ -24,11 +24,6 @@ const nextConfig = {
     ],
   },
   
-  // Transpile ESM-only packages
-  transpilePackages: [
-    '@solana/spl-token',
-  ],
-
   // Still nested under `experimental:` in Next 16 (the top-level promotion
   // didn't happen). Dropped `@solana/wallet-adapter-wallets` here — it was
   // removed from dependencies; live wallet selection happens via Wallet
@@ -39,6 +34,20 @@ const nextConfig = {
       '@coral-xyz/anchor',
       '@solana/web3.js',
     ],
+  },
+
+  // Turbopack replaces the webpack `resolve.fallback` for Node-only modules
+  // that the wallet-adapter / Solana stack reaches for in browser bundles.
+  // Aliasing them to a local empty stub for browser targets is the Turbopack
+  // equivalent of `{ fs: false, 'pino-pretty': false }`. Turbopack chunks
+  // vendor packages automatically (no need for the old splitChunks
+  // solana-vendor cache group) and handles ESM natively (no need for the
+  // `.m?js` fullySpecified:false rule).
+  turbopack: {
+    resolveAlias: {
+      fs: { browser: './src/lib/empty-module.js' },
+      'pino-pretty': { browser: './src/lib/empty-module.js' },
+    },
   },
 
   // Multiple lockfiles exist on this machine ($HOME/package-lock.json etc).
@@ -103,51 +112,6 @@ const nextConfig = {
     ];
   },
   
-  // TODO(turbopack): Port the webpack hooks below to `turbopack` config.
-  // Build/dev currently run with --webpack (see package.json scripts) to keep
-  // this block live. When porting:
-  //   - resolve.fallback {fs:false, 'pino-pretty':false} → turbopack.resolveAlias
-  //   - splitChunks Solana cacheGroup → likely a no-op; Turbopack chunks vendor
-  //     packages automatically. Verify bundle sizes afterwards.
-  //   - .m?js fullySpecified:false rule → not needed; Turbopack handles ESM.
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        fs: false,
-        'pino-pretty': false,
-      };
-      
-      // Optimize chunk splitting for better caching
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          ...config.optimization.splitChunks,
-          cacheGroups: {
-            ...config.optimization.splitChunks?.cacheGroups,
-            // Separate Solana-related code into its own chunk
-            solana: {
-              test: /[\\/]node_modules[\\/](@solana|@coral-xyz)[\\/]/,
-              name: 'solana-vendor',
-              chunks: 'all',
-              priority: 20,
-            },
-          },
-        },
-      };
-    }
-    
-    // Handle ES module resolution issues that can cause syntax errors in compiled chunks
-    config.module.rules.push({
-      test: /\.m?js$/,
-      resolve: {
-        fullySpecified: false,
-      },
-    });
-    
-    return config;
-  },
-  // Note: Turbopack doesn't need explicit fs fallback configuration
-  // It automatically handles Node.js modules in browser context
 };
 
 module.exports = nextConfig;

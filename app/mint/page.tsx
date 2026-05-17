@@ -6,11 +6,11 @@ import { useRouter } from 'next/navigation';
 import { useProgram } from '@/hooks/useProgram';
 import { Logo } from '@/components/Logo';
 import { PublicKey, Transaction, TransactionInstruction, Connection, SystemProgram, ComputeBudgetProgram } from '@solana/web3.js';
-import { 
+import {
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
   createAssociatedTokenAccountIdempotentInstruction,
-} from '@solana/spl-token';
+} from '@/lib/spl-token-inline';
 import { 
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,

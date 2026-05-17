@@ -22,7 +22,7 @@ import {
   getAssociatedTokenAddressSync,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
-} from '@solana/spl-token';
+} from '../src/lib/spl-token-inline';
 import * as anchor from '@coral-xyz/anchor';
 import {
   PROGRAM_ID,

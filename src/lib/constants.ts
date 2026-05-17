@@ -1,9 +1,9 @@
-import { PublicKey } from '@solana/web3.js'; 
-import { 
-  TOKEN_PROGRAM_ID as SPL_TOKEN_PROGRAM_ID, 
+import { PublicKey } from '@solana/web3.js';
+import {
+  TOKEN_PROGRAM_ID as SPL_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID as SPL_ASSOCIATED_TOKEN_PROGRAM_ID 
-} from '@solana/spl-token';
+  ASSOCIATED_TOKEN_PROGRAM_ID as SPL_ASSOCIATED_TOKEN_PROGRAM_ID
+} from './spl-token-inline';
 
 // Support both NEXT_PUBLIC_PROGRAM_ID (preferred) and legacy NEXT_PUBLIC_UNIA_PROGRAM_ID
 export const PROGRAM_ID = new PublicKey(
