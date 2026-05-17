@@ -6,12 +6,25 @@
 
 import { Handler, HandlerResponse } from '@netlify/functions';
 import { getLatestFxRates } from './lib/blobStorage';
+import { enforceRateLimit } from './lib/rateLimit';
+
+// Cached upstream response — looser limit since this fans out to many users.
+const RATE_LIMIT = { endpoint: 'get-fx-rates', windowMs: 60_000, max: 120 };
+
+const BASE_CORS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
 // ============================================================================
 // Main Handler
 // ============================================================================
 
 const handler: Handler = async (event, context): Promise<HandlerResponse> => {
+  const rateLimited = await enforceRateLimit(event.headers ?? {}, RATE_LIMIT, BASE_CORS);
+  if (rateLimited) return rateLimited;
+
   try {
     console.log('Fetching latest FX rates...');
     

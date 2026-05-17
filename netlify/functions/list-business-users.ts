@@ -25,11 +25,12 @@
 
 import { Handler } from '@netlify/functions';
 import { PublicKey } from '@solana/web3.js';
-import { 
-  getConnection, 
-  getProgramId, 
-  getBusinessRegistryPDA 
+import {
+  getConnection,
+  getProgramId,
+  getBusinessRegistryPDA
 } from './lib/solana-admin';
+import { enforceRateLimit } from './lib/rateLimit';
 
 /**
  * CORS headers for API responses
@@ -40,6 +41,10 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Content-Type': 'application/json',
 };
+
+// Public read endpoint: looser than the admin POSTs but still bounded so a
+// single IP can't drive function-invocation costs without limit.
+const RATE_LIMIT = { endpoint: 'list-business-users', windowMs: 60_000, max: 120 };
 
 /**
  * BusinessRegistry account layout:
@@ -117,13 +122,16 @@ export const handler: Handler = async (event) => {
     return {
       statusCode: 405,
       headers: CORS_HEADERS,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         success: false,
         error: 'Method not allowed',
         message: 'Only GET requests are accepted'
       }),
     };
   }
+
+  const rateLimited = await enforceRateLimit(event.headers ?? {}, RATE_LIMIT, CORS_HEADERS);
+  if (rateLimited) return rateLimited;
 
   try {
     console.log('Fetching business registry...');

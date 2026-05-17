@@ -1,11 +1,11 @@
 [build]
   command = "npm run prebuild && npm run build"
-  publish = ".next"
   functions = "netlify/functions"
+  # publish is intentionally omitted — @netlify/plugin-nextjs sets it.
 
 [build.environment]
   NODE_VERSION = "20.18.0"
-  
+
 [functions."update-unx-price"]
 schedule = "0 * * * *"
 
@@ -14,8 +14,3 @@ schedule = "0 * * * *"
 
 [functions."snapshot-daily-performance"]
 schedule = "0 0 * * *"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200

@@ -11,6 +11,16 @@
 
 import { Handler } from '@netlify/functions';
 import { getUnxHistory, UnxPriceSnapshot } from './lib/blobStorage';
+import { enforceRateLimit } from './lib/rateLimit';
+
+// Historical data; query can be expensive on large windows.
+const RATE_LIMIT = { endpoint: 'get-eqx-history', windowMs: 60_000, max: 60 };
+
+const BASE_CORS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
 // ============================================================================
 // Helper Functions
@@ -90,6 +100,9 @@ function aggregateToDaily(snapshots: UnxPriceSnapshot[]): UnxPriceSnapshot[] {
 // ============================================================================
 
 const handler: Handler = async (event, context) => {
+  const rateLimited = await enforceRateLimit(event.headers ?? {}, RATE_LIMIT, BASE_CORS);
+  if (rateLimited) return rateLimited;
+
   try {
     // Parse query parameters
     const params = event.queryStringParameters || {};

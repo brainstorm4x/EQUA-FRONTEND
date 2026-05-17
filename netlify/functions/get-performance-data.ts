@@ -19,6 +19,10 @@ import {
   DailyPerformanceRow,
   SEND_MODAL_CURRENCIES,
 } from './lib/tursoStorage';
+import { enforceRateLimit } from './lib/rateLimit';
+
+// Performance queries hit Turso; bound them so a single IP can't run up cost.
+const RATE_LIMIT = { endpoint: 'get-performance-data', windowMs: 60_000, max: 60 };
 
 // ============================================================================
 // CORS / Cache headers
@@ -217,6 +221,9 @@ function addHoldingValues(rows: UnxPerformanceRow[]): AnnotatedPerformanceRow[] 
 // ============================================================================
 
 const handler: Handler = async (event): Promise<HandlerResponse> => {
+  const rateLimited = await enforceRateLimit(event.headers ?? {}, RATE_LIMIT, RESPONSE_HEADERS);
+  if (rateLimited) return rateLimited;
+
   try {
     // ------------------------------------------------------------------
     // Validate Turso env vars up-front so we return 503 with a clear

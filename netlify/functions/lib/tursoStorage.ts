@@ -431,6 +431,35 @@ export async function storeUnxSnapshotToTurso(
 // ============================================================================
 
 /**
+ * Map an accepted currency code to the matching `unia_price_*` SQL column
+ * literal. Returns the USD column for any unknown/missing value. Keeping the
+ * mapping exhaustive (rather than constructing the column name from the
+ * input) means a future rename of `SEND_MODAL_CURRENCIES` cannot accidentally
+ * widen what `getUnxPerformanceHistory` will splice into SQL.
+ */
+function resolveLocalPriceColumn(currency?: string): string {
+  switch ((currency ?? '').toUpperCase()) {
+    case 'USD': return 'unia_price_usd_val';
+    case 'EUR': return 'unia_price_eur';
+    case 'GBP': return 'unia_price_gbp';
+    case 'INR': return 'unia_price_inr';
+    case 'JPY': return 'unia_price_jpy';
+    case 'CNY': return 'unia_price_cny';
+    case 'KRW': return 'unia_price_krw';
+    case 'BRL': return 'unia_price_brl';
+    case 'MXN': return 'unia_price_mxn';
+    case 'AUD': return 'unia_price_aud';
+    case 'CAD': return 'unia_price_cad';
+    case 'CHF': return 'unia_price_chf';
+    case 'NGN': return 'unia_price_ngn';
+    case 'ZAR': return 'unia_price_zar';
+    case 'AED': return 'unia_price_aed';
+    case 'SGD': return 'unia_price_sgd';
+    default:    return 'unia_price_usd_val';
+  }
+}
+
+/**
  * Performance history row returned by getUnxPerformanceHistory.
  */
 export interface UnxPerformanceRow {
@@ -459,11 +488,12 @@ export async function getUnxPerformanceHistory(
 ): Promise<UnxPerformanceRow[]> {
   const client = getTursoClient();
 
-  // Determine which currency column to return as the local price
-  const localCol: string =
-    currency && SEND_MODAL_CURRENCIES.includes(currency.toUpperCase())
-      ? `unia_price_${currency.toLowerCase()}`
-      : 'unia_price_usd_val';
+  // Determine which currency column to return as the local price.
+  // libSQL/SQLite cannot parameterize identifiers, so the column name is
+  // chosen by an exhaustive allowlist that maps each accepted currency to a
+  // hard-coded column literal. Anything outside the allowlist falls through
+  // to the USD column — there is no path that splices user input into SQL.
+  const localCol: string = resolveLocalPriceColumn(currency);
 
   const result = await client.execute({
     sql: `

@@ -31,24 +31,19 @@
 import { Handler } from '@netlify/functions';
 import { PublicKey } from '@solana/web3.js';
 import { Program, AnchorProvider, Wallet, BN } from '@coral-xyz/anchor';
-import { 
-  getAdminKeypair, 
-  getConnection, 
-  getProgramId, 
-  getBusinessRegistryPDA 
+import {
+  getAdminKeypair,
+  getConnection,
+  getProgramId,
+  getBusinessRegistryPDA
 } from './lib/solana-admin';
 import { UniaToken } from './lib/unia_token';
 import idl from './lib/unia_token.json';
+import { buildCorsHeaders, verifyAdminAuth } from './lib/adminAuth';
+import { enforceRateLimit } from './lib/rateLimit';
 
-/**
- * CORS headers for API responses
- */
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Type': 'application/json',
-};
+// Mirrors add-business-referrer; same risk profile (signs a tx with the admin key).
+const RATE_LIMIT = { endpoint: 'remove-business-referrer', windowMs: 60_000, max: 30 };
 
 /**
  * Parse Anchor error from transaction logs
@@ -83,10 +78,13 @@ function parseAnchorError(error: any): { code: string; message: string } {
  * Main handler for remove-business-referrer endpoint
  */
 export const handler: Handler = async (event) => {
+  const requestOrigin = event.headers?.['origin'] ?? event.headers?.['Origin'];
+  const CORS_HEADERS = buildCorsHeaders(requestOrigin, 'POST, OPTIONS');
+
   // Handle OPTIONS preflight request
   if (event.httpMethod === 'OPTIONS') {
     return {
-      statusCode: 200,
+      statusCode: 204,
       headers: CORS_HEADERS,
       body: '',
     };
@@ -97,12 +95,22 @@ export const handler: Handler = async (event) => {
     return {
       statusCode: 405,
       headers: CORS_HEADERS,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         success: false,
         error: 'Method not allowed',
         message: 'Only POST requests are accepted'
       }),
     };
+  }
+
+  // Rate limit BEFORE auth so token-guessing attempts can't trigger O(N) crypto.
+  const rateLimited = await enforceRateLimit(event.headers ?? {}, RATE_LIMIT, CORS_HEADERS);
+  if (rateLimited) return rateLimited;
+
+  // Authenticate the caller. Must come BEFORE any expensive work or admin keypair load.
+  const authFailure = verifyAdminAuth(event.headers ?? {}, CORS_HEADERS);
+  if (authFailure) {
+    return authFailure;
   }
 
   try {
@@ -138,15 +146,15 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    console.log('Removing business referrer:', userPublicKey);
+    console.debug('Removing business referrer:', userPublicKey);
 
     // Initialize Solana components
     const connection = getConnection();
     const adminKeypair = getAdminKeypair();
     const programId = getProgramId();
-    
-    console.log('Admin public key:', adminKeypair.publicKey.toBase58());
-    console.log('Program ID:', programId.toBase58());
+
+    console.debug('Admin public key:', adminKeypair.publicKey.toBase58());
+    console.debug('Program ID:', programId.toBase58());
 
     // Create Anchor provider and program
     const provider = new AnchorProvider(
@@ -162,7 +170,7 @@ export const handler: Handler = async (event) => {
 
     // Derive business registry PDA
     const businessRegistryPDA = getBusinessRegistryPDA(programId);
-    console.log('Business Registry PDA:', businessRegistryPDA.toBase58());
+    console.debug('Business Registry PDA:', businessRegistryPDA.toBase58());
 
     // Build and send transaction
     const tx = await program.methods
@@ -173,7 +181,7 @@ export const handler: Handler = async (event) => {
       })
       .rpc();
 
-    console.log('Transaction successful:', tx);
+    console.log('Business referrer removed. Signature:', tx);
 
     // Return success response
     return {

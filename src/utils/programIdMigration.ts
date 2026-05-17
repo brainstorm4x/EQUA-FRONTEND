@@ -50,6 +50,7 @@ function clearUniaLocalStorage(): void {
     'unia_registered_fingerprints',    // Device fingerprints
     'unia_user_number',                // User registration number
     'unia_registration_complete',      // Registration event flag
+    'equa_user_keypair',               // Defensive cleanup of legacy hot-wallet secret
   ];
   
   let clearedCount = 0;

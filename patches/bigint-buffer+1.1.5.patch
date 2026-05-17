@@ -1,0 +1,25 @@
+diff --git a/node_modules/bigint-buffer/dist/node.js b/node_modules/bigint-buffer/dist/node.js
+index 513168c..b83fa3f 100644
+--- a/node_modules/bigint-buffer/dist/node.js
++++ b/node_modules/bigint-buffer/dist/node.js
+@@ -1,15 +1,12 @@
+ 'use strict';
+
+ Object.defineProperty(exports, "__esModule", { value: true });
++// SECURITY PATCH (equa-frontend, applied via patch-package):
++// Native binding load disabled to mitigate GHSA-3gc7-fjrx-p6mg
++// (buffer overflow in native toBigIntLE). The pure-JS fallback below uses
++// Node's built-in BigInt('0x' + hex) and is not vulnerable.
++// Leaving `converter` undefined forces every entry point to the safe path.
+ let converter;
+-{
+-    try {
+-        converter = require('bindings')('bigint_buffer');
+-    }
+-    catch (e) {
+-        console.warn('bigint: Failed to load bindings, pure JS will be used (try npm run rebuild?)');
+-    }
+-}
+ /**
+  * Convert a little-endian buffer into a BigInt.
+  * @param buf The little-endian buffer to convert

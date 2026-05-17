@@ -1,4 +1,4 @@
-import { Connection, PublicKey, Keypair, TransactionInstruction, SystemProgram } from "@solana/web3.js";
+import { Connection, PublicKey, TransactionInstruction, SystemProgram } from "@solana/web3.js";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import {
@@ -392,61 +392,6 @@ export async function getEquaMintDecimals(connection: Connection): Promise<numbe
   }
 
   return metadata.decimals;
-}
-
-// Keypair storage helpers
-const KEYPAIR_STORAGE_KEY = "equa_user_keypair";
-
-export function loadKeypair(): Keypair | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const stored = localStorage.getItem(KEYPAIR_STORAGE_KEY);
-    if (!stored) return null;
-    const secretKey = Uint8Array.from(JSON.parse(stored));
-    return Keypair.fromSecretKey(secretKey);
-  } catch (error) {
-    console.error("Error loading keypair:", error);
-    return null;
-  }
-}
-
-export function saveKeypair(keypair: Keypair): void {
-  if (typeof window === "undefined") return;
-  try {
-    const secretKey = Array.from(keypair.secretKey);
-    localStorage.setItem(KEYPAIR_STORAGE_KEY, JSON.stringify(secretKey));
-  } catch (error) {
-    console.error("Error saving keypair:", error);
-  }
-}
-
-// Cached keypair for performance
-let cachedKeypair: Keypair | null = null;
-
-export function getOrCreateKeypair(): Keypair {
-  // Return cached keypair if available
-  if (cachedKeypair) {
-    return cachedKeypair;
-  }
-  
-  let keypair = loadKeypair();
-  if (!keypair) {
-    keypair = Keypair.generate();
-    saveKeypair(keypair);
-    console.log(
-      "✅ Generated new user account keypair:",
-      keypair.publicKey.toBase58()
-    );
-  } else {
-    console.log(
-      "✅ Loaded existing user account keypair:",
-      keypair.publicKey.toBase58()
-    );
-  }
-  
-  // Cache the keypair
-  cachedKeypair = keypair;
-  return keypair;
 }
 
 // Token program addresses imported from constants

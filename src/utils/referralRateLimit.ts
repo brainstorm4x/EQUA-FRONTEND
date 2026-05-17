@@ -1,243 +1,128 @@
 /**
- * Referrer Rate Limiting Utility
- * 
- * Tracks the number of referrals per referrer within a 24-hour window.
- * If a referrer exceeds N referrals in 24 hours, their next registration
- * referral reward is reduced.
- * 
- * This is an off-chain tracking mechanism stored in localStorage/metadata.
- * In production, this should be tracked in a backend service.
+ * Referral rate-limit client.
+ *
+ * Backed by the server-side counter at /.netlify/functions/referral-rate-limit
+ * (see netlify/functions/lib/referralCounter.ts). The previous version of this
+ * module stored counters in localStorage, which any user could reset by
+ * clearing their browser data; the server-side counter is global and survives
+ * across sessions, devices, and browsers.
+ *
+ * Limitations (documented):
+ * - The /record endpoint does not yet cryptographically verify that the
+ *   reported referral actually occurred on-chain. A real enforcement path
+ *   requires the on-chain program to read this counter (or to be queried by
+ *   it). Treat the rate-limit signal as advisory for UI purposes.
+ * - On network failure the client returns an "unknown / not rate limited"
+ *   status, matching the original fail-open behaviour and avoiding false
+ *   warnings.
  */
 
-// Configuration
-export const REFERRAL_RATE_LIMIT = 10; // Max referrals per 24h before penalty
+// Public constants preserved from the prior API.
+export const REFERRAL_RATE_LIMIT = 10;                  // Max referrals per 24h before penalty
 export const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-export const REWARD_REDUCTION_PERCENT = 50; // Reduce reward by 50% when rate limited
+export const REWARD_REDUCTION_PERCENT = 50;             // Reduce reward by 50% when rate limited
 
-/**
- * Interface for tracking a single referral event
- */
-export interface ReferralEvent {
-  timestamp: number;
-  refereeAddress: string;
-}
+const ENDPOINT = '/.netlify/functions/referral-rate-limit';
 
-/**
- * Interface for referrer tracking data
- */
-export interface ReferrerTrackingData {
-  referrerAddress: string;
-  referrals: ReferralEvent[];
-  totalReferrals: number;
-  isRateLimited: boolean;
-  lastUpdated: number;
-}
-
-/**
- * Interface for the referral registry stored in localStorage
- */
-export interface ReferralRateLimitRegistry {
-  [referrerAddress: string]: ReferrerTrackingData;
-}
-
-const STORAGE_KEY = 'equa_referral_rate_limit_registry';
-
-/**
- * Gets the referral rate limit registry from localStorage
- */
-export function getRateLimitRegistry(): ReferralRateLimitRegistry {
-  if (typeof window === 'undefined') return {};
-  
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return {};
-    return JSON.parse(stored);
-  } catch {
-    console.warn('Failed to parse referral rate limit registry');
-    return {};
-  }
-}
-
-/**
- * Saves the referral rate limit registry to localStorage
- */
-export function saveRateLimitRegistry(registry: ReferralRateLimitRegistry): void {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(registry));
-  } catch {
-    console.warn('Failed to save referral rate limit registry');
-  }
-}
-
-/**
- * Cleans up expired referral events (older than 24 hours)
- */
-export function cleanupExpiredEvents(data: ReferrerTrackingData): ReferrerTrackingData {
-  const now = Date.now();
-  const cutoff = now - RATE_LIMIT_WINDOW_MS;
-  
-  const validReferrals = data.referrals.filter(r => r.timestamp > cutoff);
-  
-  return {
-    ...data,
-    referrals: validReferrals,
-    isRateLimited: validReferrals.length >= REFERRAL_RATE_LIMIT,
-    lastUpdated: now,
-  };
-}
-
-/**
- * Gets tracking data for a specific referrer
- */
-export function getReferrerData(referrerAddress: string): ReferrerTrackingData | null {
-  const registry = getRateLimitRegistry();
-  const data = registry[referrerAddress];
-  
-  if (!data) return null;
-  
-  // Clean up expired events
-  return cleanupExpiredEvents(data);
-}
-
-/**
- * Counts referrals within the rate limit window (24 hours)
- */
-export function countRecentReferrals(referrerAddress: string): number {
-  const data = getReferrerData(referrerAddress);
-  if (!data) return 0;
-  
-  return data.referrals.length;
-}
-
-/**
- * Checks if a referrer is rate limited
- */
-export function isReferrerRateLimited(referrerAddress: string): boolean {
-  const recentCount = countRecentReferrals(referrerAddress);
-  return recentCount >= REFERRAL_RATE_LIMIT;
-}
-
-/**
- * Records a new referral event
- */
-export function recordReferral(referrerAddress: string, refereeAddress: string): void {
-  const registry = getRateLimitRegistry();
-  const now = Date.now();
-  
-  let data = registry[referrerAddress];
-  
-  if (!data) {
-    data = {
-      referrerAddress,
-      referrals: [],
-      totalReferrals: 0,
-      isRateLimited: false,
-      lastUpdated: now,
-    };
-  } else {
-    // Clean up expired events first
-    data = cleanupExpiredEvents(data);
-  }
-  
-  // Add new referral event
-  data.referrals.push({
-    timestamp: now,
-    refereeAddress,
-  });
-  
-  data.totalReferrals += 1;
-  data.isRateLimited = data.referrals.length >= REFERRAL_RATE_LIMIT;
-  data.lastUpdated = now;
-  
-  registry[referrerAddress] = data;
-  saveRateLimitRegistry(registry);
-}
-
-/**
- * Calculates the adjusted referral reward based on rate limiting
- * @param baseReward The original reward amount
- * @param referrerAddress The referrer's address
- * @returns The adjusted reward (reduced if rate limited)
- */
-export function calculateAdjustedReferralReward(
-  baseReward: number,
-  referrerAddress: string
-): number {
-  if (isReferrerRateLimited(referrerAddress)) {
-    // Reduce reward by the configured percentage
-    return Math.floor(baseReward * (1 - REWARD_REDUCTION_PERCENT / 100));
-  }
-  return baseReward;
-}
-
-/**
- * Gets rate limit status information for display
- */
 export interface RateLimitStatus {
   isRateLimited: boolean;
   recentReferralCount: number;
   maxReferrals: number;
   remainingReferrals: number;
   rewardMultiplier: number;
+  /** Approximate time the oldest event in the window will expire. */
   nextResetTime: number | null;
 }
 
-export function getRateLimitStatus(referrerAddress: string): RateLimitStatus {
-  const data = getReferrerData(referrerAddress);
-  const recentCount = data?.referrals.length || 0;
-  const isLimited = recentCount >= REFERRAL_RATE_LIMIT;
-  
-  // Find the earliest referral to determine when the window resets
-  let nextResetTime: number | null = null;
-  if (data && data.referrals.length > 0) {
-    const oldestReferral = data.referrals.reduce(
-      (min, r) => (r.timestamp < min ? r.timestamp : min),
-      data.referrals[0].timestamp
-    );
-    nextResetTime = oldestReferral + RATE_LIMIT_WINDOW_MS;
-  }
-  
+const DEFAULT_STATUS: RateLimitStatus = {
+  isRateLimited: false,
+  recentReferralCount: 0,
+  maxReferrals: REFERRAL_RATE_LIMIT,
+  remainingReferrals: REFERRAL_RATE_LIMIT,
+  rewardMultiplier: 1,
+  nextResetTime: null,
+};
+
+interface ServerStatus {
+  success: boolean;
+  recentReferrals: number;
+  totalReferrals: number;
+  isRateLimited: boolean;
+  limit: number;
+  windowMs: number;
+}
+
+function statusFromServer(payload: ServerStatus): RateLimitStatus {
   return {
-    isRateLimited: isLimited,
-    recentReferralCount: recentCount,
-    maxReferrals: REFERRAL_RATE_LIMIT,
-    remainingReferrals: Math.max(0, REFERRAL_RATE_LIMIT - recentCount),
-    rewardMultiplier: isLimited ? (1 - REWARD_REDUCTION_PERCENT / 100) : 1,
-    nextResetTime,
+    isRateLimited: payload.isRateLimited,
+    recentReferralCount: payload.recentReferrals,
+    maxReferrals: payload.limit,
+    remainingReferrals: Math.max(0, payload.limit - payload.recentReferrals),
+    rewardMultiplier: payload.isRateLimited
+      ? 1 - REWARD_REDUCTION_PERCENT / 100
+      : 1,
+    // We don't have the exact oldest timestamp from the server response shape,
+    // so approximate with "one window from now" when at the limit. UI uses
+    // this for a coarse countdown only.
+    nextResetTime: payload.isRateLimited ? Date.now() + payload.windowMs : null,
   };
 }
 
 /**
- * Format time remaining until rate limit resets
+ * Fetch the current rate-limit status for a referrer.
+ * Returns a default ("not rate limited") status on any failure to keep the UI
+ * permissive when the backend is unreachable.
  */
-export function formatTimeUntilReset(nextResetTime: number | null): string {
-  if (!nextResetTime) return 'N/A';
-  
-  const now = Date.now();
-  const remaining = nextResetTime - now;
-  
-  if (remaining <= 0) return 'Now';
-  
-  const hours = Math.floor(remaining / (60 * 60 * 1000));
-  const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-  
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
+export async function getRateLimitStatus(referrerAddress: string): Promise<RateLimitStatus> {
+  if (typeof fetch === 'undefined') return DEFAULT_STATUS;
+  try {
+    const url = `${ENDPOINT}?address=${encodeURIComponent(referrerAddress)}`;
+    const resp = await fetch(url, { method: 'GET' });
+    if (!resp.ok) return DEFAULT_STATUS;
+    const json = (await resp.json()) as ServerStatus;
+    if (!json?.success) return DEFAULT_STATUS;
+    return statusFromServer(json);
+  } catch {
+    return DEFAULT_STATUS;
   }
-  return `${minutes}m`;
 }
 
 /**
- * Clears all rate limiting data (for testing/admin purposes)
+ * Record a referral event server-side. Fire-and-forget: a failure here must
+ * not interrupt the user's registration flow.
+ *
+ * The `_refereeAddress` parameter is accepted for backward source
+ * compatibility with the previous localStorage API but is no longer sent to
+ * the server (the server only needs the referrer to maintain the counter).
  */
-export function clearRateLimitRegistry(): void {
-  if (typeof window === 'undefined') return;
-  
+export async function recordReferral(
+  referrerAddress: string,
+  _refereeAddress?: string,
+): Promise<void> {
+  if (typeof fetch === 'undefined') return;
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ referrerAddress }),
+    });
   } catch {
-    console.warn('Failed to clear referral rate limit registry');
+    // Intentionally swallowed; this counter is advisory.
   }
+}
+
+/**
+ * Format the time remaining until the window resets. Pure helper, no network.
+ */
+export function formatTimeUntilReset(nextResetTime: number | null): string {
+  if (!nextResetTime) return 'N/A';
+
+  const remaining = nextResetTime - Date.now();
+  if (remaining <= 0) return 'Now';
+
+  const hours = Math.floor(remaining / (60 * 60 * 1000));
+  const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }

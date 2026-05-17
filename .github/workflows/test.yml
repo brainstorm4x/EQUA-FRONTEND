@@ -27,6 +27,12 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Security audit (production deps, critical+ blocks build)
+        run: npm run audit:ci
+
+      - name: Block spl-token decoder usage (GHSA-3gc7-fjrx-p6mg)
+        run: npm run check:spl-decoder
+
       - name: Run TypeScript check
         run: npm run typecheck || true  # Don't fail on existing type errors
 

@@ -60,14 +60,21 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   const hasSufficientBalance = hasMinimumSolBalance(walletBalance);
   const balanceSOL = formatSolBalance(walletBalance);
 
-  // Check referrer rate limit when referrer changes
+  // Check referrer rate limit when referrer changes. The status now comes
+  // from the server (Netlify Blobs) instead of localStorage, so the fetch is
+  // async; we guard against stale resolves with `cancelled` since the
+  // referrer can change before this promise settles.
   useEffect(() => {
-    if (referralResolution.referrerPubkey) {
-      const rateLimitStatus = getRateLimitStatus(referralResolution.referrerPubkey);
-      setReferrerRateLimited(rateLimitStatus.isRateLimited);
-    } else {
+    const referrerPubkey = referralResolution.referrerPubkey;
+    if (!referrerPubkey) {
       setReferrerRateLimited(false);
+      return;
     }
+    let cancelled = false;
+    getRateLimitStatus(referrerPubkey).then((status) => {
+      if (!cancelled) setReferrerRateLimited(status.isRateLimited);
+    });
+    return () => { cancelled = true; };
   }, [referralResolution.referrerPubkey]);
 
   // Validate referrer when it changes (now uses onchain validation)
@@ -143,11 +150,12 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
       fingerprint,
       referrerRateLimited,
       adjustedRewardMultiplier: referrerRateLimited ? (1 - REWARD_REDUCTION_PERCENT / 100) : 1,
-      // Callback for parent to record referral after successful registration
-      onSuccessfulRegistration: effectiveReferrer && userWalletAddress 
+      // Callback for parent to record referral after successful registration.
+      // The recordReferral helper now posts to the Netlify counter endpoint;
+      // failures are swallowed there so this does not block the user flow.
+      onSuccessfulRegistration: effectiveReferrer && userWalletAddress
         ? async () => {
-            recordReferral(effectiveReferrer, userWalletAddress);
-            console.log('✓ Referral recorded to localStorage');
+            await recordReferral(effectiveReferrer, userWalletAddress);
           }
         : undefined,
     };

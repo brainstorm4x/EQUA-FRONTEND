@@ -44,10 +44,6 @@ import {
   accountTypeToUserType,
 } from '@/utils/registration';
 import { safeParseUserCount, safeParseTimestamp } from '@/utils/safeAccountParsing';
-import { 
-  isPublicKeyRegistered, 
-  recordRegisteredKey,
-} from '@/utils/registrationGuard';
 import { isUserAccountRegisteredOnchain } from '@/utils/onchainRegistration';
 import * as CooldownGuard from '@/utils/cooldown';
 import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
@@ -799,29 +795,16 @@ export default function MintPage() {
       console.log('  - Wallet has signTransaction:', !!wallet.signTransaction);
       console.log('  - Wallet has sendTransaction:', !!wallet.sendTransaction);
       
-      // Check if public key has already been registered (prevent duplicate registrations)
-      // Use onchain check as source of truth, with localStorage for fast client-side validation
-      const publicKeyBase58 = publicKey.toBase58();
-      
-      // Check localStorage first (fast)
-      if (isPublicKeyRegistered(publicKeyBase58)) {
-        console.error('🚫 Duplicate public key detected in localStorage - blocking duplicate registration');
-        throw new Error(
-          'Registration blocked: This wallet address has already been registered. ' +
-          'Each wallet can only register once.'
-        );
-      }
-      
-      // Check on-chain if the user account already exists (source of truth)
+      // Check if the user account already exists on-chain. This PDA is the
+      // canonical source of truth — there is no client-side cache to keep
+      // in sync with it.
       const isRegisteredOnchain = await isUserAccountRegisteredOnchain(
         connection,
         userAccountPDA
       );
-      
+
       if (isRegisteredOnchain) {
         console.error('🚫 User account already exists on-chain');
-        // Record this public key as registered in localStorage for faster future checks
-        recordRegisteredKey(publicKeyBase58);
         throw new Error(
           'Registration blocked: A user account already exists for this wallet on-chain. ' +
           'You may already be registered. Please refresh the page.'
@@ -1061,10 +1044,6 @@ export default function MintPage() {
         console.log('✅ Registration persisted on-chain (blockchain is source of truth)');
         
         if (typeof window !== 'undefined') {
-          // Record the public key as registered (prevent duplicate registration)
-          recordRegisteredKey(publicKey.toBase58(), metadata?.fingerprint?.fingerprint);
-          console.log('🔑 Public key recorded to prevent duplicate registration');
-          
           // Store fingerprint AFTER successful registration (Sybil prevention)
           if (metadata?.fingerprint) {
             const existingFingerprints = JSON.parse(localStorage.getItem('unia_registered_fingerprints') || '[]');
@@ -1239,10 +1218,6 @@ export default function MintPage() {
         console.log('✅ Registration persisted on-chain (blockchain is source of truth)');
         
         if (typeof window !== 'undefined') {
-          // Record the public key as registered (prevent duplicate registration)
-          recordRegisteredKey(publicKey.toBase58(), metadata?.fingerprint?.fingerprint);
-          console.log('🔑 Public key recorded to prevent duplicate registration');
-          
           // Store fingerprint AFTER successful registration (Sybil prevention)
           if (metadata?.fingerprint) {
             const existingFingerprints = JSON.parse(localStorage.getItem('unia_registered_fingerprints') || '[]');

@@ -8,10 +8,7 @@ const nextConfig = {
   
   // Optimize production builds
   productionBrowserSourceMaps: false,
-  
-  // Enable SWC minification for faster builds and smaller bundles
-  swcMinify: true,
-  
+
   // Optimize images with Next.js Image component
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -31,21 +28,60 @@ const nextConfig = {
   transpilePackages: [
     '@solana/spl-token',
   ],
-  
-  // Experimental features for performance
+
+  // Still nested under `experimental:` in Next 16 (the top-level promotion
+  // didn't happen). Dropped `@solana/wallet-adapter-wallets` here — it was
+  // removed from dependencies; live wallet selection happens via Wallet
+  // Standard auto-detect.
   experimental: {
-    // Optimize package imports for better tree-shaking
     optimizePackageImports: [
-      '@solana/wallet-adapter-wallets',
       '@solana/wallet-adapter-react',
       '@coral-xyz/anchor',
       '@solana/web3.js',
     ],
   },
+
+  // Multiple lockfiles exist on this machine ($HOME/package-lock.json etc).
+  // Pin tracing root to this project so dev/build don't accidentally include
+  // unrelated workspaces in the file-trace output.
+  outputFileTracingRoot: __dirname,
   
   // Headers for better caching and security
   async headers() {
+    // Baseline security headers applied to every response.
+    // Notes on choices:
+    // - frame-ancestors 'none' (via CSP) plus X-Frame-Options: DENY prevents
+    //   any other site from iframing the wallet UI for clickjacking.
+    // - We intentionally do NOT set a strict script-src / connect-src CSP
+    //   because the Solana wallet-adapter stack connects to many wallet
+    //   origins (Phantom, Solflare, WalletConnect bridges, etc.) and would
+    //   require constant maintenance. Re-introduce a stricter CSP when the
+    //   set of allowed wallet origins stabilises.
+    const securityHeaders = [
+      {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload',
+      },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      {
+        // Camera needed for QR scanning; everything else off.
+        key: 'Permissions-Policy',
+        value:
+          'camera=(self), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()',
+      },
+      {
+        key: 'Content-Security-Policy',
+        value: "frame-ancestors 'none'",
+      },
+    ];
+
     return [
+      {
+        source: '/:path*',
+        headers: securityHeaders,
+      },
       {
         source: '/:all*(svg|jpg|png|webp|avif|ico)',
         headers: [
@@ -67,6 +103,13 @@ const nextConfig = {
     ];
   },
   
+  // TODO(turbopack): Port the webpack hooks below to `turbopack` config.
+  // Build/dev currently run with --webpack (see package.json scripts) to keep
+  // this block live. When porting:
+  //   - resolve.fallback {fs:false, 'pino-pretty':false} → turbopack.resolveAlias
+  //   - splitChunks Solana cacheGroup → likely a no-op; Turbopack chunks vendor
+  //     packages automatically. Verify bundle sizes afterwards.
+  //   - .m?js fullySpecified:false rule → not needed; Turbopack handles ESM.
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
