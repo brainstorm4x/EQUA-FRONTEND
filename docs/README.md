@@ -1,4 +1,4 @@
-# UNIA Frontend Documentation
+# UNIYAA Frontend Documentation
 
 ## Quick Navigation
 
@@ -20,7 +20,7 @@
 
 ### Technical Specs
 - **[Transaction Counting](TRANSACTION_COUNTING.md)** - How minting attempts are counted
-- **[Whitepaper](WHITEPAPER.md)** - UNIA token economics and mechanics
+- **[Whitepaper](WHITEPAPER.md)** - UNIYAA token economics and mechanics
 
 ## Recent Updates
 

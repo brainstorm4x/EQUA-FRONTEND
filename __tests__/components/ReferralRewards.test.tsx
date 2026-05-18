@@ -282,9 +282,9 @@ describe('ReferralRewards Component', () => {
         tokenMint: mockPublicKey.toBase58(),
       });
       
-      // Mock tier calculation (returns 100 UNIA for user #101)
+      // Mock tier calculation (returns 100 UNIYAA for user #101)
       const { calculateTierLimit } = require('@/utils/tierLimits');
-      calculateTierLimit.mockReturnValue(100_000_000n); // 100 UNIA in base units
+      calculateTierLimit.mockReturnValue(100_000_000n); // 100 UNIYAA in base units
       
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         credits: 10, // 10 credits = 2 possible bonus mints

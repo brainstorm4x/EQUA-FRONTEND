@@ -1,9 +1,9 @@
 /**
- * Tests for useEquaBalance hook
+ * Tests for useUniyaaBalance hook
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
-import { useEquaBalance } from '@/hooks/useEquaBalance';
+import { useUniyaaBalance } from '@/hooks/useUniyaaBalance';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey, Connection } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
@@ -31,7 +31,7 @@ jest.mock('@/lib/constants', () => ({
   RPC_ENDPOINT: 'https://api.devnet.solana.com',
 }));
 
-describe('useEquaBalance', () => {
+describe('useUniyaaBalance', () => {
   const mockConnection = {
     getAccountInfo: jest.fn(),
     onAccountChange: jest.fn(() => 1),
@@ -54,7 +54,7 @@ describe('useEquaBalance', () => {
       connected: false,
     });
 
-    const { result } = renderHook(() => useEquaBalance());
+    const { result } = renderHook(() => useUniyaaBalance());
 
     expect(result.current.balance).toBe(0);
     expect(result.current.isLoading).toBe(false);
@@ -72,7 +72,7 @@ describe('useEquaBalance', () => {
     // Mock token account not found
     mockConnection.getAccountInfo = jest.fn().mockResolvedValue(null);
 
-    const { result } = renderHook(() => useEquaBalance());
+    const { result } = renderHook(() => useUniyaaBalance());
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -89,8 +89,8 @@ describe('useEquaBalance', () => {
     });
 
     // Create mock token account data with balance at offset 64
-    // Note: UNIA uses 6 decimals, so 1,000,000 base units = 1 UNIA
-    const mockBalance = 1000000; // 1 UNIA (1,000,000 base units with 6 decimals)
+    // Note: UNIYAA uses 6 decimals, so 1,000,000 base units = 1 UNIYAA
+    const mockBalance = 1000000; // 1 UNIYAA (1,000,000 base units with 6 decimals)
     const mockAccountData = Buffer.alloc(165); // SPL Token account size
     
     // Write balance at offset 64 (8 bytes, u64 little-endian)
@@ -104,7 +104,7 @@ describe('useEquaBalance', () => {
       owner: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
     });
 
-    const { result } = renderHook(() => useEquaBalance());
+    const { result } = renderHook(() => useUniyaaBalance());
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -124,7 +124,7 @@ describe('useEquaBalance', () => {
       new Error('RPC connection failed')
     );
 
-    const { result } = renderHook(() => useEquaBalance());
+    const { result } = renderHook(() => useUniyaaBalance());
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -143,7 +143,7 @@ describe('useEquaBalance', () => {
 
     mockConnection.getAccountInfo = jest.fn().mockResolvedValue(null);
 
-    const { result } = renderHook(() => useEquaBalance());
+    const { result } = renderHook(() => useUniyaaBalance());
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -167,7 +167,7 @@ describe('useEquaBalance', () => {
     mockConnection.onAccountChange = jest.fn().mockReturnValue(mockSubscriptionId);
     mockConnection.getAccountInfo = jest.fn().mockResolvedValue(null);
 
-    const { unmount } = renderHook(() => useEquaBalance());
+    const { unmount } = renderHook(() => useUniyaaBalance());
 
     await waitFor(() => {
       expect(mockConnection.getAccountInfo).toHaveBeenCalled();

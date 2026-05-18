@@ -10,7 +10,7 @@ import { BN } from '@coral-xyz/anchor';
 
 /**
  * UserAccount structure from the IDL
- * Note: locked_until field removed per UNIA Whitepaper 2025
+ * Note: locked_until field removed per UNIYAA Whitepaper 2025
  */
 export interface UserAccountData {
   authority: PublicKey;
@@ -87,7 +87,7 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
     // 8 bytes: mint_start (i64)
     // 8 bytes: referral_rewards (u64)
     // 8 bytes: last_mint_time (i64)
-    // Note: locked_until field removed per UNIA Whitepaper 2025
+    // Note: locked_until field removed per UNIYAA Whitepaper 2025
     
     let offset = 8; // Skip discriminator
     

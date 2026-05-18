@@ -1,7 +1,7 @@
 /**
  * FX Rate Client - Real-Time Exchange Rate Fetching
  *
- * Fetches FX rates from the UNIA Netlify function (get-fx-rates),
+ * Fetches FX rates from the UNIYAA Netlify function (get-fx-rates),
  * which reads blob-stored rates updated hourly by the update-fx-rates scheduled function.
  * NEVER calls ExchangeRate-API directly from the browser.
  * Provides 4-layer fallback chain for maximum reliability:
@@ -45,7 +45,7 @@ const FX_RATES_URL =
 // Increment this version when a deploy should force-clear all client FX caches
 // (e.g., after fixing stale data bugs, changing the Blobs data format, etc.)
 const CACHE_VERSION = "v2";
-const CACHE_KEY = `equa_fx_rates_cache_${CACHE_VERSION}`;
+const CACHE_KEY = `uniyaa_fx_rates_cache_${CACHE_VERSION}`;
 const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 const BLOBS_STALE_THRESHOLD_SECONDS = 7200; // 2 hours — warn if Blobs data is older than this

@@ -240,7 +240,7 @@ export function getUserLocaleCurrency(): string {
   }
 }
 
-const PREFERRED_CURRENCY_KEY = 'equa_preferred_currency';
+const PREFERRED_CURRENCY_KEY = 'uniyaa_preferred_currency';
 
 /**
  * Get user's preferred currency.

@@ -6,7 +6,7 @@
  * This is a client-side tracking mechanism for UI display purposes.
  */
 
-const STORAGE_KEY = 'equa_registration_stats';
+const STORAGE_KEY = 'uniyaa_registration_stats';
 
 export interface RegistrationStats {
   individualCount: number;

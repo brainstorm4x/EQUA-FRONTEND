@@ -1,7 +1,7 @@
 /**
  * UNX Oracle - On-Chain Oracle Integration
  * 
- * This module reads the UNX (UNIA Index) price directly from the on-chain oracle.
+ * This module reads the UNX (UNIYAA Index) price directly from the on-chain oracle.
  * The oracle is the single source of truth for UNX pricing, maintained by the backend.
  * 
  * Basket Composition (7 assets):
@@ -22,7 +22,7 @@
 
 import { PublicKey, Connection } from '@solana/web3.js';
 import { Program, AnchorProvider, Wallet } from '@coral-xyz/anchor';
-import { UniaToken } from '@/lib/unia_token';
+import { UniyaaToken } from '@/lib/uniyaa_token';
 import { getFxRate } from './fxRateClient';
 
 // ============================================================================
@@ -30,9 +30,9 @@ import { getFxRate } from './fxRateClient';
 // ============================================================================
 
 /**
- * UNIA Program ID (from backend Anchor.toml)
+ * UNIYAA Program ID (from backend Anchor.toml)
  */
-const UNIA_PROGRAM_ID = new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
+const UNIYAA_PROGRAM_ID = new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
 
 /**
  * Fixed-point precision (1e8)
@@ -67,7 +67,7 @@ export interface ComponentInfo {
 
 /**
  * UNX basket composition (7 components)
- * Source: brainstorm4x/UNIA backend (post PR #71)
+ * Source: brainstorm4x/UNIYAA backend (post PR #71)
  */
 export const BASKET_COMPONENTS: ComponentInfo[] = [
   { id: BasketComponent.USDUSD, name: 'USD/USD', weight: 0.23 },
@@ -111,10 +111,10 @@ export interface UnxOracleData {
  * Derive UNX Oracle PDA
  * Seeds: ["unx-oracle"]
  * 
- * @param programId - UNIA program ID
+ * @param programId - UNIYAA program ID
  * @returns [PublicKey, bump] tuple
  */
-export function getUnxOraclePda(programId: PublicKey = UNIA_PROGRAM_ID): [PublicKey, number] {
+export function getUnxOraclePda(programId: PublicKey = UNIYAA_PROGRAM_ID): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [Buffer.from('unx-oracle')],
     programId
@@ -144,14 +144,14 @@ export async function fetchUnxOracle(
     );
     
     // Load program with IDL
-    const idl = await import('@/../../public/idl/unia_token.json');
-    const program = new Program<UniaToken>(
+    const idl = await import('@/../../public/idl/uniyaa_token.json');
+    const program = new Program<UniyaaToken>(
       idl as any,
       provider
     );
     
     // Derive PDA
-    const [oraclePda] = getUnxOraclePda(UNIA_PROGRAM_ID);
+    const [oraclePda] = getUnxOraclePda(UNIYAA_PROGRAM_ID);
     
     // Fetch account
     const account = await program.account.unxOracle.fetch(oraclePda);
@@ -223,9 +223,9 @@ export function floatToFixed(float: number): bigint {
 // ============================================================================
 
 /**
- * Multi-format UNIA price data
+ * Multi-format UNIYAA price data
  */
-export interface MultiFormatUniaPrice {
+export interface MultiFormatUniyaaPrice {
   unx: number;                      // Price in UNX
   usd: number;                      // Price in USD
   localCurrency: number;            // Price in user's local currency
@@ -239,18 +239,18 @@ export interface MultiFormatUniaPrice {
 }
 
 /**
- * Get UNIA price in multiple formats
+ * Get UNIYAA price in multiple formats
  * 
- * @param equaPriceUSD - UNIA price in USD (from price calculator)
+ * @param uniyaaPriceUSD - UNIYAA price in USD (from price calculator)
  * @param localCurrencyCode - User's local currency code
  * @param connection - Solana connection
  * @returns Multi-format price data
  */
-export async function getUniaPriceMultiFormat(
-  equaPriceUSD: number,
+export async function getUniyaaPriceMultiFormat(
+  uniyaaPriceUSD: number,
   localCurrencyCode: string,
   connection: Connection
-): Promise<MultiFormatUniaPrice> {
+): Promise<MultiFormatUniyaaPrice> {
   const unxPriceFloat = await getUnxPriceFloat(connection);
   
   // Fallback to 1.0 if oracle read fails (should rarely happen)
@@ -260,9 +260,9 @@ export async function getUniaPriceMultiFormat(
   const fxData = await getFxRate(localCurrencyCode);
   
   return {
-    unx: equaPriceUSD / unxValue,
-    usd: equaPriceUSD,
-    localCurrency: equaPriceUSD * fxData.rate,
+    unx: uniyaaPriceUSD / unxValue,
+    usd: uniyaaPriceUSD,
+    localCurrency: uniyaaPriceUSD * fxData.rate,
     localCurrencyCode,
     unxValue,
     source: 'on-chain-oracle',

@@ -47,8 +47,8 @@ test.describe('Minting Flow', () => {
     if (isVisible) {
       await expect(tierCard).toBeVisible();
       
-      // Should show UNIA per mint
-      await expect(page.locator('text=/UNIA.*mint/i')).toBeVisible();
+      // Should show UNIYAA per mint
+      await expect(page.locator('text=/UNIYAA.*mint/i')).toBeVisible();
     }
   });
   
@@ -93,7 +93,7 @@ test.describe('Minting Flow', () => {
     if (isVisible) {
       await expect(balanceDisplay).toBeVisible();
       // Balance should be a number
-      await expect(page.locator('text=/\\d+.*UNIA/i')).toBeVisible();
+      await expect(page.locator('text=/\\d+.*UNIYAA/i')).toBeVisible();
     }
   });
   

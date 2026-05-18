@@ -10,8 +10,8 @@
 
 ### Test Steps
 
-1. **Open UNIA in mobile browser**
-   - Navigate to https://equa-frontend.netlify.app
+1. **Open UNIYAA in mobile browser**
+   - Navigate to https://uniyaa-frontend.netlify.app
    - Open browser DevTools (Chrome Remote Debugging)
 
 2. **Initiate Registration**
@@ -36,7 +36,7 @@
    - Wait for confirmation
 
 6. **Return to Browser**
-   - Browser should automatically return to UNIA
+   - Browser should automatically return to UNIYAA
    - **CRITICAL CHECK:** Page should detect pending transaction
 
 7. **Check Console After Return**
@@ -68,12 +68,12 @@
 
 Check localStorage:
 ```javascript
-localStorage.getItem('equa_pending_transaction')
+localStorage.getItem('uniyaa_pending_transaction')
 ```
 
 If stuck, clear manually:
 ```javascript
-localStorage.removeItem('equa_pending_transaction')
+localStorage.removeItem('uniyaa_pending_transaction')
 ```
 
 ### Known Issues

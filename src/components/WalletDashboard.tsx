@@ -14,7 +14,7 @@ import {
   getUserAccountPDA, 
   TOKEN_PROGRAM_ID, 
   ASSOCIATED_TOKEN_PROGRAM_ID, 
-  getEquaMintDecimals,
+  getUniyaaMintDecimals,
   getMintAuthorityPDA,
   getGlobalStatePDA,
   verifyMintOwner,
@@ -23,14 +23,14 @@ import {
 } from '@/lib/program';
 import { Logo } from './Logo';
 import Image from 'next/image';
-import { formatEquaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRaw } from '@/utils/tokenFormat';
+import { formatUniyaaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRaw } from '@/utils/tokenFormat';
 import { getUserLocaleCurrency, getPreferredCurrency, setPreferredCurrency, getSavedPreferredCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { fetchFxRates } from '@/utils/fxRateClient';
-import { getUniaPriceMultiFormat } from '@/utils/unxOracle';
-import { UniaPriceCalculator } from '@/utils/priceCalculator';
+import { getUniyaaPriceMultiFormat } from '@/utils/unxOracle';
+import { UniyaaPriceCalculator } from '@/utils/priceCalculator';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
 import { useUserAccount } from '@/hooks/useUserAccount';
-import { useEquaBalance } from '@/hooks/useEquaBalance';
+import { useUniyaaBalance } from '@/hooks/useUniyaaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
 import { isUserRegistered } from '@/utils/registrationCheck';
 import { claimBonusMint, getReferralStats } from '@/utils/referralRewards';
@@ -42,11 +42,11 @@ interface WalletDashboardProps {
   className?: string;
 }
 
-// UNIA Token decimals will be fetched from on-chain mint
+// UNIYAA Token decimals will be fetched from on-chain mint
 // Default to 6 decimals as per the on-chain mint configuration
 
 // Shared constants for referral messages
-const UNIA_SHARE_BASE_URL = 'https://unia.live/mint';
+const UNIYAA_SHARE_BASE_URL = 'https://uniyaa.live/mint';
 
 /**
  * Generates a referral message for sharing
@@ -54,7 +54,7 @@ const UNIA_SHARE_BASE_URL = 'https://unia.live/mint';
  * @returns The formatted referral message
  */
 function generateReferralMessage(pubkeyBase58: string): string {
-  return `Join UNIA Token - A revolutionary token system on Solana with price appreciation! Use my referral: ${pubkeyBase58}\n\nGet started: ${UNIA_SHARE_BASE_URL}`;
+  return `Join UNIYAA Token - A revolutionary token system on Solana with price appreciation! Use my referral: ${pubkeyBase58}\n\nGet started: ${UNIYAA_SHARE_BASE_URL}`;
 }
 
 /**
@@ -63,7 +63,7 @@ function generateReferralMessage(pubkeyBase58: string): string {
  * @returns The referral URL with ref parameter
  */
 function generateReferralUrl(pubkeyBase58: string): string {
-  return `${UNIA_SHARE_BASE_URL}?ref=${pubkeyBase58}`;
+  return `${UNIYAA_SHARE_BASE_URL}?ref=${pubkeyBase58}`;
 }
 
 export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) => {
@@ -71,7 +71,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const { connection } = useConnection();
   
   // Use real-time balance hook instead of manual fetching
-  const { balance, isLoading: isBalanceLoading } = useEquaBalance();
+  const { balance, isLoading: isBalanceLoading } = useUniyaaBalance();
   
   const [mintDecimals, setMintDecimals] = useState<number>(6); // Default to 6
   const [isLoading, setIsLoading] = useState(false);
@@ -144,10 +144,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     const fetchData = async () => {
       try {
         // Fetch mint decimals from on-chain
-        const decimals = await getEquaMintDecimals(connection);
+        const decimals = await getUniyaaMintDecimals(connection);
         setMintDecimals(decimals);
         
-        // Get referral credits from on-chain (integer count, not UNIA amounts)
+        // Get referral credits from on-chain (integer count, not UNIYAA amounts)
         if (userAccountPDA) {
           const stats = await getReferralStats(connection, userAccountPDA);
           
@@ -258,7 +258,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       
       // Convert to number for transaction (safe for reasonable tier limits)
       const amountInBaseUnits = Number(tierLimitBaseUnits);
-      const tierLimitEqua = rawToDecimal(amountInBaseUnits, 6);
+      const tierLimitUniyaa = rawToDecimal(amountInBaseUnits, 6);
 
       if (process.env.NODE_ENV === 'development') {
         // Get detailed tier calculation for logging
@@ -274,10 +274,10 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   - Total Users: ${globalState.userCount}
   - Tier: ${tierDetails.tierName}
   - Is Elevated: ${tierDetails.isElevated}
-  - User Tier Rate: ${Number(tierDetails.userTierRate) / 1_000_000} UNIA
-  - Prevailing Rate: ${Number(tierDetails.prevailingRate) / 1_000_000} UNIA
+  - User Tier Rate: ${Number(tierDetails.userTierRate) / 1_000_000} UNIYAA
+  - Prevailing Rate: ${Number(tierDetails.prevailingRate) / 1_000_000} UNIYAA
   - Limited By: ${tierDetails.limitedBy}
-  - Final Tier Limit: ${tierLimitEqua} UNIA (${amountInBaseUnits} base units)`);
+  - Final Tier Limit: ${tierLimitUniyaa} UNIYAA (${amountInBaseUnits} base units)`);
       }
 
       // Call claimBonusMint utility
@@ -294,7 +294,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       // Show success message
       const creditsRemaining = referralCredits - 5;
       setClaimSuccess(
-        `✅ Successfully claimed ${tierLimitEqua} UNIA! ` +
+        `✅ Successfully claimed ${tierLimitUniyaa} UNIYAA! ` +
         `${creditsRemaining} credits remaining. You can claim another bonus mint immediately if you have 5+ credits.`
       );
 
@@ -385,14 +385,14 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       {/* Balance Card */}
       <div className="bg-gradient-to-br from-purple-500/30 to-purple-600/30 backdrop-blur-md rounded-2xl p-6 border border-purple-400/50 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-purple-200 text-lg font-medium">Your UNIA Balance</h3>
+          <h3 className="text-purple-200 text-lg font-medium">Your UNIYAA Balance</h3>
           <Logo size={32} />
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-white text-4xl font-bold" data-testid="unia-balance">
-            {balance > 0 ? formatEquaBalance(balance) : '--'}
+          <span className="text-white text-4xl font-bold" data-testid="uniyaa-balance">
+            {balance > 0 ? formatUniyaaBalance(balance) : '--'}
           </span>
-          <span className="text-purple-300 text-xl">UNIA</span>
+          <span className="text-purple-300 text-xl">UNIYAA</span>
         </div>
       </div>
 
@@ -403,14 +403,14 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
         >
           <span className="text-xl">📤</span>
-          Send UNIA
+          Send UNIYAA
         </button>
         <button
           onClick={() => setShowReceiveModal(true)}
           className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
         >
           <span className="text-xl">📥</span>
-          Receive UNIA
+          Receive UNIYAA
         </button>
       </div>
 
@@ -522,7 +522,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
           onClose={() => setShowSendModal(false)}
           onSuccess={() => {
             setShowSendModal(false);
-            // Balance will be updated automatically via useEquaBalance subscription
+            // Balance will be updated automatically via useUniyaaBalance subscription
             // No manual refresh needed
           }}
         />
@@ -570,7 +570,7 @@ const SendModal: FC<SendModalProps> = ({
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [localCurrencyAmount, setLocalCurrencyAmount] = useState('');
-  const [uniaPrice, setUniaPrice] = useState<number>(0.01);
+  const [uniyaaPrice, setUniyaaPrice] = useState<number>(0.01);
   const [localCurrency, setLocalCurrency] = useState(() => {
     // Detect currency on initialization (runs once, synchronously on first render)
     if (typeof window !== 'undefined') {
@@ -628,18 +628,18 @@ const SendModal: FC<SendModalProps> = ({
     loadCurrencies();
   }, []);
 
-  // Fetch UNIA price based on current transaction count (re-runs when localCurrency changes)
+  // Fetch UNIYAA price based on current transaction count (re-runs when localCurrency changes)
   useEffect(() => {
     const fetchPrice = async () => {
       setIsLoadingPrice(true);
       // Compute price from on-chain transaction count (matches PriceDisplay.tsx pattern)
-      const uniaPriceUsd = UniaPriceCalculator.calculatePrice(totalTransactions);
+      const uniyaaPriceUsd = UniyaaPriceCalculator.calculatePrice(totalTransactions);
       try {
         // Use the already-initialized localCurrency state
         const currencyCode = localCurrency;
         
-        const priceData = await getUniaPriceMultiFormat(uniaPriceUsd, currencyCode, connection);
-        setUniaPrice(priceData.localCurrency);
+        const priceData = await getUniyaaPriceMultiFormat(uniyaaPriceUsd, currencyCode, connection);
+        setUniyaaPrice(priceData.localCurrency);
         
         // Log FX metadata for debugging
         console.log(`FX Rate Info: ${currencyCode} = ${priceData.fxRate} (source: ${priceData.fxSource}, age: ${Math.floor((priceData.fxAge || 0) / 3600000)}h)`);
@@ -649,8 +649,8 @@ const SendModal: FC<SendModalProps> = ({
           console.warn(`⚠️ FX rate for ${currencyCode} is stale (${Math.floor((priceData.fxAge || 0) / 3600000)} hours old)`);
         }
       } catch (err) {
-        console.warn('Failed to fetch UNIA price:', err);
-        setUniaPrice(uniaPriceUsd);
+        console.warn('Failed to fetch UNIYAA price:', err);
+        setUniyaaPrice(uniyaaPriceUsd);
       } finally {
         setIsLoadingPrice(false);
       }
@@ -662,24 +662,24 @@ const SendModal: FC<SendModalProps> = ({
   const handleLocalCurrencyChange = (value: string) => {
     setLocalCurrencyAmount(value);
     
-    // Convert to UNIA
-    if (value && !isNaN(parseFloat(value)) && uniaPrice > 0) {
+    // Convert to UNIYAA
+    if (value && !isNaN(parseFloat(value)) && uniyaaPrice > 0) {
       const localAmount = parseFloat(value);
-      const equaAmount = localAmount / uniaPrice;
-      setAmount(equaAmount.toFixed(6));
+      const uniyaaAmount = localAmount / uniyaaPrice;
+      setAmount(uniyaaAmount.toFixed(6));
     } else {
       setAmount('');
     }
   };
 
-  // Handle UNIA amount change
-  const handleEquaAmountChange = (value: string) => {
+  // Handle UNIYAA amount change
+  const handleUniyaaAmountChange = (value: string) => {
     setAmount(value);
     
     // Convert to local currency
-    if (value && !isNaN(parseFloat(value)) && uniaPrice > 0) {
-      const equaAmount = parseFloat(value);
-      const localAmount = equaAmount * uniaPrice;
+    if (value && !isNaN(parseFloat(value)) && uniyaaPrice > 0) {
+      const uniyaaAmount = parseFloat(value);
+      const localAmount = uniyaaAmount * uniyaaPrice;
       setLocalCurrencyAmount(localAmount.toFixed(6));
     } else {
       setLocalCurrencyAmount('');
@@ -915,8 +915,8 @@ const SendModal: FC<SendModalProps> = ({
 
       // Validate against current balance
       if (amountInBaseUnits > BigInt(currentBalance)) {
-        const balanceInEqua = rawToDecimal(currentBalance, mintDecimals);
-        throw new Error(`Insufficient balance. You have ${balanceInEqua.toFixed(6)} UNIA available.`);
+        const balanceInUniyaa = rawToDecimal(currentBalance, mintDecimals);
+        throw new Error(`Insufficient balance. You have ${balanceInUniyaa.toFixed(6)} UNIYAA available.`);
       }
 
       // Get recipient's token account
@@ -1005,7 +1005,7 @@ const SendModal: FC<SendModalProps> = ({
       console.error('Send error:', err);
       
       // Extract detailed error message from SendTransactionError
-      let errorMessage = 'Failed to send UNIA';
+      let errorMessage = 'Failed to send UNIYAA';
       
       if (err instanceof SendTransactionError) {
         const logs = await err.getLogs(connection);
@@ -1044,7 +1044,7 @@ const SendModal: FC<SendModalProps> = ({
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-white text-xl font-bold flex items-center gap-2">
             <span className="text-2xl">📤</span>
-            Send UNIA
+            Send UNIYAA
           </h3>
           <button 
             onClick={onClose}
@@ -1252,12 +1252,12 @@ const SendModal: FC<SendModalProps> = ({
             </div>
 
             <div className="mb-4">
-              <label className="block text-purple-200 text-sm mb-2">Amount (UNIA)</label>
+              <label className="block text-purple-200 text-sm mb-2">Amount (UNIYAA)</label>
               <div className="relative">
                 <input
                   type="number"
                   value={amount}
-                  onChange={(e) => handleEquaAmountChange(e.target.value)}
+                  onChange={(e) => handleUniyaaAmountChange(e.target.value)}
                   placeholder="0.000000"
                   min="0"
                   step="0.000001"
@@ -1265,9 +1265,9 @@ const SendModal: FC<SendModalProps> = ({
                 />
                 <button
                   onClick={() => {
-                    const maxEqua = rawToDecimal(balance, mintDecimals);
-                    setAmount(maxEqua.toString());
-                    handleEquaAmountChange(maxEqua.toString());
+                    const maxUniyaa = rawToDecimal(balance, mintDecimals);
+                    setAmount(maxUniyaa.toString());
+                    handleUniyaaAmountChange(maxUniyaa.toString());
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-white text-sm"
                 >
@@ -1275,7 +1275,7 @@ const SendModal: FC<SendModalProps> = ({
                 </button>
               </div>
               <p className="text-purple-400 text-xs mt-1">
-                Available: {formatEquaBalance(balance, mintDecimals)} UNIA
+                Available: {formatUniyaaBalance(balance, mintDecimals)} UNIYAA
               </p>
             </div>
 
@@ -1294,7 +1294,7 @@ const SendModal: FC<SendModalProps> = ({
                   : 'bg-purple-600 hover:bg-purple-700 text-white'
               }`}
             >
-              {isLoading ? '⏳ Sending...' : 'Send UNIA'}
+              {isLoading ? '⏳ Sending...' : 'Send UNIYAA'}
             </button>
           </>
         )}
@@ -1357,7 +1357,7 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-white text-xl font-bold flex items-center gap-2">
             <span className="text-2xl">📥</span>
-            Receive UNIA
+            Receive UNIYAA
           </h3>
           <button 
             onClick={onClose}
@@ -1391,7 +1391,7 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
           </div>
 
           <p className="text-purple-200 text-sm mb-4">
-            Scan the QR code or copy your wallet address to receive UNIA tokens
+            Scan the QR code or copy your wallet address to receive UNIYAA tokens
           </p>
 
           {/* Copy Address Button */}
@@ -1442,13 +1442,13 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
     {
       name: 'Telegram',
       icon: '✈️',
-      url: `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent('Join UNIA Token - A revolutionary token system on Solana! Use my referral: ' + pubkeyBase58)}`,
+      url: `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent('Join UNIYAA Token - A revolutionary token system on Solana! Use my referral: ' + pubkeyBase58)}`,
       color: 'bg-blue-500 hover:bg-blue-600',
     },
     {
       name: 'Email',
       icon: '📧',
-      url: `mailto:?subject=${encodeURIComponent('Join UNIA Token')}&body=${encodedMessage}`,
+      url: `mailto:?subject=${encodeURIComponent('Join UNIYAA Token')}&body=${encodedMessage}`,
       color: 'bg-red-500 hover:bg-red-600',
     },
     {
@@ -1483,7 +1483,7 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Join UNIA Token',
+          title: 'Join UNIYAA Token',
           text: referralMessage,
           url: referralUrl,
         });
@@ -1518,7 +1518,7 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
           <div className="bg-black/20 rounded-xl p-4 mb-6">
             <p className="text-purple-300 text-xs mb-2">Your Referral Link</p>
             <p className="text-white text-sm font-mono break-all">
-              https://equa.live/mint?ref={publicKey.toBase58().slice(0, 8)}...
+              https://uniyaa.live/mint?ref={publicKey.toBase58().slice(0, 8)}...
             </p>
           </div>
 

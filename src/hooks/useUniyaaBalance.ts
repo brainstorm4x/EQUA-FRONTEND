@@ -1,7 +1,7 @@
 /**
- * useEquaBalance Hook
+ * useUniyaaBalance Hook
  * 
- * Provides real-time UNIA token balance for the connected wallet.
+ * Provides real-time UNIYAA token balance for the connected wallet.
  * Subscribes to SPL token account changes to update balance automatically.
  */
 
@@ -40,7 +40,7 @@ function parseTokenBalance(accountData: Buffer | Uint8Array): number {
   return balanceRaw.toNumber();
 }
 
-export interface UseEquaBalanceResult {
+export interface UseUniyaaBalanceResult {
   balance: number; // Balance in base units (raw)
   isLoading: boolean;
   error: string | null;
@@ -48,11 +48,11 @@ export interface UseEquaBalanceResult {
 }
 
 /**
- * Hook to fetch and subscribe to UNIA token balance
+ * Hook to fetch and subscribe to UNIYAA token balance
  * 
  * @returns Balance data and utility functions
  */
-export function useEquaBalance(): UseEquaBalanceResult {
+export function useUniyaaBalance(): UseUniyaaBalanceResult {
   const { connection } = useConnection();
   const { publicKey, connected } = useWallet();
   
@@ -108,7 +108,7 @@ export function useEquaBalance(): UseEquaBalanceResult {
         setIsLoading(false);
       }
     } catch (err: any) {
-      console.error('Error fetching UNIA balance:', err);
+      console.error('Error fetching UNIYAA balance:', err);
       if (isMountedRef.current) {
         setError(err.message || 'Failed to fetch balance');
         setBalance(0);
@@ -148,7 +148,7 @@ export function useEquaBalance(): UseEquaBalanceResult {
         const tokenProgramName = TOKEN_PROGRAM_ID.toBase58() === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' 
           ? 'Token-2022' 
           : 'Standard SPL Token';
-        console.log('🔍 useEquaBalance: ATA Subscription Diagnostics');
+        console.log('🔍 useUniyaaBalance: ATA Subscription Diagnostics');
         console.log('  Token Program:', tokenProgramName, `(${TOKEN_PROGRAM_ID.toBase58()})`);
         console.log('  Associated Token Program:', ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
         console.log('  Derived ATA:', tokenAccount.toBase58());

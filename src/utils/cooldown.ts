@@ -36,8 +36,8 @@ const MINT_COOLDOWN_SECONDS = parseInt(
 );
 
 // LocalStorage keys
-const COOLDOWN_KEY_PREFIX = 'unia:cooldown:';
-const IN_FLIGHT_KEY_PREFIX = 'unia:mintInFlight:';
+const COOLDOWN_KEY_PREFIX = 'uniyaa:cooldown:';
+const IN_FLIGHT_KEY_PREFIX = 'uniyaa:mintInFlight:';
 
 /**
  * Cooldown state stored in localStorage

@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { UniaToken } from "../unia_token/target/types/unia_token";
+import { UniyaaToken } from "../uniyaa_token/target/types/uniyaa_token";
 
 const TOKEN_2022_PROGRAM_ID = new anchor.web3.PublicKey(
   "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
@@ -10,7 +10,7 @@ async function main() {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.UniaToken as Program<UniaToken>;
+  const program = anchor.workspace.UniyaaToken as Program<UniyaaToken>;
 
   // Derive PDAs
   const [globalState] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -19,7 +19,7 @@ async function main() {
   );
 
   const [mint] = anchor.web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("unia-mint")],
+    [Buffer.from("uniyaa-mint")],
     program.programId
   );
 
@@ -28,7 +28,7 @@ async function main() {
     program.programId
   );
 
-  console.log("Creating UNIA token mint with Token-2022 program...");
+  console.log("Creating UNIYAA token mint with Token-2022 program...");
   console.log("Mint PDA:", mint.toBase58());
   console.log("Mint Authority:", mintAuthority.toBase58());
   console.log("Token Program:", TOKEN_2022_PROGRAM_ID.toBase58());

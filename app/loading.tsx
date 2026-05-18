@@ -13,7 +13,7 @@ export default function Loading() {
         <div className="inline-block">
           <div className="w-16 h-16 border-4 border-purple-300 border-t-white rounded-full animate-spin"></div>
         </div>
-        <p className="text-white text-xl font-semibold mt-4">Loading UNIA...</p>
+        <p className="text-white text-xl font-semibold mt-4">Loading UNIYAA...</p>
       </div>
     </div>
   );

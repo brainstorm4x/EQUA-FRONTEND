@@ -4,7 +4,7 @@ This document provides instructions for deploying and configuring the UNX Oracle
 
 ## Overview
 
-The UNIA Frontend uses Netlify Scheduled Functions to maintain real-time pricing data:
+The UNIYAA Frontend uses Netlify Scheduled Functions to maintain real-time pricing data:
 
 - **`update-unx-price`** - Updates the on-chain UNX Oracle and stores historical prices (runs hourly)
 - **`update-fx-rates`** - Fetches and stores foreign exchange rates (runs hourly)
@@ -31,11 +31,11 @@ The UNIA Frontend uses Netlify Scheduled Functions to maintain real-time pricing
 3. **`netlify/functions/snapshot-daily-performance.ts`**
    - Schedule: `0 0 * * *` (daily at 00:00 UTC)
    - Reads yesterday's hourly rows from the `unx_price_snapshots` Turso table
-   - Computes OHLC values for UNIA price and the UNX basket close
+   - Computes OHLC values for UNIYAA price and the UNX basket close
    - Computes "$100 held" comparison metrics:
-     - `equaHoldingValue`: value of a $100 UNIA holding since the first-ever snapshot
+     - `uniyaaHoldingValue`: value of a $100 UNIYAA holding since the first-ever snapshot
      - `usdHoldingValue`: value of a $100 USD holding after inflation (`100 / inflationIndex`)
-     - `advantagePerHundred`: `equaHoldingValue − usdHoldingValue`
+     - `advantagePerHundred`: `uniyaaHoldingValue − usdHoldingValue`
    - Writes a row to the `unx_daily_performance` Turso table (idempotent)
    - Runs Netlify Blobs housekeeping (deletes snapshots older than 30 days)
 
@@ -55,7 +55,7 @@ The UNIA Frontend uses Netlify Scheduled Functions to maintain real-time pricing
 
 1. Log in to [Netlify](https://app.netlify.com/)
 2. Click "Add new site" → "Import an existing project"
-3. Connect to GitHub and select `brainstorm4x/UNIA-FRONTEND`
+3. Connect to GitHub and select `brainstorm4x/UNIYAA-FRONTEND`
 4. Choose the branch to deploy (e.g., `main`)
 
 ### 2. Configure Build Settings
@@ -82,7 +82,7 @@ In **Netlify Dashboard → Site Settings → Environment Variables**, add:
 |----------|-------------|---------|------------|
 | `SOLANA_RPC_ENDPOINT` | Solana RPC endpoint | `https://api.devnet.solana.com` | Use public endpoint or get from Helius/Alchemy |
 | `SOLANA_NETWORK` | Network name | `devnet` | `devnet`, `testnet`, or `mainnet-beta` |
-| `NEXT_PUBLIC_PROGRAM_ID` | UNIA program ID | `D158AFttmz...` | From `Anchor.toml` in backend repo |
+| `NEXT_PUBLIC_PROGRAM_ID` | UNIYAA program ID | `D158AFttmz...` | From `Anchor.toml` in backend repo |
 | `SOLANA_WALLET_PRIVATE_KEY` | Admin wallet private key (base58) | `5x7k9...` | See "Generate Admin Wallet" below |
 
 #### Optional Variables
@@ -432,7 +432,7 @@ For issues or questions:
 
 1. Check Netlify function logs
 2. Review this documentation
-3. Open an issue on GitHub: `brainstorm4x/UNIA-FRONTEND`
+3. Open an issue on GitHub: `brainstorm4x/UNIYAA-FRONTEND`
 
 ---
 

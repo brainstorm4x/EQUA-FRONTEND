@@ -41,7 +41,7 @@ describe('createTransferTokensInstruction', () => {
       globalState,
       senderAuthority,
       TOKEN_PROGRAM_ID,
-      1000000 // 1 UNIA in base units
+      1000000 // 1 UNIYAA in base units
     );
 
     expect(instruction).toBeInstanceOf(TransactionInstruction);
@@ -53,7 +53,7 @@ describe('createTransferTokensInstruction', () => {
   });
 
   it('should encode amount correctly as u64 little-endian', () => {
-    const amount = 1000000; // 1 UNIA
+    const amount = 1000000; // 1 UNIYAA
     const instruction = createTransferTokensInstruction(
       senderUserAccount,
       senderTokenAccount,
@@ -211,7 +211,7 @@ describe('createTransferTokensInstruction', () => {
   });
 
   it('should handle bigint amounts correctly', () => {
-    const bigAmount = 1000000000000n; // 1 million UNIA (1000000000000 base units with 6 decimals) as bigint
+    const bigAmount = 1000000000000n; // 1 million UNIYAA (1000000000000 base units with 6 decimals) as bigint
     
     const instruction = createTransferTokensInstruction(
       senderUserAccount,

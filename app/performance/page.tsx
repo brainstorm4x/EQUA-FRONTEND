@@ -11,29 +11,30 @@ import { Logo } from '@/components/Logo';
 interface PerformanceRow {
   timestamp: number;
   recordedAt: string;
-  equaPriceUsd: number;
-  equaPriceLocal: number | null;
+  uniyaaPriceUsd: number;
+  uniyaaPriceLocal: number | null;
   unxPriceUsd: number;
   usdInflationIndex: number;
-  equaPurchasingPower: number;
+  uniyaaPurchasingPower: number;
   source: string;
-  // "$100 held" comparison fields (added by get-performance-data)
-  equaHoldingValue: number;
+  // "$100 held" comparison fields (added by get-performance-data).
+  // unxHoldingValue tracks the UNX basket — the actual hedging instrument.
+  unxHoldingValue: number;
   usdHoldingValue: number;
   advantagePerHundred: number;
 }
 
 interface PerformanceSummary {
-  equaPriceChange: number;
-  equaPriceChangePercent: number;
+  unxPriceChange: number;
+  unxPriceChangePercent: number;
   usdPurchasingPowerLoss: number;
-  equaVsUsdAdvantage: number;
-  currentEquaPriceUsd: number;
-  currentEquaPriceLocal: number | null;
+  unxVsUsdAdvantage: number;
+  currentUniyaaPriceUsd: number;
+  currentUniyaaPriceLocal: number | null;
   currentUnxPriceUsd: number;
   dataPoints: number;
   // "$100 held" comparison fields
-  equaHoldingValue: number;
+  unxHoldingValue: number;
   usdHoldingValue: number;
   advantagePerHundred: number;
   holdingPeriodLabel: string;
@@ -58,8 +59,23 @@ const SUPPORTED_CURRENCIES = [
   'MXN', 'AUD', 'CAD', 'CHF', 'NGN', 'ZAR', 'AED', 'SGD',
 ];
 
-type TimeRange = '7d' | '30d' | '90d' | 'all';
+type TimeRange = '7d' | '30d' | '90d' | '1y' | 'all';
 type Interval = 'hourly' | 'daily';
+
+/**
+ * UNX basket composition — kept in lockstep with BASKET_COMPONENTS in
+ * netlify/functions/lib/unxOracle.ts (which is the single source of truth
+ * read by the on-chain oracle updater). Ordered largest weight first.
+ */
+const UNX_BASKET = [
+  { name: 'Gold (XAU)',      pct: 35, color: '#fbbf24' /* amber-400 */, note: 'inflation hedge' },
+  { name: 'USD',             pct: 23, color: '#4ade80' /* green-400 */, note: 'liquidity' },
+  { name: 'Euro (EUR)',      pct: 17, color: '#60a5fa' /* blue-400 */,  note: 'reserve FX' },
+  { name: 'Yuan (CNH)',      pct:  9, color: '#f87171' /* red-400 */,   note: 'Asian FX' },
+  { name: 'Oil',             pct:  8, color: '#1f2937' /* slate-800 */, note: 'energy' },
+  { name: 'Yen (JPY)',       pct:  5, color: '#a78bfa' /* violet-400 */, note: 'reserve FX' },
+  { name: 'Sterling (GBP)',  pct:  3, color: '#f472b6' /* pink-400 */,  note: 'reserve FX' },
+] as const;
 
 // ============================================================================
 // Utility helpers
@@ -115,6 +131,15 @@ function fmtPct(n: number): string {
   return sign + n.toFixed(2) + '%';
 }
 
+/**
+ * Express a $-denominated holding value (baseline $100) as a percentage
+ * change relative to that baseline. Keeps the math correct even if the
+ * BASELINE_INVESTMENT_USD ever changes from 100 in the backend.
+ */
+function holdingValueToPct(holdingValue: number, baseline = 100): number {
+  return ((holdingValue - baseline) / baseline) * 100;
+}
+
 function getRangeFrom(range: TimeRange): string | undefined {
   const now = new Date();
   switch (range) {
@@ -124,6 +149,8 @@ function getRangeFrom(range: TimeRange): string | undefined {
       return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
     case '90d':
       return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    case '1y':
+      return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString();
     case 'all':
       return undefined;
   }
@@ -135,7 +162,10 @@ function getRangeFrom(range: TimeRange): string | undefined {
 
 export default function PerformancePage() {
   const [currency, setCurrency] = useState<string>('USD');
-  const [range, setRange] = useState<TimeRange>('30d');
+  // Default to 'all' (since genesis) so the CPI signal is large enough to be
+  // visible — over a 30-day window CPI moves ~0.25 % which barely separates
+  // from zero in the visual.
+  const [range, setRange] = useState<TimeRange>('all');
   const [interval, setInterval] = useState<Interval>('daily');
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -193,7 +223,7 @@ export default function PerformancePage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <Logo size={40} />
-              <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
+              <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
             </Link>
             <nav className="flex items-center gap-6">
               <Link href="/" className="text-purple-200 hover:text-white transition-colors">
@@ -227,9 +257,9 @@ export default function PerformancePage() {
 
           {/* Hero */}
           <div className="text-center mb-4">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">UNIA Performance</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">UNX vs USD</h2>
             <p className="text-purple-300 text-lg">
-              See how UNX helps UNIA retain purchasing power compared to traditional currencies
+              How the UNX basket (35% gold, 30% FX ex-USD, 8% oil, 23% USD) holds value as the dollar erodes
             </p>
           </div>
 
@@ -253,7 +283,7 @@ export default function PerformancePage() {
             <div className="flex flex-col gap-1">
               <label className="text-purple-300 text-sm font-medium">Time Range</label>
               <div className="flex gap-1">
-                {(['7d', '30d', '90d', 'all'] as TimeRange[]).map((r) => (
+                {(['7d', '30d', '90d', '1y', 'all'] as TimeRange[]).map((r) => (
                   <button
                     key={r}
                     onClick={() => {
@@ -296,47 +326,98 @@ export default function PerformancePage() {
             </div>
           </div>
 
+          {/* UNX Basket Composition */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30">
+            <h3 className="text-xl font-bold text-white mb-1 text-center">Why UNX holds value</h3>
+            <p className="text-purple-300 text-sm text-center mb-6">
+              Each UNX is a weighted basket of seven assets
+            </p>
+            <div className="flex flex-col md:flex-row gap-8 items-center justify-center">
+              {/* Donut */}
+              <div className="relative w-48 h-48 shrink-0">
+                <div
+                  className="w-full h-full rounded-full"
+                  style={{
+                    background: (() => {
+                      let acc = 0;
+                      const stops = UNX_BASKET.map((c) => {
+                        const s = `${c.color} ${acc}% ${acc + c.pct}%`;
+                        acc += c.pct;
+                        return s;
+                      }).join(', ');
+                      return `conic-gradient(${stops})`;
+                    })(),
+                  }}
+                />
+                <div className="absolute inset-0 m-auto flex flex-col items-center justify-center rounded-full bg-purple-900/90 w-24 h-24 top-12 left-12">
+                  <span className="text-2xl">🪙</span>
+                  <span className="text-purple-200 text-xs font-semibold">UNX</span>
+                </div>
+              </div>
+              {/* Legend */}
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 min-w-0">
+                {UNX_BASKET.map((c) => (
+                  <div key={c.name} className="flex items-center gap-3">
+                    <span
+                      className="inline-block w-3 h-3 rounded-sm shrink-0"
+                      style={{ backgroundColor: c.color }}
+                      aria-hidden
+                    />
+                    <span className="text-purple-100 text-sm font-mono w-10 text-right">{c.pct}%</span>
+                    <span className="text-purple-200 text-sm">
+                      {c.name} <span className="text-purple-400 text-xs">· {c.note}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="text-purple-300 text-sm mt-6 text-center">
+              77% of UNX is denominated in non-USD assets that historically appreciate when the dollar
+              weakens. The 23% USD weight provides liquidity without amplifying dollar risk.
+            </p>
+          </div>
+
           {/* $100 Held Hero Comparison Banner */}
           {summary && !loading && !error && (
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30">
               <p className="text-center text-purple-200 text-sm mb-1">
-                If you invested $100 in UNIA vs $100 in USD
+                $100 held as UNX vs $100 held as USD cash
               </p>
               <p className="text-center text-purple-400 text-xs mb-6">
-                over the last {summary.holdingPeriodLabel}
+                over the {summary.holdingPeriodLabel === 'today' ? 'last' : 'past'} {summary.holdingPeriodLabel}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                {/* UNIA card */}
+                {/* UNX card */}
                 <div className={`rounded-xl p-5 border text-center ${
-                  summary.equaHoldingValue >= 100
+                  summary.unxHoldingValue >= 100
                     ? 'border-green-500/40 bg-green-900/20'
                     : 'border-red-500/40 bg-red-900/20'
                 }`}>
-                  <p className="text-purple-200 text-sm mb-1">💰 $100 in UNIA</p>
-                  <p className="text-purple-300 text-xs mb-3">Now worth:</p>
+                  <p className="text-purple-200 text-sm mb-1">🪙 $100 in UNX</p>
+                  <p className="text-purple-300 text-xs mb-3">Market value today:</p>
                   <p className={`text-3xl font-bold ${
-                    summary.equaHoldingValue >= 100 ? 'text-green-400' : 'text-red-400'
+                    summary.unxHoldingValue >= 100 ? 'text-green-400' : 'text-red-400'
                   }`}>
-                    {fmtHolding(summary.equaHoldingValue)}
+                    {fmtHolding(summary.unxHoldingValue)}
                   </p>
                   <p className={`text-sm mt-1 ${
-                    summary.equaHoldingValue >= 100 ? 'text-green-400' : 'text-red-400'
+                    summary.unxHoldingValue >= 100 ? 'text-green-400' : 'text-red-400'
                   }`}>
-                    {summary.equaHoldingValue >= 100 ? '▲' : '▼'}{' '}
-                    {fmtPct(summary.equaHoldingValue - 100)}
+                    {summary.unxHoldingValue >= 100 ? '▲' : '▼'}{' '}
+                    {fmtPct(holdingValueToPct(summary.unxHoldingValue))}
                   </p>
                 </div>
 
                 {/* USD card */}
                 <div className="rounded-xl p-5 border border-red-500/40 bg-red-900/20 text-center">
-                  <p className="text-purple-200 text-sm mb-1">💵 $100 in USD</p>
-                  <p className="text-purple-300 text-xs mb-3">Now worth (after inflation):</p>
+                  <p className="text-purple-200 text-sm mb-1">💵 $100 in USD cash</p>
+                  <p className="text-purple-300 text-xs mb-3">Real purchasing power (per FRED CPI):</p>
                   <p className="text-3xl font-bold text-red-400">
                     {fmtHolding(summary.usdHoldingValue)}
                   </p>
                   <p className="text-sm mt-1 text-red-400">
-                    ▼ {fmtPct(summary.usdHoldingValue - 100)}
+                    ▼ {fmtPct(holdingValueToPct(summary.usdHoldingValue))}
                   </p>
                 </div>
               </div>
@@ -346,7 +427,7 @@ export default function PerformancePage() {
                 <p className={`text-lg font-semibold ${
                   summary.advantagePerHundred >= 0 ? 'text-yellow-400' : 'text-red-400'
                 }`}>
-                  UNIA preserved{' '}
+                  UNX preserved{' '}
                   <span className="font-bold">
                     {fmtAdvantage(summary.advantagePerHundred)}
                   </span>{' '}
@@ -391,16 +472,16 @@ export default function PerformancePage() {
                   <thead>
                     <tr className="border-b border-purple-500/30 bg-purple-900/40">
                       <th className="px-4 py-3 text-left text-purple-300 font-medium whitespace-nowrap">Date</th>
-                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">$100 UNIA →</th>
-                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">$100 USD →</th>
-                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">UNIA Advantage</th>
+                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">$100 UNX →</th>
+                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">$100 USD (real)</th>
+                      <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">UNX Advantage</th>
                       <th className="px-4 py-3 text-right text-purple-300 font-medium whitespace-nowrap">UNX Basket</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.map((row, idx) => {
                       const prev = idx > 0 ? data[idx - 1] : null;
-                      // Color rows by whether the UNIA advantage is growing or shrinking.
+                      // Color rows by whether the UNX advantage is growing or shrinking.
                       // First row has no comparison point — use neutral colour.
                       const advantageDelta =
                         prev != null
@@ -423,8 +504,8 @@ export default function PerformancePage() {
                         <tr key={row.timestamp} className={`border-b border-purple-500/10 ${rowColor}`}>
                           <td className="px-4 py-3 text-purple-200 whitespace-nowrap">{fmtDate(row.recordedAt)}</td>
                           <td className={`px-4 py-3 text-right font-mono whitespace-nowrap ${
-                            row.equaHoldingValue >= 100 ? 'text-green-400' : 'text-red-400'
-                          }`}>{fmtHolding(row.equaHoldingValue)}</td>
+                            row.unxHoldingValue >= 100 ? 'text-green-400' : 'text-red-400'
+                          }`}>{fmtHolding(row.unxHoldingValue)}</td>
                           <td className="px-4 py-3 text-right text-red-400 font-mono whitespace-nowrap">{fmtHolding(row.usdHoldingValue)}</td>
                           <td className={`px-4 py-3 text-right font-mono whitespace-nowrap ${
                             row.advantagePerHundred >= 0 ? 'text-yellow-400' : 'text-red-400'
@@ -438,15 +519,15 @@ export default function PerformancePage() {
               </div>
               <div className="px-4 py-3 border-t border-purple-500/30 text-purple-400 text-xs">
                 {data.length} data point{data.length !== 1 ? 's' : ''} •{' '}
-                <span className="text-green-400">Green rows</span> = UNIA advantage growing •{' '}
-                <span className="text-red-400">Red rows</span> = UNIA advantage declining
+                <span className="text-green-400">Green rows</span> = UNX advantage growing •{' '}
+                <span className="text-red-400">Red rows</span> = UNX advantage declining
               </div>
             </div>
           )}
 
           {/* Footer */}
           <div className="text-center pt-8 border-t border-purple-500/30">
-            <p className="text-2xl font-bold text-white mb-2">UNIA</p>
+            <p className="text-2xl font-bold text-white mb-2">UNIYAA</p>
             <p className="text-purple-300">Powered by People, Not Capital</p>
           </div>
 

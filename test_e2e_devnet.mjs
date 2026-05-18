@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * End-to-End Integration Test for UNIA Token on Devnet
+ * End-to-End Integration Test for UNIYAA Token on Devnet
  * 
  * This script verifies:
  * 1. Program deployment status
@@ -62,7 +62,7 @@ function createAssociatedTokenAccountInstruction(
 // Constants from the frontend
 const PROGRAM_ID = new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
 const GLOBAL_STATE_SEED = 'global-state';
-const MINT_SEED = 'unia-mint';
+const MINT_SEED = 'uniyaa-mint';
 const MINT_AUTHORITY_SEED = 'mint-authority';
 const RPC_ENDPOINT = 'https://api.devnet.solana.com';
 
@@ -408,7 +408,7 @@ function generateRecommendations(results) {
 
 async function main() {
   console.log(`\n${colors.cyan}╔${'═'.repeat(78)}╗`);
-  console.log(`║  UNIA Token - End-to-End Devnet Integration Test${' '.repeat(28)}║`);
+  console.log(`║  UNIYAA Token - End-to-End Devnet Integration Test${' '.repeat(28)}║`);
   console.log(`╚${'═'.repeat(78)}╝${colors.reset}\n`);
   
   info(`RPC Endpoint: ${RPC_ENDPOINT}`);

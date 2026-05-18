@@ -37,8 +37,8 @@ import {
   getProgramId,
   getBusinessRegistryPDA
 } from './lib/solana-admin';
-import { UniaToken } from './lib/unia_token';
-import idl from './lib/unia_token.json';
+import { UniyaaToken } from './lib/uniyaa_token';
+import idl from './lib/uniyaa_token.json';
 import { buildCorsHeaders, verifyAdminAuth } from './lib/adminAuth';
 import { enforceRateLimit } from './lib/rateLimit';
 
@@ -163,7 +163,7 @@ export const handler: Handler = async (event) => {
       { commitment: 'confirmed' }
     );
 
-    const program = new Program<UniaToken>(
+    const program = new Program<UniyaaToken>(
       idl as any,
       provider
     );

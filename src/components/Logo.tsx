@@ -1,5 +1,5 @@
 /**
- * UNIA Logo Component
+ * UNIYAA Logo Component
  * 
  * Uses standard <img> for SVG logos following industry best practices.
  * SVG logos don't benefit from Next.js Image optimization and can cause build failures.
@@ -16,8 +16,8 @@ interface LogoProps {
 export function Logo({ className = '', size = 40, priority = false }: LogoProps) {
   return (
     <img 
-      src="/branding/unia-logo-light.svg"
-      alt="UNIA Logo"
+      src="/branding/uniyaa-logo-light.svg"
+      alt="UNIYAA Logo"
       className={className}
       style={{ 
         height: `${size}px`, 

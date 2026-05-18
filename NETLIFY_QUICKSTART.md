@@ -12,8 +12,8 @@ This PR migrates the UNX Oracle and FX Rate update jobs from GitHub Actions to N
 
 ✅ **5 Shared Utility Modules:**
 - `lib/unxOracle.ts` - UNX Oracle integration
-- `lib/equa_token.ts` - Anchor program types
-- `lib/equa_token.json` - Anchor program IDL
+- `lib/uniyaa_token.ts` - Anchor program types
+- `lib/uniyaa_token.json` - Anchor program IDL
 - `lib/pythPrices.ts` - Pyth Hermes API client
 - `lib/blobStorage.ts` - Netlify Blobs helpers
 
@@ -30,7 +30,7 @@ This PR migrates the UNX Oracle and FX Rate update jobs from GitHub Actions to N
 ### Step 1: Connect to Netlify
 1. Go to https://app.netlify.com/
 2. Click "Add new site" → "Import an existing project"
-3. Connect GitHub and select `brainstorm4x/UNIA-FRONTEND`
+3. Connect GitHub and select `brainstorm4x/UNIYAA-FRONTEND`
 4. Branch: `main` (after merge)
 
 ### Step 2: Set Environment Variables
@@ -123,8 +123,8 @@ netlify/functions/
   ├── get-fx-rates.ts                     # NEW - API function
   └── lib/
       ├── unxOracle.ts                    # COPIED from src/utils/
-      ├── equa_token.ts                   # COPIED from src/lib/
-      ├── equa_token.json                 # COPIED from public/idl/
+      ├── uniyaa_token.ts                   # COPIED from src/lib/
+      ├── uniyaa_token.json                 # COPIED from public/idl/
       ├── pythPrices.ts                   # NEW - Pyth API client
       └── blobStorage.ts                  # NEW - Blob helpers
 docs/

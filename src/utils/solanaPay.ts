@@ -1,7 +1,7 @@
 /**
  * Solana Pay URL generation utilities
  * 
- * Generates Solana Pay transfer URLs for UNIA Token-2022 transfers.
+ * Generates Solana Pay transfer URLs for UNIYAA Token-2022 transfers.
  * See: https://docs.solanapay.com/spec
  */
 
@@ -50,8 +50,8 @@ function toBase58(value: PublicKey | string): string {
  *   recipient: publicKey,
  *   splToken: mintAddress,
  *   amount: 10.5,
- *   label: 'UNIA Token',
- *   message: 'Receive UNIA tokens'
+ *   label: 'UNIYAA Token',
+ *   message: 'Receive UNIYAA tokens'
  * })
  */
 export function generateSolanaPayUrl(params: SolanaPayTransferParams): string {
@@ -102,24 +102,24 @@ export function generateSolanaPayUrl(params: SolanaPayTransferParams): string {
 }
 
 /**
- * Generates a Solana Pay URL for receiving UNIA tokens (Token-2022)
+ * Generates a Solana Pay URL for receiving UNIYAA tokens (Token-2022)
  * 
  * @param recipientAddress - Recipient wallet address
- * @param mintAddress - UNIA mint address
- * @returns Solana Pay URL for UNIA token transfers
+ * @param mintAddress - UNIYAA mint address
+ * @returns Solana Pay URL for UNIYAA token transfers
  * 
  * @example
- * const url = generateUniaSolanaPayUrl(walletAddress, uniaMintAddress);
- * // solana:RecipientAddress?spl-token=MintAddress&token-program=TokenzQdBN...&label=UNIA&message=Send%20UNIA%20tokens
+ * const url = generateUniyaaSolanaPayUrl(walletAddress, uniyaaMintAddress);
+ * // solana:RecipientAddress?spl-token=MintAddress&token-program=TokenzQdBN...&label=UNIYAA&message=Send%20UNIYAA%20tokens
  */
-export function generateUniaSolanaPayUrl(
+export function generateUniyaaSolanaPayUrl(
   recipientAddress: PublicKey | string,
   mintAddress: PublicKey | string
 ): string {
   // Runtime validation: Ensure TOKEN_PROGRAM_ID is Token-2022
   if (TOKEN_PROGRAM_ID.toBase58() !== TOKEN_2022_PROGRAM_ADDRESS) {
     throw new Error(
-      `UNIA Solana Pay URLs require Token-2022. ` +
+      `UNIYAA Solana Pay URLs require Token-2022. ` +
       `Configured TOKEN_PROGRAM_ID (${TOKEN_PROGRAM_ID.toBase58()}) does not match Token-2022 (${TOKEN_2022_PROGRAM_ADDRESS})`
     );
   }
@@ -127,8 +127,8 @@ export function generateUniaSolanaPayUrl(
   return generateSolanaPayUrl({
     recipient: recipientAddress,
     splToken: mintAddress,
-    label: 'UNIA Token',
-    message: 'Send UNIA tokens (Token-2022)',
+    label: 'UNIYAA Token',
+    message: 'Send UNIYAA tokens (Token-2022)',
     tokenProgram: TOKEN_PROGRAM_ID,
   });
 }

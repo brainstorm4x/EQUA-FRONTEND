@@ -53,11 +53,11 @@ export function getConnection(): Connection {
 }
 
 /**
- * Get UNIA program ID
+ * Get UNIYAA program ID
  * 
  * Uses NEXT_PUBLIC_PROGRAM_ID from environment, defaults to known devnet deployment
  * 
- * @returns PublicKey of the UNIA token program
+ * @returns PublicKey of the UNIYAA token program
  */
 export function getProgramId(): PublicKey {
   const programIdStr = process.env.NEXT_PUBLIC_PROGRAM_ID || 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2';
@@ -68,9 +68,9 @@ export function getProgramId(): PublicKey {
  * Derive BusinessRegistry PDA
  * 
  * PDA Seeds: ["business-registry"]
- * Must match the seed defined in the UNIA backend program
+ * Must match the seed defined in the UNIYAA backend program
  * 
- * @param programId - The UNIA program ID
+ * @param programId - The UNIYAA program ID
  * @returns PublicKey of the BusinessRegistry PDA
  */
 export function getBusinessRegistryPDA(programId: PublicKey): PublicKey {

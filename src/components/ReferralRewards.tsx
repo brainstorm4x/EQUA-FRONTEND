@@ -128,18 +128,18 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       );
 
       // Convert bigint to number for transaction (safe for tier limits which are well below MAX_SAFE_INTEGER)
-      // Largest tier limit is 100,000 UNIA = 100_000_000_000 base units << Number.MAX_SAFE_INTEGER (2^53 - 1)
+      // Largest tier limit is 100,000 UNIYAA = 100_000_000_000 base units << Number.MAX_SAFE_INTEGER (2^53 - 1)
       const amountInBaseUnits = Number(tierLimitBaseUnits);
       
-      // Convert to decimal UNIA for display (rawToDecimal handles the conversion)
-      const amountInEqua = rawToDecimal(tierLimitBaseUnits);
+      // Convert to decimal UNIYAA for display (rawToDecimal handles the conversion)
+      const amountInUniyaa = rawToDecimal(tierLimitBaseUnits);
 
       if (process.env.NODE_ENV === 'development') {
         console.log('✓ Tier calculation:', {
           user_index: userMetadata.user_index,
           elevated_attempts_used: userMetadata.elevated_mint_attempts_used,
           total_users: globalState.userCount,
-          tier_limit_equa: amountInEqua,
+          tier_limit_uniyaa: amountInUniyaa,
           tier_limit_base_units: amountInBaseUnits,
         });
       }
@@ -159,7 +159,7 @@ export const ReferralRewards: FC<ReferralRewardsProps> = ({ className = '' }) =>
       // Note: credits is guaranteed non-null because button is only enabled when hasCredits is true
       const creditsRemaining = credits! - CREDITS_REQUIRED_FOR_BONUS_MINT;
       setSuccessMessage(
-        `✅ Successfully claimed ${amountInEqua} UNIA! ` +
+        `✅ Successfully claimed ${amountInUniyaa} UNIYAA! ` +
         `${creditsRemaining} credits remaining. You can claim another bonus mint immediately if you have 5+ credits.`
       );
 

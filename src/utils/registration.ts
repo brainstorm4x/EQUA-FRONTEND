@@ -1,5 +1,5 @@
 /**
- * Registration utilities for UNIA Token
+ * Registration utilities for UNIYAA Token
  */
 
 // Account type options
@@ -26,20 +26,20 @@ export const MIN_SOL_BALANCE = 0.01;
 export interface ElevatedMintTier {
   minUser: number;
   maxUser: number;
-  equaPerAttempt: number;
+  uniyaaPerAttempt: number;
   elevatedAttempts: number;
 }
 
 export const ELEVATED_MINT_TIERS: ElevatedMintTier[] = [
-  { minUser: 1, maxUser: 1, equaPerAttempt: 100000, elevatedAttempts: 100 },        // User #1: 100,000 UNIA/day × 100 days
-  { minUser: 2, maxUser: 10, equaPerAttempt: 10000, elevatedAttempts: 100 },        // Users #2-10: 10,000 UNIA/day × 100 days
-  { minUser: 11, maxUser: 100, equaPerAttempt: 1000, elevatedAttempts: 100 },       // Users #11-100: 1,000 UNIA/day × 100 days
-  { minUser: 101, maxUser: 1000, equaPerAttempt: 100, elevatedAttempts: 0 },        // Users #101-1000: 100 UNIA/day
-  { minUser: 1001, maxUser: 10000, equaPerAttempt: 10, elevatedAttempts: 0 },       // Users #1001-10000: 10 UNIA/day
-  { minUser: 10001, maxUser: 100000, equaPerAttempt: 1, elevatedAttempts: 0 },      // Users #10001-100000: 1 UNIA/day
-  { minUser: 100001, maxUser: 1000000, equaPerAttempt: 0.1, elevatedAttempts: 0 },  // Users #100001-1000000: 0.1 UNIA/day
-  { minUser: 1000001, maxUser: 10000000, equaPerAttempt: 0.01, elevatedAttempts: 0 }, // Users #1000001-10000000: 0.01 UNIA/day
-  { minUser: 10000001, maxUser: Infinity, equaPerAttempt: 0.001, elevatedAttempts: 0 }, // Users #10000001+: 0.001 UNIA/day (unlimited)
+  { minUser: 1, maxUser: 1, uniyaaPerAttempt: 100000, elevatedAttempts: 100 },        // User #1: 100,000 UNIYAA/day × 100 days
+  { minUser: 2, maxUser: 10, uniyaaPerAttempt: 10000, elevatedAttempts: 100 },        // Users #2-10: 10,000 UNIYAA/day × 100 days
+  { minUser: 11, maxUser: 100, uniyaaPerAttempt: 1000, elevatedAttempts: 100 },       // Users #11-100: 1,000 UNIYAA/day × 100 days
+  { minUser: 101, maxUser: 1000, uniyaaPerAttempt: 100, elevatedAttempts: 0 },        // Users #101-1000: 100 UNIYAA/day
+  { minUser: 1001, maxUser: 10000, uniyaaPerAttempt: 10, elevatedAttempts: 0 },       // Users #1001-10000: 10 UNIYAA/day
+  { minUser: 10001, maxUser: 100000, uniyaaPerAttempt: 1, elevatedAttempts: 0 },      // Users #10001-100000: 1 UNIYAA/day
+  { minUser: 100001, maxUser: 1000000, uniyaaPerAttempt: 0.1, elevatedAttempts: 0 },  // Users #100001-1000000: 0.1 UNIYAA/day
+  { minUser: 1000001, maxUser: 10000000, uniyaaPerAttempt: 0.01, elevatedAttempts: 0 }, // Users #1000001-10000000: 0.01 UNIYAA/day
+  { minUser: 10000001, maxUser: Infinity, uniyaaPerAttempt: 0.001, elevatedAttempts: 0 }, // Users #10000001+: 0.001 UNIYAA/day (unlimited)
 ];
 
 /**

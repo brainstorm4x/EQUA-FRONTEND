@@ -120,7 +120,7 @@ export default function AccountDebugPage() {
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
                 <Logo size={40} />
-                <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
+                <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
               </Link>
               <WalletButton />
             </div>
@@ -151,7 +151,7 @@ export default function AccountDebugPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <Logo size={40} />
-              <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
+              <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
             </Link>
             <WalletButton />
           </div>
@@ -163,7 +163,7 @@ export default function AccountDebugPage() {
           <div className="text-center mb-12">
             <h2 className="text-5xl font-bold text-white mb-4">Account Diagnostics</h2>
             <p className="text-purple-200 text-xl">
-              Debug information for your UNIA user account
+              Debug information for your UNIYAA user account
             </p>
           </div>
 
@@ -190,7 +190,7 @@ export default function AccountDebugPage() {
                   <div className="text-4xl mb-4">ℹ️</div>
                   <p className="text-purple-200 text-lg mb-2">Not registered yet</p>
                   <p className="text-purple-300 text-sm">
-                    This wallet has not been registered on the UNIA program.
+                    This wallet has not been registered on the UNIYAA program.
                   </p>
                   <Link 
                     href="/mint" 
@@ -321,14 +321,14 @@ export default function AccountDebugPage() {
               <div className="bg-yellow-500/20 border border-yellow-500 rounded-2xl p-8">
                 <h3 className="text-2xl font-bold text-yellow-100 mb-4">⚠️ Legacy Account Detected</h3>
                 <p className="text-yellow-200 mb-4">
-                  Your account was created with an older version of the UNIA program. 
-                  To continue using UNIA with the latest features:
+                  Your account was created with an older version of the UNIYAA program. 
+                  To continue using UNIYAA with the latest features:
                 </p>
                 <div className="bg-yellow-900/30 rounded-lg p-4 mb-4">
                   <h4 className="text-yellow-100 font-bold mb-2">How to Fix:</h4>
                   <ol className="list-decimal list-inside space-y-2 text-yellow-200 text-sm">
                     <li>Use a different wallet that hasn&apos;t been registered yet, or</li>
-                    <li>Contact the UNIA team for account migration assistance</li>
+                    <li>Contact the UNIYAA team for account migration assistance</li>
                   </ol>
                 </div>
                 <p className="text-yellow-300 text-xs">

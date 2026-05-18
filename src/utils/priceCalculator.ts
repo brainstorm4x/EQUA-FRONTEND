@@ -1,5 +1,5 @@
 /**
- * UNIA Token Price Appreciation Calculator
+ * UNIYAA Token Price Appreciation Calculator
  * 
  * 9-Tier Price Model with Constant 0.01% Growth:
  * 
@@ -31,7 +31,7 @@ export interface PriceInfo {
   transactionsPerEpoch: number;
 }
 
-export class UniaPriceCalculator {
+export class UniyaaPriceCalculator {
   // Initial Price
   private static readonly INITIAL_PRICE = 0.01;
   
@@ -61,42 +61,42 @@ export class UniaPriceCalculator {
   // Calculate epochs needed for each tier (using ln(endPrice/startPrice) / ln(1.0001))
   // Tier 1: $0.01 to $0.1 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
   private static readonly TIER_1_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_1_END_TRANSACTIONS = UniaPriceCalculator.TIER_1_EPOCHS * UniaPriceCalculator.TIER_1_2_EPOCH_SIZE;
+  private static readonly TIER_1_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_1_EPOCHS * UniyaaPriceCalculator.TIER_1_2_EPOCH_SIZE;
   
   // Tier 2: $0.1 to $1 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
   private static readonly TIER_2_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_2_END_TRANSACTIONS = UniaPriceCalculator.TIER_1_END_TRANSACTIONS + 
-    (UniaPriceCalculator.TIER_2_EPOCHS * UniaPriceCalculator.TIER_1_2_EPOCH_SIZE);
+  private static readonly TIER_2_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_1_END_TRANSACTIONS + 
+    (UniyaaPriceCalculator.TIER_2_EPOCHS * UniyaaPriceCalculator.TIER_1_2_EPOCH_SIZE);
   
   // Tier 3: $1 to $10 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
   private static readonly TIER_3_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_3_END_TRANSACTIONS = UniaPriceCalculator.TIER_2_END_TRANSACTIONS + 
-    (UniaPriceCalculator.TIER_3_EPOCHS * UniaPriceCalculator.TIER_3_4_EPOCH_SIZE);
+  private static readonly TIER_3_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_2_END_TRANSACTIONS + 
+    (UniyaaPriceCalculator.TIER_3_EPOCHS * UniyaaPriceCalculator.TIER_3_4_EPOCH_SIZE);
   
   // Tier 4: $10 to $100 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
   private static readonly TIER_4_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_4_END_TRANSACTIONS = UniaPriceCalculator.TIER_3_END_TRANSACTIONS + 
-    (UniaPriceCalculator.TIER_4_EPOCHS * UniaPriceCalculator.TIER_3_4_EPOCH_SIZE);
+  private static readonly TIER_4_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_3_END_TRANSACTIONS + 
+    (UniyaaPriceCalculator.TIER_4_EPOCHS * UniyaaPriceCalculator.TIER_3_4_EPOCH_SIZE);
   
   // Tier 5: $100 to $1,000 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
   private static readonly TIER_5_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_5_END_TRANSACTIONS = UniaPriceCalculator.TIER_4_END_TRANSACTIONS + 
-    (UniaPriceCalculator.TIER_5_EPOCHS * UniaPriceCalculator.TIER_5_6_EPOCH_SIZE);
+  private static readonly TIER_5_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_4_END_TRANSACTIONS + 
+    (UniyaaPriceCalculator.TIER_5_EPOCHS * UniyaaPriceCalculator.TIER_5_6_EPOCH_SIZE);
   
   // Tier 6: $1,000 to $10,000 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
   private static readonly TIER_6_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_6_END_TRANSACTIONS = UniaPriceCalculator.TIER_5_END_TRANSACTIONS + 
-    (UniaPriceCalculator.TIER_6_EPOCHS * UniaPriceCalculator.TIER_5_6_EPOCH_SIZE);
+  private static readonly TIER_6_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_5_END_TRANSACTIONS + 
+    (UniyaaPriceCalculator.TIER_6_EPOCHS * UniyaaPriceCalculator.TIER_5_6_EPOCH_SIZE);
   
   // Tier 7: $10,000 to $100,000 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
   private static readonly TIER_7_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_7_END_TRANSACTIONS = UniaPriceCalculator.TIER_6_END_TRANSACTIONS + 
-    (UniaPriceCalculator.TIER_7_EPOCHS * UniaPriceCalculator.TIER_7_8_9_EPOCH_SIZE);
+  private static readonly TIER_7_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_6_END_TRANSACTIONS + 
+    (UniyaaPriceCalculator.TIER_7_EPOCHS * UniyaaPriceCalculator.TIER_7_8_9_EPOCH_SIZE);
   
   // Tier 8: $100,000 to $500,000 = 5x = ln(5) / ln(1.0001) ≈ 16095 epochs
   private static readonly TIER_8_EPOCHS = Math.ceil(Math.log(5) / Math.log(1.0001)); // ~16095
-  private static readonly TIER_8_END_TRANSACTIONS = UniaPriceCalculator.TIER_7_END_TRANSACTIONS + 
-    (UniaPriceCalculator.TIER_8_EPOCHS * UniaPriceCalculator.TIER_7_8_9_EPOCH_SIZE);
+  private static readonly TIER_8_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_7_END_TRANSACTIONS + 
+    (UniyaaPriceCalculator.TIER_8_EPOCHS * UniyaaPriceCalculator.TIER_7_8_9_EPOCH_SIZE);
 
   /**
    * Determine the current price tier based on total transactions
@@ -141,7 +141,7 @@ export class UniaPriceCalculator {
   }
 
   /**
-   * Calculate current UNIA price based on transaction count
+   * Calculate current UNIYAA price based on transaction count
    */
   static calculatePrice(
     totalTransactions: number,
@@ -583,12 +583,12 @@ export class UniaPriceCalculator {
 }
 
 // Export convenience function
-export function getCurrentUniaPrice(
+export function getCurrentUniyaaPrice(
   totalTransactions: number,
   currentEpoch?: number,
   compoundingComplete?: boolean
 ): number {
-  return UniaPriceCalculator.calculatePrice(
+  return UniyaaPriceCalculator.calculatePrice(
     totalTransactions,
     currentEpoch,
     compoundingComplete
@@ -596,12 +596,12 @@ export function getCurrentUniaPrice(
 }
 
 /**
- * Format UNIA price for display
+ * Format UNIYAA price for display
  * - Shows $0.01 for base price (no extra decimals)
  * - Shows 6 decimal places for prices under $1
  * - Shows 2 decimal places for prices $1 and above
  */
-export function formatUniaPrice(price: number): string {
+export function formatUniyaaPrice(price: number): string {
   if (price === 0.01) {
     return '$0.01';
   }
@@ -613,6 +613,3 @@ export function formatUniaPrice(price: number): string {
     maximumFractionDigits: 2
   })}`;
 }
-
-// Backward-compatible alias for tests and any code still using the old name
-export { UniaPriceCalculator as EquaPriceCalculator };

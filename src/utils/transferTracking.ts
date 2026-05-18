@@ -23,8 +23,8 @@
  * - Reward claims (claim_referral_rewards instruction)
  * 
  * BACKEND ALIGNMENT:
- * - Backend source: programs/equa_token/src/lib.rs (transfer_tokens instruction)
- * - GlobalState structure: programs/equa_token/src/state.rs
+ * - Backend source: programs/uniyaa_token/src/lib.rs (transfer_tokens instruction)
+ * - GlobalState structure: programs/uniyaa_token/src/state.rs
  * - Only transfer_tokens instruction increments GlobalState.total_transactions
  * 
  * SYBIL ATTACK PREVENTION:
@@ -41,7 +41,7 @@
  * The blockchain is the single source of truth for all transaction counts and statistics.
  * 
  * Legacy functionality (deprecated):
- * - Tracks UNIA token transfers using localStorage only (local testing only)
+ * - Tracks UNIYAA token transfers using localStorage only (local testing only)
  * - Optional analytics logging (non-authoritative)
  */
 
@@ -68,7 +68,7 @@ import * as anchor from '@coral-xyz/anchor';
  * 
  * Total: 85 bytes
  * 
- * Backend source: public/idl/equa_token.json (GlobalState type definition)
+ * Backend source: public/idl/uniyaa_token.json (GlobalState type definition)
  */
 const GLOBAL_STATE_TOTAL_TRANSACTIONS_OFFSET = 12;
 const GLOBAL_STATE_TOTAL_TRANSACTIONS_SIZE = 8;
@@ -92,8 +92,8 @@ const GLOBAL_STATE_TOTAL_TRANSACTIONS_SIZE = 8;
  * console.log(`Total transactions: ${count}`);
  * ```
  * 
- * Backend source: programs/equa_token/src/lib.rs (transfer_tokens instruction)
- * GlobalState structure: public/idl/equa_token.json (GlobalState type)
+ * Backend source: programs/uniyaa_token/src/lib.rs (transfer_tokens instruction)
+ * GlobalState structure: public/idl/uniyaa_token.json (GlobalState type)
  */
 export async function getGlobalTransactionCount(
   connection: Connection
@@ -159,8 +159,8 @@ export function getGlobalStatePDAPublicKey(): [PublicKey, number] {
 // DEPRECATED: localStorage-based Transfer Tracking (Local Testing Only)
 // ============================================================================
 
-const STORAGE_KEY = 'equa_transfer_stats';
-const PROCESSED_SIGNATURES_KEY = 'equa_processed_signatures';
+const STORAGE_KEY = 'uniyaa_transfer_stats';
+const PROCESSED_SIGNATURES_KEY = 'uniyaa_processed_signatures';
 
 // Cached authority blocklist (computed once at module load)
 let cachedAuthorityBlocklist: Set<string> | null = null;
@@ -280,7 +280,7 @@ export async function recordTransfer(
   
   // Dispatch event for real-time UI updates
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('equa_transfer_recorded', {
+    window.dispatchEvent(new CustomEvent('uniyaa_transfer_recorded', {
       detail: { totalTransfers: stats.totalTransfers }
     }));
   }

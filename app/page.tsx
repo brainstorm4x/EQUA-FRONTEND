@@ -84,7 +84,7 @@ export default function HomePage() {
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
                 <Logo size={40} />
-                <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
+                <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
               </Link>
 
               <nav className="hidden md:flex items-center gap-6">
@@ -122,7 +122,7 @@ export default function HomePage() {
           </div>
           
           <h1 className="text-6xl font-bold text-white mb-6">
-            Welcome to UNIA Token
+            Welcome to UNIYAA Token
           </h1>
           
           <p className="text-xl text-purple-200 mb-8 max-w-2xl mx-auto">
@@ -136,13 +136,13 @@ export default function HomePage() {
               // ✅ Show "Get Started" for UNREGISTERED users
               <GetStartedButton />
             ) : (
-              // ✅ Show "Mint UNIA" for REGISTERED users
+              // ✅ Show "Mint UNIYAA" for REGISTERED users
               <Link
                 href="/mint"
-                data-testid="mint-unia-cta"
+                data-testid="mint-uniyaa-cta"
                 className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg"
               >
-                Mint UNIA →
+                Mint UNIYAA →
               </Link>
             )}
             
@@ -174,7 +174,7 @@ export default function HomePage() {
                 - Individual referrals: 1 credit per successful registration
                 - Business referrals: 2 credits per successful registration
                 - Credits are redeemable for bonus minting attempts (5 credits = 1 bonus mint)
-                - Backend source: brainstorm4x/UNIA repo - programs/equa_token/src/lib.rs (lines 765-790)
+                - Backend source: brainstorm4x/UNIYAA repo - programs/uniyaa_token/src/lib.rs (lines 765-790)
                 - Frontend implementation: src/utils/referralRewards.ts (getReferralCredits)
             */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">

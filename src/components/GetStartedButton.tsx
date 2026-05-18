@@ -15,14 +15,14 @@ interface GetStartedButtonProps {
 const REGISTRATION_CACHE_DURATION = 5 * 60 * 1000;
 
 // Key used to trigger re-check when registration completes
-const REGISTRATION_EVENT_KEY = 'equa_registration_complete';
+const REGISTRATION_EVENT_KEY = 'uniyaa_registration_complete';
 
 /**
  * GetStartedButton - Smart CTA button that changes based on user registration status
  * 
  * - Unconnected wallet: Shows "Get Started →" (links to /mint)
  * - Connected but not registered: Shows "Get Started →" (links to /mint for registration)
- * - Connected and registered: Shows "Mint UNIA →" (links to /mint for minting)
+ * - Connected and registered: Shows "Mint UNIYAA →" (links to /mint for minting)
  * 
  * Registration is checked ON-CHAIN ONLY (no database lookup).
  * Uses local keypair + on-chain account verification.
@@ -130,11 +130,11 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
       checkRegistrationStatus(true);
     };
     
-    window.addEventListener('equa_registration_complete', handleRegistrationComplete);
+    window.addEventListener('uniyaa_registration_complete', handleRegistrationComplete);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('equa_registration_complete', handleRegistrationComplete);
+      window.removeEventListener('uniyaa_registration_complete', handleRegistrationComplete);
     };
   }, [checkRegistrationStatus]);
 
@@ -144,7 +144,7 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
       return 'Loading...';
     }
     if (connected && isRegistered) {
-      return 'Mint UNIA →';
+      return 'Mint UNIYAA →';
     }
     return 'Get Started →';
   };

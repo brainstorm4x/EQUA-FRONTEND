@@ -1,5 +1,5 @@
 {
-  "name": "EQUA Frontend (Next.js + Solana)",
+  "name": "UNIYAA Frontend (Next.js + Solana)",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye",
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {},

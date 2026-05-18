@@ -1,15 +1,15 @@
 /**
- * Token formatting utilities for UNIA token
+ * Token formatting utilities for UNIYAA token
  * 
- * UNIA token uses 6 decimals (1,000,000 base units = 1 UNIA)
- * The smallest unit of UNIA is called Gajbhiye (singular) / Gajbhiyes (plural)
+ * UNIYAA token uses 6 decimals (1,000,000 base units = 1 UNIYAA)
+ * The smallest unit of UNIYAA is called Gajbhiye (singular) / Gajbhiyes (plural)
  */
 
-// UNIA token decimals - imported from centralized config for consistency
-import { UNIA_DECIMALS } from '@/lib/constants';
+// UNIYAA token decimals - imported from centralized config for consistency
+import { UNIYAA_DECIMALS } from '@/lib/constants';
 
 /**
- * Name of the smallest unit of UNIA
+ * Name of the smallest unit of UNIYAA
  */
 export const SMALLEST_UNIT_NAME = 'Gajbhiye';
 export const SMALLEST_UNIT_NAME_PLURAL = 'Gajbhiyes';
@@ -26,36 +26,36 @@ export interface FormatOptions {
 }
 
 /**
- * Formats a raw UNIA token amount (in base units/Gajbhiyes) to a human-readable UNIA string
- * This shows the actual UNIA balance, not the smallest unit
+ * Formats a raw UNIYAA token amount (in base units/Gajbhiyes) to a human-readable UNIYAA string
+ * This shows the actual UNIYAA balance, not the smallest unit
  * 
  * @param rawAmount - The raw token amount in base units (Gajbhiyes)
  * @param options - Formatting options
  * @returns Formatted token amount as a string
  * 
  * @example
- * formatEquaRaw(1_000_000_000) // "1,000.000000" (with 6 decimals)
- * formatEquaRaw(1_000_000_000, { decimals: 2 }) // "1,000.00"
- * formatEquaRaw(1_000_000_000, { trimTrailingZeros: true }) // "1,000"
- * formatEquaRaw(3_120_045, { trimTrailingZeros: true }) // "3.120045"
- * formatEquaRaw(123_456) // "0.123456"
- * formatEquaRaw(1_000_000_000, { tokenDecimals: 9 }) // "1.000000000" (if mint had 9 decimals)
+ * formatUniyaaRaw(1_000_000_000) // "1,000.000000" (with 6 decimals)
+ * formatUniyaaRaw(1_000_000_000, { decimals: 2 }) // "1,000.00"
+ * formatUniyaaRaw(1_000_000_000, { trimTrailingZeros: true }) // "1,000"
+ * formatUniyaaRaw(3_120_045, { trimTrailingZeros: true }) // "3.120045"
+ * formatUniyaaRaw(123_456) // "0.123456"
+ * formatUniyaaRaw(1_000_000_000, { tokenDecimals: 9 }) // "1.000000000" (if mint had 9 decimals)
  * 
  * @note This function converts bigint to Number. While this can lose precision for values
  * larger than Number.MAX_SAFE_INTEGER (2^53 - 1 = ~9 quadrillion), with 6 decimal places
- * this means amounts above ~9 billion UNIA tokens (in raw base units) may lose precision.
+ * this means amounts above ~9 billion UNIYAA tokens (in raw base units) may lose precision.
  * For typical individual holdings and transactions, this precision is more than sufficient.
  * The SPL token program uses u64, which has a maximum value of ~18 quintillion.
  */
-export function formatEquaRaw(
+export function formatUniyaaRaw(
   rawAmount: number | string | bigint,
   options: FormatOptions = {}
 ): string {
   const {
-    decimals = UNIA_DECIMALS,
+    decimals = UNIYAA_DECIMALS,
     trimTrailingZeros = false,
     useGrouping = true,
-    tokenDecimals = UNIA_DECIMALS,
+    tokenDecimals = UNIYAA_DECIMALS,
   } = options;
 
   // Convert to number if string or bigint
@@ -70,7 +70,7 @@ export function formatEquaRaw(
     return '0'.padEnd(decimals + 2, '0'); // "0.000..." with appropriate decimal places
   }
 
-  // Convert from raw units (Gajbhiyes) to UNIA tokens using dynamic decimals
+  // Convert from raw units (Gajbhiyes) to UNIYAA tokens using dynamic decimals
   const multiplier = Math.pow(10, tokenDecimals);
   const tokenAmount = amount / multiplier;
 
@@ -85,19 +85,19 @@ export function formatEquaRaw(
 }
 
 /**
- * Formats a raw UNIA token amount to display the actual UNIA balance
+ * Formats a raw UNIYAA token amount to display the actual UNIYAA balance
  * Shows appropriate decimal places based on the balance value
  * 
  * @param rawAmount - The raw token amount in base units (Gajbhiyes)
  * @param tokenDecimals - Token decimals (defaults to 6)
- * @returns Formatted UNIA balance string with appropriate decimals
+ * @returns Formatted UNIYAA balance string with appropriate decimals
  * 
  * @example
- * formatEquaBalance(100_000_000_000) // "100,000" (whole number, no decimals needed)
- * formatEquaBalance(1_500_000) // "1.5" (fractional, shows needed decimals)
- * formatEquaBalance(123_456) // "0.123456" (small amount, shows all decimals)
+ * formatUniyaaBalance(100_000_000_000) // "100,000" (whole number, no decimals needed)
+ * formatUniyaaBalance(1_500_000) // "1.5" (fractional, shows needed decimals)
+ * formatUniyaaBalance(123_456) // "0.123456" (small amount, shows all decimals)
  */
-export function formatEquaBalance(rawAmount: number | string | bigint, tokenDecimals: number = UNIA_DECIMALS): string {
+export function formatUniyaaBalance(rawAmount: number | string | bigint, tokenDecimals: number = UNIYAA_DECIMALS): string {
   // Convert to number if string or bigint
   const amount = typeof rawAmount === 'bigint' 
     ? Number(rawAmount) 
@@ -110,7 +110,7 @@ export function formatEquaBalance(rawAmount: number | string | bigint, tokenDeci
     return '0';
   }
 
-  // Convert from raw units (Gajbhiyes) to UNIA tokens using dynamic decimals
+  // Convert from raw units (Gajbhiyes) to UNIYAA tokens using dynamic decimals
   const multiplier = Math.pow(10, tokenDecimals);
   const tokenAmount = amount / multiplier;
 
@@ -137,21 +137,21 @@ export function formatEquaBalance(rawAmount: number | string | bigint, tokenDeci
 }
 
 /**
- * Parses a formatted UNIA token string back to raw base units (Gajbhiyes)
+ * Parses a formatted UNIYAA token string back to raw base units (Gajbhiyes)
  * 
  * @param formattedAmount - The formatted token amount (e.g., "1,000.50" or "0.123456789")
  * @param tokenDecimals - Token decimals (defaults to 6)
  * @returns Raw token amount in base units (Gajbhiyes)
  * 
  * @example
- * parseEquaFormatted("1,000") // 1_000_000 (with 6 decimals)
- * parseEquaFormatted("0.123456") // 123_456
+ * parseUniyaaFormatted("1,000") // 1_000_000 (with 6 decimals)
+ * parseUniyaaFormatted("0.123456") // 123_456
  * 
  * @note Uses Math.round which can introduce minor rounding errors for edge cases with
  * floating point arithmetic. For precise financial calculations, consider using a
  * decimal library. However, for typical token amounts, the precision is sufficient.
  */
-export function parseEquaFormatted(formattedAmount: string, tokenDecimals: number = UNIA_DECIMALS): number {
+export function parseUniyaaFormatted(formattedAmount: string, tokenDecimals: number = UNIYAA_DECIMALS): number {
   // Remove any grouping separators (commas)
   const cleaned = formattedAmount.replace(/,/g, '');
   const tokenAmount = parseFloat(cleaned);
@@ -166,11 +166,11 @@ export function parseEquaFormatted(formattedAmount: string, tokenDecimals: numbe
 }
 
 /**
- * Converts raw UNIA amount (in Gajbhiyes) to a number (decimal UNIA form)
+ * Converts raw UNIYAA amount (in Gajbhiyes) to a number (decimal UNIYAA form)
  * 
  * @param rawAmount - The raw token amount in base units (Gajbhiyes)
  * @param tokenDecimals - Token decimals (defaults to 6)
- * @returns Token amount as a decimal number (UNIA)
+ * @returns Token amount as a decimal number (UNIYAA)
  * 
  * @example
  * rawToDecimal(1_000_000) // 1 (with 6 decimals)
@@ -178,10 +178,10 @@ export function parseEquaFormatted(formattedAmount: string, tokenDecimals: numbe
  * 
  * @note Converting bigint to Number can lose precision for values larger than
  * Number.MAX_SAFE_INTEGER (~9 quadrillion). With 6 decimal places, this means
- * amounts above ~9 billion UNIA tokens (in raw base units) may lose precision.
+ * amounts above ~9 billion UNIYAA tokens (in raw base units) may lose precision.
  * For typical individual holdings, this is more than sufficient.
  */
-export function rawToDecimal(rawAmount: number | string | bigint, tokenDecimals: number = UNIA_DECIMALS): number {
+export function rawToDecimal(rawAmount: number | string | bigint, tokenDecimals: number = UNIYAA_DECIMALS): number {
   const amount = typeof rawAmount === 'bigint' 
     ? Number(rawAmount) 
     : typeof rawAmount === 'string'
@@ -197,9 +197,9 @@ export function rawToDecimal(rawAmount: number | string | bigint, tokenDecimals:
 }
 
 /**
- * Converts a decimal UNIA amount to raw base units (Gajbhiyes)
+ * Converts a decimal UNIYAA amount to raw base units (Gajbhiyes)
  * 
- * @param decimalAmount - Token amount as a decimal number (UNIA)
+ * @param decimalAmount - Token amount as a decimal number (UNIYAA)
  * @param tokenDecimals - Token decimals (defaults to 6)
  * @returns Raw token amount in base units (Gajbhiyes)
  * 
@@ -211,7 +211,7 @@ export function rawToDecimal(rawAmount: number | string | bigint, tokenDecimals:
  * within reasonable ranges, the precision is sufficient. Very large or very precise
  * values may have minor rounding discrepancies due to IEEE 754 floating point arithmetic.
  */
-export function decimalToRaw(decimalAmount: number, tokenDecimals: number = UNIA_DECIMALS): number {
+export function decimalToRaw(decimalAmount: number, tokenDecimals: number = UNIYAA_DECIMALS): number {
   if (isNaN(decimalAmount) || !isFinite(decimalAmount)) {
     return 0;
   }
@@ -233,7 +233,7 @@ export function decimalToRaw(decimalAmount: number, tokenDecimals: number = UNIA
  * parseDecimalStringToRaw("0.123456", 6) // 123456n
  * parseDecimalStringToRaw("100", 6) // 100000000n
  */
-export function parseDecimalStringToRaw(decimalString: string, tokenDecimals: number = UNIA_DECIMALS): bigint | null {
+export function parseDecimalStringToRaw(decimalString: string, tokenDecimals: number = UNIYAA_DECIMALS): bigint | null {
   try {
     // Remove whitespace and validate
     const cleaned = decimalString.trim();
@@ -279,8 +279,8 @@ export function getSmallestUnitName(amount: number): string {
 }
 
 /**
- * Get the number of decimals for UNIA token
+ * Get the number of decimals for UNIYAA token
  */
-export function getEquaDecimals(): number {
-  return UNIA_DECIMALS;
+export function getUniyaaDecimals(): number {
+  return UNIYAA_DECIMALS;
 }

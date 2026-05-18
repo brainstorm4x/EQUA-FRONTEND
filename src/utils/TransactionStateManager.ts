@@ -8,12 +8,12 @@
  * 1. saveTransactionState() before wallet.signTransaction()
  * 2. User deep links to wallet app
  * 3. User approves/rejects
- * 4. Browser returns to UNIA
+ * 4. Browser returns to UNIYAA
  * 5. restoreTransactionState() on page mount
  * 6. clearTransactionState() on completion or error
  */
 
-const STORAGE_KEY = 'equa_pending_transaction';
+const STORAGE_KEY = 'uniyaa_pending_transaction';
 const STATE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 export interface TransactionState {

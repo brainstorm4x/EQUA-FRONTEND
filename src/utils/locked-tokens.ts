@@ -56,8 +56,8 @@ export function getSecondsUntilUnlock(unlockTimestamp: BN): number {
  * @param seconds - Seconds remaining until unlock
  * @returns Formatted string (e.g., "3 years, 11 months, 29 days")
  * 
- * Backend reference: brainstorm4x/UNIA - programs/equa_token/src/lib.rs (mint_tokens)
- * Frontend issue: https://github.com/brainstorm4x/UNIA-FRONTEND/issues/XXX
+ * Backend reference: brainstorm4x/UNIYAA - programs/uniyaa_token/src/lib.rs (mint_tokens)
+ * Frontend issue: https://github.com/brainstorm4x/UNIYAA-FRONTEND/issues/XXX
  */
 export function formatTimeRemaining(seconds: number): string {
   if (seconds <= 0) return "Unlocked";
@@ -120,14 +120,14 @@ export function formatUnlockDate(unlockTimestamp: BN): string {
  * @returns {unlocked, locked} amounts in base units
  */
 export function calculateLockSplit(userIndex: number, totalAmount: BN): { unlocked: BN; locked: BN } {
-  const TIER_1_UNLOCKED = new BN(100_000_000);      // 100 UNIA
-  const TIER_1_LOCKED = new BN(99_900_000_000);     // 99,900 UNIA
+  const TIER_1_UNLOCKED = new BN(100_000_000);      // 100 UNIYAA
+  const TIER_1_LOCKED = new BN(99_900_000_000);     // 99,900 UNIYAA
   
-  const TIER_2_UNLOCKED = new BN(100_000_000);      // 100 UNIA
-  const TIER_2_LOCKED = new BN(9_900_000_000);      // 9,900 UNIA
+  const TIER_2_UNLOCKED = new BN(100_000_000);      // 100 UNIYAA
+  const TIER_2_LOCKED = new BN(9_900_000_000);      // 9,900 UNIYAA
   
-  const TIER_3_UNLOCKED = new BN(100_000_000);      // 100 UNIA
-  const TIER_3_LOCKED = new BN(900_000_000);        // 900 UNIA
+  const TIER_3_UNLOCKED = new BN(100_000_000);      // 100 UNIYAA
+  const TIER_3_LOCKED = new BN(900_000_000);        // 900 UNIYAA
   
   // Tier 1: User #1
   if (userIndex === 1) {

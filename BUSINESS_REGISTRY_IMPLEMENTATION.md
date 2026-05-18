@@ -10,7 +10,7 @@ This PR implements serverless Netlify functions for managing the BusinessRegistr
 - **`netlify/functions/lib/solana-admin.ts`** (82 lines)
   - `getAdminKeypair()` - Loads admin private key from environment (base58 encoded)
   - `getConnection()` - Creates Solana RPC connection
-  - `getProgramId()` - Returns UNIA program ID from environment
+  - `getProgramId()` - Returns UNIYAA program ID from environment
   - `getBusinessRegistryPDA()` - Derives BusinessRegistry PDA using seed `"business-registry"`
 
 ### 2. API Endpoints
@@ -123,7 +123,7 @@ All required dependencies already present in `package.json`:
 ## Backend Integration Notes
 
 ### IDL Requirements
-The implementation uses the `add_business_referrer` and `remove_business_referrer` instructions from the UNIA backend IDL:
+The implementation uses the `add_business_referrer` and `remove_business_referrer` instructions from the UNIYAA backend IDL:
 
 **Discriminators:**
 - `add_business_referrer`: `[110, 7, 225, 205, 126, 199, 112, 219]`
@@ -195,7 +195,7 @@ Potential improvements for future PRs:
 
 ## References
 
-- **Backend Program:** brainstorm4x/UNIA (Anchor program)
+- **Backend Program:** brainstorm4x/UNIYAA (Anchor program)
 - **Program ID:** `D158AFttmzAYsbDhHZjqNbJbda8x8pUceucw5QZELDzw`
 - **Network:** Solana Devnet
 - **Documentation:** `docs/BUSINESS_REGISTRY_API.md`

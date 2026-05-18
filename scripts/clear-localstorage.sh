@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================================================
-# EQUA Frontend - Clear Browser localStorage Script
+# UNIYAA Frontend - Clear Browser localStorage Script
 # ============================================================================
 # This script provides instructions and commands to clear localStorage
-# for the EQUA frontend application.
+# for the UNIYAA frontend application.
 # 
 # NOTE: This script intentionally provides instructions rather than
 # executing commands, as localStorage clearing requires browser access
@@ -17,7 +17,7 @@
 set -e
 
 echo "╔════════════════════════════════════════════════════════════════════╗"
-echo "║  EQUA Frontend - Clear localStorage                               ║"
+echo "║  UNIYAA Frontend - Clear localStorage                               ║"
 echo "╚════════════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -99,20 +99,20 @@ echo "   await browser.close();"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "📝 Specific EQUA localStorage Keys:"
+echo "📝 Specific UNIYAA localStorage Keys:"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "The EQUA frontend uses the following localStorage keys:"
-echo "  - equa_current_program_id"
-echo "  - equa_referrer_data"
-echo "  - equa_registration_stats"
-echo "  - equa_user_locale"
+echo "The UNIYAA frontend uses the following localStorage keys:"
+echo "  - uniyaa_current_program_id"
+echo "  - uniyaa_referrer_data"
+echo "  - uniyaa_registration_stats"
+echo "  - uniyaa_user_locale"
 echo "  - Various wallet adapter keys"
 echo ""
-echo "To clear only EQUA-specific data, run in browser console:"
+echo "To clear only UNIYAA-specific data, run in browser console:"
 echo ""
 echo "  Object.keys(localStorage)"
-echo "    .filter(key => key.startsWith('equa_'))"
+echo "    .filter(key => key.startsWith('uniyaa_'))"
 echo "    .forEach(key => localStorage.removeItem(key));"
 echo "  location.reload();"
 echo ""

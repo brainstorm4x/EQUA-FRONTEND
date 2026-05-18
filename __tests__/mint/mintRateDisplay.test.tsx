@@ -43,7 +43,7 @@ describe('Mint Rate Display', () => {
   });
 
   describe('First User (User #1)', () => {
-    it('should display 100,000 UNIA/day for first user', async () => {
+    it('should display 100,000 UNIYAA/day for first user', async () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
@@ -70,7 +70,7 @@ describe('Mint Rate Display', () => {
   });
 
   describe('Early Users (Users #2-10)', () => {
-    it('should display appropriate UNIA/day range for users 2-10', async () => {
+    it('should display appropriate UNIYAA/day range for users 2-10', async () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
@@ -98,7 +98,7 @@ describe('Mint Rate Display', () => {
   });
 
   describe('Mid-Tier Users (Users #11-100)', () => {
-    it('should display appropriate UNIA/day range for users 11-100', async () => {
+    it('should display appropriate UNIYAA/day range for users 11-100', async () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
@@ -126,7 +126,7 @@ describe('Mint Rate Display', () => {
   });
 
   describe('Standard Users (Users #101+)', () => {
-    it('should display 100 UNIA/day for users after 100', async () => {
+    it('should display 100 UNIYAA/day for users after 100', async () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
@@ -153,7 +153,7 @@ describe('Mint Rate Display', () => {
   });
 
   describe('Price Display', () => {
-    it('should display current UNIA price', async () => {
+    it('should display current UNIYAA price', async () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator

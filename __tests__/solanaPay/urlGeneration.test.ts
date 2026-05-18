@@ -3,7 +3,7 @@
  */
 
 import { PublicKey } from '@solana/web3.js';
-import { generateSolanaPayUrl, generateUniaSolanaPayUrl } from '@/utils/solanaPay';
+import { generateSolanaPayUrl, generateUniyaaSolanaPayUrl } from '@/utils/solanaPay';
 import { TOKEN_PROGRAM_ID } from '@/lib/constants';
 
 describe('Solana Pay URL Generation', () => {
@@ -124,14 +124,14 @@ describe('Solana Pay URL Generation', () => {
     });
   });
 
-  describe('generateUniaSolanaPayUrl', () => {
-    it('should generate UNIA-specific URL with Token-2022 program', () => {
-      const url = generateUniaSolanaPayUrl(mockRecipient, mockMint);
+  describe('generateUniyaaSolanaPayUrl', () => {
+    it('should generate UNIYAA-specific URL with Token-2022 program', () => {
+      const url = generateUniyaaSolanaPayUrl(mockRecipient, mockMint);
       
       expect(url).toContain(`solana:${mockRecipient.toBase58()}`);
       expect(url).toContain(`spl-token=${mockMint.toBase58()}`);
-      expect(url).toContain('label=UNIA+Token');
-      expect(url).toContain('message=Send+UNIA+tokens+%28Token-2022%29');
+      expect(url).toContain('label=UNIYAA+Token');
+      expect(url).toContain('message=Send+UNIYAA+tokens+%28Token-2022%29');
       expect(url).toContain(`token-program=${TOKEN_PROGRAM_ID.toBase58()}`);
     });
 
@@ -139,14 +139,14 @@ describe('Solana Pay URL Generation', () => {
       const recipientStr = mockRecipient.toBase58();
       const mintStr = mockMint.toBase58();
       
-      const url = generateUniaSolanaPayUrl(recipientStr, mintStr);
+      const url = generateUniyaaSolanaPayUrl(recipientStr, mintStr);
       
       expect(url).toContain(`solana:${recipientStr}`);
       expect(url).toContain(`spl-token=${mintStr}`);
     });
 
     it('should always include Token-2022 program ID from constants', () => {
-      const url = generateUniaSolanaPayUrl(mockRecipient, mockMint);
+      const url = generateUniyaaSolanaPayUrl(mockRecipient, mockMint);
       
       // Should use the TOKEN_PROGRAM_ID from constants
       expect(url).toContain(`token-program=${TOKEN_PROGRAM_ID.toBase58()}`);

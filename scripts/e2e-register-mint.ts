@@ -1,10 +1,10 @@
 /**
- * E2E Test Script for UNIA Registration and Minting
+ * E2E Test Script for UNIYAA Registration and Minting
  * 
- * This script performs an end-to-end test of the UNIA token system:
+ * This script performs an end-to-end test of the UNIYAA token system:
  * 1. Verifies global state and mint PDA exist
  * 2. Performs user registration with self-referral
- * 3. Mints 1000 UNIA tokens using new 7-account mint_tokens instruction
+ * 3. Mints 1000 UNIYAA tokens using new 7-account mint_tokens instruction
  * 4. Logs all instruction metas and results
  * 
  * Usage: npx ts-node scripts/e2e-register-mint.ts
@@ -40,15 +40,15 @@ import {
   getUserMetadataPDA,
   getBusinessRegistryPDA,
   createInitializeUserInstruction,
-  createMintUniaInstruction,
+  createMintUniyaaInstruction,
   createMintTokensInstruction,
   getSPLTokenBalance,
 } from '../src/lib/program';
-import { formatEquaRaw } from '../src/utils/tokenFormat';
+import { formatUniyaaRaw } from '../src/utils/tokenFormat';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '../src/utils/pda-helpers';
 
 async function main() {
-  console.log('🚀 Starting E2E Test: UNIA Registration & Minting\n');
+  console.log('🚀 Starting E2E Test: UNIYAA Registration & Minting\n');
   
   // Initialize connection
   const connection = new Connection(RPC_ENDPOINT, 'confirmed');
@@ -205,8 +205,8 @@ async function main() {
     process.exit(1);
   }
   
-  // Step 6: Mint 1000 UNIA using new 15-account mint_tokens instruction
-  console.log('\n🔍 Step 6: Minting 1000 UNIA...');
+  // Step 6: Mint 1000 UNIYAA using new 15-account mint_tokens instruction
+  console.log('\n🔍 Step 6: Minting 1000 UNIYAA...');
   console.log('  User Metadata PDA:', userMetadataPDA.toBase58());
   
   // Derive locked token PDAs
@@ -231,7 +231,7 @@ async function main() {
     TOKEN_PROGRAM_ID,              // token_program
     ASSOCIATED_TOKEN_PROGRAM_ID,   // associated_token_program
     SystemProgram.programId,       // system_program
-    1000_000000                    // 1000 UNIA with 6 decimals
+    1000_000000                    // 1000 UNIYAA with 6 decimals
   );
   
   console.log('\n🧪 Mint Instruction Metas (15-account mint_tokens):');
@@ -267,22 +267,22 @@ async function main() {
   await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for state to update
   
   const finalBalance = await getSPLTokenBalance(connection, userTokenAccount);
-  const formattedBalance = formatEquaRaw(finalBalance, { trimTrailingZeros: true });
-  console.log(`✅ Final balance: ${formattedBalance} UNIA (raw: ${finalBalance})`);
+  const formattedBalance = formatUniyaaRaw(finalBalance, { trimTrailingZeros: true });
+  console.log(`✅ Final balance: ${formattedBalance} UNIYAA (raw: ${finalBalance})`);
   
-  // Compare raw amount (should be >= 1,000,000,000 for 1000 UNIA)
+  // Compare raw amount (should be >= 1,000,000,000 for 1000 UNIYAA)
   if (finalBalance >= 1_000_000_000) {
     console.log('\n🎉 E2E Test PASSED! Registration and minting successful.');
   } else {
-    console.log(`\n⚠️  E2E Test WARNING: Expected at least 1,000,000,000 raw units (1000 UNIA), got ${finalBalance} (${formattedBalance} UNIA)`);
+    console.log(`\n⚠️  E2E Test WARNING: Expected at least 1,000,000,000 raw units (1000 UNIYAA), got ${finalBalance} (${formattedBalance} UNIYAA)`);
   }
   
   console.log('\n📊 Test Summary:');
   console.log('  ✅ Global state verified');
   console.log('  ✅ Mint verified');
   console.log('  ✅ User registered (self-referral)');
-  console.log('  ✅ 1000 UNIA minted');
-  console.log('  ✅ Final balance:', formattedBalance, 'UNIA');
+  console.log('  ✅ 1000 UNIYAA minted');
+  console.log('  ✅ Final balance:', formattedBalance, 'UNIYAA');
 }
 
 main().catch(err => {

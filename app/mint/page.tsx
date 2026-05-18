@@ -20,7 +20,7 @@ import {
   TOKEN_2022_PROGRAM_ADDRESS,
 } from '@/lib/constants';
 import { 
-  createMintUniaInstruction,
+  createMintUniyaaInstruction,
   createMintTokensInstruction,
   getUserMetadataPDA,
   getUserAccountPDA,
@@ -32,7 +32,7 @@ import {
 } from '@/lib/program';
 import * as anchor from '@coral-xyz/anchor';
 import Link from 'next/link';
-import { formatEquaBalance, decimalToRaw } from '@/utils/tokenFormat';
+import { formatUniyaaBalance, decimalToRaw } from '@/utils/tokenFormat';
 import { RegistrationForm, RegistrationMetadata } from '@/components/RegistrationForm';
 import { MintTierCard } from '@/components/MintTierCard';
 import {
@@ -536,7 +536,7 @@ export default function MintPage() {
           if (tokenAccountInfo) {
             const amount = new anchor.BN(tokenAccountInfo.data.slice(64, 72), 'le');
             tokenBalanceRaw = amount.toNumber();
-            console.log('📊 Token account balance (raw):', tokenBalanceRaw, '(formatted:', formatEquaBalance(tokenBalanceRaw), 'UNIA)');
+            console.log('📊 Token account balance (raw):', tokenBalanceRaw, '(formatted:', formatUniyaaBalance(tokenBalanceRaw), 'UNIYAA)');
           } else {
             console.log('📊 Token account does not exist yet');
           }
@@ -601,7 +601,7 @@ export default function MintPage() {
             
             // Calculate total mints based on user's tier
             // For elevated users (1-100): Use elevated_mint_attempts_used
-            // For standard users (101+): Calculate from minted_amount / equaPerMint
+            // For standard users (101+): Calculate from minted_amount / uniyaaPerMint
             const userTier = getUserMintTier(metadata.user_index);
             
             if (userTier && userTier.elevatedAttempts > 0) {
@@ -609,8 +609,8 @@ export default function MintPage() {
               setTotalMints(metadata.elevated_mint_attempts_used);
             } else if (userTier) {
               // Standard user: calculate from total minted amount
-              const equaPerMint = userTier.equaPerAttempt;
-              const baseUnitsPerMint = decimalToRaw(equaPerMint);
+              const uniyaaPerMint = userTier.uniyaaPerAttempt;
+              const baseUnitsPerMint = decimalToRaw(uniyaaPerMint);
               const calculatedTotalMints = baseUnitsPerMint > 0
                 ? Math.floor(mintedAmount / baseUnitsPerMint)
                 : 0;
@@ -626,7 +626,7 @@ export default function MintPage() {
               setBalance(0);
             } else {
               // User has minted before, show actual token balance
-              console.log('💰 User has minted before. Setting balance to token balance:', formatEquaBalance(tokenBalanceRaw), 'UNIA');
+              console.log('💰 User has minted before. Setting balance to token balance:', formatUniyaaBalance(tokenBalanceRaw), 'UNIYAA');
               setBalance(tokenBalanceRaw);
             }
           } else {
@@ -693,10 +693,10 @@ export default function MintPage() {
     };
     
     // Listen for custom event dispatched after successful registration
-    window.addEventListener('unia_registration_complete', handleRegistrationComplete);
+    window.addEventListener('uniyaa_registration_complete', handleRegistrationComplete);
     
     return () => {
-      window.removeEventListener('unia_registration_complete', handleRegistrationComplete);
+      window.removeEventListener('uniyaa_registration_complete', handleRegistrationComplete);
     };
   }, [publicKey, checkUserRegistration]);
 
@@ -809,7 +809,7 @@ export default function MintPage() {
         console.log('🔐 Device fingerprint:', metadata.fingerprint.fingerprint);
         // Store fingerprint in localStorage for duplicate detection
         if (typeof window !== 'undefined') {
-          const existingFingerprints = JSON.parse(localStorage.getItem('unia_registered_fingerprints') || '[]');
+          const existingFingerprints = JSON.parse(localStorage.getItem('uniyaa_registered_fingerprints') || '[]');
           if (existingFingerprints.includes(metadata.fingerprint.fingerprint)) {
             // Warn but don't block - fingerprint is informational
             console.warn('⚠️ Duplicate fingerprint detected in localStorage (informational)');
@@ -1039,17 +1039,17 @@ export default function MintPage() {
         if (typeof window !== 'undefined') {
           // Store fingerprint AFTER successful registration (Sybil prevention)
           if (metadata?.fingerprint) {
-            const existingFingerprints = JSON.parse(localStorage.getItem('unia_registered_fingerprints') || '[]');
+            const existingFingerprints = JSON.parse(localStorage.getItem('uniyaa_registered_fingerprints') || '[]');
             existingFingerprints.push(metadata.fingerprint.fingerprint);
-            localStorage.setItem('unia_registered_fingerprints', JSON.stringify(existingFingerprints));
-            localStorage.setItem(`unia_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
+            localStorage.setItem('uniyaa_registered_fingerprints', JSON.stringify(existingFingerprints));
+            localStorage.setItem(`uniyaa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
             console.log('🔐 Device fingerprint stored for Sybil prevention');
           }
           
           // Notify other components that registration is complete
           // This triggers GetStartedButton to update its state
-          localStorage.setItem('unia_registration_complete', Date.now().toString());
-          window.dispatchEvent(new CustomEvent('unia_registration_complete'));
+          localStorage.setItem('uniyaa_registration_complete', Date.now().toString());
+          window.dispatchEvent(new CustomEvent('uniyaa_registration_complete'));
           console.log('📢 Registration complete event dispatched');
         }
         
@@ -1213,17 +1213,17 @@ export default function MintPage() {
         if (typeof window !== 'undefined') {
           // Store fingerprint AFTER successful registration (Sybil prevention)
           if (metadata?.fingerprint) {
-            const existingFingerprints = JSON.parse(localStorage.getItem('unia_registered_fingerprints') || '[]');
+            const existingFingerprints = JSON.parse(localStorage.getItem('uniyaa_registered_fingerprints') || '[]');
             existingFingerprints.push(metadata.fingerprint.fingerprint);
-            localStorage.setItem('unia_registered_fingerprints', JSON.stringify(existingFingerprints));
-            localStorage.setItem(`unia_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
+            localStorage.setItem('uniyaa_registered_fingerprints', JSON.stringify(existingFingerprints));
+            localStorage.setItem(`uniyaa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
             console.log('🔐 Device fingerprint stored for Sybil prevention');
           }
           
           // Notify other components that registration is complete
           // This triggers GetStartedButton to update its state
-          localStorage.setItem('unia_registration_complete', Date.now().toString());
-          window.dispatchEvent(new CustomEvent('unia_registration_complete'));
+          localStorage.setItem('uniyaa_registration_complete', Date.now().toString());
+          window.dispatchEvent(new CustomEvent('uniyaa_registration_complete'));
           console.log('📢 Registration complete event dispatched');
         }
         
@@ -1483,7 +1483,7 @@ export default function MintPage() {
       const mintInfo = await connection.getAccountInfo(mintPDA);
       if (!mintInfo) {
         throw new Error(
-          'UNIA token mint has not been created yet. The program administrator needs to run the mint creation script first. ' +
+          'UNIYAA token mint has not been created yet. The program administrator needs to run the mint creation script first. ' +
           'See MINT_CREATION_INSTRUCTIONS.md for details.'
         );
       }
@@ -1522,7 +1522,7 @@ export default function MintPage() {
         
         throw new Error(
           `⚠️ Legacy Account Detected\n\n` +
-          `Your Devnet account was created with an older version of the UNIA program and cannot be used for minting.\n\n` +
+          `Your Devnet account was created with an older version of the UNIYAA program and cannot be used for minting.\n\n` +
           `Account size: ${userAccountInfo.data.length} bytes (requires ${MIN_USER_ACCOUNT_SIZE} bytes)\n\n` +
           `To continue:\n` +
           `1. Use a different wallet that hasn't been registered yet, or\n` +
@@ -1610,7 +1610,7 @@ export default function MintPage() {
       // ============================================================================
       console.log('🔍 Running preflight diagnostics...');
       
-      // Calculate mint amount based on user tier from on-chain metadata (UNIA has 6 decimals)
+      // Calculate mint amount based on user tier from on-chain metadata (UNIYAA has 6 decimals)
       // CRITICAL: This must use on-chain UserMetadata as the source of truth
       if (!userMetadata) {
         throw new Error(
@@ -1627,10 +1627,10 @@ export default function MintPage() {
         );
       }
       
-      const equaAmount = userTier.equaPerAttempt;
-      const mintAmount = decimalToRaw(equaAmount); // Convert to base units using utility
+      const uniyaaAmount = userTier.uniyaaPerAttempt;
+      const mintAmount = decimalToRaw(uniyaaAmount); // Convert to base units using utility
       
-      console.log(`🪙 Minting ${equaAmount.toLocaleString()} UNIA (${mintAmount.toLocaleString()} base units) for user #${userMetadata.user_index} (tier: ${userTier.minUser}-${userTier.maxUser})`);
+      console.log(`🪙 Minting ${uniyaaAmount.toLocaleString()} UNIYAA (${mintAmount.toLocaleString()} base units) for user #${userMetadata.user_index} (tier: ${userTier.minUser}-${userTier.maxUser})`);
       
       // Verify mint authority PDA is correct
       console.log('🔍 Verifying mint authority PDA...');
@@ -1976,7 +1976,7 @@ export default function MintPage() {
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
                 <Logo size={40} />
-                <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
+                <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
               </Link>
               <WalletButton />
             </div>
@@ -2007,7 +2007,7 @@ export default function MintPage() {
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
                 <Logo size={40} />
-                <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
+                <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
               </Link>
               <WalletButton />
             </div>
@@ -2041,7 +2041,7 @@ export default function MintPage() {
               <div className="flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-3">
                   <Logo size={40} />
-                  <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
+                  <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
                 </Link>
                 <WalletButton />
               </div>
@@ -2074,7 +2074,7 @@ export default function MintPage() {
               <div className="flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-3">
                   <Logo size={40} />
-                  <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
+                  <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
                 </Link>
                 <WalletButton />
               </div>
@@ -2100,7 +2100,7 @@ export default function MintPage() {
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
                 <Logo size={40} />
-                <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
+                <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
               </Link>
               <WalletButton />
             </div>
@@ -2132,7 +2132,7 @@ export default function MintPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <Logo size={40} />
-              <h1 className="text-2xl font-bold text-white">UNIA Token</h1>
+              <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
             </Link>
             <WalletButton />
           </div>
@@ -2143,10 +2143,10 @@ export default function MintPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-5xl font-bold text-white mb-4">
-              {registered ? 'Mint UNIA Tokens' : 'Get Started with UNIA'}
+              {registered ? 'Mint UNIYAA Tokens' : 'Get Started with UNIYAA'}
             </h2>
             <p className="text-purple-200 text-xl">
-              {registered ? 'Claim your daily UNIA tokens' : 'Register your account to start minting UNIA tokens'}
+              {registered ? 'Claim your daily UNIYAA tokens' : 'Register your account to start minting UNIYAA tokens'}
             </p>
           </div>
 
@@ -2236,7 +2236,7 @@ export default function MintPage() {
                       <Logo size={80} />
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-4">
-                      {canMint ? 'Daily UNIA Reward' : 'Cooldown Active'}
+                      {canMint ? 'Daily UNIYAA Reward' : 'Cooldown Active'}
                     </h3>
                     
                     {/* Countdown Display */}
@@ -2249,7 +2249,7 @@ export default function MintPage() {
                         <>
                           <p className="text-green-100 text-3xl font-bold mb-2">✅ Ready to mint!</p>
                           <p className="text-green-200 text-lg">
-                            Claim your {userMetadata && getUserMintTier(userMetadata.user_index)?.equaPerAttempt.toLocaleString() || '...'} UNIA
+                            Claim your {userMetadata && getUserMintTier(userMetadata.user_index)?.uniyaaPerAttempt.toLocaleString() || '...'} UNIYAA
                           </p>
                         </>
                       ) : (
@@ -2286,7 +2286,7 @@ export default function MintPage() {
                       ) : canMint ? (
                         <span className="flex items-center justify-center gap-2">
                           <Logo size={24} />
-                          <span>Claim Daily UNIA</span>
+                          <span>Claim Daily UNIYAA</span>
                         </span>
                       ) : (
                         `Cooldown: ${formatTimeRemaining(timeUntilNextMint)}`
@@ -2305,9 +2305,9 @@ export default function MintPage() {
                   <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
                     <h3 className="text-purple-200 text-lg mb-4 text-center">Your Balance</h3>
                     <p className="text-white font-bold text-5xl text-center mb-2">
-                      {formatEquaBalance(balance)}
+                      {formatUniyaaBalance(balance)}
                     </p>
-                    <p className="text-purple-300 text-center">UNIA</p>
+                    <p className="text-purple-300 text-center">UNIYAA</p>
                     {userMetadata && (
                       <p className="text-purple-400 text-sm text-center mt-2">
                         User #{userMetadata.user_index}

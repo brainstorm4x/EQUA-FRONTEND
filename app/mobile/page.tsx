@@ -6,12 +6,12 @@ import { Logo } from '@/components/Logo';
 /**
  * Dedicated Mobile Browser Landing Page
  *
- * Shown when a user visits the UNIA site from a mobile external browser
+ * Shown when a user visits the UNIYAA site from a mobile external browser
  * (Chrome / Safari on Android / iOS).  Deep-linking to Solana wallet
  * extensions is unreliable in these environments, so we guide the user toward
  * the two supported paths:
  *
- *   1. Download the UNIA Flutter mobile app (iOS & Android)
+ *   1. Download the UNIYAA Flutter mobile app (iOS & Android)
  *   2. Switch to a desktop browser with Phantom or Solflare installed
  *
  * Users are redirected here automatically from both app/page.tsx and
@@ -30,10 +30,10 @@ export default function MobilePage() {
         {/* Headline */}
         <div className="space-y-3">
           <h1 className="text-2xl font-bold text-white leading-snug">
-            UNIA works best on desktop or in our mobile app
+            UNIYAA works best on desktop or in our mobile app
           </h1>
           <p className="text-purple-300 text-sm leading-relaxed">
-            For the best experience, download the UNIA app for your phone or visit
+            For the best experience, download the UNIYAA app for your phone or visit
             this page in a desktop browser with a Solana wallet extension installed.
           </p>
         </div>
@@ -41,7 +41,7 @@ export default function MobilePage() {
         {/* App store buttons */}
         <div className="flex flex-col gap-3 w-full">
           <a
-            href="https://apps.apple.com/app/unia"
+            href="https://apps.apple.com/app/uniyaa"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-3 bg-white text-black font-semibold py-3 px-5 rounded-xl transition-opacity hover:opacity-90 text-sm"
@@ -54,7 +54,7 @@ export default function MobilePage() {
           </a>
 
           <a
-            href="https://play.google.com/store/apps/details?id=com.unia.app"
+            href="https://play.google.com/store/apps/details?id=com.uniyaa.app"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-5 rounded-xl transition-colors text-sm"

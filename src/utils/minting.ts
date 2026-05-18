@@ -3,7 +3,7 @@
 export interface MintSlot {
   minUser: number;
   maxUser: number;
-  rate: number;      // UNIA per day
+  rate: number;      // UNIYAA per day
   period: number;    // Days initial rate applies, then --> prevailingRate
 }
 

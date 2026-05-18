@@ -1,8 +1,8 @@
 import { PublicKey, Connection } from '@solana/web3.js';
 
-// EQUA Token Program ID (Token-2022)
+// UNIYAA Token Program ID (Token-2022)
 const PROGRAM_ID = new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
-const MINT_SEED = 'unia-mint';
+const MINT_SEED = 'uniyaa-mint';
 
 async function checkMint() {
   const [mintPDA] = PublicKey.findProgramAddressSync(
@@ -25,14 +25,14 @@ async function checkMint() {
   console.log('Data length:', mintInfo.data.length);
   console.log('Lamports:', mintInfo.lamports);
   
-  // EQUA requires Token-2022 only
+  // UNIYAA requires Token-2022 only
   const TOKEN_2022_PROGRAM_ID = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
   
   if (mintInfo.owner.toBase58() === TOKEN_2022_PROGRAM_ID) {
     console.log('✅ Using Token-2022 (Token Extensions) - CORRECT');
   } else {
     console.log('❌ ERROR: Mint is not using Token-2022!');
-    console.log('   EQUA requires Token-2022 program:', TOKEN_2022_PROGRAM_ID);
+    console.log('   UNIYAA requires Token-2022 program:', TOKEN_2022_PROGRAM_ID);
     console.log('   Found:', mintInfo.owner.toBase58());
   }
 }

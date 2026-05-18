@@ -2,12 +2,12 @@
  * Program IDL in camelCase format in order to be used in JS/TS.
  *
  * Note that this is only a type helper and is not the actual IDL. The original
- * IDL can be found at `target/idl/unia_token.json`.
+ * IDL can be found at `target/idl/uniyaa_token.json`.
  */
-export type UniaToken = {
+export type UniyaaToken = {
   "address": "B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2",
   "metadata": {
-    "name": "uniaToken",
+    "name": "uniyaaToken",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Created with Anchor"
@@ -278,6 +278,8 @@ export type UniaToken = {
                   117,
                   110,
                   105,
+                  121,
+                  97,
                   97,
                   45,
                   109,
@@ -470,7 +472,7 @@ export type UniaToken = {
         "Claim accumulated referral rewards (LEGACY - DEPRECATED)",
         "",
         "This instruction is deprecated as of the referral credits update.",
-        "Referral rewards are now stored as credits, not UNIA tokens.",
+        "Referral rewards are now stored as credits, not UNIYAA tokens.",
         "Use claim_bonus_mint instead to redeem credits for bonus mint attempts.",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
@@ -531,6 +533,8 @@ export type UniaToken = {
                   117,
                   110,
                   105,
+                  121,
+                  97,
                   97,
                   45,
                   109,
@@ -584,7 +588,7 @@ export type UniaToken = {
     {
       "name": "createTokenMint",
       "docs": [
-        "Create the UNIA token mint (call once during deployment)"
+        "Create the UNIYAA token mint (call once during deployment)"
       ],
       "discriminator": [
         35,
@@ -608,6 +612,8 @@ export type UniaToken = {
                   117,
                   110,
                   105,
+                  121,
+                  97,
                   97,
                   45,
                   109,
@@ -727,6 +733,8 @@ export type UniaToken = {
                   117,
                   110,
                   105,
+                  121,
+                  97,
                   97,
                   45,
                   109,
@@ -1428,8 +1436,12 @@ export type UniaToken = {
     {
       "name": "initializeUser",
       "docs": [
-        "Register a new user with account type (Individual/Business) and metadata",
-        "Enforces referral requirement after first 100 users and anti-sybil measures",
+        "Register a new user with account type (Individual/Business) and metadata.",
+        "",
+        "Referrals are OPTIONAL for every tier — the program never rejects a",
+        "missing referral. When a referral IS supplied past",
+        "REFERRAL_ANTISYBIL_THRESHOLD, extra anti-sybil checks (PDA validation +",
+        "rapid-referral slot gap) are applied to the referrer.",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
         "Only P2P transfers (transfer_tokens) increment the transaction counter."
@@ -1605,6 +1617,8 @@ export type UniaToken = {
                   117,
                   110,
                   105,
+                  121,
+                  97,
                   97,
                   45,
                   109,
@@ -1676,10 +1690,10 @@ export type UniaToken = {
     {
       "name": "mintTokens",
       "docs": [
-        "Mint UNIA tokens with tier limits based on user index",
-        "User #1: 100 attempts at 100,000 UNIA each",
-        "Users #2-10: 100 attempts at 10,000 UNIA each",
-        "Users #11+: Normal limit (1,000 UNIA)",
+        "Mint UNIYAA tokens with tier limits based on user index",
+        "User #1: 100 attempts at 100,000 UNIYAA each",
+        "Users #2-10: 100 attempts at 10,000 UNIYAA each",
+        "Users #11+: Normal limit (1,000 UNIYAA)",
         "",
         "Cooldown: 24-hour cooldown enforced between regular mints",
         "",
@@ -1791,6 +1805,8 @@ export type UniaToken = {
                   117,
                   110,
                   105,
+                  121,
+                  97,
                   97,
                   45,
                   109,
@@ -2126,7 +2142,7 @@ export type UniaToken = {
     {
       "name": "transferTokens",
       "docs": [
-        "Transfer UNIA tokens between users (P2P)",
+        "Transfer UNIYAA tokens between users (P2P)",
         "",
         "This is the PRIMARY instruction that increments GlobalState.total_transactions.",
         "The counter tracks peer-to-peer user transfers for price appreciation calculations.",
@@ -2205,6 +2221,8 @@ export type UniaToken = {
                   117,
                   110,
                   105,
+                  121,
+                  97,
                   97,
                   45,
                   109,
@@ -2380,6 +2398,8 @@ export type UniaToken = {
                   117,
                   110,
                   105,
+                  121,
+                  97,
                   97,
                   45,
                   109,
@@ -2607,7 +2627,7 @@ export type UniaToken = {
     {
       "code": 6006,
       "name": "mintAmountExceedsTierLimit",
-      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 UNIA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 UNIA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 UNIA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 UNIA; Tier 5 (#1,001-10,000): 10 UNIA; Tier 6 (#10,001-100,000): 1 UNIA; Tier 7 (#100,001-1M): 0.1 UNIA; Tier 8 (#1M-10M): 0.01 UNIA; Tier 9 (#10M-100M): 0.001 UNIA; Tier 10 (#100M-1B): 0.0001 UNIA; Tier 11 (#1B+): 0.00001 UNIA"
+      "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 UNIYAA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 UNIYAA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 UNIYAA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 UNIYAA; Tier 5 (#1,001-10,000): 10 UNIYAA; Tier 6 (#10,001-100,000): 1 UNIYAA; Tier 7 (#100,001-1M): 0.1 UNIYAA; Tier 8 (#1M-10M): 0.01 UNIYAA; Tier 9 (#10M-100M): 0.001 UNIYAA; Tier 10 (#100M-1B): 0.0001 UNIYAA; Tier 11 (#1B+): 0.00001 UNIYAA"
     },
     {
       "code": 6007,
@@ -2627,7 +2647,7 @@ export type UniaToken = {
     {
       "code": 6010,
       "name": "invalidAssociatedTokenAccount",
-      "msg": "Missing or invalid Associated Token Account (ATA). Ensure the ATA is initialized for the UNIA mint with Token-2022 program. Use getAssociatedTokenAddressSync() to derive the correct address."
+      "msg": "Missing or invalid Associated Token Account (ATA). Ensure the ATA is initialized for the UNIYAA mint with Token-2022 program. Use getAssociatedTokenAddressSync() to derive the correct address."
     },
     {
       "code": 6011,
@@ -2657,7 +2677,7 @@ export type UniaToken = {
     {
       "code": 6016,
       "name": "invalidMintPda",
-      "msg": "Mint PDA derivation failed. Expected seeds: ['unia-mint']. Ensure you're deriving the PDA correctly on the client side."
+      "msg": "Mint PDA derivation failed. Expected seeds: ['uniyaa-mint']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
       "code": 6017,

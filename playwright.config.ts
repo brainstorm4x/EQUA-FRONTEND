@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright Configuration for UNIA Frontend E2E Tests
+ * Playwright Configuration for UNIYAA Frontend E2E Tests
  * 
  * See https://playwright.dev/docs/test-configuration
  */

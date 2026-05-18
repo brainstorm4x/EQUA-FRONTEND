@@ -1,10 +1,10 @@
 import fs from 'fs';
 
-const idlPath = './public/idl/unia_token.json';
+const idlPath = './public/idl/uniyaa_token.json';
 const idl = JSON.parse(fs.readFileSync(idlPath, 'utf8'));
 
 // Add complete type definitions to accounts
-// Note: locked_until field removed per UNIA Whitepaper 2025
+// Note: locked_until field removed per UNIYAA Whitepaper 2025
 idl.accounts = [
   {
     name: "GlobalState",

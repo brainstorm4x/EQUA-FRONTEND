@@ -6,7 +6,7 @@ This guide helps verify the Mobile Wallet Adapter fix for the "Signature verific
 ## Prerequisites
 - Mobile device (iOS or Android)
 - Phantom mobile app installed
-- Access to the UNIA frontend (https://equa-frontend.netlify.app)
+- Access to the UNIYAA frontend (https://uniyaa-frontend.netlify.app)
 
 ## Test Scenarios
 
@@ -14,7 +14,7 @@ This guide helps verify the Mobile Wallet Adapter fix for the "Signature verific
 **Environment:** Desktop browser with Phantom extension
 
 **Steps:**
-1. Open https://equa-frontend.netlify.app in Chrome/Firefox/Safari
+1. Open https://uniyaa-frontend.netlify.app in Chrome/Firefox/Safari
 2. Click "Register Now"
 3. Click "Select Wallet" → Choose Phantom
 4. Phantom extension popup appears
@@ -42,7 +42,7 @@ This guide helps verify the Mobile Wallet Adapter fix for the "Signature verific
 **Steps:**
 1. Open Phantom mobile app
 2. Navigate to Browser tab
-3. Go to https://equa-frontend.netlify.app
+3. Go to https://uniyaa-frontend.netlify.app
 4. Click "Register Now"
 5. Wallet connects automatically (in-app)
 6. Approve transaction
@@ -69,7 +69,7 @@ This guide helps verify the Mobile Wallet Adapter fix for the "Signature verific
 
 **Steps:**
 1. Open Chrome or Safari on mobile device
-2. Go to https://equa-frontend.netlify.app
+2. Go to https://uniyaa-frontend.netlify.app
 3. Click "Register Now"
 4. Click "Select Wallet" → Choose wallet
 5. **OBSERVE:** WebSocket connection attempts in console

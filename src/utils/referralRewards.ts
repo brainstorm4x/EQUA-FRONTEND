@@ -8,7 +8,7 @@
  * - Business referrals: 2 credits per registration
  * - Credits are redeemable for bonus minting attempts (5 credits = 1 bonus mint)
  * 
- * Backend source: programs/equa_token/src/lib.rs (lines 765-790)
+ * Backend source: programs/uniyaa_token/src/lib.rs (lines 765-790)
  */
 
 import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
@@ -34,7 +34,7 @@ import {
 } from './referralCalculator';
 
 // Instruction discriminator for claim_bonus_mint
-// Source: public/idl/equa_token.json, instruction: claimBonusMint
+// Source: public/idl/uniyaa_token.json, instruction: claimBonusMint
 // This 8-byte prefix identifies the instruction in the Solana program
 const CLAIM_BONUS_MINT_DISCRIMINATOR = Buffer.from([165, 189, 110, 164, 88, 80, 20, 71]);
 
@@ -102,7 +102,7 @@ export async function getReferralRewardsBalance(
  * Get referral credits from backend UserAccount
  * 
  * Reads the authoritative `referral_rewards` field which contains
- * integer credit count (NOT UNIA token amounts).
+ * integer credit count (NOT UNIYAA token amounts).
  * 
  * @param connection - Solana connection
  * @param userAccountPubkey - User account PDA public key (NOT authority pubkey)
@@ -334,7 +334,7 @@ export async function getReferredUsersDetails(
  * 
  * @param connection Solana connection
  * @param wallet Wallet adapter with signTransaction and publicKey
- * @param amount Amount of UNIA tokens to mint (in base units, 6 decimals)
+ * @param amount Amount of UNIYAA tokens to mint (in base units, 6 decimals)
  * @returns Transaction signature on success
  * @throws Error on validation failure or transaction error
  */

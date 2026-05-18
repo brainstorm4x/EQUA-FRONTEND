@@ -41,7 +41,7 @@ jest.mock('@solana/web3.js', () => {
 
 // Generate valid public keys for testing
 const mockTokenAccount = Keypair.generate().publicKey;
-const mockMint = new PublicKey('DkY7ARHqXJ9F23XmJGMLFdPdraPHoE7N3ghZqCqBb1pi'); // Real UNIA mint PDA
+const mockMint = new PublicKey('DkY7ARHqXJ9F23XmJGMLFdPdraPHoE7N3ghZqCqBb1pi'); // Real UNIYAA mint PDA
 const otherMint = Keypair.generate().publicKey;
 const token2022Program = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb');
 const legacyTokenProgram = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');

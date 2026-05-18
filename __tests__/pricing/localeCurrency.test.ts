@@ -2,7 +2,7 @@
  * Tests for Local Currency Utilities
  * 
  * Validates that users from different locales get the correct
- * local currency for UNIA price display.
+ * local currency for UNIYAA price display.
  */
 
 import {

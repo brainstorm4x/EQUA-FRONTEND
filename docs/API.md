@@ -1,8 +1,8 @@
-# UNIA Frontend - API Documentation
+# UNIYAA Frontend - API Documentation
 
 ## Overview
 
-UNIA Frontend provides serverless API functions for real-time pricing data and historical analysis.
+UNIYAA Frontend provides serverless API functions for real-time pricing data and historical analysis.
 
 ## API Endpoints
 
@@ -14,7 +14,7 @@ https://[your-site].netlify.app/.netlify/functions/[function-name]
 
 ### 1. Get UNX Price History
 
-Retrieve historical UNX (UNIA Index) prices for charts and analysis.
+Retrieve historical UNX (UNIYAA Index) prices for charts and analysis.
 
 **Endpoint:** `GET /get-unx-history`
 
@@ -173,7 +173,7 @@ console.log(`100 USD = ${eurAmount.toFixed(2)} EUR`);
 
 ### 3. Get Performance Data
 
-Retrieve UNIA/UNX performance history with a computed summary comparing UNIA price appreciation against USD purchasing-power loss.
+Retrieve UNIYAA/UNX performance history with a computed summary comparing UNIYAA price appreciation against USD purchasing-power loss.
 
 **Endpoint:** `GET /get-performance-data`
 
@@ -206,21 +206,21 @@ GET /.netlify/functions/get-performance-data?from=2025-12-09&to=2026-01-08&curre
     {
       "timestamp": 1736341200000,
       "recordedAt": "2026-01-08T13:00:00.000Z",
-      "equaPriceUsd": 0.010003,
-      "equaPriceLocal": 0.84,
+      "uniyaaPriceUsd": 0.010003,
+      "uniyaaPriceLocal": 0.84,
       "unxPriceUsd": 933.12,
       "usdInflationIndex": 1.00038,
-      "equaPurchasingPower": 0.009999,
+      "uniyaaPurchasingPower": 0.009999,
       "source": "hermes"
     }
   ],
   "summary": {
-    "equaPriceChange": 0.0003,
-    "equaPriceChangePercent": 3.0,
+    "uniyaaPriceChange": 0.0003,
+    "uniyaaPriceChangePercent": 3.0,
     "usdPurchasingPowerLoss": 0.38,
-    "equaVsUsdAdvantage": 3.38,
-    "currentEquaPriceUsd": 0.010003,
-    "currentEquaPriceLocal": 0.84,
+    "uniyaaVsUsdAdvantage": 3.38,
+    "currentUniyaaPriceUsd": 0.010003,
+    "currentUniyaaPriceLocal": 0.84,
     "currentUnxPriceUsd": 933.12,
     "dataPoints": 720
   },
@@ -236,12 +236,12 @@ GET /.netlify/functions/get-performance-data?from=2025-12-09&to=2026-01-08&curre
 
 | Field | Description |
 |---|---|
-| `equaPriceChange` | Absolute USD price change (last − first) |
-| `equaPriceChangePercent` | Relative change as a percentage |
+| `uniyaaPriceChange` | Absolute USD price change (last − first) |
+| `uniyaaPriceChangePercent` | Relative change as a percentage |
 | `usdPurchasingPowerLoss` | `(1 − 1/lastInflationIndex) × 100` |
-| `equaVsUsdAdvantage` | `equaPriceChangePercent + usdPurchasingPowerLoss` |
-| `currentEquaPriceUsd` | Latest UNIA price in USD |
-| `currentEquaPriceLocal` | Latest UNIA price in the requested currency |
+| `uniyaaVsUsdAdvantage` | `uniyaaPriceChangePercent + usdPurchasingPowerLoss` |
+| `currentUniyaaPriceUsd` | Latest UNIYAA price in USD |
+| `currentUniyaaPriceLocal` | Latest UNIYAA price in the requested currency |
 | `currentUnxPriceUsd` | Latest UNX basket price in USD |
 | `dataPoints` | Number of rows returned |
 
@@ -299,7 +299,7 @@ Free tier limits (Netlify):
 
 ## Support
 
-For issues or questions, open an issue on [GitHub](https://github.com/brainstorm4x/UNIA-FRONTEND).
+For issues or questions, open an issue on [GitHub](https://github.com/brainstorm4x/UNIYAA-FRONTEND).
 
 ---
 

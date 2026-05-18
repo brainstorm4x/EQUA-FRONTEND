@@ -2,7 +2,7 @@
  * Tier-based mint limit calculation utilities
  * 
  * This module implements the exact tier limit logic from the backend Rust program
- * (programs/equa_token/src/lib.rs lines 1260-1364).
+ * (programs/uniyaa_token/src/lib.rs lines 1260-1364).
  * 
  * Critical: These functions MUST match the backend implementation exactly to ensure
  * the frontend requests the correct mint amounts that the backend will approve.
@@ -11,40 +11,40 @@
 // ============================================================================
 // Tier Constants (matching backend lib.rs lines 53-72)
 // ============================================================================
-// All values are in base units (6 decimals: 1 UNIA = 1,000,000 base units)
+// All values are in base units (6 decimals: 1 UNIYAA = 1,000,000 base units)
 
-/** Tier 1: User #1 - 100,000 UNIA per attempt (for first 100 attempts) */
-export const TIER_1_MINT_LIMIT = 100_000_000_000n; // 100,000 UNIA
+/** Tier 1: User #1 - 100,000 UNIYAA per attempt (for first 100 attempts) */
+export const TIER_1_MINT_LIMIT = 100_000_000_000n; // 100,000 UNIYAA
 
-/** Tier 2: Users #2-10 - 10,000 UNIA per attempt (for first 100 attempts) */
-export const TIER_2_MINT_LIMIT = 10_000_000_000n;  // 10,000 UNIA
+/** Tier 2: Users #2-10 - 10,000 UNIYAA per attempt (for first 100 attempts) */
+export const TIER_2_MINT_LIMIT = 10_000_000_000n;  // 10,000 UNIYAA
 
-/** Tier 3: Users #11-100 - 1,000 UNIA per attempt (for first 100 attempts) */
-export const TIER_3_MINT_LIMIT = 1_000_000_000n;   // 1,000 UNIA
+/** Tier 3: Users #11-100 - 1,000 UNIYAA per attempt (for first 100 attempts) */
+export const TIER_3_MINT_LIMIT = 1_000_000_000n;   // 1,000 UNIYAA
 
-/** Tier 4: Users #1-1000 (base rate after elevated attempts) - 100 UNIA */
-export const TIER_4_MINT_LIMIT = 100_000_000n;     // 100 UNIA
+/** Tier 4: Users #1-1000 (base rate after elevated attempts) - 100 UNIYAA */
+export const TIER_4_MINT_LIMIT = 100_000_000n;     // 100 UNIYAA
 
-/** Tier 5: Users #1001-10000 - 10 UNIA */
-export const TIER_5_MINT_LIMIT = 10_000_000n;      // 10 UNIA
+/** Tier 5: Users #1001-10000 - 10 UNIYAA */
+export const TIER_5_MINT_LIMIT = 10_000_000n;      // 10 UNIYAA
 
-/** Tier 6: Users #10001-100000 - 1 UNIA */
-export const TIER_6_MINT_LIMIT = 1_000_000n;       // 1 UNIA
+/** Tier 6: Users #10001-100000 - 1 UNIYAA */
+export const TIER_6_MINT_LIMIT = 1_000_000n;       // 1 UNIYAA
 
-/** Tier 7: Users #100001-1000000 - 0.1 UNIA */
-export const TIER_7_MINT_LIMIT = 100_000n;         // 0.1 UNIA
+/** Tier 7: Users #100001-1000000 - 0.1 UNIYAA */
+export const TIER_7_MINT_LIMIT = 100_000n;         // 0.1 UNIYAA
 
-/** Tier 8: Users #1000001-10000000 - 0.01 UNIA */
-export const TIER_8_MINT_LIMIT = 10_000n;          // 0.01 UNIA
+/** Tier 8: Users #1000001-10000000 - 0.01 UNIYAA */
+export const TIER_8_MINT_LIMIT = 10_000n;          // 0.01 UNIYAA
 
-/** Tier 9: Users #10000001-100000000 - 0.001 UNIA */
-export const TIER_9_MINT_LIMIT = 1_000n;           // 0.001 UNIA
+/** Tier 9: Users #10000001-100000000 - 0.001 UNIYAA */
+export const TIER_9_MINT_LIMIT = 1_000n;           // 0.001 UNIYAA
 
-/** Tier 10: Users #100000001-1000000000 - 0.0001 UNIA */
-export const TIER_10_MINT_LIMIT = 100n;            // 0.0001 UNIA
+/** Tier 10: Users #100000001-1000000000 - 0.0001 UNIYAA */
+export const TIER_10_MINT_LIMIT = 100n;            // 0.0001 UNIYAA
 
-/** Tier 11: Users #1000000001+ - 0.00001 UNIA */
-export const TIER_11_MINT_LIMIT = 10n;             // 0.00001 UNIA
+/** Tier 11: Users #1000000001+ - 0.00001 UNIYAA */
+export const TIER_11_MINT_LIMIT = 10n;             // 0.00001 UNIYAA
 
 /** Number of elevated attempts available to Tiers 1-3 */
 export const ELEVATED_MINT_ATTEMPTS = 100;
@@ -65,24 +65,24 @@ export const ELEVATED_MINT_ATTEMPTS = 100;
 export function calculatePrevailingRate(totalUsers: number): bigint {
   // Match backend tier boundaries exactly
   if (totalUsers >= 1 && totalUsers <= 100) {
-    return TIER_4_MINT_LIMIT; // 100 UNIA
+    return TIER_4_MINT_LIMIT; // 100 UNIYAA
   } else if (totalUsers >= 101 && totalUsers <= 1_000) {
-    return TIER_4_MINT_LIMIT; // 100 UNIA
+    return TIER_4_MINT_LIMIT; // 100 UNIYAA
   } else if (totalUsers >= 1_001 && totalUsers <= 10_000) {
-    return TIER_5_MINT_LIMIT; // 10 UNIA
+    return TIER_5_MINT_LIMIT; // 10 UNIYAA
   } else if (totalUsers >= 10_001 && totalUsers <= 100_000) {
-    return TIER_6_MINT_LIMIT; // 1 UNIA
+    return TIER_6_MINT_LIMIT; // 1 UNIYAA
   } else if (totalUsers >= 100_001 && totalUsers <= 1_000_000) {
-    return TIER_7_MINT_LIMIT; // 0.1 UNIA
+    return TIER_7_MINT_LIMIT; // 0.1 UNIYAA
   } else if (totalUsers >= 1_000_001 && totalUsers <= 10_000_000) {
-    return TIER_8_MINT_LIMIT; // 0.01 UNIA
+    return TIER_8_MINT_LIMIT; // 0.01 UNIYAA
   } else if (totalUsers >= 10_000_001 && totalUsers <= 100_000_000) {
-    return TIER_9_MINT_LIMIT; // 0.001 UNIA
+    return TIER_9_MINT_LIMIT; // 0.001 UNIYAA
   } else if (totalUsers >= 100_000_001 && totalUsers <= 1_000_000_000) {
-    return TIER_10_MINT_LIMIT; // 0.0001 UNIA
+    return TIER_10_MINT_LIMIT; // 0.0001 UNIYAA
   } else {
     // totalUsers >= 1_000_000_001
-    return TIER_11_MINT_LIMIT; // 0.00001 UNIA
+    return TIER_11_MINT_LIMIT; // 0.00001 UNIYAA
   }
 }
 
@@ -93,14 +93,14 @@ export function calculatePrevailingRate(totalUsers: number): bigint {
  * 
  * Algorithm:
  * 1. Check if user is in elevated tier (1-100) and has elevated attempts remaining
- *    - User #1 with <100 attempts: 100,000 UNIA
- *    - Users #2-10 with <100 attempts: 10,000 UNIA
- *    - Users #11-100 with <100 attempts: 1,000 UNIA
+ *    - User #1 with <100 attempts: 100,000 UNIYAA
+ *    - Users #2-10 with <100 attempts: 10,000 UNIYAA
+ *    - Users #11-100 with <100 attempts: 1,000 UNIYAA
  * 
  * 2. Calculate user's base tier rate (based on their user_index):
- *    - Users #1-100 (exhausted elevated): 100 UNIA
- *    - Users #101-1000: 100 UNIA
- *    - Users #1001-10000: 10 UNIA
+ *    - Users #1-100 (exhausted elevated): 100 UNIYAA
+ *    - Users #101-1000: 100 UNIYAA
+ *    - Users #1001-10000: 10 UNIYAA
  *    - And so on...
  * 
  * 3. Calculate prevailing rate (based on total_users)
@@ -115,13 +115,13 @@ export function calculatePrevailingRate(totalUsers: number): bigint {
  * 
  * @example
  * // User #6 with 0 elevated attempts used, total 9 users
- * calculateTierLimit(6, 0, 9) // Returns 100_000_000_000n (100,000 UNIA)
+ * calculateTierLimit(6, 0, 9) // Returns 100_000_000_000n (100,000 UNIYAA)
  * 
  * // User #6 with 100 elevated attempts used (exhausted), total 9 users
- * calculateTierLimit(6, 100, 9) // Returns 10_000_000_000n (10,000 UNIA - prevailing rate)
+ * calculateTierLimit(6, 100, 9) // Returns 10_000_000_000n (10,000 UNIYAA - prevailing rate)
  * 
  * // User #101, total 101 users
- * calculateTierLimit(101, 0, 101) // Returns 100_000_000n (100 UNIA)
+ * calculateTierLimit(101, 0, 101) // Returns 100_000_000n (100 UNIYAA)
  */
 export function calculateTierLimit(
   userIndex: number,
@@ -132,17 +132,17 @@ export function calculateTierLimit(
   // These users get higher rates for their first 100 attempts
   
   if (userIndex === 1 && elevatedAttemptsUsed < ELEVATED_MINT_ATTEMPTS) {
-    // User #1: 100,000 UNIA per attempt (elevated)
+    // User #1: 100,000 UNIYAA per attempt (elevated)
     return TIER_1_MINT_LIMIT;
   }
   
   if (userIndex >= 2 && userIndex <= 10 && elevatedAttemptsUsed < ELEVATED_MINT_ATTEMPTS) {
-    // Users #2-10: 10,000 UNIA per attempt (elevated)
+    // Users #2-10: 10,000 UNIYAA per attempt (elevated)
     return TIER_2_MINT_LIMIT;
   }
   
   if (userIndex >= 11 && userIndex <= 100 && elevatedAttemptsUsed < ELEVATED_MINT_ATTEMPTS) {
-    // Users #11-100: 1,000 UNIA per attempt (elevated)
+    // Users #11-100: 1,000 UNIYAA per attempt (elevated)
     return TIER_3_MINT_LIMIT;
   }
   
@@ -152,31 +152,31 @@ export function calculateTierLimit(
   
   if (userIndex >= 1 && userIndex <= 100) {
     // Users #1-100 (after exhausting elevated attempts)
-    userTierRate = TIER_4_MINT_LIMIT; // 100 UNIA
+    userTierRate = TIER_4_MINT_LIMIT; // 100 UNIYAA
   } else if (userIndex >= 101 && userIndex <= 1_000) {
     // Users #101-1000
-    userTierRate = TIER_4_MINT_LIMIT; // 100 UNIA
+    userTierRate = TIER_4_MINT_LIMIT; // 100 UNIYAA
   } else if (userIndex >= 1_001 && userIndex <= 10_000) {
     // Users #1001-10000
-    userTierRate = TIER_5_MINT_LIMIT; // 10 UNIA
+    userTierRate = TIER_5_MINT_LIMIT; // 10 UNIYAA
   } else if (userIndex >= 10_001 && userIndex <= 100_000) {
     // Users #10001-100000
-    userTierRate = TIER_6_MINT_LIMIT; // 1 UNIA
+    userTierRate = TIER_6_MINT_LIMIT; // 1 UNIYAA
   } else if (userIndex >= 100_001 && userIndex <= 1_000_000) {
     // Users #100001-1000000
-    userTierRate = TIER_7_MINT_LIMIT; // 0.1 UNIA
+    userTierRate = TIER_7_MINT_LIMIT; // 0.1 UNIYAA
   } else if (userIndex >= 1_000_001 && userIndex <= 10_000_000) {
     // Users #1000001-10000000
-    userTierRate = TIER_8_MINT_LIMIT; // 0.01 UNIA
+    userTierRate = TIER_8_MINT_LIMIT; // 0.01 UNIYAA
   } else if (userIndex >= 10_000_001 && userIndex <= 100_000_000) {
     // Users #10000001-100000000
-    userTierRate = TIER_9_MINT_LIMIT; // 0.001 UNIA
+    userTierRate = TIER_9_MINT_LIMIT; // 0.001 UNIYAA
   } else if (userIndex >= 100_000_001 && userIndex <= 1_000_000_000) {
     // Users #100000001-1000000000
-    userTierRate = TIER_10_MINT_LIMIT; // 0.0001 UNIA
+    userTierRate = TIER_10_MINT_LIMIT; // 0.0001 UNIYAA
   } else {
     // Users #1000000001+
-    userTierRate = TIER_11_MINT_LIMIT; // 0.00001 UNIA
+    userTierRate = TIER_11_MINT_LIMIT; // 0.00001 UNIYAA
   }
   
   // STEP 3: Calculate prevailing rate (based on total_users)
@@ -202,7 +202,7 @@ export function describeTierCalculation(
   totalUsers: number
 ): {
   tierLimit: bigint;
-  tierLimitEqua: number;
+  tierLimitUniyaa: number;
   isElevated: boolean;
   tierName: string;
   userTierRate: bigint;
@@ -275,7 +275,7 @@ export function describeTierCalculation(
   
   return {
     tierLimit,
-    tierLimitEqua: Number(tierLimit) / 1_000_000, // Convert to UNIA (6 decimals)
+    tierLimitUniyaa: Number(tierLimit) / 1_000_000, // Convert to UNIYAA (6 decimals)
     isElevated,
     tierName,
     userTierRate,

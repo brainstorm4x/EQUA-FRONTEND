@@ -3,7 +3,7 @@
  * E2E Validation Script for Registration Flow
  * 
  * This script validates:
- * 1. Mint owner matches Token-2022 (UNIA requires Token-2022 only)
+ * 1. Mint owner matches Token-2022 (UNIYAA requires Token-2022 only)
  * 2. ASSOCIATED_TOKEN_PROGRAM_ID is correct
  * 3. Instruction accounts are in correct order (12-account structure)
  * 4. IDL matches backend expectations
@@ -45,18 +45,18 @@ function info(msg) {
 }
 
 // Configuration
-// UNIA Token Program ID (Token-2022 only)
+// UNIYAA Token Program ID (Token-2022 only)
 const PROGRAM_ID = new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
-const MINT_SEED = 'unia-mint';
+const MINT_SEED = 'uniyaa-mint';
 const TOKEN_2022_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
 const ASSOCIATED_TOKEN_PROGRAM = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
 
-// UNIA requires Token-2022 only (no Standard SPL support)
+// UNIYAA requires Token-2022 only (no Standard SPL support)
 const EXPECTED_TOKEN_PROGRAM = TOKEN_2022_PROGRAM;
 
 async function main() {
   console.log('='.repeat(80));
-  info('UNIA Frontend Registration Validation');
+  info('UNIYAA Frontend Registration Validation');
   console.log('='.repeat(80));
   console.log();
 
@@ -65,7 +65,7 @@ async function main() {
   // Step 1: Validate IDL
   info('Step 1: Validating IDL...');
   try {
-    const idlPath = path.join(__dirname, '..', 'public', 'idl', 'equa_token.json');
+    const idlPath = path.join(__dirname, '..', 'public', 'idl', 'uniyaa_token.json');
     const idl = JSON.parse(fs.readFileSync(idlPath, 'utf-8'));
     
     const initializeUserInstruction = idl.instructions.find(ix => ix.name === 'initialize_user');
@@ -230,7 +230,7 @@ async function main() {
       if (mintOwner === TOKEN_2022_PROGRAM) {
         success('✓ Mint uses Token-2022 Program (correct)');
       } else {
-        error(`✗ Mint does not use Token-2022! UNIA requires Token-2022 only.`);
+        error(`✗ Mint does not use Token-2022! UNIYAA requires Token-2022 only.`);
         error(`  Found: ${mintOwner}`);
         error(`  Expected: ${TOKEN_2022_PROGRAM}`);
         error('  Fix: Recreate the mint with Token-2022 program');

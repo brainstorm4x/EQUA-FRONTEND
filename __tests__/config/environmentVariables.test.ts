@@ -39,7 +39,7 @@ describe('Environment Variables', () => {
 
   describe('NEXT_PUBLIC_PROGRAM_ID', () => {
     const originalProgramId = process.env.NEXT_PUBLIC_PROGRAM_ID;
-    const originalLegacyId = process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID;
+    const originalLegacyId = process.env.NEXT_PUBLIC_UNIYAA_PROGRAM_ID;
 
     afterEach(() => {
       // Restore original values
@@ -49,15 +49,15 @@ describe('Environment Variables', () => {
         delete process.env.NEXT_PUBLIC_PROGRAM_ID;
       }
       if (originalLegacyId !== undefined) {
-        process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID = originalLegacyId;
+        process.env.NEXT_PUBLIC_UNIYAA_PROGRAM_ID = originalLegacyId;
       } else {
-        delete process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID;
+        delete process.env.NEXT_PUBLIC_UNIYAA_PROGRAM_ID;
       }
     });
 
     it('should have a default program ID when not set', () => {
       delete process.env.NEXT_PUBLIC_PROGRAM_ID;
-      delete process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID;
+      delete process.env.NEXT_PUBLIC_UNIYAA_PROGRAM_ID;
       
       // Re-import to get fresh value
       jest.resetModules();
@@ -72,7 +72,7 @@ describe('Environment Variables', () => {
       const legacyId = 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2';
       
       process.env.NEXT_PUBLIC_PROGRAM_ID = preferredId;
-      process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID = legacyId;
+      process.env.NEXT_PUBLIC_UNIYAA_PROGRAM_ID = legacyId;
       
       // Re-import to get fresh value
       jest.resetModules();
@@ -86,7 +86,7 @@ describe('Environment Variables', () => {
       const legacyId = 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2';
       
       delete process.env.NEXT_PUBLIC_PROGRAM_ID;
-      process.env.NEXT_PUBLIC_UNIA_PROGRAM_ID = legacyId;
+      process.env.NEXT_PUBLIC_UNIYAA_PROGRAM_ID = legacyId;
       
       // Re-import to get fresh value
       jest.resetModules();

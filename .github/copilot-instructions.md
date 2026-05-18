@@ -1,7 +1,7 @@
-# UNIA Token - AI Coding Agent Instructions
+# UNIYAA Token - AI Coding Agent Instructions
 
 ## Project Overview
-Next.js 14 (App Router) + Solana blockchain dApp for minting UNIA tokens with time-locked rewards, referral system, and dynamic pricing. Uses **Token-2022 (SPL Token Extensions)** on Solana Devnet.
+Next.js 14 (App Router) + Solana blockchain dApp for minting UNIYAA tokens with time-locked rewards, referral system, and dynamic pricing. Uses **Token-2022 (SPL Token Extensions)** on Solana Devnet.
 
 ## Critical Installation Pattern
 **Always use `npm install --legacy-peer-deps`** due to Solana wallet adapter peer dependency conflicts. Never use plain `npm install`.
@@ -12,7 +12,7 @@ Next.js 14 (App Router) + Solana blockchain dApp for minting UNIA tokens with ti
 - **`app/`** - Next.js App Router pages (NOT `src/app/` - see build script validation)
 - **`src/components/`** - React UI components with client-side wallet integration
 - **`src/lib/`** - Core blockchain interaction: `program.ts` (PDAs, instructions), `constants.ts` (program ID, seeds)
-- **`src/utils/`** - Pure utility functions: `tokenFormat.ts` (6-decimal UNIA formatting), `registration.ts` (tiers, SOL validation), `referral/` (code generation and registry)
+- **`src/utils/`** - Pure utility functions: `tokenFormat.ts` (6-decimal UNIYAA formatting), `registration.ts` (tiers, SOL validation), `referral/` (code generation and registry)
 - **`src/hooks/`** - React hooks: `useProgram.ts`, `useReferralResolution.ts`
 - **`lib/`** - Legacy root-level utilities (being migrated to `src/lib/`)
 - **`__tests__/`** - Jest + React Testing Library tests organized by feature
@@ -28,7 +28,7 @@ Next.js 14 (App Router) + Solana blockchain dApp for minting UNIA tokens with ti
 ```typescript
 // Seeds are EXACT strings from Rust program - never modify
 const GLOBAL_STATE_SEED = 'global-state';
-const MINT_SEED = 'equa-mint';
+const MINT_SEED = 'uniyaa-mint';
 const MINT_AUTHORITY_SEED = 'mint-authority';
 
 // Always use PublicKey.findProgramAddressSync, not manual derivation
@@ -45,13 +45,13 @@ const [globalStatePDA] = PublicKey.findProgramAddressSync(
 - **Critical**: `referral_account` must ALWAYS be writable per IDL, even when user self-refers
 
 ### Token Amount Conversions
-UNIA uses **6 decimals** (1 UNIA = 1,000,000 base units):
+UNIYAA uses **6 decimals** (1 UNIYAA = 1,000,000 base units):
 ```typescript
 // ALWAYS use tokenFormat.ts utilities - never raw division/multiplication
-import { formatEquaRaw, decimalToRaw, rawToDecimal } from '@/utils/tokenFormat';
+import { formatUniyaaRaw, decimalToRaw, rawToDecimal } from '@/utils/tokenFormat';
 
-formatEquaRaw(1_000_000_000) // "1,000.000000"
-formatEquaRaw(1_000_000_000, { trimTrailingZeros: true }) // "1,000"
+formatUniyaaRaw(1_000_000_000) // "1,000.000000"
+formatUniyaaRaw(1_000_000_000, { trimTrailingZeros: true }) // "1,000"
 decimalToRaw(100) // 100_000_000 base units
 ```
 
@@ -115,16 +115,16 @@ hasMinimumSolBalance(walletBalance) // Validates in lamports
 
 ### Elevated Mint Tiers (Hard-Coded)
 ```typescript
-// User #1: 100,000 UNIA/attempt × 100 attempts (100 days)
-// Users #2-10: 10,000 UNIA/attempt × 100 attempts (100 days)
-// Users #11-100: 1,000 UNIA/attempt × 100 attempts (100 days)
-// Users #101-1000: 100 UNIA/attempt (standard, till user 1001)
-// Users #1001-10000: 10 UNIA/attempt (till user 10001)
-// Users #10001-100000: 1 UNIA/attempt (till user 100001)
-// Users #100001-1000000: 0.1 UNIA/attempt (till user 1000001)
-// Users #1000001-10000000: 0.01 UNIA/attempt (till user 10000001)
-// Users #10000001-100000000: 0.001 UNIA/attempt (till user 100000001)
-// Users #100000001+: 0.0005 UNIA/attempt (continues at this rate)
+// User #1: 100,000 UNIYAA/attempt × 100 attempts (100 days)
+// Users #2-10: 10,000 UNIYAA/attempt × 100 attempts (100 days)
+// Users #11-100: 1,000 UNIYAA/attempt × 100 attempts (100 days)
+// Users #101-1000: 100 UNIYAA/attempt (standard, till user 1001)
+// Users #1001-10000: 10 UNIYAA/attempt (till user 10001)
+// Users #10001-100000: 1 UNIYAA/attempt (till user 100001)
+// Users #100001-1000000: 0.1 UNIYAA/attempt (till user 1000001)
+// Users #1000001-10000000: 0.01 UNIYAA/attempt (till user 10000001)
+// Users #10000001-100000000: 0.001 UNIYAA/attempt (till user 100000001)
+// Users #100000001+: 0.0005 UNIYAA/attempt (continues at this rate)
 getUserMintTier(userNumber) // Returns tier config
 ```
 

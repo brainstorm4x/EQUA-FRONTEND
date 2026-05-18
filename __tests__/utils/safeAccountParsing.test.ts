@@ -235,7 +235,7 @@ describe('safeParseAmount', () => {
 
     it('should parse standard amounts', () => {
       const buffer = Buffer.alloc(16);
-      const amount = 1_000_000_000; // 1000 UNIA with 6 decimals
+      const amount = 1_000_000_000; // 1000 UNIYAA with 6 decimals
       const bn = new anchor.BN(amount);
       bn.toArrayLike(Buffer, 'le', 8).copy(buffer, 8);
       
@@ -245,7 +245,7 @@ describe('safeParseAmount', () => {
 
     it('should parse large but reasonable amounts', () => {
       const buffer = Buffer.alloc(16);
-      const amount = 1_000_000_000_000; // 1 million UNIA with 6 decimals
+      const amount = 1_000_000_000_000; // 1 million UNIYAA with 6 decimals
       const bn = new anchor.BN(amount);
       bn.toArrayLike(Buffer, 'le', 8).copy(buffer, 8);
       

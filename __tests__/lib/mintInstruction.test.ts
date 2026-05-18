@@ -5,24 +5,24 @@
 
 import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
-import { createMintUniaInstruction, createMintTokensInstruction, TOKEN_PROGRAM_ID, PROGRAM_ID } from '@/lib/program';
+import { createMintUniyaaInstruction, createMintTokensInstruction, TOKEN_PROGRAM_ID, PROGRAM_ID } from '@/lib/program';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 
-describe('createMintUniaInstruction', () => {
+describe('createMintUniyaaInstruction', () => {
   // Mock public keys for testing (valid base58-encoded addresses)
   const userAccount = new PublicKey('C3r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
   const authority = new PublicKey('G7r8mGG3KqZEqKt6jWE5nN2Y4sLGsZqN5j8qK2wY5Yzz');
 
   it('should create instruction with correct discriminator', () => {
-    const amount = 10_000_000_000; // 10,000 UNIA in base units (6 decimals)
+    const amount = 10_000_000_000; // 10,000 UNIYAA in base units (6 decimals)
     
-    const instruction = createMintUniaInstruction(
+    const instruction = createMintUniyaaInstruction(
       userAccount,
       authority,
       amount
     );
 
-    // Verify discriminator bytes match IDL for mint_equa
+    // Verify discriminator bytes match IDL for mint_uniyaa
     const expectedDiscriminator = Buffer.from([151, 97, 251, 10, 45, 109, 190, 115]);
     const actualDiscriminator = instruction.data.slice(0, 8);
     
@@ -30,9 +30,9 @@ describe('createMintUniaInstruction', () => {
   });
 
   it('should encode amount correctly as u64 little-endian', () => {
-    const amount = 10_000_000_000; // 10,000 UNIA in base units
+    const amount = 10_000_000_000; // 10,000 UNIYAA in base units
     
-    const instruction = createMintUniaInstruction(
+    const instruction = createMintUniyaaInstruction(
       userAccount,
       authority,
       amount
@@ -52,15 +52,15 @@ describe('createMintUniaInstruction', () => {
   });
 
   it('should have correct account metas in order per IDL', () => {
-    const amount = 1_000_000; // 1 UNIA
+    const amount = 1_000_000; // 1 UNIYAA
     
-    const instruction = createMintUniaInstruction(
+    const instruction = createMintUniyaaInstruction(
       userAccount,
       authority,
       amount
     );
 
-    // Verify account order and flags match IDL for mint_equa
+    // Verify account order and flags match IDL for mint_uniyaa
     expect(instruction.keys).toHaveLength(2);
     
     // 0. user_account - writable, not signer
@@ -76,14 +76,14 @@ describe('createMintUniaInstruction', () => {
 
   it('should handle different amount values correctly', () => {
     const testCases = [
-      100_000_000, // 100 UNIA (standard user)
-      1_000_000_000, // 1,000 UNIA (community builder)
-      10_000_000_000, // 10,000 UNIA (pioneer)
-      100_000_000_000, // 100,000 UNIA (early adopter)
+      100_000_000, // 100 UNIYAA (standard user)
+      1_000_000_000, // 1,000 UNIYAA (community builder)
+      10_000_000_000, // 10,000 UNIYAA (pioneer)
+      100_000_000_000, // 100,000 UNIYAA (early adopter)
     ];
 
     testCases.forEach(amount => {
-      const instruction = createMintUniaInstruction(
+      const instruction = createMintUniyaaInstruction(
         userAccount,
         authority,
         amount
@@ -121,7 +121,7 @@ describe('createMintTokensInstruction', () => {
   const systemProgram = new PublicKey('11111111111111111111111111111111');
 
   it('should create instruction with correct discriminator for mint_tokens', () => {
-    const amount = 10_000_000_000; // 10,000 UNIA in base units (6 decimals)
+    const amount = 10_000_000_000; // 10,000 UNIYAA in base units (6 decimals)
     const referrerAccount = PublicKey.default; // No referrer
     
     const instruction = createMintTokensInstruction(
@@ -151,7 +151,7 @@ describe('createMintTokensInstruction', () => {
   });
 
   it('should encode amount correctly as u64 little-endian', () => {
-    const amount = 10_000_000_000; // 10,000 UNIA in base units
+    const amount = 10_000_000_000; // 10,000 UNIYAA in base units
     const referrerAccount = PublicKey.default; // No referrer
     
     const instruction = createMintTokensInstruction(
@@ -187,7 +187,7 @@ describe('createMintTokensInstruction', () => {
   });
 
   it('should have correct 15 account metas in order per backend IDL', () => {
-    const amount = 1_000_000; // 1 UNIA
+    const amount = 1_000_000; // 1 UNIYAA
     const referrerAccount = PublicKey.default; // No referrer
     
     const instruction = createMintTokensInstruction(
@@ -290,10 +290,10 @@ describe('createMintTokensInstruction', () => {
 
   it('should handle different amount values correctly', () => {
     const testCases = [
-      100_000_000, // 100 UNIA (standard user)
-      1_000_000_000, // 1,000 UNIA (community builder)
-      10_000_000_000, // 10,000 UNIA (pioneer)
-      100_000_000_000, // 100,000 UNIA (early adopter)
+      100_000_000, // 100 UNIYAA (standard user)
+      1_000_000_000, // 1,000 UNIYAA (community builder)
+      10_000_000_000, // 10,000 UNIYAA (pioneer)
+      100_000_000_000, // 100,000 UNIYAA (early adopter)
     ];
     const referrerAccount = PublicKey.default; // No referrer
 
@@ -332,7 +332,7 @@ describe('createMintTokensInstruction', () => {
   });
 
   it('should handle large amounts passed as strings', () => {
-    const largeAmount = '100000000000'; // 100,000 UNIA with 6 decimals (user #1 tier)
+    const largeAmount = '100000000000'; // 100,000 UNIYAA with 6 decimals (user #1 tier)
     const referrerAccount = PublicKey.default;
     
     const instruction = createMintTokensInstruction(

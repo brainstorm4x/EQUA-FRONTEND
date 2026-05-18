@@ -24,7 +24,7 @@ const customJestConfig = {
     '!src/lib/program.ts',
     '!src/services/**',
     '!src/hooks/useProgram.ts',
-    '!src/hooks/useEquaProgram.ts',
+    '!src/hooks/useUniyaaProgram.ts',
   ],
   coverageThreshold: {
     global: {

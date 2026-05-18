@@ -6,7 +6,7 @@
 
 import { Connection } from '@solana/web3.js';
 import {
-  getUniaPriceMultiFormat,
+  getUniyaaPriceMultiFormat,
   formatUNXPrice,
 } from '@/utils/unxOracle';
 
@@ -54,7 +54,7 @@ describe('UNX Oracle', () => {
 
   describe('Currency Conversion', () => {
     it('should get multi-format price for USD', async () => {
-      const price = await getUniaPriceMultiFormat(0.01, 'USD', mockConnection);
+      const price = await getUniyaaPriceMultiFormat(0.01, 'USD', mockConnection);
       
       expect(price.usd).toBe(0.01);
       expect(price.localCurrency).toBe(0.01);
@@ -65,7 +65,7 @@ describe('UNX Oracle', () => {
     });
 
     it('should get multi-format price for EUR', async () => {
-      const price = await getUniaPriceMultiFormat(0.01, 'EUR', mockConnection);
+      const price = await getUniyaaPriceMultiFormat(0.01, 'EUR', mockConnection);
       
       expect(price.usd).toBe(0.01);
       expect(price.localCurrency).toBeCloseTo(0.01 * 0.92, 6);
@@ -79,7 +79,7 @@ describe('UNX Oracle', () => {
     });
 
     it('should get multi-format price for INR', async () => {
-      const price = await getUniaPriceMultiFormat(0.01, 'INR', mockConnection);
+      const price = await getUniyaaPriceMultiFormat(0.01, 'INR', mockConnection);
       
       expect(price.usd).toBe(0.01);
       expect(price.localCurrencyCode).toBe('INR');
@@ -90,7 +90,7 @@ describe('UNX Oracle', () => {
     });
 
     it('should include FX metadata in multi-format price', async () => {
-      const price = await getUniaPriceMultiFormat(0.01, 'EUR', mockConnection);
+      const price = await getUniyaaPriceMultiFormat(0.01, 'EUR', mockConnection);
       
       // Verify FX metadata fields exist
       expect(price.fxRate).toBeDefined();

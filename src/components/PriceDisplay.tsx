@@ -2,10 +2,10 @@
 
 import { FC, useEffect, useState } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
-import { UniaPriceCalculator, PriceTier, formatUniaPrice } from '@/utils/priceCalculator';
+import { UniyaaPriceCalculator, PriceTier, formatUniyaaPrice } from '@/utils/priceCalculator';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import { getUserLocaleCurrency, formatLocalCurrency, formatLocalCurrencyDynamic } from '@/utils/localeCurrency';
-import { getUniaPriceMultiFormat, formatUNXPrice, MultiFormatUniaPrice } from '@/utils/unxOracle';
+import { getUniyaaPriceMultiFormat, formatUNXPrice, MultiFormatUniyaaPrice } from '@/utils/unxOracle';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
 
 
@@ -54,8 +54,8 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
   // Calculate price, tier, and minting rate based on authoritative totalTransactions
   useEffect(() => {
     // Calculate price based on total_transactions from GlobalState (authoritative)
-    const price = UniaPriceCalculator.calculatePrice(totalTransactions);
-    const tier = UniaPriceCalculator.getTier(totalTransactions);
+    const price = UniyaaPriceCalculator.calculatePrice(totalTransactions);
+    const tier = UniyaaPriceCalculator.getTier(totalTransactions);
     
     setCurrentPrice(price);
     setCurrentTier(tier);
@@ -67,16 +67,16 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
     );
     
     const rate = currentTier 
-      ? currentTier.equaPerAttempt.toLocaleString() 
+      ? currentTier.uniyaaPerAttempt.toLocaleString() 
       : '100';
     setMintingRate(rate);
     
     // Fetch UNX price data
     const fetchUnxPrice = async () => {
       const currencyCode = getUserLocaleCurrency();
-      let unxPriceData: MultiFormatUniaPrice;
+      let unxPriceData: MultiFormatUniyaaPrice;
       try {
-        unxPriceData = await getUniaPriceMultiFormat(price, currencyCode, connection);
+        unxPriceData = await getUniyaaPriceMultiFormat(price, currencyCode, connection);
       } catch (unxError) {
         console.warn('Error fetching UNX price, using defaults:', unxError);
         unxPriceData = {
@@ -147,14 +147,14 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
     <div className={`bg-gradient-to-br from-purple-500/20 to-purple-600/20 backdrop-blur-md rounded-2xl p-6 border border-purple-400/50 ${className}`} data-testid="price-display">
       <div className={`grid ${showStats ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'} gap-6`}>
         <div>
-          <p className="text-purple-200 text-sm mb-2">Current UNIA Price</p>
+          <p className="text-purple-200 text-sm mb-2">Current UNIYAA Price</p>
           {/* UNX Price (Primary) */}
           <p className="text-yellow-300 text-2xl font-bold" data-testid="unx-price">
             {formatUNXPrice(unxData.unxPrice)}
           </p>
           {/* USD Price */}
           <p className="text-white text-lg font-semibold mt-1" data-testid="current-price">
-            {formatUniaPrice(currentPrice)}
+            {formatUniyaaPrice(currentPrice)}
           </p>
           {/* Local currency equivalent */}
           {localCurrency !== 'USD' && (
@@ -191,7 +191,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         <div>
           <p className="text-purple-200 text-sm mb-2">Minting Rate</p>
           <p className="text-white text-3xl font-bold" data-testid="mint-rate">{mintingRate}</p>
-          <p className="text-purple-300 text-xs mt-1">UNIA/day</p>
+          <p className="text-purple-300 text-xs mt-1">UNIYAA/day</p>
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
             {getTierLabel(currentTier)}</p>
         </div>

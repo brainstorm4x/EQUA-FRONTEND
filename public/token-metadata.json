@@ -1,8 +1,8 @@
 {
-  "name": "UNIA Token",
-  "symbol": "UNIA",
-  "description": "UNIA is a utility-first token on Solana with transaction-based price appreciation. Equal Access. Equal Opportunity. Equal Economy.",
-  "image": "https://raw.githubusercontent.com/brainstorm4x/EQUA-FRONTEND/main/public/branding/unia-logo-dark.svg",
+  "name": "UNIYAA Token",
+  "symbol": "UNIYAA",
+  "description": "UNIYAA is a utility-first token on Solana with transaction-based price appreciation. Equal Access. Equal Opportunity. Equal Economy.",
+  "image": "https://raw.githubusercontent.com/brainstorm4x/UNIYAA-FRONTEND/main/public/branding/uniyaa-logo-dark.svg",
   "attributes": [
     {
       "trait_type": "Network",
@@ -21,11 +21,11 @@
       "value": "Gajbhiye"
     }
   ],
-  "external_url": "https://equa.live",
+  "external_url": "https://uniyaa.live",
   "properties": {
     "files": [
       {
-        "uri": "https://raw.githubusercontent.com/brainstorm4x/EQUA-FRONTEND/main/public/branding/unia-logo-dark.svg",
+        "uri": "https://raw.githubusercontent.com/brainstorm4x/UNIYAA-FRONTEND/main/public/branding/uniyaa-logo-dark.svg",
         "type": "image/svg+xml"
       }
     ],

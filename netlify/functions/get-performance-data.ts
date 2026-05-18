@@ -1,8 +1,8 @@
 /**
  * Netlify API Function: Get UNX Performance Data
  *
- * On-demand function to serve UNIA/UNX performance history from Turso,
- * including a computed summary comparing UNIA appreciation vs USD inflation.
+ * On-demand function to serve UNIYAA/UNX performance history from Turso,
+ * including a computed summary comparing UNIYAA appreciation vs USD inflation.
  *
  * Query params:
  * - ?from=YYYY-MM-DD        (optional, default: 30 days ago)
@@ -90,15 +90,15 @@ function aggregateToDaily(rows: UnxPerformanceRow[]): UnxPerformanceRow[] {
     dailyRows.push({
       timestamp: new Date(key + 'T00:00:00.000Z').getTime(),
       recordedAt: key + 'T00:00:00.000Z',
-      uniaPriceUsd: avg('uniaPriceUsd'),
-      // uniaPriceLocal may be null; treat null as 0 for the average then
+      uniyaaPriceUsd: avg('uniyaaPriceUsd'),
+      // uniyaaPriceLocal may be null; treat null as 0 for the average then
       // restore null if all rows had null (no local currency column matched).
-      uniaPriceLocal: dayRows.every((r) => r.uniaPriceLocal == null)
+      uniyaaPriceLocal: dayRows.every((r) => r.uniyaaPriceLocal == null)
         ? null
-        : avg('uniaPriceLocal'),
+        : avg('uniyaaPriceLocal'),
       unxPriceUsd: avg('unxPriceUsd'),
       usdInflationIndex: avg('usdInflationIndex'),
-      uniaPurchasingPower: avg('uniaPurchasingPower'),
+      uniyaaPurchasingPower: avg('uniyaaPurchasingPower'),
       source: last.source,
     });
   }
@@ -108,9 +108,13 @@ function aggregateToDaily(rows: UnxPerformanceRow[]): UnxPerformanceRow[] {
 
 /**
  * UnxPerformanceRow annotated with "$100 held" comparison values.
+ * The headline hedging story compares the UNX basket against USD CPI —
+ * UNX is the asset that actually carries the FX/gold/oil exposure that
+ * hedges USD devaluation. UNIYAA token tier appreciation is shown separately
+ * in the table for context but is not the comparison's protagonist.
  */
 type AnnotatedPerformanceRow = UnxPerformanceRow & {
-  uniaHoldingValue: number;
+  unxHoldingValue: number;
   usdHoldingValue: number;
   advantagePerHundred: number;
 };
@@ -121,15 +125,15 @@ type AnnotatedPerformanceRow = UnxPerformanceRow & {
 function computeSummary(rows: UnxPerformanceRow[]) {
   if (rows.length === 0) {
     return {
-      uniaPriceChange: 0,
-      uniaPriceChangePercent: 0,
+      unxPriceChange: 0,
+      unxPriceChangePercent: 0,
       usdPurchasingPowerLoss: 0,
-      uniaVsUsdAdvantage: 0,
-      currentUniaPriceUsd: 0,
-      currentUniaPriceLocal: null as number | null,
+      unxVsUsdAdvantage: 0,
+      currentUniyaaPriceUsd: 0,
+      currentUniyaaPriceLocal: null as number | null,
       currentUnxPriceUsd: 0,
       dataPoints: 0,
-      uniaHoldingValue: 100,
+      unxHoldingValue: 100,
       usdHoldingValue: 100,
       advantagePerHundred: 0,
       holdingPeriodLabel: '0 days',
@@ -139,25 +143,29 @@ function computeSummary(rows: UnxPerformanceRow[]) {
   const first = rows[0];
   const last = rows[rows.length - 1];
 
-  const uniaPriceChange = last.uniaPriceUsd - first.uniaPriceUsd;
-  const uniaPriceChangePercent =
-    first.uniaPriceUsd !== 0
-      ? ((last.uniaPriceUsd - first.uniaPriceUsd) / first.uniaPriceUsd) * 100
+  // UNX basket movement is the actual hedging signal.
+  const unxPriceChange = last.unxPriceUsd - first.unxPriceUsd;
+  const unxPriceChangePercent =
+    first.unxPriceUsd !== 0
+      ? ((last.unxPriceUsd - first.unxPriceUsd) / first.unxPriceUsd) * 100
       : 0;
   const usdPurchasingPowerLoss =
     last.usdInflationIndex > 0
       ? (1 - 1 / last.usdInflationIndex) * 100
       : 0;
-  const uniaVsUsdAdvantage = uniaPriceChangePercent + usdPurchasingPowerLoss;
+  const unxVsUsdAdvantage = unxPriceChangePercent + usdPurchasingPowerLoss;
 
-  // "$100 held" metrics — baseline is the first row in the selected range
-  const uniaHoldingValue =
-    first.uniaPriceUsd > 0 ? 100 * (last.uniaPriceUsd / first.uniaPriceUsd) : 100;
+  // "$100 held" metrics — baseline is the first row in the selected range.
+  // UNX side: market-driven basket of FX + gold + oil + USD.
+  // USD side: 100 of nominal USD eroded by CPI = real purchasing power
+  //   expressed in start-of-period dollars.
+  const unxHoldingValue =
+    first.unxPriceUsd > 0 ? 100 * (last.unxPriceUsd / first.unxPriceUsd) : 100;
   const usdHoldingValue =
     last.usdInflationIndex > 0
       ? 100 * (first.usdInflationIndex / last.usdInflationIndex)
       : 100;
-  const advantagePerHundred = uniaHoldingValue - usdHoldingValue;
+  const advantagePerHundred = unxHoldingValue - usdHoldingValue;
 
   // Human-readable holding period label
   const daysElapsed = Math.round(
@@ -175,15 +183,15 @@ function computeSummary(rows: UnxPerformanceRow[]) {
       : `${(daysElapsed / 365).toFixed(1)} years`;
 
   return {
-    uniaPriceChange,
-    uniaPriceChangePercent,
+    unxPriceChange,
+    unxPriceChangePercent,
     usdPurchasingPowerLoss,
-    uniaVsUsdAdvantage,
-    currentUniaPriceUsd: last.uniaPriceUsd,
-    currentUniaPriceLocal: last.uniaPriceLocal,
+    unxVsUsdAdvantage,
+    currentUniyaaPriceUsd: last.uniyaaPriceUsd,
+    currentUniyaaPriceLocal: last.uniyaaPriceLocal,
     currentUnxPriceUsd: last.unxPriceUsd,
     dataPoints: rows.length,
-    uniaHoldingValue,
+    unxHoldingValue,
     usdHoldingValue,
     advantagePerHundred,
     holdingPeriodLabel,
@@ -193,25 +201,27 @@ function computeSummary(rows: UnxPerformanceRow[]) {
 /**
  * Annotate each row with "$100 held" comparison values.
  * The first row in the slice is used as the baseline ($100 invested).
+ * UNX basket movement (not UNIYAA tier-formula appreciation) drives the
+ * comparison — see computeSummary for the rationale.
  */
 function addHoldingValues(rows: UnxPerformanceRow[]): AnnotatedPerformanceRow[] {
   if (rows.length === 0) return [];
 
-  const firstUniaPrice = rows[0].uniaPriceUsd;
+  const firstUnxPrice = rows[0].unxPriceUsd;
   const firstInflationIndex = rows[0].usdInflationIndex;
 
   return rows.map((row) => {
-    const uniaHoldingValue =
-      firstUniaPrice > 0 ? 100 * (row.uniaPriceUsd / firstUniaPrice) : 100;
+    const unxHoldingValue =
+      firstUnxPrice > 0 ? 100 * (row.unxPriceUsd / firstUnxPrice) : 100;
     const usdHoldingValue =
       row.usdInflationIndex > 0
         ? 100 * (firstInflationIndex / row.usdInflationIndex)
         : 100;
     return {
       ...row,
-      uniaHoldingValue,
+      unxHoldingValue,
       usdHoldingValue,
-      advantagePerHundred: uniaHoldingValue - usdHoldingValue,
+      advantagePerHundred: unxHoldingValue - usdHoldingValue,
     };
   });
 }
@@ -295,11 +305,11 @@ const handler: Handler = async (event): Promise<HandlerResponse> => {
       rows = dailyRows.map((d) => ({
         timestamp: d.timestamp,
         recordedAt: d.recordedAt,
-        uniaPriceUsd: d.uniaPriceClose,
-        uniaPriceLocal: null,
+        uniyaaPriceUsd: d.uniyaaPriceClose,
+        uniyaaPriceLocal: null,
         unxPriceUsd: d.unxBasketClose,
         usdInflationIndex: d.usdInflationIndex,
-        uniaPurchasingPower: d.uniaPriceClose / d.usdInflationIndex,
+        uniyaaPurchasingPower: d.uniyaaPriceClose / d.usdInflationIndex,
         source: d.source,
       }));
     } else if (interval === 'daily') {

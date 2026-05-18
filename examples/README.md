@@ -1,6 +1,6 @@
 # Examples
 
-This directory contains example scripts demonstrating how to use various utility functions in the UNIA frontend.
+This directory contains example scripts demonstrating how to use various utility functions in the UNIYAA frontend.
 
 ## getGlobalTransactionCount.ts
 
@@ -14,7 +14,7 @@ Demonstrates how to use the standalone `getGlobalTransactionCount()` function to
 
 ### Why it's important:
 The `getGlobalTransactionCount()` function provides a Sybil-resistant transaction count because:
-- Only registered users can transfer UNIA tokens
+- Only registered users can transfer UNIYAA tokens
 - Registration requires 0.1 SOL fee (costly to spam)
 - After first 100 users, referral is required (additional barrier)
 - Both sender and recipient MUST be registered (enforced by backend)

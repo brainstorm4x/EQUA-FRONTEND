@@ -5,7 +5,7 @@
  * This ensures users start fresh with new program deployments.
  */
 
-const PROGRAM_ID_KEY = 'unia_current_program_id';
+const PROGRAM_ID_KEY = 'uniyaa_current_program_id';
 
 /**
  * Gets the stored program ID from localStorage
@@ -34,23 +34,23 @@ function storeProgramId(programId: string): void {
 }
 
 /**
- * Clears all UNIA-related localStorage data
+ * Clears all UNIYAA-related localStorage data
  */
-function clearUniaLocalStorage(): void {
+function clearUniyaaLocalStorage(): void {
   if (typeof window === 'undefined') return;
   
-  console.log('🧹 Clearing old UNIA data due to program ID change...');
+  console.log('🧹 Clearing old UNIYAA data due to program ID change...');
   
   // List of localStorage keys to clear
   const keysToRemove = [
-    'unia_registration_stats',        // Registration stats tracking
-    'unia_transfer_stats',             // Transfer stats tracking
-    'unia_referral_rate_limit_registry', // Referral rate limiting
-    'unia_registered_keys',            // Registered public keys
-    'unia_registered_fingerprints',    // Device fingerprints
-    'unia_user_number',                // User registration number
-    'unia_registration_complete',      // Registration event flag
-    'equa_user_keypair',               // Defensive cleanup of legacy hot-wallet secret
+    'uniyaa_registration_stats',        // Registration stats tracking
+    'uniyaa_transfer_stats',             // Transfer stats tracking
+    'uniyaa_referral_rate_limit_registry', // Referral rate limiting
+    'uniyaa_registered_keys',            // Registered public keys
+    'uniyaa_registered_fingerprints',    // Device fingerprints
+    'uniyaa_user_number',                // User registration number
+    'uniyaa_registration_complete',      // Registration event flag
+    'uniyaa_user_keypair',               // Defensive cleanup of legacy hot-wallet secret
   ];
   
   let clearedCount = 0;
@@ -67,11 +67,11 @@ function clearUniaLocalStorage(): void {
     }
   }
   
-  // Also clear any fingerprint keys (pattern: unia_fingerprint_*)
+  // Also clear any fingerprint keys (pattern: uniyaa_fingerprint_*)
   try {
     const allKeys = Object.keys(localStorage);
     for (const key of allKeys) {
-      if (key.startsWith('unia_fingerprint_')) {
+      if (key.startsWith('uniyaa_fingerprint_')) {
         localStorage.removeItem(key);
         clearedCount++;
       }
@@ -108,12 +108,12 @@ export function checkAndMigrateForProgramIdChange(currentProgramId: string): voi
     console.log(`   Old: ${storedProgramId}`);
     console.log(`   New: ${currentProgramId}`);
     
-    clearUniaLocalStorage();
+    clearUniyaaLocalStorage();
     storeProgramId(currentProgramId);
     
     // Dispatch event to notify components
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('unia_program_id_changed', {
+      window.dispatchEvent(new CustomEvent('uniyaa_program_id_changed', {
         detail: { oldProgramId: storedProgramId, newProgramId: currentProgramId }
       }));
     }
@@ -126,16 +126,16 @@ export function checkAndMigrateForProgramIdChange(currentProgramId: string): voi
 }
 
 /**
- * Manually clear all UNIA data (for testing/admin purposes)
+ * Manually clear all UNIYAA data (for testing/admin purposes)
  */
-export function manualClearUniaData(): void {
-  clearUniaLocalStorage();
+export function manualClearUniyaaData(): void {
+  clearUniyaaLocalStorage();
   
   // Also clear the stored program ID to force re-check on next load
   if (typeof window !== 'undefined') {
     try {
       localStorage.removeItem(PROGRAM_ID_KEY);
-      console.log('✅ All UNIA data cleared manually');
+      console.log('✅ All UNIYAA data cleared manually');
     } catch (error) {
       console.warn('Failed to clear program ID key:', error);
     }
@@ -171,11 +171,11 @@ export function resetForNewProgramId(currentProgramId: string): void {
     console.log(`   Old: ${storedProgramId}`);
     console.log(`   New: ${currentProgramId}`);
     
-    clearUniaLocalStorage();
+    clearUniyaaLocalStorage();
     storeProgramId(currentProgramId);
     
     // Dispatch event to notify components
-    window.dispatchEvent(new CustomEvent('unia_program_id_changed', {
+    window.dispatchEvent(new CustomEvent('uniyaa_program_id_changed', {
       detail: { oldProgramId: storedProgramId, newProgramId: currentProgramId }
     }));
     

@@ -26,8 +26,8 @@ import {
   validateHash
 } from './lib/unxOracle';
 import { storeUnxPrice, getLatestFxRates, UnxPriceSnapshot } from './lib/blobStorage';
-import { UniaToken } from './lib/unia_token';
-import idl from './lib/unia_token.json';
+import { UniyaaToken } from './lib/uniyaa_token';
+import idl from './lib/uniyaa_token.json';
 import { storeUnxSnapshotToTurso, SEND_MODAL_CURRENCIES, computeUsdInflationIndexAsync } from './lib/tursoStorage';
 
 // ============================================================================
@@ -142,7 +142,7 @@ const handler: Handler = async (event, context) => {
     );
     
     // Load program
-    const program = new Program<UniaToken>(
+    const program = new Program<UniyaaToken>(
       idl as any,
       provider
     );
@@ -232,7 +232,7 @@ const handler: Handler = async (event, context) => {
         console.warn('Could not fetch FX rates for Turso snapshot, currency prices will default to USD:', fxErr);
       }
 
-      // Best-effort: fetch on-chain totalTransactions to determine UNIA USD price tier.
+      // Best-effort: fetch on-chain totalTransactions to determine UNIYAA USD price tier.
       // Defaults to 0 (initial price tier) if the fetch fails.
       let totalTransactions = 0;
       try {
@@ -246,27 +246,27 @@ const handler: Handler = async (event, context) => {
         console.warn('Could not fetch totalTransactions for Turso snapshot, defaulting to 0:', txFetchErr);
       }
 
-      // Calculate UNIA price in USD from the tier-based formula.
-      const { UniaPriceCalculator } = await import('../../src/utils/priceCalculator');
-      const uniaPriceUsd = UniaPriceCalculator.calculatePrice(totalTransactions);
+      // Calculate UNIYAA price in USD from the tier-based formula.
+      const { UniyaaPriceCalculator } = await import('../../src/utils/priceCalculator');
+      const uniyaaPriceUsd = UniyaaPriceCalculator.calculatePrice(totalTransactions);
 
-      // Build UNIA price map for all 16 send-modal currencies.
+      // Build UNIYAA price map for all 16 send-modal currencies.
       // Rates in fxRates.rates are expressed as "1 USD = X <currency>".
       const currencyPrices: Record<string, number> = {};
       for (const currency of SEND_MODAL_CURRENCIES) {
         if (currency === 'USD') {
-          currencyPrices['USD'] = uniaPriceUsd;
+          currencyPrices['USD'] = uniyaaPriceUsd;
         } else {
           const rate = fxRates?.rates?.[currency];
-          currencyPrices[currency] = rate != null ? uniaPriceUsd * rate : uniaPriceUsd;
+          currencyPrices[currency] = rate != null ? uniyaaPriceUsd * rate : uniyaaPriceUsd;
         }
       }
 
       const tursoResult = await storeUnxSnapshotToTurso({
         timestamp: snapshot.timestamp,
         unxPriceUsd: basketPrice,
-        uniaPriceUsd,
-        uniaPriceUnx: basketPrice > 0 ? uniaPriceUsd / basketPrice : 0,
+        uniyaaPriceUsd,
+        uniyaaPriceUnx: basketPrice > 0 ? uniyaaPriceUsd / basketPrice : 0,
         currencyPrices,
         components: componentPrices,
         totalTransactions,

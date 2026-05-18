@@ -28,7 +28,7 @@ if (typeof window !== 'undefined' && typeof window.process === 'undefined') {
 // codebase; this line evicts it from existing browsers on first load.
 if (typeof window !== 'undefined') {
   try {
-    window.localStorage.removeItem('equa_user_keypair');
+    window.localStorage.removeItem('uniyaa_user_keypair');
   } catch {
     // Storage access can throw in privacy mode / cookies-blocked; ignore.
   }
