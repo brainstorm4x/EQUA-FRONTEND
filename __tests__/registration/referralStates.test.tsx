@@ -307,7 +307,7 @@ describe('Referral Input States', () => {
       });
     });
 
-    it('should allow registration without referral when cleared and not required', async () => {
+    it('should allow registration without referral when cleared', async () => {
       render(<RegistrationForm {...defaultProps} totalUsers={50} />);
       
       const referralInput = screen.getByTestId('referral-input');

@@ -2601,216 +2601,211 @@ export type UniaToken = {
     },
     {
       "code": 6005,
-      "name": "referralRequired",
-      "msg": "Referral is required for user registration after the first 100 users. Please provide a valid referrer's public key."
-    },
-    {
-      "code": 6006,
       "name": "invalidReferralAccount",
       "msg": "Invalid referral account - account does not exist or is not a valid user. Ensure the referrer has already registered."
     },
     {
-      "code": 6007,
+      "code": 6006,
       "name": "mintAmountExceedsTierLimit",
       "msg": "Mint amount exceeds the tier limit for this user. Tier 1 (User #1): 100,000 UNIA/attempt for 100 attempts; Tier 2 (Users #2-10): 10,000 UNIA/attempt for 100 attempts; Tier 3 (Users #11-100): 1,000 UNIA/attempt for 100 attempts. After elevated attempts exhausted: Tier 4 (#1-1,000): 100 UNIA; Tier 5 (#1,001-10,000): 10 UNIA; Tier 6 (#10,001-100,000): 1 UNIA; Tier 7 (#100,001-1M): 0.1 UNIA; Tier 8 (#1M-10M): 0.01 UNIA; Tier 9 (#10M-100M): 0.001 UNIA; Tier 10 (#100M-1B): 0.0001 UNIA; Tier 11 (#1B+): 0.00001 UNIA"
     },
     {
-      "code": 6008,
+      "code": 6007,
       "name": "insufficientSolBalance",
       "msg": "Insufficient SOL balance for registration (anti-sybil measure). Minimum required: 0.01 SOL. Please ensure your wallet has sufficient SOL balance."
     },
     {
-      "code": 6009,
+      "code": 6008,
       "name": "rapidReferralSequence",
       "msg": "Too rapid referral sequence - wait a few slots before referring another user. This anti-sybil measure prevents automated mass registrations."
     },
     {
-      "code": 6010,
+      "code": 6009,
       "name": "invalidPdaDerivation",
       "msg": "Account validation failed: The provided account does not match the expected PDA derivation. Check that you're using the correct seeds and program ID."
     },
     {
-      "code": 6011,
+      "code": 6010,
       "name": "invalidAssociatedTokenAccount",
       "msg": "Missing or invalid Associated Token Account (ATA). Ensure the ATA is initialized for the UNIA mint with Token-2022 program. Use getAssociatedTokenAddressSync() to derive the correct address."
     },
     {
-      "code": 6012,
+      "code": 6011,
       "name": "invalidAccountOwner",
       "msg": "Account ownership validation failed. The account must be owned by this program. Check that the provided account is a valid program account."
     },
     {
-      "code": 6013,
+      "code": 6012,
       "name": "invalidAccountDiscriminator",
       "msg": "Account discriminator mismatch. The account data does not match the expected account type. Ensure you're providing the correct account for this instruction."
     },
     {
-      "code": 6014,
+      "code": 6013,
       "name": "invalidUserAccountPda",
       "msg": "User account PDA derivation failed. Expected seeds: ['user-account', authority.key()]. Ensure you're deriving the PDA correctly on the client side."
     },
     {
-      "code": 6015,
+      "code": 6014,
       "name": "invalidUserMetadataPda",
       "msg": "User metadata PDA derivation failed. Expected seeds: ['user-meta', authority.key()]. Ensure you're deriving the PDA correctly on the client side."
     },
     {
-      "code": 6016,
+      "code": 6015,
       "name": "invalidGlobalStatePda",
       "msg": "Global state PDA derivation failed. Expected seeds: ['global-state']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
-      "code": 6017,
+      "code": 6016,
       "name": "invalidMintPda",
       "msg": "Mint PDA derivation failed. Expected seeds: ['unia-mint']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
-      "code": 6018,
+      "code": 6017,
       "name": "invalidMintAuthorityPda",
       "msg": "Mint authority PDA derivation failed. Expected seeds: ['mint-authority']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
-      "code": 6019,
+      "code": 6018,
       "name": "insufficientReferralRewards",
       "msg": "Insufficient referral rewards. No rewards available to claim."
     },
     {
-      "code": 6020,
+      "code": 6019,
       "name": "unauthorizedBusinessRegistryAccess",
       "msg": "Unauthorized access to business registry. Only the registry authority can manage business referrers."
     },
     {
-      "code": 6021,
+      "code": 6020,
       "name": "businessReferrerAlreadyExists",
       "msg": "Business referrer already exists in the registry."
     },
     {
-      "code": 6022,
+      "code": 6021,
       "name": "referralEventsOverflow",
       "msg": "Referral events count overflow. The referral events counter has reached its maximum value."
     },
     {
-      "code": 6023,
+      "code": 6022,
       "name": "invalidBusinessRegistryOwner",
       "msg": "Invalid business registry owner. The business registry must be owned by this program."
     },
     {
-      "code": 6024,
+      "code": 6023,
       "name": "invalidBusinessRegistryData",
       "msg": "Invalid business registry data. The business registry account data is corrupted or invalid."
     },
     {
-      "code": 6025,
+      "code": 6024,
       "name": "unauthorizedUnxOracleUpdate",
       "msg": "Unauthorized UNX oracle update. Only the oracle authority can update prices."
     },
     {
-      "code": 6026,
+      "code": 6025,
       "name": "invalidUnxPrice",
       "msg": "Invalid UNX price. Price must be greater than zero."
     },
     {
-      "code": 6027,
+      "code": 6026,
       "name": "invalidUnxHashes",
       "msg": "Invalid UNX hashes. Component prices and weights hashes must not be all zeros."
     },
     {
-      "code": 6028,
+      "code": 6027,
       "name": "invalidUnxOraclePda",
       "msg": "UNX Oracle PDA derivation failed. Expected seeds: ['unx-oracle']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
-      "code": 6029,
+      "code": 6028,
       "name": "invalidSocialFundsStatePda",
       "msg": "Social Funds State PDA derivation failed. Expected seeds: ['social-funds-state']. Ensure you're deriving the PDA correctly on the client side."
     },
     {
-      "code": 6030,
+      "code": 6029,
       "name": "socialFundsNotActivated",
       "msg": "Social funds have not been activated yet. Activation can only occur after the compounding phase ends."
     },
     {
-      "code": 6031,
+      "code": 6030,
       "name": "socialFundsAlreadyActivated",
       "msg": "Social funds have already been activated. Activation is a one-time operation."
     },
     {
-      "code": 6032,
+      "code": 6031,
       "name": "unauthorizedSocialFundsOperation",
       "msg": "Unauthorized social funds operation. Only the social funds authority can perform this action."
     },
     {
-      "code": 6033,
+      "code": 6032,
       "name": "compoundingNotComplete",
       "msg": "Compounding phase has not ended yet. Social funds can only be activated after compounding completes."
     },
     {
-      "code": 6034,
+      "code": 6033,
       "name": "annualDistributionAlreadyExecuted",
       "msg": "Annual distribution already executed for this calendar year. Distributions are limited to once per calendar year on January 1st."
     },
     {
-      "code": 6035,
+      "code": 6034,
       "name": "annualDistributionNotJanuary",
       "msg": "Social fund distributions can only be executed in January. Please wait until January of the next year."
     },
     {
-      "code": 6036,
+      "code": 6035,
       "name": "invalidTimestamp",
       "msg": "Invalid timestamp. Timestamp must be a valid positive Unix timestamp (after January 1, 1970)."
     },
     {
-      "code": 6037,
+      "code": 6036,
       "name": "legacyReferralRewardsDeprecated",
       "msg": "Legacy referral rewards functionality is deprecated. Referral rewards are now stored as credits. Use claim_bonus_mint to redeem credits for bonus mint attempts."
     },
     {
-      "code": 6038,
+      "code": 6037,
       "name": "insufficientReferralCredits",
       "msg": "Insufficient referral credits. You need at least 5 credits to claim a bonus mint attempt."
     },
     {
-      "code": 6039,
+      "code": 6038,
       "name": "monthlyBonusMintCapReached",
       "msg": "Monthly bonus mint cap reached. You have reached the maximum of 5 bonus mints per calendar month."
     },
     {
-      "code": 6040,
+      "code": 6039,
       "name": "bonusMintOverflow",
       "msg": "Bonus mint overflow. The bonus mint counter has reached its maximum value."
     },
     {
-      "code": 6041,
+      "code": 6040,
       "name": "lockPeriodNotExpired",
       "msg": "Lock period has not expired yet. Tokens can only be unlocked after the 4-year cliff vesting period."
     },
     {
-      "code": 6042,
+      "code": 6041,
       "name": "alreadyUnlocked",
       "msg": "Tokens have already been unlocked. This operation can only be performed once."
     },
     {
-      "code": 6043,
+      "code": 6042,
       "name": "timestampOverflow",
       "msg": "Timestamp overflow. The calculated unlock timestamp exceeds the maximum representable value."
     },
     {
-      "code": 6044,
+      "code": 6043,
       "name": "mintingCooldownNotExpired",
       "msg": "Minting cooldown has not expired. You must wait 24 hours between regular mints."
     },
     {
-      "code": 6045,
+      "code": 6044,
       "name": "businessRegistryNotInitialized",
       "msg": "Business registry is not initialized. Initialize the registry before registering business users."
     },
     {
-      "code": 6046,
+      "code": 6045,
       "name": "businessRegistryFull",
       "msg": "Business registry is full. Maximum capacity of 100 business referrers reached."
     },
     {
-      "code": 6047,
+      "code": 6046,
       "name": "invalidUserType",
       "msg": "Invalid user type. User type must be 0 (Individual) or 1 (Business)."
     }

@@ -103,10 +103,10 @@ import { MOCK_REFERRAL_REGISTRY, createMockUserAccount } from '../utils/mocks';
 
 ### Registration Requirements
 ```typescript
-// First 100 users: referral optional
-// User 101+: referral REQUIRED (validated on-chain)
-const REFERRAL_FREE_LIMIT = 100;
-isReferralRequired(totalUsers) // Checks threshold
+// Referrals are OPTIONAL at every tier. The on-chain program never rejects
+// a missing referral. Past 100 users, if a referral IS supplied, extra
+// anti-sybil validation runs on the referrer side (PDA check + slot gap).
+// No client-side referral gating belongs in this codebase.
 
 // Minimum 0.05 SOL balance for transaction fees
 const MIN_SOL_BALANCE = 0.05;

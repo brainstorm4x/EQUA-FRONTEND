@@ -48,30 +48,27 @@ describe('User Count Overflow Bug Fix - Integration Test', () => {
     expect(result).toBe(0);
   });
 
-  it('should ensure referral gating works correctly with safe user count', () => {
-    // Simulate various scenarios
-    
+  it('should parse user counts safely across the antisybil threshold', () => {
+    // Referrals are optional at every tier; this test only verifies that the
+    // safe-parser produces sane numbers across the antisybil threshold (100)
+    // so any downstream UX cues that key off the count stay correct.
+
     // Scenario 1: Fresh setup (uninitialized data)
     const uninitializedBuffer = Buffer.alloc(12);
-    uninitializedBuffer.fill(0xFF); // Common uninitialized memory pattern
+    uninitializedBuffer.fill(0xFF);
     const freshSetupCount = safeParseUserCount(uninitializedBuffer);
-    // 0xFFFFFFFF = 4294967295 which exceeds MAX_REASONABLE_USER_COUNT, should return 0
+    // 0xFFFFFFFF = 4294967295 exceeds MAX_REASONABLE_USER_COUNT, should return 0
     expect(freshSetupCount).toBe(0);
-    expect(freshSetupCount).toBeLessThan(100); // Referral should be optional
-    
-    // Scenario 2: Early adopters (< 100 users)
+
+    // Scenario 2: Early adopters (below antisybil threshold)
     const earlyBuffer = Buffer.alloc(12);
     new anchor.BN(50).toArrayLike(Buffer, 'le', 4).copy(earlyBuffer, 8);
-    const earlyAdopterCount = safeParseUserCount(earlyBuffer);
-    expect(earlyAdopterCount).toBe(50);
-    expect(earlyAdopterCount).toBeLessThan(100); // Referral should be optional
-    
-    // Scenario 3: After threshold (>= 100 users)
+    expect(safeParseUserCount(earlyBuffer)).toBe(50);
+
+    // Scenario 3: Past the antisybil threshold
     const afterThresholdBuffer = Buffer.alloc(12);
     new anchor.BN(150).toArrayLike(Buffer, 'le', 4).copy(afterThresholdBuffer, 8);
-    const afterThresholdCount = safeParseUserCount(afterThresholdBuffer);
-    expect(afterThresholdCount).toBe(150);
-    expect(afterThresholdCount).toBeGreaterThanOrEqual(100); // Referral should be required
+    expect(safeParseUserCount(afterThresholdBuffer)).toBe(150);
   });
 
   it('should never return a value that breaks referral logic', () => {

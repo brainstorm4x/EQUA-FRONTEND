@@ -22,9 +22,6 @@ export function accountTypeToUserType(accountType: AccountType): UserType {
 // Minimum SOL balance required for registration
 export const MIN_SOL_BALANCE = 0.01;
 
-// Number of users who can register without a referral
-export const REFERRAL_FREE_LIMIT = 100;
-
 // Elevated mint tier configuration
 export interface ElevatedMintTier {
   minUser: number;
@@ -72,18 +69,6 @@ export function getRemainingElevatedAttempts(userNumber: number, totalMints: num
   const tier = getUserMintTier(userNumber);
   if (!tier || tier.elevatedAttempts === 0) return 0;
   return Math.max(0, tier.elevatedAttempts - totalMints);
-}
-
-/**
- * Check if referral is required based on current user count
- * Returns false for implausible/overflow values (treated as invalid data)
- */
-export function isReferralRequired(totalUsers: number): boolean {
-  // Treat implausible values as invalid data (no referral required)
-  if (totalUsers < 0 || totalUsers > 10_000_000) {
-    return false;
-  }
-  return totalUsers >= REFERRAL_FREE_LIMIT;
 }
 
 /**

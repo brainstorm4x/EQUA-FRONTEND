@@ -2,14 +2,12 @@
 
 import { FC, useState, useCallback, useEffect } from 'react';
 import { PublicKey } from '@solana/web3.js';
-import { 
+import {
   AccountType,
   DEFAULT_ACCOUNT_TYPE,
-  isReferralRequired, 
-  MIN_SOL_BALANCE, 
-  REFERRAL_FREE_LIMIT,
+  MIN_SOL_BALANCE,
   hasMinimumSolBalance,
-  formatSolBalance 
+  formatSolBalance
 } from '@/utils/registration';
 import { ReferralStatusIndicator } from './ReferralStatusIndicator';
 import { useReferralResolution } from '@/hooks/useReferralResolution';
@@ -55,8 +53,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   
   // Use the referral resolution hook for code validation
   const referralResolution = useReferralResolution(referrer);
-  
-  const referralRequired = isReferralRequired(totalUsers);
+
   const hasSufficientBalance = hasMinimumSolBalance(walletBalance);
   const balanceSOL = formatSolBalance(walletBalance);
 
@@ -77,10 +74,11 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
     return () => { cancelled = true; };
   }, [referralResolution.referrerPubkey]);
 
-  // Validate referrer when it changes (now uses onchain validation)
+  // Validate referrer when it changes (now uses onchain validation).
+  // Referrals are optional at every tier, so an empty input is always valid.
   const validateReferrerInput = useCallback(async (value: string) => {
     if (!value.trim()) {
-      setReferrerError(referralRequired ? 'Referrer is required' : '');
+      setReferrerError('');
       return;
     }
 
@@ -117,7 +115,7 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
     } else {
       setReferrerError('');
     }
-  }, [referralRequired, validateReferrer]);
+  }, [validateReferrer]);
 
   // Debounced validation
   useEffect(() => {
@@ -131,10 +129,6 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
 
   const handleSubmit = () => {
     if (!hasSufficientBalance) return;
-    if (referralRequired && !referrer.trim()) {
-      setReferrerError('Referrer is required');
-      return;
-    }
     if (referrerError) return;
     
     // Use the resolved referrer public key from the hook if available
@@ -170,14 +164,13 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
     referralResolution.status === ReferralState.NOT_FOUND ||
     referralResolution.status === ReferralState.MALFORMED;
 
-  const canSubmit = 
-    hasSufficientBalance && 
-    !isLoading && 
+  const canSubmit =
+    hasSufficientBalance &&
+    !isLoading &&
     !isValidatingReferrer &&
     !referralResolution.isLoading &&
     !referrerError &&
-    !hasReferralCodeError &&
-    (!referralRequired || referrer.trim());
+    !hasReferralCodeError;
 
   return (
     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
@@ -262,19 +255,10 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
           className="block text-white font-medium mb-2"
         >
           Referral Code or Wallet Address
-          {referralRequired && <span className="text-red-400 ml-1">*</span>}
-          {!referralRequired && <span className="text-purple-400 ml-1">(optional)</span>}
+          <span className="text-purple-400 ml-1">(optional)</span>
         </label>
-        
-        {referralRequired && (
-          <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 mb-3">
-            <p className="text-yellow-200 text-sm">
-              ⚠️ Referral is required after the first {REFERRAL_FREE_LIMIT} users. 
-              Please enter a referral code or a valid registered user&apos;s wallet address.
-            </p>
-          </div>
-        )}
-        
+
+
         <div className="relative">
           <input
             id="referrer-input"
@@ -354,11 +338,6 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
       <div className="mt-6 text-center" data-testid="user-count-display">
         <p className="text-purple-300 text-sm">
           Current Users: <span className="text-white font-medium">{totalUsers}</span>
-          {totalUsers < REFERRAL_FREE_LIMIT && (
-            <span className="text-green-400 ml-2">
-              ({REFERRAL_FREE_LIMIT - totalUsers} spots left without referral)
-            </span>
-          )}
         </p>
       </div>
     </div>

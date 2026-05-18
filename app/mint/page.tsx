@@ -35,10 +35,9 @@ import Link from 'next/link';
 import { formatEquaBalance, decimalToRaw } from '@/utils/tokenFormat';
 import { RegistrationForm, RegistrationMetadata } from '@/components/RegistrationForm';
 import { MintTierCard } from '@/components/MintTierCard';
-import { 
-  AccountType, 
+import {
+  AccountType,
   MIN_SOL_BALANCE,
-  REFERRAL_FREE_LIMIT,
   hasMinimumSolBalance,
   getUserMintTier,
   accountTypeToUserType,
@@ -71,14 +70,12 @@ const ERROR_STACK_TRACE_LINES = 3;
 // Anchor error codes
 const ERROR_CODE_COOLDOWN = '0x1771';
 const ERROR_CODE_TIER_LIMIT = '0x1772';
-const ERROR_CODE_REFERRAL_REQUIRED = '0x1773';
 const ERROR_CODE_INSUFFICIENT_SOL = '0x1774';
 const ERROR_CODE_CONSTRAINT_MUT = '2000';
 const ERROR_CODE_INSTRUCTION_DESERIALIZE = '0x66';
 
 // Error keywords
 const ERROR_KEYWORD_MINT_AMOUNT_EXCEEDS = 'MintAmountExceedsTierLimit';
-const ERROR_KEYWORD_REFERRAL_REQUIRED = 'ReferralRequired';
 const ERROR_KEYWORD_INSUFFICIENT_SOL = 'InsufficientSolBalance';
 const ERROR_KEYWORD_INVALID_PROGRAM_ID = 'InvalidProgramId';
 const ERROR_KEYWORD_TOKEN_ACCOUNT_NOT_FOUND = 'TokenAccountNotFound';
@@ -143,11 +140,7 @@ function categorizeError(error: any, logs: string[] = []): string {
   if (hasPattern(ERROR_CODE_TIER_LIMIT) || hasPattern(ERROR_KEYWORD_MINT_AMOUNT_EXCEEDS)) {
     return '🚫 Mint Amount Exceeds Tier Limit: You have reached your maximum mint attempts for your tier. Please check your user tier details.';
   }
-  
-  if (hasPattern(ERROR_CODE_REFERRAL_REQUIRED) || hasPattern(ERROR_KEYWORD_REFERRAL_REQUIRED)) {
-    return '🔗 Referral Required: A valid referral code is required for registration after the first 100 users. Please obtain a referral code from an existing user.';
-  }
-  
+
   if (hasPattern(ERROR_CODE_INSUFFICIENT_SOL) || hasPattern(ERROR_KEYWORD_INSUFFICIENT_SOL)) {
     return `💰 Insufficient SOL Balance: You need at least ${MIN_SOL_BALANCE} SOL to cover transaction fees. Please add more SOL to your wallet.`;
   }
@@ -1332,10 +1325,6 @@ export default function MintPage() {
       // Instruction deserialization
       else if (errorMessage.includes('0x66') || errorMessage.includes('InstructionDidNotDeserialize')) {
         errorMessage = '❌ Instruction format mismatch. Please refresh the page and try again.';
-      }
-      // Referral required
-      else if (totalUsers >= REFERRAL_FREE_LIMIT && !referrer) {
-        errorMessage = `❌ A referral code is required after the first ${REFERRAL_FREE_LIMIT} users. Please enter a valid referral code.`;
       }
       // Generic error with technical details
       else if (!errorMessage.startsWith('❌')) {

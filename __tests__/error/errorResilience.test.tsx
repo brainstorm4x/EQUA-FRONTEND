@@ -59,12 +59,11 @@ describe('Error Resilience and Edge Cases', () => {
       // Should render without crashing
       expect(screen.getByTestId('register-button')).toBeInTheDocument();
       
-      // Referral should NOT be required for implausible counts (treated as 0 or safe value)
       const userCountDisplay = screen.getByTestId('user-count-display');
       expect(userCountDisplay).toBeInTheDocument();
     });
 
-    it('should not force referral requirement for implausible user count', () => {
+    it('should allow registration with no referral for implausible user count', () => {
       render(
         <RegistrationForm
           {...defaultProps}
@@ -72,7 +71,7 @@ describe('Error Resilience and Edge Cases', () => {
         />
       );
 
-      // Register button should be enabled without referral
+      // Referrals are optional at every tier, so the button stays enabled.
       const registerButton = screen.getByTestId('register-button');
       expect(registerButton).not.toBeDisabled();
     });
@@ -96,9 +95,9 @@ describe('Error Resilience and Edge Cases', () => {
         />
       );
 
-      // Should require referral at this count
+      // Referrals are optional at every tier, including very large user counts.
       const registerButton = screen.getByTestId('register-button');
-      expect(registerButton).toBeDisabled();
+      expect(registerButton).not.toBeDisabled();
     });
   });
 
@@ -114,7 +113,7 @@ describe('Error Resilience and Edge Cases', () => {
 
       expect(screen.getByTestId('register-button')).toBeInTheDocument();
       
-      // Should show that referral is not required
+      // Referral field is labelled optional at every tier
       expect(screen.getByText(/optional/i)).toBeInTheDocument();
     });
 

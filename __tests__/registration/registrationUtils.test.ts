@@ -7,11 +7,9 @@ import {
   getUserMintTier,
   isElevatedUser,
   getRemainingElevatedAttempts,
-  isReferralRequired,
   hasMinimumSolBalance,
   formatSolBalance,
   ELEVATED_MINT_TIERS,
-  REFERRAL_FREE_LIMIT,
   MIN_SOL_BALANCE,
 } from '@/utils/registration';
 
@@ -154,29 +152,6 @@ describe('Registration Utilities', () => {
     it('should return 0 for invalid user numbers', () => {
       expect(getRemainingElevatedAttempts(0, 0)).toBe(0);
       expect(getRemainingElevatedAttempts(-1, 0)).toBe(0);
-    });
-  });
-
-  describe('isReferralRequired', () => {
-    it('should return false for users below threshold', () => {
-      expect(isReferralRequired(0)).toBe(false);
-      expect(isReferralRequired(50)).toBe(false);
-      expect(isReferralRequired(99)).toBe(false);
-    });
-
-    it('should return true at threshold', () => {
-      expect(isReferralRequired(100)).toBe(true);
-    });
-
-    it('should return true for users above threshold', () => {
-      expect(isReferralRequired(101)).toBe(true);
-      expect(isReferralRequired(500)).toBe(true);
-      expect(isReferralRequired(1000)).toBe(true);
-    });
-
-    it('should return false for implausible values', () => {
-      expect(isReferralRequired(-1)).toBe(false);
-      expect(isReferralRequired(10_000_001)).toBe(false);
     });
   });
 

@@ -133,8 +133,7 @@ export default function AboutPage() {
                 </p>
                 
                 <p className="text-purple-200 leading-relaxed mt-3">
-                  <strong className="text-white">First 100 users:</strong> Referral optional<br />
-                  <strong className="text-white">User 101+:</strong> Referral required for registration
+                  <strong className="text-white">Referrals are always optional.</strong> You can register at any tier without one — referrers (when supplied) earn credits as a reward.
                 </p>
               </div>
 

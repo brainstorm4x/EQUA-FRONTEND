@@ -122,33 +122,6 @@ const undefinedResult = safeParseUserCount(undefined);
 console.log(`Undefined data → ${undefinedResult}, Status: ${undefinedResult === 0 ? '✅ PASS' : '❌ FAIL'}`);
 console.log();
 
-// Test Case 6: Referral logic verification
-console.log('Test 6: Referral Logic Verification');
-console.log('-'.repeat(70));
-const REFERRAL_FREE_LIMIT = 100;
-
-function isReferralRequired(totalUsers) {
-  return totalUsers >= REFERRAL_FREE_LIMIT;
-}
-
-const referralCases = [
-  { users: 0, expected: false, desc: 'Fresh setup (0 users)' },
-  { users: 50, expected: false, desc: 'Early users (50 users)' },
-  { users: 99, expected: false, desc: 'Just before threshold (99 users)' },
-  { users: 100, expected: true, desc: 'At threshold (100 users)' },
-  { users: 150, expected: true, desc: 'After threshold (150 users)' },
-];
-
-let allReferralCorrect = true;
-referralCases.forEach(({ users, expected, desc }) => {
-  const required = isReferralRequired(users);
-  const pass = required === expected;
-  allReferralCorrect = allReferralCorrect && pass;
-  console.log(`  ${desc.padEnd(35)} → ${required ? 'Required' : 'Optional'} ${pass ? '✅' : '❌'}`);
-});
-console.log(`Overall Status: ${allReferralCorrect ? '✅ PASS' : '❌ FAIL'}`);
-console.log();
-
 // Final Summary
 console.log('='.repeat(70));
 console.log('VERIFICATION SUMMARY');
@@ -158,7 +131,6 @@ console.log('✅ Uninitialized memory patterns return 0');
 console.log('✅ Valid user counts (0-999,999) parse correctly');
 console.log('✅ Overflow values (> 1,000,000) return 0');
 console.log('✅ Null/undefined data returns 0');
-console.log('✅ Referral logic works correctly with safe values');
 console.log('='.repeat(70));
 console.log('✅ ALL TESTS PASSED - Fix verified successfully!');
 console.log('='.repeat(70));
