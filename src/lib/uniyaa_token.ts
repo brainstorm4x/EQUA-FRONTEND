@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/uniyaa_token.json`.
  */
 export type UniyaaToken = {
-  "address": "B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2",
+  "address": "2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ",
   "metadata": {
     "name": "uniyaaToken",
     "version": "0.1.0",

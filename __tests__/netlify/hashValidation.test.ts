@@ -112,7 +112,7 @@ describe('Hash Validation', () => {
       const mockEnv = {
         SOLANA_WALLET_PRIVATE_KEY: 'test-key',
         SOLANA_RPC_ENDPOINT: 'https://api.devnet.solana.com',
-        NEXT_PUBLIC_PROGRAM_ID: 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2',
+        NEXT_PUBLIC_PROGRAM_ID: '2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ',
       };
       
       const missing = required.filter(key => !mockEnv[key as keyof typeof mockEnv]);

@@ -51,7 +51,7 @@ describe('ReferralRewards Component', () => {
   const mockUseWallet = require('@solana/wallet-adapter-react').useWallet;
   const mockUseConnection = require('@solana/wallet-adapter-react').useConnection;
   
-  const mockPublicKey = new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
+  const mockPublicKey = new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ');
   const mockConnection = {
     getAccountInfo: jest.fn(),
     getProgramAccounts: jest.fn(),
@@ -121,9 +121,9 @@ describe('ReferralRewards Component', () => {
         credits: 5, // 5 credits
         referredCount: 3,
         referredUsers: [
-          new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2'),
-          new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2'),
-          new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2'),
+          new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ'),
+          new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ'),
+          new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ'),
         ],
         canClaimBonus: true,
       });
@@ -165,7 +165,7 @@ describe('ReferralRewards Component', () => {
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         credits: 10,
         referredCount: 5,
-        referredUsers: [new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2')],
+        referredUsers: [new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ')],
         canClaimBonus: true,
       });
 
@@ -204,7 +204,7 @@ describe('ReferralRewards Component', () => {
     it('should show/hide referred users details on button click', async () => {
       (programUtils.getUserAccountPDA as jest.Mock).mockReturnValue([mockPublicKey, 255]);
 
-      const referredUser1 = new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
+      const referredUser1 = new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ');
       (referralRewardsUtils.getReferralStats as jest.Mock).mockResolvedValue({
         credits: 2,
         referredCount: 1,
@@ -519,7 +519,7 @@ describe('ReferralRewards Component', () => {
       getReferralStatsMock.mockResolvedValue({
         credits: 2,
         referredCount: 1,
-        referredUsers: [new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2')],
+        referredUsers: [new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ')],
         canClaimBonus: false,
       });
 

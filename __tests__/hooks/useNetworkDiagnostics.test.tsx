@@ -37,7 +37,7 @@ describe('useNetworkDiagnostics', () => {
   } as unknown as Connection;
 
   const mockIdl = {
-    address: 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2',
+    address: '2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ',
   };
 
   beforeEach(() => {
@@ -176,7 +176,7 @@ describe('useNetworkDiagnostics', () => {
 
     expect(result.current.programId).toBeDefined();
     expect(result.current.tokenProgramId).toBeDefined();
-    expect(result.current.idlProgramId).toBe('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
+    expect(result.current.idlProgramId).toBe('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ');
   });
 
   it('should handle failed IDL fetch', async () => {

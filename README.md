@@ -282,7 +282,7 @@ npm run build
 
 **Required:**
 - `NEXT_PUBLIC_RPC_ENDPOINT`: Solana RPC endpoint (e.g., `https://api.devnet.solana.com`)
-- `NEXT_PUBLIC_PROGRAM_ID`: UNIYAA program ID (e.g., `B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2`)
+- `NEXT_PUBLIC_PROGRAM_ID`: UNIYAA program ID (e.g., `2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ`)
 
 **Optional:**
 - `NODE_ENV`: `development` or `production` (auto-set by Netlify)

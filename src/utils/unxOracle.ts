@@ -32,7 +32,7 @@ import { getFxRate } from './fxRateClient';
 /**
  * UNIYAA Program ID (from backend Anchor.toml)
  */
-const UNIYAA_PROGRAM_ID = new PublicKey('B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2');
+const UNIYAA_PROGRAM_ID = new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ');
 
 /**
  * Fixed-point precision (1e8)

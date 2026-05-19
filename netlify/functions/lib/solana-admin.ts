@@ -60,7 +60,7 @@ export function getConnection(): Connection {
  * @returns PublicKey of the UNIYAA token program
  */
 export function getProgramId(): PublicKey {
-  const programIdStr = process.env.NEXT_PUBLIC_PROGRAM_ID || 'B2zocFnLGMryMTt3iBEtezDGqiCQJygc2iXBMYnkDfx2';
+  const programIdStr = process.env.NEXT_PUBLIC_PROGRAM_ID || '2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ';
   return new PublicKey(programIdStr);
 }
 
