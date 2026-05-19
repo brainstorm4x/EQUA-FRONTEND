@@ -1,13 +1,17 @@
 'use client';
 
 import { FC, ReactNode, useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { detectWalletEnvironment, type WalletEnvironment } from '@/utils/walletEnvironment';
 import { DesktopWalletProvider } from './DesktopWalletProvider';
 import { MobileInAppWalletProvider } from './MobileInAppWalletProvider';
 import { MobileExternalWalletProvider } from './MobileExternalWalletProvider';
+import { MobileExternalWalletProviderMWA } from './MobileExternalWalletProviderMWA';
 import { ProgramIdMigration } from '@/components/ProgramIdMigration';
 import { WalletDebugLogger } from '@/components/WalletDebugLogger';
+
+const MWA_TEST_ROUTE = '/signup-mobile-test';
 
 interface WalletProviderProps {
   children: ReactNode;
@@ -52,7 +56,9 @@ const WalletConnectionLogger: FC = () => {
  */
 export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   const [environment, setEnvironment] = useState<WalletEnvironment | null>(null);
-  
+  const pathname = usePathname();
+  const isMwaTestRoute = pathname === MWA_TEST_ROUTE;
+
   useEffect(() => {
     // Detect environment ONCE on client mount
     if (typeof window !== 'undefined') {
@@ -94,6 +100,13 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
       );
     
     case 'mobile-browser':
+      if (isMwaTestRoute) {
+        return (
+          <MobileExternalWalletProviderMWA>
+            <ProviderWithExtras>{children}</ProviderWithExtras>
+          </MobileExternalWalletProviderMWA>
+        );
+      }
       return (
         <MobileExternalWalletProvider>
           <ProviderWithExtras>{children}</ProviderWithExtras>
