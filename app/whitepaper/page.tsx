@@ -48,7 +48,7 @@ export default function WhitepaperPage() {
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                 UNIYAA: A Fair Economy Built on Transparent Rules
               </h1>
-              <p className="text-purple-300 text-lg">Last Updated: March 2026</p>
+              <p className="text-purple-300 text-lg">Last Updated: May 2026</p>
             </div>
 
             {/* Executive Summary */}
@@ -378,6 +378,9 @@ export default function WhitepaperPage() {
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">3. Referral Merit System (Not Recruitment)</h4>
               <p className="text-purple-200 leading-relaxed">
+                <strong className="text-white">Referrals are optional at every tier.</strong> UNIYAA never requires a referral to register, mint, or transact—the on-chain program will never reject a missing one. The referral system exists purely as a bonus mechanism for users who choose to participate.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
                 UNIYAA&apos;s referral system is fundamentally different: <strong className="text-white">rewards come only when real value is created.</strong> When someone you refer becomes active and contributes to the network, you earn referral credits—not as tokens handed to you, but as recognition of your contribution to bringing them into the ecosystem. Individual referrals earn +1 credit; business referrals earn +2 credits. Credits can be redeemed for bonus mint attempts (5 credits = 1 bonus mint, up to 5 bonus mints per month).
               </p>
             </section>
@@ -867,7 +870,7 @@ export default function WhitepaperPage() {
 
               {/* UNX Basket Composition */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-yellow-400 mb-4">UNX (UNIYAA Index) Basket Composition (7 Components)</h4>
+                <h4 className="text-lg font-bold text-yellow-400 mb-4">UNX (UNIYAA Index) Basket Composition (10 Components)</h4>
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/30">
                     <h5 className="text-blue-300 font-semibold mb-2">Currencies (57%)</h5>
@@ -1279,7 +1282,7 @@ export default function WhitepaperPage() {
               <p className="text-2xl font-bold text-white mb-2">UNIYAA</p>
               <p className="text-purple-300">Powered by People, Not Capital</p>
               <p className="text-purple-300 text-sm">People Powered Value</p>
-              <p className="text-purple-400 text-sm mt-4">Last Updated: March 2026</p>
+              <p className="text-purple-400 text-sm mt-4">Last Updated: May 2026</p>
             </div>
           </article>
 
