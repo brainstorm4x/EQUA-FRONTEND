@@ -4,14 +4,10 @@
  * This module reads the UNX (UNIYAA Index) price directly from the on-chain oracle.
  * The oracle is the single source of truth for UNX pricing, maintained by the backend.
  * 
- * Basket Composition (7 assets):
- * - USD/USD: 23%
- * - EUR/USD: 17%
- * - CNH/USD: 9%
- * - JPY/USD: 5%
- * - GBP/USD: 3%
- * - XAU/USD (Gold): 35%
- * - OIL: 8%
+ * Basket Composition (10 assets):
+ *   FX 57%     — USD 23% / EUR 17% / CNH 9% / JPY 5% / GBP 3%
+ *   Metals 30% — XAU (Gold) 20% / XAG (Silver) 5% / XCU (Copper) 5%
+ *   Energy 13% — WTI 7% / Brent 6%
  * 
  * Features:
  * - Direct on-chain oracle reads from UnxOracle PDA
@@ -39,7 +35,7 @@ const UNIYAA_PROGRAM_ID = new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpC
 export const PRECISION = 100_000_000;
 
 // ============================================================================
-// Basket Component Definitions (7-asset basket from backend)
+// Basket Component Definitions (10-asset diversified basket)
 // ============================================================================
 
 /**
@@ -52,7 +48,10 @@ export enum BasketComponent {
   USDJPY = 3,
   USDGBP = 4,
   XAUUSD = 5,
-  OIL = 6,
+  XAGUSD = 6,
+  XCUUSD = 7,
+  OILWTI = 8,
+  OILBRENT = 9,
 }
 
 /**
@@ -65,8 +64,10 @@ export interface ComponentInfo {
 }
 
 /**
- * UNX basket composition (7 components)
- * Source: brainstorm4x/UNIYAA backend (post PR #71)
+ * UNX basket composition (10 components)
+ *   FX 57%     = USD 23 + EUR 17 + CNH 9 + JPY 5 + GBP 3
+ *   Metals 30% = XAU 20 + XAG 5 + XCU 5
+ *   Energy 13% = WTI 7 + Brent 6
  */
 export const BASKET_COMPONENTS: ComponentInfo[] = [
   { id: BasketComponent.USDUSD, name: 'USD/USD', weight: 0.23 },
@@ -74,8 +75,11 @@ export const BASKET_COMPONENTS: ComponentInfo[] = [
   { id: BasketComponent.USDCNY, name: 'CNH/USD', weight: 0.09 },
   { id: BasketComponent.USDJPY, name: 'JPY/USD', weight: 0.05 },
   { id: BasketComponent.USDGBP, name: 'GBP/USD', weight: 0.03 },
-  { id: BasketComponent.XAUUSD, name: 'XAU/USD', weight: 0.35 },
-  { id: BasketComponent.OIL, name: 'OIL', weight: 0.08 },
+  { id: BasketComponent.XAUUSD, name: 'XAU/USD', weight: 0.20 },
+  { id: BasketComponent.XAGUSD, name: 'XAG/USD', weight: 0.05 },
+  { id: BasketComponent.XCUUSD, name: 'XCU/USD', weight: 0.05 },
+  { id: BasketComponent.OILWTI, name: 'OIL_WTI', weight: 0.07 },
+  { id: BasketComponent.OILBRENT, name: 'OIL_BRENT', weight: 0.06 },
 ];
 
 // Verify weights sum to 1
@@ -223,20 +227,22 @@ export function floatToFixed(float: number): bigint {
 
 /**
  * Calculate weighted basket price from component prices
- * 
- * @param componentPrices - Array of 7 component prices [USDUSD, EURUSD, CNHUSD, JPYUSD, GBPUSD, XAUUSD, OIL]
+ *
+ * @param componentPrices - Array of component prices (length must match BASKET_COMPONENTS)
+ *   Order: [USDUSD, EURUSD, CNHUSD, JPYUSD, GBPUSD, XAUUSD, XAGUSD, XCUUSD, OILWTI, OILBRENT]
  * @returns Weighted basket price
  */
 export function calculateBasketPrice(componentPrices: number[]): number {
-  if (componentPrices.length !== 7) {
-    throw new Error(`Expected 7 component prices, got ${componentPrices.length}`);
+  const N = BASKET_COMPONENTS.length;
+  if (componentPrices.length !== N) {
+    throw new Error(`Expected ${N} component prices, got ${componentPrices.length}`);
   }
-  
+
   let basketPrice = 0;
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < N; i++) {
     basketPrice += componentPrices[i] * BASKET_COMPONENTS[i].weight;
   }
-  
+
   return basketPrice;
 }
 

@@ -72,7 +72,10 @@ export interface UnxPriceSnapshot {
     JPYUSD: number;
     GBPUSD: number;
     XAUUSD: number;
-    OIL: number;
+    XAGUSD: number;
+    XCUUSD: number;
+    OILWTI: number;
+    OILBRENT: number;
   };
   componentPricesHash: string; // SHA-256 hash (hex)
   weightsHash: string;         // SHA-256 hash (hex)

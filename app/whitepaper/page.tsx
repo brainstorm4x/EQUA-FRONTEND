@@ -808,7 +808,7 @@ export default function WhitepaperPage() {
                   </tbody>
                 </table>
                 <p className="text-purple-200 text-xs mt-2 italic">
-                  <strong className="text-white">Note:</strong> All prices denominated in UNX (UNIYAA Index). USD values shown are approximate equivalents for convenience only. Actual pricing uses UNX, which is a diversified basket of 7 components (57% currencies, 35% gold, 8% oil). The on-chain oracle updates UNX/USD exchange rates every hour.
+                  <strong className="text-white">Note:</strong> All prices denominated in UNX (UNIYAA Index). USD values shown are approximate equivalents for convenience only. Actual pricing uses UNX, which is a diversified basket of 10 components (57% currencies, 30% precious + industrial metals, 13% oil). The on-chain oracle updates UNX/USD exchange rates every hour.
                 </p>
               </div>
 
@@ -816,7 +816,7 @@ export default function WhitepaperPage() {
               <div className="bg-yellow-500/10 rounded-xl p-6 mt-8 border border-yellow-500/30">
                 <h4 className="text-lg font-bold text-yellow-400 mb-3">⚠️ Important: UNX vs USD</h4>
                 <p className="text-purple-200 leading-relaxed">
-                  <strong className="text-white">All price appreciation is calculated in UNX (UNIYAA Index), not USD.</strong> UNX is a diversified basket of 7 components: 57% major currencies, 35% gold, and 8% oil. The USD values shown throughout this whitepaper are <strong className="text-white">approximate equivalents for convenience only</strong>—actual pricing on-chain is denominated in UNX.
+                  <strong className="text-white">All price appreciation is calculated in UNX (UNIYAA Index), not USD.</strong> UNX is a diversified basket of 10 components: 57% major currencies, 30% precious + industrial metals (gold, silver, copper), and 13% oil (WTI + Brent). The USD values shown throughout this whitepaper are <strong className="text-white">approximate equivalents for convenience only</strong>—actual pricing on-chain is denominated in UNX.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
                   This means that when the whitepaper says &quot;Tier 1: $0.01 to $0.1,&quot; it actually means <strong className="text-white">&quot;0.01 to 0.1 UNX&quot;</strong>, with USD values calculated dynamically based on the current UNX/USD exchange rate (updated every hour from Hermes/Pyth price feeds).
@@ -851,12 +851,12 @@ export default function WhitepaperPage() {
                 UNX (UNIYAA Index) is a weighted reference basket composed of:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li><strong className="text-white">Widely used global currencies</strong> (USD, EUR, CNY, JPY, GBP) - 57% weight</li>
-                <li><strong className="text-white">Gold (XAU/USD)</strong> - 35% weight, serving as a long-term store of value across civilizations</li>
-                <li><strong className="text-white">Essential energy commodity</strong> (Oil/WTI) - 8% weight, tracking energy costs that affect all economic activity</li>
+                <li><strong className="text-white">Widely used global currencies</strong> (USD, EUR, CNH, JPY, GBP) — 57% weight</li>
+                <li><strong className="text-white">Precious + industrial metals</strong> (Gold XAU 20%, Silver XAG 5%, Copper XCU 5%) — 30% weight, combining long-term store of value with industrial-cycle exposure</li>
+                <li><strong className="text-white">Energy commodities</strong> (WTI 7%, Brent 6%) — 13% weight, tracking US + global energy costs that drive real-economy inflation</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">7-Component Design:</strong> The basket was optimized from 10 to 7 components in January 2026 to improve oracle efficiency while maintaining robust diversification across currencies, precious metals, and commodities.
+                <strong className="text-white">10-Component Design:</strong> The basket was rebalanced in May 2026 to reduce concentration risk in gold and oil — gold weight cut from 35% → 20% with the freed weight redistributed across silver, copper, and a Brent crude addition. The resulting basket has lower expected volatility, broader real-economy exposure, and all components remain spot-priced via Pyth Hermes (no futures-rolling complexity).
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 UNIYAA does not require users to hold these assets directly. Instead, the system uses UNX as a <strong className="text-white">pricing lens</strong>: when the protocol calculates UNIYAA&apos;s fair value, it references this basket rather than any single currency.
@@ -881,22 +881,25 @@ export default function WhitepaperPage() {
                     <p className="text-blue-200 text-xs mt-2">Major global currencies</p>
                   </div>
                   <div className="bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/30">
-                    <h5 className="text-yellow-300 font-semibold mb-2">Gold (35%)</h5>
+                    <h5 className="text-yellow-300 font-semibold mb-2">Metals (30%)</h5>
                     <ul className="text-purple-200 text-sm space-y-1">
-                      <li>XAU/USD (Gold): 35%</li>
+                      <li>XAU/USD (Gold): 20%</li>
+                      <li>XAG/USD (Silver): 5%</li>
+                      <li>XCU/USD (Copper): 5%</li>
                     </ul>
-                    <p className="text-yellow-200 text-xs mt-2">Long-term store of value across civilizations</p>
+                    <p className="text-yellow-200 text-xs mt-2">Monetary metals + industrial-cycle exposure</p>
                   </div>
                   <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/30">
-                    <h5 className="text-green-300 font-semibold mb-2">Commodities (8%)</h5>
+                    <h5 className="text-green-300 font-semibold mb-2">Energy (13%)</h5>
                     <ul className="text-purple-200 text-sm space-y-1">
-                      <li>Oil (WTI): 8%</li>
+                      <li>Oil — WTI: 7%</li>
+                      <li>Oil — Brent: 6%</li>
                     </ul>
-                    <p className="text-green-200 text-xs mt-2">Essential energy commodity</p>
+                    <p className="text-green-200 text-xs mt-2">US + global crude, real-economy inflation proxy</p>
                   </div>
                 </div>
                 <p className="text-purple-300 text-sm mt-4 italic">
-                  <strong className="text-white">Updated Jan 2026:</strong> UNX basket optimized to 7 components for oracle efficiency while maintaining diversification. Weights sum to 100% (verified on-chain).
+                  <strong className="text-white">Updated May 2026:</strong> UNX basket rebalanced to 10 components. Gold concentration reduced from 35% → 20% and oil exposure split across WTI and Brent, with silver and copper added for industrial diversification. All components remain spot-priced via Pyth Hermes. Weights sum to 100% (verified on-chain).
                 </p>
               </div>
 

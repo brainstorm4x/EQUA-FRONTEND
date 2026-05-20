@@ -12,27 +12,32 @@ const HERMES_API_URL = 'https://hermes.pyth.network/v2/updates/price/latest';
  * These are the ONLY correct feed IDs - do not modify without verification
  */
 const PYTH_PRICE_FEEDS = {
-  XAUUSD: '0x765d2ba906dbc32ca17cc11f5310a89e9ee1f6420508c63861f2f8ba4ee34bb2',  // Metal.XAU/USD (Gold)
-  EURUSD: '0xa995d00bb36a63cef7fd2c287dc105fc8f3d93779f062f09551b0af3e81ec30b',  // FX.EUR/USD (NEEDS INVERSION)
-  USDCNH: '0xeef52e09c878ad41f6a81803e3640fe04dceea727de894edd4ea117e2e332e66',  // FX.USD/CNH (Yuan)
-  USDJPY: '0xef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52',  // FX.USD/JPY (Yen)
-  GBPUSD: '0x84c2dde9633d93d1bcad84e7dc41c9d56578b7ec52fabedc1f335d673df0a7c1',  // FX.GBP/USD (NEEDS INVERSION)
-  OIL: '0x925ca92ff005ae943c158e3563f59698ce7e75c5a8c8dd43303a0a154887b3e6',     // Commodities.USOILSPOT (WTI Crude)
+  XAUUSD:    '0x765d2ba906dbc32ca17cc11f5310a89e9ee1f6420508c63861f2f8ba4ee34bb2', // Metal.XAU/USD (Gold)
+  XAGUSD:    '0xf2fb02c32b055c805e7238d628e5e9dadef274376114eb1f012337cabe93871e', // Metal.XAG/USD (Silver)
+  XCUUSD:    '0x636bedafa14a37912993f265eda22431a2be363ad41a10276424bbe1b7f508c4', // Metal.XCU/USD (Copper, spot)
+  EURUSD:    '0xa995d00bb36a63cef7fd2c287dc105fc8f3d93779f062f09551b0af3e81ec30b', // FX.EUR/USD
+  USDCNH:    '0xeef52e09c878ad41f6a81803e3640fe04dceea727de894edd4ea117e2e332e66', // FX.USD/CNH (invert → CNH/USD)
+  USDJPY:    '0xef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52', // FX.USD/JPY (invert → JPY/USD)
+  GBPUSD:    '0x84c2dde9633d93d1bcad84e7dc41c9d56578b7ec52fabedc1f335d673df0a7c1', // FX.GBP/USD
+  OILWTI:    '0x925ca92ff005ae943c158e3563f59698ce7e75c5a8c8dd43303a0a154887b3e6', // Commodities.USOILSPOT (WTI)
+  OILBRENT:  '0x27f0d5e09a830083e5491795cac9ca521399c8f7fd56240d09484b14e614d57a', // Commodities.UKOILSPOT (Brent)
 };
 
 /**
  * Fallback prices (used if Hermes API fails)
  * All values in XXX/USD format (USD in denominator)
- * These are reasonable market values as of Mar 2025
  */
 const FALLBACK_PRICES = {
-  USDUSD: 1.0,        // Always 1.0
-  EURUSD: 1.087,      // EUR/USD (direct quote)
-  CNHUSD: 0.14,       // CNH/USD (inverted from USD/CNH ≈ 7.14)
-  JPYUSD: 0.0066,     // JPY/USD (inverted from USD/JPY ≈ 151)
-  GBPUSD: 1.27,       // GBP/USD (direct quote)
-  XAUUSD: 2900.0,     // Gold spot price ($/oz)
-  OIL: 68.5,          // WTI Crude ($/barrel)
+  USDUSD:   1.0,    // Always 1.0
+  EURUSD:   1.087,  // EUR/USD
+  CNHUSD:   0.14,   // CNH/USD (inverted from USD/CNH ≈ 7.14)
+  JPYUSD:   0.0066, // JPY/USD (inverted from USD/JPY ≈ 151)
+  GBPUSD:   1.27,   // GBP/USD
+  XAUUSD:   2900.0, // Gold spot ($/oz)
+  XAGUSD:   30.0,   // Silver spot ($/oz)
+  XCUUSD:   4.20,   // Copper spot ($/lb)
+  OILWTI:   68.5,   // WTI Crude ($/barrel)
+  OILBRENT: 72.0,   // Brent Crude ($/barrel)
 };
 
 /**
@@ -46,7 +51,10 @@ export interface ComponentPrices {
   JPYUSD: number;
   GBPUSD: number;
   XAUUSD: number;
-  OIL: number;
+  XAGUSD: number;
+  XCUUSD: number;
+  OILWTI: number;
+  OILBRENT: number;
 }
 
 /**
@@ -75,23 +83,29 @@ export async function fetchComponentPrices(): Promise<{
     // Hermes returns: { parsed: [{ id, price: { price, expo, ... } }] }
     // All prices stored in XXX/USD format (USD in denominator)
     const prices: ComponentPrices = {
-      USDUSD: 1.0, // Always 1.0
-      EURUSD: parsePythPrice(data, PYTH_PRICE_FEEDS.EURUSD, FALLBACK_PRICES.EURUSD, false), // EUR/USD: use directly
-      CNHUSD: parsePythPrice(data, PYTH_PRICE_FEEDS.USDCNH, FALLBACK_PRICES.CNHUSD, true),  // USD/CNH → invert → CNH/USD
-      JPYUSD: parsePythPrice(data, PYTH_PRICE_FEEDS.USDJPY, FALLBACK_PRICES.JPYUSD, true),  // USD/JPY → invert → JPY/USD
-      GBPUSD: parsePythPrice(data, PYTH_PRICE_FEEDS.GBPUSD, FALLBACK_PRICES.GBPUSD, false), // GBP/USD: use directly
-      XAUUSD: parsePythPrice(data, PYTH_PRICE_FEEDS.XAUUSD, FALLBACK_PRICES.XAUUSD, false),
-      OIL: parsePythPrice(data, PYTH_PRICE_FEEDS.OIL, FALLBACK_PRICES.OIL, false),
+      USDUSD:   1.0, // Always 1.0
+      EURUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.EURUSD,   FALLBACK_PRICES.EURUSD,   false),
+      CNHUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.USDCNH,   FALLBACK_PRICES.CNHUSD,   true),  // USD/CNH → invert
+      JPYUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.USDJPY,   FALLBACK_PRICES.JPYUSD,   true),  // USD/JPY → invert
+      GBPUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.GBPUSD,   FALLBACK_PRICES.GBPUSD,   false),
+      XAUUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.XAUUSD,   FALLBACK_PRICES.XAUUSD,   false),
+      XAGUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.XAGUSD,   FALLBACK_PRICES.XAGUSD,   false),
+      XCUUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.XCUUSD,   FALLBACK_PRICES.XCUUSD,   false),
+      OILWTI:   parsePythPrice(data, PYTH_PRICE_FEEDS.OILWTI,   FALLBACK_PRICES.OILWTI,   false),
+      OILBRENT: parsePythPrice(data, PYTH_PRICE_FEEDS.OILBRENT, FALLBACK_PRICES.OILBRENT, false),
     };
 
     // Warn if all feeds returned fallback values despite a successful HTTP response
     const livePriceCount = [
-      prices.EURUSD !== FALLBACK_PRICES.EURUSD,
-      prices.CNHUSD !== FALLBACK_PRICES.CNHUSD,
-      prices.JPYUSD !== FALLBACK_PRICES.JPYUSD,
-      prices.GBPUSD !== FALLBACK_PRICES.GBPUSD,
-      prices.XAUUSD !== FALLBACK_PRICES.XAUUSD,
-      prices.OIL    !== FALLBACK_PRICES.OIL,
+      prices.EURUSD   !== FALLBACK_PRICES.EURUSD,
+      prices.CNHUSD   !== FALLBACK_PRICES.CNHUSD,
+      prices.JPYUSD   !== FALLBACK_PRICES.JPYUSD,
+      prices.GBPUSD   !== FALLBACK_PRICES.GBPUSD,
+      prices.XAUUSD   !== FALLBACK_PRICES.XAUUSD,
+      prices.XAGUSD   !== FALLBACK_PRICES.XAGUSD,
+      prices.XCUUSD   !== FALLBACK_PRICES.XCUUSD,
+      prices.OILWTI   !== FALLBACK_PRICES.OILWTI,
+      prices.OILBRENT !== FALLBACK_PRICES.OILBRENT,
     ].filter(Boolean).length;
 
     const totalFeeds = Object.keys(PYTH_PRICE_FEEDS).length;
@@ -169,18 +183,22 @@ function parsePythPrice(
  * Convert component prices object to array
  * Order matches BASKET_COMPONENTS from unxOracle.ts
  * All values in XXX/USD format (USD in denominator)
- * 
+ *
  * @param prices - Component prices object
- * @returns Array of 7 prices [USDUSD, EURUSD, CNHUSD, JPYUSD, GBPUSD, XAUUSD, OIL]
+ * @returns Array of 10 prices
+ *   [USDUSD, EURUSD, CNHUSD, JPYUSD, GBPUSD, XAUUSD, XAGUSD, XCUUSD, OILWTI, OILBRENT]
  */
 export function componentPricesToArray(prices: ComponentPrices): number[] {
   return [
-    prices.USDUSD,  // Index 0: USD/USD
-    prices.EURUSD,  // Index 1: EUR/USD
-    prices.CNHUSD,  // Index 2: CNH/USD
-    prices.JPYUSD,  // Index 3: JPY/USD
-    prices.GBPUSD,  // Index 4: GBP/USD
-    prices.XAUUSD,  // Index 5: XAU/USD (Gold)
-    prices.OIL,     // Index 6: OIL
+    prices.USDUSD,   // [0] USD/USD
+    prices.EURUSD,   // [1] EUR/USD
+    prices.CNHUSD,   // [2] CNH/USD
+    prices.JPYUSD,   // [3] JPY/USD
+    prices.GBPUSD,   // [4] GBP/USD
+    prices.XAUUSD,   // [5] XAU/USD (Gold)
+    prices.XAGUSD,   // [6] XAG/USD (Silver)
+    prices.XCUUSD,   // [7] XCU/USD (Copper)
+    prices.OILWTI,   // [8] OIL_WTI
+    prices.OILBRENT, // [9] OIL_BRENT
   ];
 }

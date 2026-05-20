@@ -298,9 +298,12 @@ const handler: Handler = async (event, context) => {
         source,
         timestamp: snapshot.timestamp,
         sampleComponents: {
-          XAUUSD: componentPrices.XAUUSD,
-          EURUSD: componentPrices.EURUSD,
-          OIL: componentPrices.OIL,
+          XAUUSD:   componentPrices.XAUUSD,
+          XAGUSD:   componentPrices.XAGUSD,
+          XCUUSD:   componentPrices.XCUUSD,
+          EURUSD:   componentPrices.EURUSD,
+          OILWTI:   componentPrices.OILWTI,
+          OILBRENT: componentPrices.OILBRENT,
         },
       }),
     };

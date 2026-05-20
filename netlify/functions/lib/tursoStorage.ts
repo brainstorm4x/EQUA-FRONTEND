@@ -99,11 +99,14 @@ export interface TursoUnxSnapshot {
    */
   components: {
     XAUUSD: number;
+    XAGUSD: number;  // SQL column: comp_xagusd  (silver, added in 10-component basket)
+    XCUUSD: number;  // SQL column: comp_xcuusd  (copper, added in 10-component basket)
     EURUSD: number;  // SQL column: comp_usdeur
     CNHUSD: number;  // SQL column: comp_usdcny
     JPYUSD: number;  // SQL column: comp_usdjpy
     GBPUSD: number;  // SQL column: comp_usdgbp
-    OIL: number;
+    OILWTI: number;    // SQL column: comp_oilwti  (renamed from comp_oil)
+    OILBRENT: number;  // SQL column: comp_oilbrent (added in 10-component basket)
     USDUSD: number;
   };
   /** On-chain total transactions count (best-effort) */
@@ -196,11 +199,14 @@ export async function initTursoSchema(
       uniyaa_price_aed        REAL,
       uniyaa_price_sgd        REAL,
       comp_xauusd           REAL,
+      comp_xagusd           REAL,
+      comp_xcuusd           REAL,
       comp_usdeur           REAL,
       comp_usdcny           REAL,
       comp_usdjpy           REAL,
       comp_usdgbp           REAL,
-      comp_oil              REAL,
+      comp_oilwti           REAL,
+      comp_oilbrent         REAL,
       comp_usdusd           REAL,
       total_transactions    INTEGER,
       usd_inflation_index   REAL NOT NULL DEFAULT 1.0,
@@ -242,11 +248,12 @@ export async function initTursoSchema(
 }
 
 /**
- * UNIYAA-rebrand one-shot drop: if either performance table still has any
- * column starting with `unia_` or `equa_`, drop both tables so the subsequent
- * `CREATE TABLE IF NOT EXISTS` calls recreate them with the new `uniyaa_*`
- * schema. Devnet data is deliberately wiped (operator-chosen tradeoff for the
- * rebrand). Once the tables are recreated this becomes a permanent no-op.
+ * One-shot legacy-table drop. Two triggers:
+ *   1. UNIYAA rebrand: any column starting with `unia_` or `equa_`.
+ *   2. 10-component basket migration: presence of the now-removed `comp_oil`
+ *      column on `unx_price_snapshots` (it was renamed to `comp_oilwti`).
+ * Devnet data is deliberately wiped on both triggers (operator-chosen tradeoff).
+ * Once the tables are recreated this becomes a permanent no-op.
  */
 async function dropLegacyUniyaaTables(
   client: ReturnType<typeof createClient>
@@ -255,12 +262,23 @@ async function dropLegacyUniyaaTables(
   for (const table of tables) {
     try {
       const info = await client.execute(`PRAGMA table_info(${table})`);
-      const hasLegacy = info.rows.some((r) => {
-        const name = String((r as Record<string, unknown>).name ?? '');
-        return name.startsWith('unia_') || name.startsWith('equa_');
-      });
-      if (hasLegacy) {
-        console.log(`UNIYAA rebrand: dropping legacy ${table} (had unia_*/equa_* columns)`);
+      const names = info.rows.map((r) =>
+        String((r as Record<string, unknown>).name ?? '')
+      );
+
+      const hasRebrandLegacy = names.some(
+        (n) => n.startsWith('unia_') || n.startsWith('equa_')
+      );
+      const hasOldBasket =
+        table === 'unx_price_snapshots' &&
+        names.includes('comp_oil') &&
+        !names.includes('comp_oilwti');
+
+      if (hasRebrandLegacy || hasOldBasket) {
+        const reason = hasRebrandLegacy
+          ? 'had unia_*/equa_* columns'
+          : 'pre-10-component basket schema (comp_oil)';
+        console.log(`Legacy schema drop: ${table} (${reason})`);
         await client.execute(`DROP TABLE IF EXISTS ${table}`);
       }
     } catch (err) {
@@ -327,18 +345,21 @@ export async function storeUnxSnapshotToTurso(
           uniyaa_price_aed,
           uniyaa_price_sgd,
           comp_xauusd,
+          comp_xagusd,
+          comp_xcuusd,
           comp_usdeur,
           comp_usdcny,
           comp_usdjpy,
           comp_usdgbp,
-          comp_oil,
+          comp_oilwti,
+          comp_oilbrent,
           comp_usdusd,
           total_transactions,
           usd_inflation_index,
           uniyaa_purchasing_power
         ) VALUES (
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
       `,
       args: [
@@ -365,11 +386,14 @@ export async function storeUnxSnapshotToTurso(
         cp['AED'] ?? null,
         cp['SGD'] ?? null,
         co.XAUUSD ?? null,
-        co.EURUSD ?? null,  // maps to comp_usdeur SQL column
-        co.CNHUSD ?? null,  // maps to comp_usdcny SQL column
-        co.JPYUSD ?? null,  // maps to comp_usdjpy SQL column
-        co.GBPUSD ?? null,  // maps to comp_usdgbp SQL column
-        co.OIL ?? null,
+        co.XAGUSD ?? null,
+        co.XCUUSD ?? null,
+        co.EURUSD ?? null,    // → comp_usdeur
+        co.CNHUSD ?? null,    // → comp_usdcny
+        co.JPYUSD ?? null,    // → comp_usdjpy
+        co.GBPUSD ?? null,    // → comp_usdgbp
+        co.OILWTI ?? null,    // → comp_oilwti
+        co.OILBRENT ?? null,  // → comp_oilbrent
         co.USDUSD ?? null,
         snap.totalTransactions ?? null,
         usdInflationIndex,

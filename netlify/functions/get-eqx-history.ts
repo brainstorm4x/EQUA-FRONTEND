@@ -67,14 +67,18 @@ function aggregateToDaily(snapshots: UnxPriceSnapshot[]): UnxPriceSnapshot[] {
   
   for (const [dateKey, daySnapshots] of dailyMap) {
     const avgPrice = daySnapshots.reduce((sum, s) => sum + s.price, 0) / daySnapshots.length;
+    const n = daySnapshots.length;
     const avgComponents = {
-      USDUSD: daySnapshots.reduce((sum, s) => sum + s.components.USDUSD, 0) / daySnapshots.length,
-      EURUSD: daySnapshots.reduce((sum, s) => sum + s.components.EURUSD, 0) / daySnapshots.length,
-      CNHUSD: daySnapshots.reduce((sum, s) => sum + s.components.CNHUSD, 0) / daySnapshots.length,
-      JPYUSD: daySnapshots.reduce((sum, s) => sum + s.components.JPYUSD, 0) / daySnapshots.length,
-      GBPUSD: daySnapshots.reduce((sum, s) => sum + s.components.GBPUSD, 0) / daySnapshots.length,
-      XAUUSD: daySnapshots.reduce((sum, s) => sum + s.components.XAUUSD, 0) / daySnapshots.length,
-      OIL: daySnapshots.reduce((sum, s) => sum + s.components.OIL, 0) / daySnapshots.length,
+      USDUSD:   daySnapshots.reduce((sum, s) => sum + s.components.USDUSD,   0) / n,
+      EURUSD:   daySnapshots.reduce((sum, s) => sum + s.components.EURUSD,   0) / n,
+      CNHUSD:   daySnapshots.reduce((sum, s) => sum + s.components.CNHUSD,   0) / n,
+      JPYUSD:   daySnapshots.reduce((sum, s) => sum + s.components.JPYUSD,   0) / n,
+      GBPUSD:   daySnapshots.reduce((sum, s) => sum + s.components.GBPUSD,   0) / n,
+      XAUUSD:   daySnapshots.reduce((sum, s) => sum + s.components.XAUUSD,   0) / n,
+      XAGUSD:   daySnapshots.reduce((sum, s) => sum + s.components.XAGUSD,   0) / n,
+      XCUUSD:   daySnapshots.reduce((sum, s) => sum + s.components.XCUUSD,   0) / n,
+      OILWTI:   daySnapshots.reduce((sum, s) => sum + s.components.OILWTI,   0) / n,
+      OILBRENT: daySnapshots.reduce((sum, s) => sum + s.components.OILBRENT, 0) / n,
     };
     
     // Use the latest snapshot of the day for metadata
