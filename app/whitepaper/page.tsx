@@ -1123,7 +1123,7 @@ export default function WhitepaperPage() {
               
               <ul className="list-disc list-inside text-purple-200 space-y-3 mt-4">
                 <li><strong className="text-white">No Team Minting</strong>: Every token entering circulation follows transparent rules. There&apos;s no admin wallet that can secretly print tokens.</li>
-                <li><strong className="text-white">Algorithmic Scarcity</strong>: As adoption grows, the rate at which new tokens are created decreases. This is a mathematical certainty built into the contract.</li>
+                <li><strong className="text-white">Diminishing Mint Rate</strong>: As adoption grows, the per-attempt amount each new user can mint steps down according to the published Mint Tier Schedule (Part VIII). UNIYAA does not enforce a fixed total-supply cap; instead, the combination of the tiered step-down and the on-chain mint cooldown holds issuance asymptotic — i.e. each new cohort can add less than the one before it, and no single actor can outrun the schedule.</li>
                 <li><strong className="text-white">Transaction-Based Appreciation</strong>: Price appreciation isn&apos;t driven by marketing hype or speculative enthusiasm. It&apos;s directly tied to actual economic activity.</li>
               </ul>
             </section>
@@ -1235,10 +1235,45 @@ export default function WhitepaperPage() {
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <h4 className="text-lg font-semibold text-white mb-3">Token Economics:</h4>
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
-                  <li>Variable minting rate tied to user adoption</li>
+                  <li>Variable minting rate tied to user adoption (see Mint Tier Schedule below)</li>
                   <li>Utility-first design: use UNIYAA to buy and sell goods and services</li>
-                  <li>Referral rewards via credit-based system: individual referral = +1 credit, business referral = +2 credits; 5 credits = 1 bonus mint attempt (max 5/month)</li>
+                  <li>Referral rewards via credit-based system: individual referral = +1 credit, business referral = +2 credits; 5 credits = 1 bonus mint attempt (max 5/month). Referrals are optional at every tier.</li>
                 </ul>
+              </div>
+
+              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
+                <h4 className="text-lg font-semibold text-white mb-3">Mint Tier Schedule (per-attempt cap by user registration index):</h4>
+                <p className="text-purple-300 text-sm mb-3">
+                  Each user&apos;s per-attempt mint amount is determined by the order in which they registered. As more users join, the per-attempt amount steps down, so newcomers can&apos;t flood the supply faster than the early cohort. This is independent of the 9-tier <em>price</em> model in Part IV — the price tiers describe how UNIYAA <em>appreciates</em> per transaction; the mint tiers below describe how much each user can <em>create</em> per attempt.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-purple-200 border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b border-purple-500/30">
+                        <th className="text-left p-2 text-white">Mint Tier</th>
+                        <th className="text-left p-2 text-white">User Index Range</th>
+                        <th className="text-left p-2 text-white">UNIYAA / Attempt</th>
+                        <th className="text-left p-2 text-white">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-purple-500/20"><td className="p-2">1</td><td className="p-2">#1</td><td className="p-2">100,000</td><td className="p-2">+ 100 elevated attempts</td></tr>
+                      <tr className="border-b border-purple-500/20"><td className="p-2">2</td><td className="p-2">#2 – 10</td><td className="p-2">10,000</td><td className="p-2">+ 100 elevated attempts</td></tr>
+                      <tr className="border-b border-purple-500/20"><td className="p-2">3</td><td className="p-2">#11 – 100</td><td className="p-2">1,000</td><td className="p-2">+ 100 elevated attempts</td></tr>
+                      <tr className="border-b border-purple-500/20"><td className="p-2">4</td><td className="p-2">#101 – 1,000</td><td className="p-2">100</td><td className="p-2">flat per-attempt rate</td></tr>
+                      <tr className="border-b border-purple-500/20"><td className="p-2">5</td><td className="p-2">#1,001 – 10,000</td><td className="p-2">10</td><td className="p-2">flat per-attempt rate</td></tr>
+                      <tr className="border-b border-purple-500/20"><td className="p-2">6</td><td className="p-2">#10,001 – 100,000</td><td className="p-2">1</td><td className="p-2">flat per-attempt rate</td></tr>
+                      <tr className="border-b border-purple-500/20"><td className="p-2">7</td><td className="p-2">#100,001 – 1,000,000</td><td className="p-2">0.1</td><td className="p-2">flat per-attempt rate</td></tr>
+                      <tr className="border-b border-purple-500/20"><td className="p-2">8</td><td className="p-2">#1,000,001 – 10,000,000</td><td className="p-2">0.01</td><td className="p-2">flat per-attempt rate</td></tr>
+                      <tr className="border-b border-purple-500/20"><td className="p-2">9</td><td className="p-2">#10,000,001 – 100,000,000</td><td className="p-2">0.001</td><td className="p-2">flat per-attempt rate</td></tr>
+                      <tr className="border-b border-purple-500/20"><td className="p-2">10</td><td className="p-2">#100,000,001 – 1,000,000,000</td><td className="p-2">0.0001</td><td className="p-2">flat per-attempt rate</td></tr>
+                      <tr><td className="p-2">11</td><td className="p-2">#1,000,000,001+</td><td className="p-2">0.00001</td><td className="p-2">unbounded user range</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-purple-300 text-xs mt-3 italic">
+                  Repeat mints are gated by an on-chain cooldown; bonus mints can be earned by redeeming referral credits (5 credits = 1 bonus mint, max 5/month). There is no hard total-supply cap — the design relies on the per-attempt step-down plus cooldowns to keep issuance asymptotic, not on a fixed maximum.
+                </p>
               </div>
 
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
