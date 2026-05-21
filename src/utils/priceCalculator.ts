@@ -596,20 +596,13 @@ export function getCurrentUniyaaPrice(
 }
 
 /**
- * Format UNIYAA price for display
- * - Shows $0.01 for base price (no extra decimals)
- * - Shows 6 decimal places for prices under $1
- * - Shows 2 decimal places for prices $1 and above
+ * Format UNIYAA price for display.
+ * Always shows 6 decimal places so users can see per-transaction price
+ * increments at every tier. Uses locale grouping for thousands separators.
  */
 export function formatUniyaaPrice(price: number): string {
-  if (price === 0.01) {
-    return '$0.01';
-  }
-  if (price < 1) {
-    return `$${price.toFixed(6)}`;
-  }
   return `$${price.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    minimumFractionDigits: 6,
+    maximumFractionDigits: 6
   })}`;
 }
