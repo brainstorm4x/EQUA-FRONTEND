@@ -1,11 +1,37 @@
 /**
  * Pyth Hermes API Integration
- * 
- * Fetches real-time price data for UNX basket components from Pyth Network's Hermes API.
- * Provides fallback to hardcoded prices if API fails.
+ *
+ * Fetches real-time price data for UNX basket components from Pyth Network's
+ * Hermes API. Returns per-component readings with freshness/quality status so
+ * the writer can decide what to publish versus carry forward.
+ *
+ * Notes on stability rules:
+ *  - `publish_time` older than MAX_FEED_AGE_SECONDS → component is treated as
+ *    missing (Pyth has gone quiet for that feed).
+ *  - `conf / |price|` > MAX_CONF_RATIO → component is treated as missing
+ *    (Pyth is publishing but flagging the value as low-confidence).
+ *  - HTTP failure / parse failure / NaN → component is treated as missing.
+ *
+ * FALLBACK_PRICES are retained as a *boot-only* last resort so the very first
+ * snapshot (when Turso is empty) can write something — they are NEVER
+ * silently substituted into a normal write. Use `bootFallbackComponents()`
+ * explicitly when needed.
  */
 
 const HERMES_API_URL = 'https://hermes.pyth.network/v2/updates/price/latest';
+
+/**
+ * A Pyth feed is considered missing if its last publish is older than this.
+ * Set conservatively (10 min) — Pyth normally republishes feeds every second.
+ */
+export const MAX_FEED_AGE_SECONDS = 600;
+
+/**
+ * Maximum confidence-to-price ratio before we treat the reading as missing.
+ * 5% is loose enough to admit normal commodities volatility but tight enough
+ * to reject Pyth's "I'm not sure" wide-interval publishes.
+ */
+export const MAX_CONF_RATIO = 0.05;
 
 /**
  * Verified Pyth Hermes Feed IDs (from Pyth Network documentation)
@@ -24,10 +50,11 @@ const PYTH_PRICE_FEEDS = {
 };
 
 /**
- * Fallback prices (used if Hermes API fails)
- * All values in XXX/USD format (USD in denominator)
+ * Boot-time fallback prices. Used ONLY when Turso has no prior snapshot to
+ * carry forward (first-ever deploy). Never silently substituted otherwise.
+ * All values in XXX/USD format (USD in denominator).
  */
-const FALLBACK_PRICES = {
+export const FALLBACK_PRICES: ComponentPrices = {
   USDUSD:   1.0,    // Always 1.0
   EURUSD:   1.087,  // EUR/USD
   CNHUSD:   0.14,   // CNH/USD (inverted from USD/CNH ≈ 7.14)
@@ -57,126 +84,205 @@ export interface ComponentPrices {
   OILBRENT: number;
 }
 
+export type ComponentKey = keyof ComponentPrices;
+
+export type ComponentStatus = 'hermes' | 'missing';
+
 /**
- * Fetch component prices from Pyth Hermes API
- * 
- * @returns Component prices and source ('hermes' or 'fallback')
+ * A single component reading from Hermes.
+ *  - `status: 'hermes'` → value is a fresh, in-confidence price from the API.
+ *  - `status: 'missing'` → caller must carry forward (or fall back to boot
+ *    defaults if no prior data exists). `reason` explains why.
  */
-export async function fetchComponentPrices(): Promise<{
-  prices: ComponentPrices;
-  source: 'hermes' | 'fallback';
-}> {
+export interface ComponentReading {
+  status: ComponentStatus;
+  /** Parsed XXX/USD price, or null when `status === 'missing'`. */
+  value: number | null;
+  /** Pyth `publish_time` for the feed (Unix ms), if available. */
+  publishTimeMs: number | null;
+  /** `conf / |price|` ratio reported by Pyth, if available. */
+  confRatio: number | null;
+  /** Free-form reason for missing readings; absent for hermes readings. */
+  reason?: 'http_failure' | 'feed_not_in_response' | 'parse_error' | 'stale_publish' | 'low_confidence';
+}
+
+export type ComponentReadings = Record<ComponentKey, ComponentReading>;
+
+/**
+ * Fetch per-component readings from Pyth Hermes.
+ *
+ * On total HTTP/network failure every component is returned with
+ * `status: 'missing'` and `reason: 'http_failure'`. On a successful response
+ * each component is evaluated independently against the freshness and
+ * confidence thresholds, so a partial Hermes outage produces a partial result.
+ */
+export async function fetchComponentReadings(): Promise<ComponentReadings> {
+  let data: unknown;
+
   try {
-    // Build Hermes API URL with all feed IDs
     const feedIds = Object.values(PYTH_PRICE_FEEDS);
-    const url = `${HERMES_API_URL}?${feedIds.map(id => `ids[]=${id}`).join('&')}`;
-    
+    const url = `${HERMES_API_URL}?${feedIds.map((id) => `ids[]=${id}`).join('&')}`;
+
     const response = await fetch(url);
-    
     if (!response.ok) {
       throw new Error(`Hermes API returned ${response.status}`);
     }
-    
-    const data = await response.json();
-    
-    // Parse prices from Hermes response
-    // Hermes returns: { parsed: [{ id, price: { price, expo, ... } }] }
-    // All prices stored in XXX/USD format (USD in denominator)
-    const prices: ComponentPrices = {
-      USDUSD:   1.0, // Always 1.0
-      EURUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.EURUSD,   FALLBACK_PRICES.EURUSD,   false),
-      CNHUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.USDCNH,   FALLBACK_PRICES.CNHUSD,   true),  // USD/CNH → invert
-      JPYUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.USDJPY,   FALLBACK_PRICES.JPYUSD,   true),  // USD/JPY → invert
-      GBPUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.GBPUSD,   FALLBACK_PRICES.GBPUSD,   false),
-      XAUUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.XAUUSD,   FALLBACK_PRICES.XAUUSD,   false),
-      XAGUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.XAGUSD,   FALLBACK_PRICES.XAGUSD,   false),
-      XCUUSD:   parsePythPrice(data, PYTH_PRICE_FEEDS.XCUUSD,   FALLBACK_PRICES.XCUUSD,   false),
-      OILWTI:   parsePythPrice(data, PYTH_PRICE_FEEDS.OILWTI,   FALLBACK_PRICES.OILWTI,   false),
-      OILBRENT: parsePythPrice(data, PYTH_PRICE_FEEDS.OILBRENT, FALLBACK_PRICES.OILBRENT, false),
-    };
-
-    // Warn if all feeds returned fallback values despite a successful HTTP response
-    const livePriceCount = [
-      prices.EURUSD   !== FALLBACK_PRICES.EURUSD,
-      prices.CNHUSD   !== FALLBACK_PRICES.CNHUSD,
-      prices.JPYUSD   !== FALLBACK_PRICES.JPYUSD,
-      prices.GBPUSD   !== FALLBACK_PRICES.GBPUSD,
-      prices.XAUUSD   !== FALLBACK_PRICES.XAUUSD,
-      prices.XAGUSD   !== FALLBACK_PRICES.XAGUSD,
-      prices.XCUUSD   !== FALLBACK_PRICES.XCUUSD,
-      prices.OILWTI   !== FALLBACK_PRICES.OILWTI,
-      prices.OILBRENT !== FALLBACK_PRICES.OILBRENT,
-    ].filter(Boolean).length;
-
-    const totalFeeds = Object.keys(PYTH_PRICE_FEEDS).length;
-    if (livePriceCount === 0) {
-      console.warn(
-        'All Hermes feeds returned fallback values — check feed IDs or Hermes API response shape. ' +
-        `Response top-level keys: [${Object.keys(data).join(', ')}]`
-      );
-    } else {
-      console.log(`✓ Fetched ${livePriceCount}/${totalFeeds} live prices from Hermes`);
-    }
-
-    return { prices, source: 'hermes' };
+    data = await response.json();
   } catch (error) {
-    console.warn('Pyth Hermes API failed, using fallback prices:', error);
-    return { prices: FALLBACK_PRICES, source: 'fallback' };
+    console.warn('Pyth Hermes API request failed:', error);
+    return allMissing('http_failure');
   }
+
+  const usdReading: ComponentReading = {
+    status: 'hermes',
+    value: 1.0,
+    publishTimeMs: Date.now(),
+    confRatio: 0,
+  };
+
+  return {
+    USDUSD:   usdReading,
+    EURUSD:   readPythComponent(data, PYTH_PRICE_FEEDS.EURUSD,   false),
+    CNHUSD:   readPythComponent(data, PYTH_PRICE_FEEDS.USDCNH,   true),  // USD/CNH → invert
+    JPYUSD:   readPythComponent(data, PYTH_PRICE_FEEDS.USDJPY,   true),  // USD/JPY → invert
+    GBPUSD:   readPythComponent(data, PYTH_PRICE_FEEDS.GBPUSD,   false),
+    XAUUSD:   readPythComponent(data, PYTH_PRICE_FEEDS.XAUUSD,   false),
+    XAGUSD:   readPythComponent(data, PYTH_PRICE_FEEDS.XAGUSD,   false),
+    XCUUSD:   readPythComponent(data, PYTH_PRICE_FEEDS.XCUUSD,   false),
+    OILWTI:   readPythComponent(data, PYTH_PRICE_FEEDS.OILWTI,   false),
+    OILBRENT: readPythComponent(data, PYTH_PRICE_FEEDS.OILBRENT, false),
+  };
 }
 
 /**
- * Parse a single price from Pyth Hermes response
- * 
- * @param data - Hermes API response
- * @param feedId - Pyth feed ID to look up
- * @param fallback - Fallback value if parsing fails
- * @param invert - Whether to invert the price (for indirect quotes like EUR/USD → USD/EUR)
- * @returns Parsed price
+ * Build a fully-missing readings object with the given reason — used both
+ * for total HTTP failure and as a starting shape for tests.
  */
-function parsePythPrice(
-  data: any,
-  feedId: string,
-  fallback: number,
-  invert: boolean
-): number {
-  try {
-    // Find the feed in the response
-    // Hermes v2 returns IDs without '0x' prefix; our constants include it — normalise both sides
-    const normalizedFeedId = feedId.startsWith('0x') ? feedId.slice(2) : feedId;
+function allMissing(reason: ComponentReading['reason']): ComponentReadings {
+  const empty: ComponentReading = {
+    status: 'missing',
+    value: null,
+    publishTimeMs: null,
+    confRatio: null,
+    reason,
+  };
+  return {
+    USDUSD: { ...empty },
+    EURUSD: { ...empty },
+    CNHUSD: { ...empty },
+    JPYUSD: { ...empty },
+    GBPUSD: { ...empty },
+    XAUUSD: { ...empty },
+    XAGUSD: { ...empty },
+    XCUUSD: { ...empty },
+    OILWTI: { ...empty },
+    OILBRENT: { ...empty },
+  };
+}
 
-    const feed = data.parsed?.find((p: any) => {
-      const responseId = p.id.startsWith('0x') ? p.id.slice(2) : p.id;
-      return responseId.toLowerCase() === normalizedFeedId.toLowerCase();
-    });
-    if (!feed) {
-      console.warn(`Feed ${feedId} not found in Hermes response, using fallback`);
-      return fallback;
-    }
-    
-    // Extract price and exponent
-    // Pyth uses fixed-point: actual_price = price * 10^expo
-    const price = parseFloat(feed.price.price);
-    const expo = parseInt(feed.price.expo);
-    
-    if (isNaN(price) || isNaN(expo)) {
-      console.warn(`Invalid price data for feed ${feedId}, using fallback`);
-      return fallback;
-    }
-    
-    // Calculate actual price
-    let actualPrice = price * Math.pow(10, expo);
-    
-    // Invert if needed (EUR/USD → USD/EUR)
-    if (invert && actualPrice !== 0) {
-      actualPrice = 1.0 / actualPrice;
-    }
-    
-    return actualPrice;
-  } catch (error) {
-    console.warn(`Error parsing price for feed ${feedId}:`, error);
-    return fallback;
+/**
+ * Parse a single feed entry from the Hermes response with freshness checks.
+ */
+function readPythComponent(
+  data: unknown,
+  feedId: string,
+  invert: boolean,
+): ComponentReading {
+  const normalizedFeedId = feedId.startsWith('0x') ? feedId.slice(2) : feedId;
+
+  // Hermes v2 shape: { parsed: [{ id, price: { price, conf, expo, publish_time } }] }
+  const parsed = (data as { parsed?: Array<Record<string, unknown>> } | undefined)?.parsed;
+  const feed = parsed?.find((p) => {
+    const idRaw = String(p['id'] ?? '');
+    const responseId = idRaw.startsWith('0x') ? idRaw.slice(2) : idRaw;
+    return responseId.toLowerCase() === normalizedFeedId.toLowerCase();
+  });
+
+  if (!feed) {
+    console.warn(`Feed ${feedId} not found in Hermes response`);
+    return {
+      status: 'missing',
+      value: null,
+      publishTimeMs: null,
+      confRatio: null,
+      reason: 'feed_not_in_response',
+    };
   }
+
+  const priceObj = feed['price'] as Record<string, unknown> | undefined;
+  const priceRaw = priceObj?.['price'];
+  const expoRaw = priceObj?.['expo'];
+  const confRaw = priceObj?.['conf'];
+  const publishRaw = priceObj?.['publish_time'];
+
+  const priceInt = typeof priceRaw === 'string' ? parseFloat(priceRaw) : Number(priceRaw);
+  const expo = typeof expoRaw === 'string' ? parseInt(expoRaw, 10) : Number(expoRaw);
+  const confInt = typeof confRaw === 'string' ? parseFloat(confRaw) : Number(confRaw);
+  const publishSec =
+    typeof publishRaw === 'string' ? parseInt(publishRaw, 10) : Number(publishRaw);
+
+  if (!Number.isFinite(priceInt) || !Number.isFinite(expo)) {
+    console.warn(`Invalid price data for feed ${feedId}`);
+    return {
+      status: 'missing',
+      value: null,
+      publishTimeMs: null,
+      confRatio: null,
+      reason: 'parse_error',
+    };
+  }
+
+  const scale = Math.pow(10, expo);
+  let actualPrice = priceInt * scale;
+  const actualConf = Number.isFinite(confInt) ? Math.abs(confInt) * scale : null;
+
+  // Confidence ratio is evaluated on the raw quote (before inversion) — the
+  // ratio is invariant under inversion since both numerator and denominator
+  // scale together.
+  const confRatio =
+    actualConf != null && actualPrice !== 0 ? actualConf / Math.abs(actualPrice) : null;
+
+  const publishTimeMs = Number.isFinite(publishSec) ? publishSec * 1000 : null;
+
+  if (invert && actualPrice !== 0) {
+    actualPrice = 1.0 / actualPrice;
+  }
+
+  // Freshness gate.
+  if (publishTimeMs != null) {
+    const ageSec = (Date.now() - publishTimeMs) / 1000;
+    if (ageSec > MAX_FEED_AGE_SECONDS) {
+      console.warn(`Feed ${feedId} is stale: age=${ageSec.toFixed(0)}s`);
+      return {
+        status: 'missing',
+        value: null,
+        publishTimeMs,
+        confRatio,
+        reason: 'stale_publish',
+      };
+    }
+  }
+
+  // Confidence gate.
+  if (confRatio != null && confRatio > MAX_CONF_RATIO) {
+    console.warn(
+      `Feed ${feedId} confidence too wide: conf/price=${(confRatio * 100).toFixed(2)}%`,
+    );
+    return {
+      status: 'missing',
+      value: null,
+      publishTimeMs,
+      confRatio,
+      reason: 'low_confidence',
+    };
+  }
+
+  return {
+    status: 'hermes',
+    value: actualPrice,
+    publishTimeMs,
+    confRatio,
+  };
 }
 
 /**
@@ -202,3 +308,8 @@ export function componentPricesToArray(prices: ComponentPrices): number[] {
     prices.OILBRENT, // [9] OIL_BRENT
   ];
 }
+
+export const COMPONENT_KEYS: readonly ComponentKey[] = [
+  'USDUSD', 'EURUSD', 'CNHUSD', 'JPYUSD', 'GBPUSD',
+  'XAUUSD', 'XAGUSD', 'XCUUSD', 'OILWTI', 'OILBRENT',
+];

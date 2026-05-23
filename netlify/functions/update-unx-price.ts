@@ -16,10 +16,18 @@ import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } f
 import { Program, AnchorProvider, Wallet, BN } from '@coral-xyz/anchor';
 import bs58 from 'bs58';
 import crypto from 'crypto';
-import { fetchComponentPrices, componentPricesToArray } from './lib/pythPrices';
-import { 
-  getUnxOraclePda, 
-  floatToFixed, 
+import {
+  fetchComponentReadings,
+  componentPricesToArray,
+  ComponentPrices,
+  ComponentKey,
+  ComponentReadings,
+  COMPONENT_KEYS,
+  FALLBACK_PRICES,
+} from './lib/pythPrices';
+import {
+  getUnxOraclePda,
+  floatToFixed,
   calculateBasketPrice,
   BASKET_COMPONENTS,
   PRECISION,
@@ -28,7 +36,12 @@ import {
 import { storeUnxPrice, getLatestFxRates, UnxPriceSnapshot } from './lib/blobStorage';
 import { UniyaaToken } from './lib/uniyaa_token';
 import idl from './lib/uniyaa_token.json';
-import { storeUnxSnapshotToTurso, SEND_MODAL_CURRENCIES, computeUsdInflationIndexAsync } from './lib/tursoStorage';
+import {
+  storeUnxSnapshotToTurso,
+  SEND_MODAL_CURRENCIES,
+  computeUsdInflationIndexAsync,
+  getLatestComponentBaseline,
+} from './lib/tursoStorage';
 
 // ============================================================================
 // Environment Variable Validation (runs at module load time)
@@ -106,6 +119,109 @@ function hashWeights(): string {
   return crypto.createHash('sha256').update(weightsString).digest('hex');
 }
 
+/**
+ * Resolve final component prices for this hour's snapshot.
+ *
+ * For each component:
+ *   - if Hermes returned a fresh reading, use it;
+ *   - otherwise carry forward the most recent known-fresh value from Turso;
+ *   - if Turso is empty (first-ever deploy), fall back to FALLBACK_PRICES.
+ *
+ * The returned `source` reflects the *write* semantics, not the raw Hermes
+ * status: any successful carry-forward write is tagged `'fallback'` so legacy
+ * downstream consumers (and the daily aggregator that watches `source`) keep
+ * working. The richer truth lives in `staleComponents` + `is_carried_forward`.
+ */
+async function resolveComponentPrices(
+  readings: ComponentReadings,
+  missingKeys: ComponentKey[],
+): Promise<{
+  componentPrices: ComponentPrices;
+  staleComponents: ComponentKey[];
+  source: 'hermes' | 'fallback';
+  baselineAgeMs: number | null;
+}> {
+  // Fast path: everything is fresh.
+  if (missingKeys.length === 0) {
+    return {
+      componentPrices: extractFreshPrices(readings),
+      staleComponents: [],
+      source: 'hermes',
+      baselineAgeMs: null,
+    };
+  }
+
+  // Try to fetch the latest baseline from Turso.
+  let baseline = null;
+  try {
+    baseline = await getLatestComponentBaseline();
+  } catch (err) {
+    console.warn(
+      'Could not load component baseline from Turso for carry-forward; ' +
+      'falling back to FALLBACK_PRICES for missing components:',
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  const composed: ComponentPrices = extractFreshPrices(readings);
+  const now = Date.now();
+  let oldestCarriedAt: number | null = null;
+
+  for (const key of missingKeys) {
+    let carriedValue: number | null = null;
+    let carriedAt: number | null = null;
+
+    if (baseline) {
+      const v = baseline.prices[key];
+      if (typeof v === 'number' && isFinite(v)) {
+        carriedValue = v;
+        carriedAt = baseline.freshAt[key];
+      }
+    }
+
+    if (carriedValue == null) {
+      carriedValue = FALLBACK_PRICES[key];
+      console.warn(
+        `Component ${key} has no carry-forward source (Turso empty or column NULL); ` +
+        `using FALLBACK_PRICES literal ${carriedValue}. This is expected on first-ever deploy only.`,
+      );
+    }
+
+    composed[key] = carriedValue;
+    if (carriedAt != null && (oldestCarriedAt == null || carriedAt < oldestCarriedAt)) {
+      oldestCarriedAt = carriedAt;
+    }
+  }
+
+  return {
+    componentPrices: composed,
+    staleComponents: [...missingKeys],
+    source: 'fallback',
+    baselineAgeMs: oldestCarriedAt != null ? now - oldestCarriedAt : null,
+  };
+}
+
+/**
+ * Pull just the numeric value out of each reading. Missing readings get a
+ * harmless 0 here — the caller is expected to overwrite them via carry-forward
+ * before using the result. Kept as a separate step so the carry-forward pass
+ * has a single uniform target structure to mutate.
+ */
+function extractFreshPrices(readings: ComponentReadings): ComponentPrices {
+  return {
+    USDUSD: readings.USDUSD.value ?? 0,
+    EURUSD: readings.EURUSD.value ?? 0,
+    CNHUSD: readings.CNHUSD.value ?? 0,
+    JPYUSD: readings.JPYUSD.value ?? 0,
+    GBPUSD: readings.GBPUSD.value ?? 0,
+    XAUUSD: readings.XAUUSD.value ?? 0,
+    XAGUSD: readings.XAGUSD.value ?? 0,
+    XCUUSD: readings.XCUUSD.value ?? 0,
+    OILWTI: readings.OILWTI.value ?? 0,
+    OILBRENT: readings.OILBRENT.value ?? 0,
+  };
+}
+
 // ============================================================================
 // Main Handler
 // ============================================================================
@@ -114,21 +230,45 @@ const handler: Handler = async (event, context) => {
   console.log('Starting UNX price oracle update...');
   
   try {
-    // 1. Fetch component prices
-    console.log('Fetching component prices from Pyth Hermes API...');
-    const { prices: componentPrices, source } = await fetchComponentPrices();
+    // 1. Fetch per-component readings from Pyth Hermes.
+    //    Each reading is independently graded as 'hermes' (fresh + in-confidence)
+    //    or 'missing' (stale, low-confidence, parse-failed, or HTTP failure).
+    console.log('Fetching component readings from Pyth Hermes API...');
+    const readings = await fetchComponentReadings();
+
+    const missingKeys: ComponentKey[] = COMPONENT_KEYS.filter(
+      (k) => readings[k].status === 'missing',
+    );
+
+    // 2. Resolve final component prices via carry-forward.
+    //    Fresh components keep their Hermes value. Missing ones inherit the
+    //    most recently *known-fresh-for-that-component* value from Turso. If
+    //    Turso is empty (first-ever deploy) we fall back to FALLBACK_PRICES
+    //    so the system can bootstrap — that single path is explicit and
+    //    logged, never silent substitution.
+    const { componentPrices, staleComponents, source, baselineAgeMs } =
+      await resolveComponentPrices(readings, missingKeys);
+
+    if (staleComponents.length > 0) {
+      console.warn(
+        `Carry-forward write: ${staleComponents.length}/${COMPONENT_KEYS.length} ` +
+        `components stale [${staleComponents.join(', ')}]; reusing prior values ` +
+        `(baseline age ~${Math.round((baselineAgeMs ?? 0) / 60000)} min). ` +
+        `Reasons: ${staleComponents.map((k) => `${k}=${readings[k].reason ?? 'unknown'}`).join(', ')}`,
+      );
+    } else {
+      console.log(`✓ All ${COMPONENT_KEYS.length} components fresh from Hermes`);
+    }
+
     const componentPricesArray = componentPricesToArray(componentPrices);
-    
-    console.log('Component prices:', componentPrices);
-    console.log('Source:', source);
-    
-    // 2. Calculate basket price
+
+    // 3. Calculate basket price from the resolved component mix.
     const basketPrice = calculateBasketPrice(componentPricesArray);
     const basketPriceFixed = floatToFixed(basketPrice);
-    
+
     console.log(`Calculated basket price: ${basketPrice} USD (${basketPriceFixed} fixed-point)`);
-    
-    // 3. Update on-chain oracle
+
+    // 4. Update on-chain oracle
     console.log('Updating on-chain UNX Oracle...');
     
     const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
@@ -190,10 +330,10 @@ const handler: Handler = async (event, context) => {
       console.log('Continuing with blob storage...');
     }
     
-    // 4. Get current slot
+    // 5. Get current slot
     const slot = await connection.getSlot();
-    
-    // 5. Store price snapshot in blobs (best-effort — non-fatal)
+
+    // 6. Store price snapshot in blobs (best-effort — non-fatal)
     console.log('Storing price snapshot to Netlify Blobs...');
 
     const snapshot: UnxPriceSnapshot = {
@@ -220,7 +360,7 @@ const handler: Handler = async (event, context) => {
       );
     }
 
-    // 6. Write to Turso for long-term performance tracking (best-effort — non-fatal)
+    // 7. Write to Turso for long-term performance tracking (best-effort — non-fatal)
     console.log('Writing UNX price snapshot to Turso...');
     try {
       // Fetch latest FX rates from blobs (already written by update-fx-rates function).
@@ -272,6 +412,8 @@ const handler: Handler = async (event, context) => {
         totalTransactions,
         source,
         usdInflationIndex: await computeUsdInflationIndexAsync(snapshot.timestamp),
+        isCarriedForward: staleComponents.length > 0,
+        staleComponents,
       });
 
       if (!tursoResult.success) {

@@ -22,6 +22,11 @@ interface PerformanceRow {
   unxHoldingValue: number;
   usdHoldingValue: number;
   advantagePerHundred: number;
+  // Data-quality flags from the hourly writer's carry-forward path.
+  // isCarriedForward = at least one basket component reused a prior value
+  // because Pyth was stale/low-confidence/unreachable for that feed.
+  isCarriedForward?: boolean;
+  staleComponents?: string[];
 }
 
 interface PerformanceSummary {
@@ -508,9 +513,35 @@ export default function PerformancePage() {
                           ? 'bg-red-900/10'
                           : 'bg-red-900/20';
 
+                      // Carried-forward rows are visually de-emphasised so the
+                      // user can see at a glance which numbers came from a
+                      // live Pyth feed vs. were patched in by the writer.
+                      const carried = row.isCarriedForward === true;
+                      const carriedClass = carried ? 'opacity-60 italic' : '';
+                      const staleTitle = carried
+                        ? `Components carried forward from a prior snapshot because the Pyth feed was unavailable or low-confidence: ${
+                            (row.staleComponents ?? []).join(', ') || 'unknown'
+                          }`
+                        : undefined;
+
                       return (
-                        <tr key={row.timestamp} className={`border-b border-purple-500/10 ${rowColor}`}>
-                          <td className="px-4 py-3 text-purple-200 whitespace-nowrap">{fmtDate(row.recordedAt)}</td>
+                        <tr key={row.timestamp} className={`border-b border-purple-500/10 ${rowColor} ${carriedClass}`}>
+                          <td
+                            className="px-4 py-3 text-purple-200 whitespace-nowrap"
+                            title={staleTitle}
+                          >
+                            <span className="inline-flex items-center gap-2">
+                              {carried && (
+                                <span
+                                  aria-label="stale-feed"
+                                  className="text-yellow-300/80 text-xs font-mono"
+                                >
+                                  ~
+                                </span>
+                              )}
+                              {fmtDate(row.recordedAt)}
+                            </span>
+                          </td>
                           <td className={`px-4 py-3 text-right font-mono whitespace-nowrap ${
                             row.unxHoldingValue >= 100 ? 'text-green-400' : 'text-red-400'
                           }`}>{fmtHolding(row.unxHoldingValue)}</td>
@@ -518,7 +549,12 @@ export default function PerformancePage() {
                           <td className={`px-4 py-3 text-right font-mono whitespace-nowrap ${
                             row.advantagePerHundred >= 0 ? 'text-yellow-400' : 'text-red-400'
                           }`}>{fmtAdvantage(row.advantagePerHundred)}</td>
-                          <td className="px-4 py-3 text-right text-purple-200 font-mono whitespace-nowrap">{fmtUnx(row.unxPriceUsd)}</td>
+                          <td
+                            className="px-4 py-3 text-right text-purple-200 font-mono whitespace-nowrap"
+                            title={staleTitle}
+                          >
+                            {fmtUnx(row.unxPriceUsd)}
+                          </td>
                         </tr>
                       );
                     })}
@@ -528,7 +564,9 @@ export default function PerformancePage() {
               <div className="px-4 py-3 border-t border-purple-500/30 text-purple-400 text-xs">
                 {data.length} data point{data.length !== 1 ? 's' : ''} •{' '}
                 <span className="text-green-400">Green rows</span> = UNX advantage growing •{' '}
-                <span className="text-red-400">Red rows</span> = UNX advantage declining
+                <span className="text-red-400">Red rows</span> = UNX advantage declining •{' '}
+                <span className="text-yellow-300/80 font-mono">~</span> = at least one basket
+                component carried forward from a prior snapshot (hover the date for details)
               </div>
             </div>
           )}

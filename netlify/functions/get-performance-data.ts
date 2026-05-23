@@ -87,6 +87,14 @@ function aggregateToDaily(rows: UnxPerformanceRow[]): UnxPerformanceRow[] {
       dayRows.reduce((sum, r) => sum + ((r[field] as number) ?? 0), 0) / n;
 
     const last = dayRows[dayRows.length - 1];
+
+    // A day rolls up to "carried-forward" if any hourly row inside it was
+    // carried — that's the right granularity for the daily view.
+    const dailyCarried = dayRows.some((r) => r.isCarriedForward);
+    const dailyStale = Array.from(
+      new Set(dayRows.flatMap((r) => r.staleComponents)),
+    );
+
     dailyRows.push({
       timestamp: new Date(key + 'T00:00:00.000Z').getTime(),
       recordedAt: key + 'T00:00:00.000Z',
@@ -100,6 +108,8 @@ function aggregateToDaily(rows: UnxPerformanceRow[]): UnxPerformanceRow[] {
       usdInflationIndex: avg('usdInflationIndex'),
       uniyaaPurchasingPower: avg('uniyaaPurchasingPower'),
       source: last.source,
+      isCarriedForward: dailyCarried,
+      staleComponents: dailyStale,
     });
   }
 
@@ -302,6 +312,9 @@ const handler: Handler = async (event): Promise<HandlerResponse> => {
     if (interval === 'daily' && dailyRows.length > 0) {
       // Map DailyPerformanceRow → UnxPerformanceRow-compatible shape so the
       // rest of the pipeline (computeSummary, addHoldingValues) works unchanged.
+      // The unx_daily_performance table does not yet persist per-day carry
+      // status — until that's added, default conservatively to false; the
+      // hourly view (and on-the-fly aggregation below) carries the real flag.
       rows = dailyRows.map((d) => ({
         timestamp: d.timestamp,
         recordedAt: d.recordedAt,
@@ -311,6 +324,8 @@ const handler: Handler = async (event): Promise<HandlerResponse> => {
         usdInflationIndex: d.usdInflationIndex,
         uniyaaPurchasingPower: d.uniyaaPriceClose / d.usdInflationIndex,
         source: d.source,
+        isCarriedForward: false,
+        staleComponents: [],
       }));
     } else if (interval === 'daily') {
       rows = aggregateToDaily(rows);

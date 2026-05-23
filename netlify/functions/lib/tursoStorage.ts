@@ -119,6 +119,17 @@ export interface TursoUnxSnapshot {
    * If omitted, computed automatically via computeUsdInflationIndex().
    */
   usdInflationIndex?: number;
+  /**
+   * True when at least one component price was carried forward from an earlier
+   * snapshot because the live feed was missing/stale at write time. The basket
+   * value, currency prices, and `unxPriceUsd` reflect the carried mix.
+   */
+  isCarriedForward?: boolean;
+  /**
+   * Component IDs whose values were carried forward (subset of basket keys),
+   * e.g. `['XAUUSD', 'OILWTI']`. Empty/undefined for fully-fresh rows.
+   */
+  staleComponents?: string[];
 }
 
 // ============================================================================
@@ -211,9 +222,19 @@ export async function initTursoSchema(
       total_transactions    INTEGER,
       usd_inflation_index   REAL NOT NULL DEFAULT 1.0,
       uniyaa_purchasing_power REAL,
+      is_carried_forward    INTEGER NOT NULL DEFAULT 0,
+      stale_components      TEXT,
       UNIQUE(timestamp)
     )
   `);
+
+  // Non-destructive add for the carry-forward columns on databases that
+  // already had the pre-carry-forward schema. Each ALTER TABLE is wrapped
+  // independently because libSQL/SQLite throws "duplicate column name" if it
+  // already exists, and we want the second column to still be attempted even
+  // if the first add no-ops.
+  await addColumnIfMissing(client, 'unx_price_snapshots', 'is_carried_forward', 'INTEGER NOT NULL DEFAULT 0');
+  await addColumnIfMissing(client, 'unx_price_snapshots', 'stale_components', 'TEXT');
 
   await client.execute(`
     CREATE INDEX IF NOT EXISTS idx_unx_timestamp ON unx_price_snapshots(timestamp DESC)
@@ -245,6 +266,33 @@ export async function initTursoSchema(
   await client.execute(`
     CREATE INDEX IF NOT EXISTS idx_daily_perf_date ON unx_daily_performance(date DESC)
   `);
+}
+
+/**
+ * Idempotent ALTER TABLE ADD COLUMN.
+ *
+ * libSQL/SQLite has no native `IF NOT EXISTS` for ADD COLUMN, so we check
+ * `PRAGMA table_info` first and swallow duplicate-column errors as a
+ * belt-and-braces guard against races between concurrent function instances.
+ */
+async function addColumnIfMissing(
+  client: ReturnType<typeof createClient>,
+  table: string,
+  column: string,
+  type: string,
+): Promise<void> {
+  try {
+    const info = await client.execute(`PRAGMA table_info(${table})`);
+    const existing = info.rows.map((r) =>
+      String((r as Record<string, unknown>).name ?? ''),
+    );
+    if (existing.includes(column)) return;
+    await client.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/duplicate column name/i.test(msg)) return;
+    throw err;
+  }
 }
 
 /**
@@ -319,6 +367,9 @@ export async function storeUnxSnapshotToTurso(
     const cp = snap.currencyPrices;
     const co = snap.components;
 
+    const staleComponents = snap.staleComponents ?? [];
+    const isCarriedForward = snap.isCarriedForward ?? staleComponents.length > 0;
+
     await client.execute({
       sql: `
         INSERT OR REPLACE INTO unx_price_snapshots (
@@ -356,10 +407,12 @@ export async function storeUnxSnapshotToTurso(
           comp_usdusd,
           total_transactions,
           usd_inflation_index,
-          uniyaa_purchasing_power
+          uniyaa_purchasing_power,
+          is_carried_forward,
+          stale_components
         ) VALUES (
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
       `,
       args: [
@@ -398,6 +451,8 @@ export async function storeUnxSnapshotToTurso(
         snap.totalTransactions ?? null,
         usdInflationIndex,
         uniyaaPurchasingPower,
+        isCarriedForward ? 1 : 0,
+        staleComponents.length > 0 ? JSON.stringify(staleComponents) : null,
       ],
     });
 
@@ -459,6 +514,10 @@ export interface UnxPerformanceRow {
   usdInflationIndex: number;
   uniyaaPurchasingPower: number;
   source: string;
+  /** True if any component was carried forward from an earlier snapshot. */
+  isCarriedForward: boolean;
+  /** Component IDs whose values were carried forward; empty if none. */
+  staleComponents: string[];
 }
 
 /**
@@ -493,7 +552,9 @@ export async function getUnxPerformanceHistory(
         unx_price_usd,
         usd_inflation_index,
         uniyaa_purchasing_power,
-        source
+        source,
+        is_carried_forward,
+        stale_components
       FROM unx_price_snapshots
       WHERE timestamp >= ? AND timestamp <= ?
       ORDER BY timestamp ASC
@@ -501,7 +562,33 @@ export async function getUnxPerformanceHistory(
     args: [from.getTime(), to.getTime()],
   });
 
-  return result.rows.map((row) => ({
+  return result.rows.map(mapRowToPerformance);
+}
+
+/**
+ * Map a raw libSQL row from unx_price_snapshots into a UnxPerformanceRow.
+ * Tolerates rows from pre-carry-forward schema (missing columns → defaults).
+ */
+function mapRowToPerformance(row: Record<string, unknown>): UnxPerformanceRow {
+  const carriedRaw = row['is_carried_forward'];
+  const isCarriedForward =
+    typeof carriedRaw === 'number' ? carriedRaw === 1 : Boolean(carriedRaw);
+
+  let staleComponents: string[] = [];
+  const staleRaw = row['stale_components'];
+  if (typeof staleRaw === 'string' && staleRaw.length > 0) {
+    try {
+      const parsed = JSON.parse(staleRaw);
+      if (Array.isArray(parsed)) {
+        staleComponents = parsed.filter((x): x is string => typeof x === 'string');
+      }
+    } catch {
+      // Corrupt JSON in the column shouldn't break the page — just treat as
+      // "no per-component info" while keeping the boolean flag.
+    }
+  }
+
+  return {
     timestamp: row['timestamp'] as number,
     recordedAt: row['recorded_at'] as string,
     uniyaaPriceUsd: row['uniyaa_price_usd'] as number,
@@ -510,7 +597,9 @@ export async function getUnxPerformanceHistory(
     usdInflationIndex: row['usd_inflation_index'] as number,
     uniyaaPurchasingPower: row['uniyaa_purchasing_power'] as number,
     source: row['source'] as string,
-  }));
+    isCarriedForward,
+    staleComponents,
+  };
 }
 
 // ============================================================================
@@ -713,24 +802,160 @@ export async function getEarliestSnapshot(): Promise<UnxPerformanceRow | null> {
       unx_price_usd,
       usd_inflation_index,
       uniyaa_purchasing_power,
-      source
+      source,
+      is_carried_forward,
+      stale_components
     FROM unx_price_snapshots
     ORDER BY timestamp ASC
     LIMIT 1
   `);
 
   if (result.rows.length === 0) return null;
+  return mapRowToPerformance(result.rows[0] as Record<string, unknown>);
+}
 
-  const row = result.rows[0];
+// ============================================================================
+// Carry-Forward Source Lookup (used by the hourly writer)
+// ============================================================================
+
+/**
+ * Per-component XXX/USD prices as stored in `unx_price_snapshots`.
+ * Component key order matches ComponentPrices in lib/pythPrices.ts.
+ */
+export interface StoredComponentPrices {
+  USDUSD: number;
+  EURUSD: number;
+  CNHUSD: number;
+  JPYUSD: number;
+  GBPUSD: number;
+  XAUUSD: number;
+  XAGUSD: number;
+  XCUUSD: number;
+  OILWTI: number;
+  OILBRENT: number;
+}
+
+/**
+ * Source of each component for a carry-forward write decision.
+ * `freshAt` is the timestamp (Unix ms) of the snapshot that originally
+ * produced the value — useful for telemetry and "data age" UI hints.
+ */
+export interface ComponentBaseline {
+  prices: StoredComponentPrices;
+  /** Per-component origin timestamp (Unix ms). */
+  freshAt: Record<keyof StoredComponentPrices, number | null>;
+}
+
+/**
+ * Fetch the most recent component prices from Turso, preferring rows that
+ * were fully fresh at the time they were written. For each component, the
+ * most-recent value that *was not* itself carried forward for that specific
+ * component is returned. This prevents a long fallback streak from anchoring
+ * recovery on stale data.
+ *
+ * @returns Component baseline, or `null` if the table is empty.
+ */
+export async function getLatestComponentBaseline(): Promise<ComponentBaseline | null> {
+  const client = getTursoClient();
+
+  // Walk the table from newest to oldest. We don't expect long carry-forward
+  // streaks in steady state, so a small LIMIT is enough; bump if telemetry
+  // shows pathological streaks.
+  const result = await client.execute(`
+    SELECT
+      timestamp,
+      comp_usdusd,
+      comp_usdeur,
+      comp_usdcny,
+      comp_usdjpy,
+      comp_usdgbp,
+      comp_xauusd,
+      comp_xagusd,
+      comp_xcuusd,
+      comp_oilwti,
+      comp_oilbrent,
+      is_carried_forward,
+      stale_components
+    FROM unx_price_snapshots
+    ORDER BY timestamp DESC
+    LIMIT 200
+  `);
+
+  if (result.rows.length === 0) return null;
+
+  const columnByComponent: Record<keyof StoredComponentPrices, string> = {
+    USDUSD: 'comp_usdusd',
+    EURUSD: 'comp_usdeur',
+    CNHUSD: 'comp_usdcny',
+    JPYUSD: 'comp_usdjpy',
+    GBPUSD: 'comp_usdgbp',
+    XAUUSD: 'comp_xauusd',
+    XAGUSD: 'comp_xagusd',
+    XCUUSD: 'comp_xcuusd',
+    OILWTI: 'comp_oilwti',
+    OILBRENT: 'comp_oilbrent',
+  };
+
+  const prices: Partial<StoredComponentPrices> = {};
+  const freshAt: Partial<Record<keyof StoredComponentPrices, number | null>> = {};
+
+  // First pass: latest *known-fresh* value per component (i.e. that component
+  // was not in this row's stale_components list).
+  for (const componentKey of Object.keys(columnByComponent) as Array<keyof StoredComponentPrices>) {
+    for (const row of result.rows) {
+      const r = row as Record<string, unknown>;
+      const staleRaw = r['stale_components'];
+      let staleList: string[] = [];
+      if (typeof staleRaw === 'string' && staleRaw.length > 0) {
+        try {
+          const parsed = JSON.parse(staleRaw);
+          if (Array.isArray(parsed)) {
+            staleList = parsed.filter((x): x is string => typeof x === 'string');
+          }
+        } catch {
+          // Ignore malformed JSON — treat as "we don't know what was stale";
+          // skip this row's value to be safe.
+          continue;
+        }
+      }
+      if (staleList.includes(componentKey)) continue;
+
+      const value = r[columnByComponent[componentKey]];
+      if (typeof value === 'number' && isFinite(value)) {
+        prices[componentKey] = value;
+        freshAt[componentKey] = r['timestamp'] as number;
+        break;
+      }
+    }
+  }
+
+  // Second pass: for any component still missing (e.g. it was stale in every
+  // returned row), accept the most recent non-null value regardless of
+  // staleness — degraded but better than nothing.
+  for (const componentKey of Object.keys(columnByComponent) as Array<keyof StoredComponentPrices>) {
+    if (prices[componentKey] != null) continue;
+    for (const row of result.rows) {
+      const r = row as Record<string, unknown>;
+      const value = r[columnByComponent[componentKey]];
+      if (typeof value === 'number' && isFinite(value)) {
+        prices[componentKey] = value;
+        freshAt[componentKey] = r['timestamp'] as number;
+        break;
+      }
+    }
+  }
+
+  // If any component is still missing we have no baseline at all (table has
+  // only rows where this component was NULL on every row in the window).
+  // Caller treats null return as "no carry-forward possible".
+  const componentKeys = Object.keys(columnByComponent) as Array<keyof StoredComponentPrices>;
+  for (const key of componentKeys) {
+    if (prices[key] == null) return null;
+  }
+
   return {
-    timestamp: row['timestamp'] as number,
-    recordedAt: row['recorded_at'] as string,
-    uniyaaPriceUsd: row['uniyaa_price_usd'] as number,
-    uniyaaPriceLocal: row['uniyaa_price_local'] as number | null,
-    unxPriceUsd: row['unx_price_usd'] as number,
-    usdInflationIndex: row['usd_inflation_index'] as number,
-    uniyaaPurchasingPower: row['uniyaa_purchasing_power'] as number,
-    source: row['source'] as string,
+    prices: prices as StoredComponentPrices,
+    freshAt: freshAt as Record<keyof StoredComponentPrices, number | null>,
   };
 }
 
