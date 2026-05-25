@@ -147,8 +147,12 @@ export async function fetchUnxOracle(
       { commitment: 'confirmed' }
     );
     
-    // Load program with IDL
-    const idl = await import('@/../../public/idl/uniyaa_token.json');
+    // Load program with IDL. Fetched from the static `/idl/...` URL
+    // (served from public/) rather than a dynamic import — avoids
+    // bundling the JSON into the client chunk and sidesteps the
+    // `@/../../public/...` alias path that breaks under Turbopack
+    // (it resolves one level above the project root).
+    const idl = await fetch('/idl/uniyaa_token.json').then((r) => r.json());
     const program = new Program<UniyaaToken>(
       idl as any,
       provider
