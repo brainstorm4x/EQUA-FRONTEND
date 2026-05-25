@@ -12,34 +12,57 @@ This is the M13 cut-over from the UNIYAA edge-infrastructure build plan.
 
 ## How to enable it
 
-1. **Run a UNIYAA node** (laptop tier — has a real upstream wired in).
+### Step 1 — start the UNIYAA node
 
-   From `~/dreamwork/UNIYAA/`:
+`uniyaa-cli` is a Rust binary inside the UNIYAA workspace; it is **not** on your `PATH` by default. You must invoke it via `cargo run` from the workspace root (NOT from `crates/uniyaa-cli/` — `-p uniyaa-cli` tells cargo which workspace member to build):
 
-   ```bash
-   cargo run -p uniyaa-cli --release -- start \
-     --config node_config.toml \
-     --identity node_identity.json \
-     --rpc-listen 127.0.0.1:7788 \
-     --validator-rpc-upstream https://api.devnet.solana.com
-   ```
+```bash
+cd ~/dreamwork/UNIYAA
+cargo run --release -p uniyaa-cli -- start \
+  --config node_config.toml \
+  --identity node_identity.json \
+  --rpc-listen 127.0.0.1:7788 \
+  --validator-rpc-upstream https://api.devnet.solana.com
+```
 
-   This brings up:
-   - The mesh QUIC peer on whatever `listen_addr` your `node_config.toml` says.
-   - A Solana-compatible JSON-RPC server on `http://127.0.0.1:7788`.
+Notes:
 
-2. **Point the frontend at it.** In `.env.local`:
+- The first run compiles the release binary (~2 minutes). Subsequent runs are instant.
+- The `--` separator is required — it tells cargo "everything after this is for the binary, not for cargo."
+- `node_config.toml` + `node_identity.json` live at the UNIYAA repo root; both are tracked in git.
+- The default `node_config.toml` lists unreachable bootstrap seeds (`seed1.uniyaa.network:7447` etc.). You'll see "Bootstrap seed queued" lines and dial-failure warnings — **that's expected and harmless** for local-gateway use; the RPC server is independent of mesh dial-out.
 
-   ```bash
-   NEXT_PUBLIC_RPC_ENDPOINT=http://127.0.0.1:7788
-   NEXT_PUBLIC_NETWORK=devnet
-   ```
+Once you see these three lines the gateway is ready:
 
-3. **Run the frontend normally.**
+```
+M11 RPC: validator-connected (laptop tier) ... passthrough=true
+uniyaa-api JSON-RPC server listening listen=127.0.0.1:7788 ...
+UNIYAA QUIC server listening on 0.0.0.0:7447 ...
+```
 
-   ```bash
-   npm run dev
-   ```
+**Optional convenience:** to put the binary on your `PATH` so you can just type `uniyaa-cli start ...` from anywhere:
+
+```bash
+cd ~/dreamwork/UNIYAA
+cargo install --path crates/uniyaa-cli
+```
+
+### Step 2 — point the frontend at the gateway
+
+In `.env.local`:
+
+```bash
+NEXT_PUBLIC_RPC_ENDPOINT=http://127.0.0.1:7788
+NEXT_PUBLIC_NETWORK=devnet
+```
+
+### Step 3 — run the frontend
+
+```bash
+npm run dev
+```
+
+**Restart the dev server after any `.env.local` change** — Next.js loads env vars at startup; an already-running dev server keeps serving stale values.
 
 The standard `@solana/web3.js` `Connection` works unchanged — every method either hits a fast cached path inside UNIYAA or transparently passes through to the upstream you configured.
 
