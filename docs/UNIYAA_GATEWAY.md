@@ -79,18 +79,38 @@ For this frontend you want the full-power mode. The phone mode is correct behavi
 
 **Dedicated SBCs (Pi 4 / 5 / Orange Pi etc.) are the intended mesh backbone, not laptops.** A laptop works fine for dev / casual operation; the production deployment target is always-on low-power SBCs. See `docs/DEPLOYMENT_TIERS.md` in the UNIYAA repo (`~/dreamwork/UNIYAA/docs/`) for the full hardware-tier story.
 
-## Verification
+## Verification checklist
 
-A successful cut-over looks like:
+Walk through this in a real browser once after pointing `NEXT_PUBLIC_RPC_ENDPOINT` at the gateway. Headless dev startup is clean; the browser-runtime path is the part only a real browser exercises.
 
-1. The browser console no longer reports requests to `api.devnet.solana.com`. They all go to `http://127.0.0.1:7788`.
-2. The UNIYAA node log shows:
+**Startup signals (without any wallet activity):**
+
+1. `npm run dev` reports `✓ Ready` with no module-resolution errors (`Module not found` would be a code-level bug — none known as of 2026-05-26 after the IDL-path + Program-ID fixes).
+2. Browser → `localhost:3000` loads to HTTP 200 with no SSR errors in the dev-server terminal.
+3. UNIYAA gateway log shows:
    - `uniyaa-api JSON-RPC server listening` on startup.
    - `M11 RPC: validator-connected … passthrough = true` on startup.
-   - `validator-connected: fetched + cached getAccountInfo` on the first lookup per account; subsequent lookups for the same account skip the upstream fetch (`local/witness hit, no upstream needed`).
+
+**With a wallet connected:**
+
+4. Network tab in browser dev tools: requests go to `http://127.0.0.1:7788`, NOT `api.devnet.solana.com`.
+5. UNIYAA gateway log shows per-account-info flow:
+   - `validator-connected: fetched + cached getAccountInfo` on the first lookup per account.
+   - `validator-connected: local/witness hit, no upstream needed` on subsequent same-account lookups.
    - `validator-connected: passthrough (uncached)` for `sendTransaction`, `getLatestBlockhash`, `getProgramAccounts`, etc.
+6. UI populates: balance reads, account state, transaction sends all work.
 
 If wallet flows fail with `-32601 MethodNotFound`, check that you started the node with `--validator-rpc-upstream` set; without it, the gateway has nothing to fall back to.
+
+## Known browser-console limitations (informational; not blockers)
+
+These appear in the browser console when running against the UNIYAA gateway. They are NOT errors in the cut-over — the underlying functionality works — but if you're triaging real bugs alongside them, knowing they're harmless saves time.
+
+| Symptom                                              | Cause                                                                                  | Fix                                                                                                     |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `ws error: undefined` (sometimes many)               | `@solana/web3.js` opens a WebSocket to the same host as the HTTP RPC for `onAccountChange` subscriptions. UNIYAA gateway is JSON-RPC over HTTP only — no WS endpoint. web3.js falls back to polling automatically; the failed-connection log lines are cosmetic. | Future: add WebSocket subscriptions to `uniyaa-api`. Out of scope for M13; would be its own milestone (M11.6-ish — subscription gossip is non-trivial because state changes need to fan out across mesh peers, not just one server). |
+| `404 /.netlify/functions/get-fx-rates`               | Netlify functions don't run under `next dev`. The frontend's FX-rate client tries the Netlify endpoint first then falls back to static defaults. | None needed; the static fallback rates are correct for the dev path.                                    |
+| `[browser] Error fetching ... TypeError: Failed to fetch` (during initial render) | Brief race: the page mounts before the wallet adapter resolves, so the connection's first request fires before the gateway URL is finalized. Re-fetches on next render succeed. | None needed; resolves on its own within ~1s. If persistent, check that `NEXT_PUBLIC_RPC_ENDPOINT` is set + the dev server was restarted after the `.env.local` change. |
 
 ## Reverting
 
