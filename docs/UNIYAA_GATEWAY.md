@@ -70,12 +70,14 @@ The standard `@solana/web3.js` `Connection` works unchanged — every method eit
 
 The gateway has two operating modes depending on how the node is started:
 
-| Mode                         | `--validator-rpc-upstream` set? | Behavior on unknown method                    | Recommended for                |
-| ---------------------------- | ------------------------------- | --------------------------------------------- | ------------------------------ |
-| **Laptop / SBC (M13 mode)**  | yes                             | passthrough to upstream (drop-in replacement) | this frontend                  |
-| **Phone (M11 phone tier)**   | no                              | `-32601 MethodNotFound` (honest no-fallback)  | a future Termux / Android peer |
+| Mode                                           | `--validator-rpc-upstream` set? | Behavior on unknown method                    | Recommended for                |
+| ---------------------------------------------- | ------------------------------- | --------------------------------------------- | ------------------------------ |
+| **Full-power (SBC / N100 / server / laptop)**  | yes                             | passthrough to upstream (drop-in replacement) | this frontend                  |
+| **Phone tier (Termux)**                        | no                              | `-32601 MethodNotFound` (honest no-fallback)  | UNIYAA-native apps that handle it |
 
-For this frontend you want the laptop mode. The phone mode is correct behavior for a UNIYAA-native app that already knows which methods are cacheable and would handle a `MethodNotFound` itself — but `@solana/web3.js` does not, and will throw.
+For this frontend you want the full-power mode. The phone mode is correct behavior for a UNIYAA-native app that already knows which methods are cacheable and would handle a `MethodNotFound` itself — but `@solana/web3.js` does not, and will throw.
+
+**Dedicated SBCs (Pi 4 / 5 / Orange Pi etc.) are the intended mesh backbone, not laptops.** A laptop works fine for dev / casual operation; the production deployment target is always-on low-power SBCs. See `docs/DEPLOYMENT_TIERS.md` in the UNIYAA repo (`~/dreamwork/UNIYAA/docs/`) for the full hardware-tier story.
 
 ## Verification
 
