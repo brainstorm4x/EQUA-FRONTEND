@@ -22,9 +22,13 @@ const HERMES_API_URL = 'https://hermes.pyth.network/v2/updates/price/latest';
 
 /**
  * A Pyth feed is considered missing if its last publish is older than this.
- * Set conservatively (10 min) — Pyth normally republishes feeds every second.
+ * Set to 30 min (raised from 10 min on 2026-06-01): crypto feeds republish
+ * every second, but FX / metals / oil feeds can pause 20+ min on slow news
+ * days even during market hours. 30 min lets us tolerate those normal pauses
+ * without flipping legitimate feeds into the carry-forward path. Weekend
+ * pauses (always >>30 min) still correctly trigger carry-forward.
  */
-export const MAX_FEED_AGE_SECONDS = 600;
+export const MAX_FEED_AGE_SECONDS = 1800;
 
 /**
  * Maximum confidence-to-price ratio before we treat the reading as missing.
@@ -35,12 +39,23 @@ export const MAX_CONF_RATIO = 0.05;
 
 /**
  * Verified Pyth Hermes Feed IDs (from Pyth Network documentation)
- * These are the ONLY correct feed IDs - do not modify without verification
+ * These are the ONLY correct feed IDs - do not modify without verification.
+ *
+ * XCU status (2026-06-01): Pyth has stopped publishing live values for the
+ * Metal.XCU/USD spot copper feed (returns price=0, publish_time=0). The feed
+ * is kept in this map and in COMPONENT_KEYS so the on-chain component-array
+ * layout doesn't shift, but its basket weight in BASKET_COMPONENTS has been
+ * set to 0. Every snapshot since 2026-05-23 lists XCUUSD in staleComponents
+ * because the freshness gate rejects publish_time=0. That is expected and
+ * does NOT make the snapshot a 'fallback' (see FALLBACK_WEIGHT_THRESHOLD in
+ * update-unx-price.ts). Other spot metals on Pyth (XAL, XNI) are dead too;
+ * XPT/XPD are stale (>24h). If/when Pyth restarts XCU publishing, restore
+ * BASKET_COMPONENTS XCUUSD weight to 0.05 and drop XAG back to 0.05.
  */
 const PYTH_PRICE_FEEDS = {
   XAUUSD:    '0x765d2ba906dbc32ca17cc11f5310a89e9ee1f6420508c63861f2f8ba4ee34bb2', // Metal.XAU/USD (Gold)
   XAGUSD:    '0xf2fb02c32b055c805e7238d628e5e9dadef274376114eb1f012337cabe93871e', // Metal.XAG/USD (Silver)
-  XCUUSD:    '0x636bedafa14a37912993f265eda22431a2be363ad41a10276424bbe1b7f508c4', // Metal.XCU/USD (Copper, spot)
+  XCUUSD:    '0x636bedafa14a37912993f265eda22431a2be363ad41a10276424bbe1b7f508c4', // Metal.XCU/USD (Copper) — RETIRED 2026-05-23, see header
   EURUSD:    '0xa995d00bb36a63cef7fd2c287dc105fc8f3d93779f062f09551b0af3e81ec30b', // FX.EUR/USD
   USDCNH:    '0xeef52e09c878ad41f6a81803e3640fe04dceea727de894edd4ea117e2e332e66', // FX.USD/CNH (invert → CNH/USD)
   USDJPY:    '0xef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52', // FX.USD/JPY (invert → JPY/USD)

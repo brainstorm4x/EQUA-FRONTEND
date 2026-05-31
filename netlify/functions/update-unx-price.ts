@@ -120,6 +120,25 @@ function hashWeights(): string {
 }
 
 /**
+ * Maximum fraction of basket weight that can be carry-forwarded before the
+ * snapshot is tagged as `source: 'fallback'`. Anything below this still
+ * carries forward but is tagged `'hermes'` because the basket price is
+ * substantially live. `staleComponents` always lists the specific carry-
+ * forwarded feeds regardless of the source label.
+ */
+const FALLBACK_WEIGHT_THRESHOLD = 0.10;
+
+/**
+ * Look up a component's basket weight from its ComponentKey. Relies on
+ * COMPONENT_KEYS order matching the BasketComponent enum slot order
+ * (verified at module load time).
+ */
+function weightOf(key: ComponentKey): number {
+  const idx = COMPONENT_KEYS.indexOf(key);
+  return idx >= 0 ? BASKET_COMPONENTS[idx].weight : 0;
+}
+
+/**
  * Resolve final component prices for this hour's snapshot.
  *
  * For each component:
@@ -127,10 +146,16 @@ function hashWeights(): string {
  *   - otherwise carry forward the most recent known-fresh value from Turso;
  *   - if Turso is empty (first-ever deploy), fall back to FALLBACK_PRICES.
  *
- * The returned `source` reflects the *write* semantics, not the raw Hermes
- * status: any successful carry-forward write is tagged `'fallback'` so legacy
- * downstream consumers (and the daily aggregator that watches `source`) keep
- * working. The richer truth lives in `staleComponents` + `is_carried_forward`.
+ * Source labeling (weight-aware as of 2026-06-01):
+ *   - `'hermes'`  when no carry-forward happened, OR when carry-forwarded
+ *                 weight is below FALLBACK_WEIGHT_THRESHOLD (i.e. the basket
+ *                 price is substantially live). This handles the case where
+ *                 only the retired XCU slot (weight 0) or a small feed is
+ *                 missing.
+ *   - `'fallback'` when carry-forwarded weight exceeds the threshold. The
+ *                  basket is materially stale in this case.
+ *   - `staleComponents` is the per-feed truth and is populated regardless of
+ *     the snapshot-level label.
  */
 async function resolveComponentPrices(
   readings: ComponentReadings,
@@ -193,10 +218,14 @@ async function resolveComponentPrices(
     }
   }
 
+  const missingWeight = missingKeys.reduce((sum, k) => sum + weightOf(k), 0);
+  const source: 'hermes' | 'fallback' =
+    missingWeight < FALLBACK_WEIGHT_THRESHOLD ? 'hermes' : 'fallback';
+
   return {
     componentPrices: composed,
     staleComponents: [...missingKeys],
-    source: 'fallback',
+    source,
     baselineAgeMs: oldestCarriedAt != null ? now - oldestCarriedAt : null,
   };
 }

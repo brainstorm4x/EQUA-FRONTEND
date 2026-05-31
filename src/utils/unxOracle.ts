@@ -4,10 +4,14 @@
  * This module reads the UNX (UNIYAA Index) price directly from the on-chain oracle.
  * The oracle is the single source of truth for UNX pricing, maintained by the backend.
  * 
- * Basket Composition (10 assets):
+ * Basket Composition (9 active + 1 retired slot):
  *   FX 57%     — USD 23% / EUR 17% / CNH 9% / JPY 5% / GBP 3%
- *   Metals 30% — XAU (Gold) 20% / XAG (Silver) 5% / XCU (Copper) 5%
+ *   Metals 30% — XAU (Gold) 20% / XAG (Silver) 10%
  *   Energy 13% — WTI 7% / Brent 6%
+ *
+ * XCU (Copper) slot retained at weight 0 for on-chain layout stability;
+ * Pyth paused the Metal.XCU/USD feed on 2026-05-23. See netlify/functions/
+ * lib/unxOracle.ts for full notes — keep both files in sync.
  * 
  * Features:
  * - Direct on-chain oracle reads from UnxOracle PDA
@@ -65,9 +69,9 @@ export interface ComponentInfo {
 }
 
 /**
- * UNX basket composition (10 components)
+ * UNX basket composition (9 active + 1 retired slot)
  *   FX 57%     = USD 23 + EUR 17 + CNH 9 + JPY 5 + GBP 3
- *   Metals 30% = XAU 20 + XAG 5 + XCU 5
+ *   Metals 30% = XAU 20 + XAG 10                          (XCU retired, weight 0)
  *   Energy 13% = WTI 7 + Brent 6
  */
 export const BASKET_COMPONENTS: ComponentInfo[] = [
@@ -77,8 +81,8 @@ export const BASKET_COMPONENTS: ComponentInfo[] = [
   { id: BasketComponent.USDJPY, name: 'JPY/USD', weight: 0.05 },
   { id: BasketComponent.USDGBP, name: 'GBP/USD', weight: 0.03 },
   { id: BasketComponent.XAUUSD, name: 'XAU/USD', weight: 0.20 },
-  { id: BasketComponent.XAGUSD, name: 'XAG/USD', weight: 0.05 },
-  { id: BasketComponent.XCUUSD, name: 'XCU/USD', weight: 0.05 },
+  { id: BasketComponent.XAGUSD, name: 'XAG/USD', weight: 0.10 },
+  { id: BasketComponent.XCUUSD, name: 'XCU/USD', weight: 0.00 }, // retired 2026-05-23: Pyth XCU feed dead
   { id: BasketComponent.OILWTI, name: 'OIL_WTI', weight: 0.07 },
   { id: BasketComponent.OILBRENT, name: 'OIL_BRENT', weight: 0.06 },
 ];

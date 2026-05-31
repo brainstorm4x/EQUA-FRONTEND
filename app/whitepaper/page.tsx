@@ -811,7 +811,7 @@ export default function WhitepaperPage() {
                   </tbody>
                 </table>
                 <p className="text-purple-200 text-xs mt-2 italic">
-                  <strong className="text-white">Note:</strong> All prices denominated in UNX (UNIYAA Index). USD values shown are approximate equivalents for convenience only. Actual pricing uses UNX, which is a diversified basket of 10 components (57% currencies, 30% precious + industrial metals, 13% oil). The on-chain oracle updates UNX/USD exchange rates every hour.
+                  <strong className="text-white">Note:</strong> All prices denominated in UNX (UNIYAA Index). USD values shown are approximate equivalents for convenience only. Actual pricing uses UNX, which is a diversified basket of 9 active components (57% currencies, 30% precious metals, 13% oil). The on-chain oracle updates UNX/USD exchange rates every hour.
                 </p>
               </div>
 
@@ -819,7 +819,7 @@ export default function WhitepaperPage() {
               <div className="bg-yellow-500/10 rounded-xl p-6 mt-8 border border-yellow-500/30">
                 <h4 className="text-lg font-bold text-yellow-400 mb-3">⚠️ Important: UNX vs USD</h4>
                 <p className="text-purple-200 leading-relaxed">
-                  <strong className="text-white">All price appreciation is calculated in UNX (UNIYAA Index), not USD.</strong> UNX is a diversified basket of 10 components: 57% major currencies, 30% precious + industrial metals (gold, silver, copper), and 13% oil (WTI + Brent). The USD values shown throughout this whitepaper are <strong className="text-white">approximate equivalents for convenience only</strong>—actual pricing on-chain is denominated in UNX.
+                  <strong className="text-white">All price appreciation is calculated in UNX (UNIYAA Index), not USD.</strong> UNX is a diversified basket of 9 active components: 57% major currencies, 30% precious metals (gold, silver), and 13% oil (WTI + Brent). The USD values shown throughout this whitepaper are <strong className="text-white">approximate equivalents for convenience only</strong>—actual pricing on-chain is denominated in UNX.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
                   This means that when the whitepaper says &quot;Tier 1: $0.01 to $0.1,&quot; it actually means <strong className="text-white">&quot;0.01 to 0.1 UNX&quot;</strong>, with USD values calculated dynamically based on the current UNX/USD exchange rate (updated every hour from Hermes/Pyth price feeds).
@@ -855,7 +855,7 @@ export default function WhitepaperPage() {
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li><strong className="text-white">Widely used global currencies</strong> (USD, EUR, CNH, JPY, GBP) — 57% weight</li>
-                <li><strong className="text-white">Precious + industrial metals</strong> (Gold XAU 20%, Silver XAG 5%, Copper XCU 5%) — 30% weight, combining long-term store of value with industrial-cycle exposure</li>
+                <li><strong className="text-white">Precious metals</strong> (Gold XAU 20%, Silver XAG 10%) — 30% weight, long-term store of value (copper slot retired 2026-05-23 — Pyth feed paused; weight reallocated to silver)</li>
                 <li><strong className="text-white">Energy commodities</strong> (WTI 7%, Brent 6%) — 13% weight, tracking US + global energy costs that drive real-economy inflation</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
@@ -887,10 +887,9 @@ export default function WhitepaperPage() {
                     <h5 className="text-yellow-300 font-semibold mb-2">Metals (30%)</h5>
                     <ul className="text-purple-200 text-sm space-y-1">
                       <li>XAU/USD (Gold): 20%</li>
-                      <li>XAG/USD (Silver): 5%</li>
-                      <li>XCU/USD (Copper): 5%</li>
+                      <li>XAG/USD (Silver): 10%</li>
                     </ul>
-                    <p className="text-yellow-200 text-xs mt-2">Monetary metals + industrial-cycle exposure</p>
+                    <p className="text-yellow-200 text-xs mt-2">Monetary metals (copper slot temporarily retired — Pyth feed paused)</p>
                   </div>
                   <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/30">
                     <h5 className="text-green-300 font-semibold mb-2">Energy (13%)</h5>
@@ -902,7 +901,7 @@ export default function WhitepaperPage() {
                   </div>
                 </div>
                 <p className="text-purple-300 text-sm mt-4 italic">
-                  <strong className="text-white">Updated May 2026:</strong> UNX basket rebalanced to 10 components. Gold concentration reduced from 35% → 20% and oil exposure split across WTI and Brent, with silver and copper added for industrial diversification. All components remain spot-priced via Pyth Hermes. Weights sum to 100% (verified on-chain).
+                  <strong className="text-white">Updated June 2026:</strong> UNX basket now uses 9 active spot-priced components. Pyth paused the Metal.XCU/USD copper feed on 2026-05-23; copper&apos;s 5% weight was reallocated to silver (5% → 10%) to keep the metals allocation at 30%. The XCU array slot is preserved for on-chain layout stability and can be restored if Pyth resumes the feed. All other components remain live on Pyth Hermes; weights still sum to 100%.
                 </p>
               </div>
 

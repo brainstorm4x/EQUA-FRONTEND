@@ -72,21 +72,21 @@ type Interval = 'hourly' | 'daily';
  * netlify/functions/lib/unxOracle.ts (which is the single source of truth
  * read by the on-chain oracle updater). Ordered largest weight first.
  *
- * Diversified 10-component basket:
+ * Active 9-component basket (XCU/Copper slot retired 2026-05-23 — Pyth feed
+ * went dead; 5% weight reallocated to XAG/Silver):
  *   FX 57%     — USD 23 / EUR 17 / CNH 9 / JPY 5 / GBP 3
- *   Metals 30% — XAU 20 / XAG 5 / XCU 5
+ *   Metals 30% — XAU 20 / XAG 10
  *   Energy 13% — WTI 7 / Brent 6
  */
 const UNX_BASKET = [
   { name: 'USD',             pct: 23, color: '#4ade80' /* green-400 */,  note: 'liquidity' },
   { name: 'Gold (XAU)',      pct: 20, color: '#fbbf24' /* amber-400 */,  note: 'inflation hedge' },
   { name: 'Euro (EUR)',      pct: 17, color: '#60a5fa' /* blue-400 */,   note: 'reserve FX' },
+  { name: 'Silver (XAG)',    pct: 10, color: '#cbd5e1' /* slate-300 */,  note: 'monetary metal' },
   { name: 'Yuan (CNH)',      pct:  9, color: '#f87171' /* red-400 */,    note: 'Asian FX' },
   { name: 'WTI Crude',       pct:  7, color: '#1f2937' /* slate-800 */,  note: 'US energy' },
   { name: 'Brent Crude',     pct:  6, color: '#374151' /* slate-700 */,  note: 'global energy' },
   { name: 'Yen (JPY)',       pct:  5, color: '#a78bfa' /* violet-400 */, note: 'reserve FX' },
-  { name: 'Silver (XAG)',    pct:  5, color: '#cbd5e1' /* slate-300 */,  note: 'monetary metal' },
-  { name: 'Copper (XCU)',    pct:  5, color: '#fb923c' /* orange-400 */, note: 'industrial metal' },
   { name: 'Sterling (GBP)',  pct:  3, color: '#f472b6' /* pink-400 */,   note: 'reserve FX' },
 ] as const;
 
@@ -273,6 +273,9 @@ export default function PerformancePage() {
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">UNX vs USD</h2>
             <p className="text-purple-300 text-lg">
               How the UNX basket (30% metals, 34% FX ex-USD, 13% oil, 23% USD) holds value as the dollar erodes
+            </p>
+            <p className="text-purple-400 text-xs mt-2">
+              9-component basket — copper slot temporarily retired (Pyth feed paused)
             </p>
           </div>
 
