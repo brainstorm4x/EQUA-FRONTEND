@@ -508,7 +508,7 @@ export default function WhitepaperPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Linear Phase: When Compounding Ends</h3>
               <p className="text-purple-200 leading-relaxed">
-                When UNIYAA reaches <strong className="text-white">$500,000 in UNX terms</strong> (displayed as approximate USD), the system enters the <strong className="text-white">linear phase</strong> (Tier 9). At this point:
+                When UNIYAA reaches <strong className="text-white">$1,000,000 in UNX terms</strong> (displayed as approximate USD), the system enters the <strong className="text-white">linear phase</strong> (Tier 9). At this point:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li>Compounding stops to prevent runaway appreciation</li>
@@ -553,8 +553,8 @@ export default function WhitepaperPage() {
                 <h4 className="text-lg font-bold text-teal-400 mb-3">Tier 2: Early Growth ($0.1 to $1)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~23,027 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1 transaction)</p>
+                    <p><strong className="text-white">Duration:</strong> ~230,270 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (10 transactions)</p>
                     <p><strong className="text-white">Starting Price:</strong> ~$0.1 USD</p>
                   </div>
                   <div>
@@ -576,8 +576,8 @@ export default function WhitepaperPage() {
                 <h4 className="text-lg font-bold text-blue-400 mb-3">Tier 3: Network Scaling ($1 to $10)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~230,270 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (10 transactions)</p>
+                    <p><strong className="text-white">Duration:</strong> ~2,302,700 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (100 transactions)</p>
                     <p><strong className="text-white">Starting Price:</strong> ~$1 USD</p>
                   </div>
                   <div>
@@ -599,8 +599,8 @@ export default function WhitepaperPage() {
                 <h4 className="text-lg font-bold text-indigo-400 mb-3">Tier 4: Market Expansion ($10 to $100)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~230,270 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (10 transactions)</p>
+                    <p><strong className="text-white">Duration:</strong> ~23,027,000 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
                     <p><strong className="text-white">Starting Price:</strong> ~$10 USD</p>
                   </div>
                   <div>
@@ -622,8 +622,8 @@ export default function WhitepaperPage() {
                 <h4 className="text-lg font-bold text-violet-400 mb-3">Tier 5: Early Maturity ($100 to $1k)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~2,302,700 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (100 transactions)</p>
+                    <p><strong className="text-white">Duration:</strong> ~23,027,000 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
                     <p><strong className="text-white">Starting Price:</strong> ~$100 USD</p>
                   </div>
                   <div>
@@ -645,8 +645,8 @@ export default function WhitepaperPage() {
                 <h4 className="text-lg font-bold text-pink-400 mb-3">Tier 6: Strong Adoption ($1k to $10k)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~2,302,700 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (100 transactions)</p>
+                    <p><strong className="text-white">Duration:</strong> ~23,027,000 transactions</p>
+                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
                     <p><strong className="text-white">Starting Price:</strong> ~$1,000 USD</p>
                   </div>
                   <div>
@@ -668,7 +668,7 @@ export default function WhitepaperPage() {
                 <h4 className="text-lg font-bold text-orange-400 mb-3">Tier 7: Mass Market ($10k to $100k)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~23,027,002 transactions</p>
+                    <p><strong className="text-white">Duration:</strong> ~23,027,000 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
                     <p><strong className="text-white">Starting Price:</strong> ~$10,000 USD</p>
                   </div>
@@ -688,21 +688,21 @@ export default function WhitepaperPage() {
 
               {/* Tier 8 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-red-400 mb-3">Tier 8: Final Compounding ($100k to $500k)</h4>
+                <h4 className="text-lg font-bold text-red-400 mb-3">Tier 8: Final Compounding ($100k to $1M)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Duration:</strong> ~16,095,184 transactions</p>
+                    <p><strong className="text-white">Duration:</strong> ~23,027,000 transactions</p>
                     <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
                     <p><strong className="text-white">Starting Price:</strong> ~$100,000 USD</p>
                   </div>
                   <div>
-                    <p><strong className="text-white">End Price:</strong> ~$500,000 USD</p>
+                    <p><strong className="text-white">End Price:</strong> ~$1,000,000 USD</p>
                     <p><strong className="text-white">Formula:</strong> Price = 100,000 × (1.0001)^epoch</p>
                     <p><strong className="text-white">Growth Type:</strong> Compounded</p>
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Final compounding tier before transition. Reaches $500,000 sustainably.
+                  <strong className="text-white">Why This Mechanism?</strong> Final compounding tier before transition. Reaches $1,000,000 sustainably.
                 </p>
                 <p className="text-xs text-purple-300 mt-2 italic">
                   (Actual pricing in UNX - USD shown for convenience)
@@ -711,21 +711,21 @@ export default function WhitepaperPage() {
 
               {/* Tier 9 */}
               <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-purple-400 mb-3">Tier 9: Perpetual Sustainable Growth ($500k+)</h4>
+                <h4 className="text-lg font-bold text-purple-400 mb-3">Tier 9: Perpetual Sustainable Growth ($1M+)</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
-                    <p><strong className="text-white">Start:</strong> After price reaches ~$500,000 USD</p>
+                    <p><strong className="text-white">Start:</strong> After price reaches ~$1,000,000 USD</p>
                     <p><strong className="text-white">Mechanism:</strong> 250 UNX per epoch (1,000 transactions)</p>
                     <p><strong className="text-white">Monthly Cap:</strong> 25,000 UNX maximum increase</p>
                   </div>
                   <div>
                     <p><strong className="text-white">End Price:</strong> Forever growing</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 500,000 + (250 × epochs)</p>
+                    <p><strong className="text-white">Formula:</strong> Price = 1,000,000 + (250 × epochs)</p>
                     <p><strong className="text-white">Growth Type:</strong> Linear</p>
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear 250 UNX/epoch (0.05% of 500,000 UNX) provides steady appreciation. The 25,000 UNX/month cap ensures stability while maintaining good returns.
+                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear 250 UNX/epoch (0.025% of 1,000,000 UNX) provides steady appreciation. The 25,000 UNX/month cap ensures stability while maintaining good returns.
                 </p>
                 <p className="text-xs text-purple-300 mt-2 italic">
                   (Actual pricing in UNX - USD shown for convenience)
@@ -754,35 +754,35 @@ export default function WhitepaperPage() {
                     </tr>
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">2</td>
-                      <td className="p-3">1</td>
+                      <td className="p-3">10</td>
                       <td className="p-3">0.01%</td>
                       <td className="p-3">0.1 → 1</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">3</td>
-                      <td className="p-3">10</td>
+                      <td className="p-3">100</td>
                       <td className="p-3">0.01%</td>
                       <td className="p-3">1 → 10</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">4</td>
-                      <td className="p-3">10</td>
+                      <td className="p-3">1,000</td>
                       <td className="p-3">0.01%</td>
                       <td className="p-3">10 → 100</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">5</td>
-                      <td className="p-3">100</td>
+                      <td className="p-3">1,000</td>
                       <td className="p-3">0.01%</td>
                       <td className="p-3">100 → 1k</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr className="border-b border-purple-500/20">
                       <td className="p-3">6</td>
-                      <td className="p-3">100</td>
+                      <td className="p-3">1,000</td>
                       <td className="p-3">0.01%</td>
                       <td className="p-3">1k → 10k</td>
                       <td className="p-3">Compound</td>
@@ -798,14 +798,14 @@ export default function WhitepaperPage() {
                       <td className="p-3">8</td>
                       <td className="p-3">1,000</td>
                       <td className="p-3">0.01%</td>
-                      <td className="p-3">100k → 500k</td>
+                      <td className="p-3">100k → 1M</td>
                       <td className="p-3">Compound</td>
                     </tr>
                     <tr>
                       <td className="p-3">9</td>
                       <td className="p-3">1,000</td>
                       <td className="p-3">250 UNX</td>
-                      <td className="p-3">500k → ∞</td>
+                      <td className="p-3">1M → ∞</td>
                       <td className="p-3">Linear</td>
                     </tr>
                   </tbody>
@@ -972,7 +972,7 @@ export default function WhitepaperPage() {
                 UNIYAA is designed to create value for everyone—not just token holders. Once the terminal phase is reached and price growth stabilizes, the protocol activates <strong className="text-white">five social purpose accounts</strong> that distribute UNIYAA annually to support education, healthcare, research, grants, and operations.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Critical timing:</strong> These distributions activate <em>only after</em> the compounding phase completes (76,269,935 peer-to-peer transactions, when UNIYAA reaches $500,000 in UNX terms). This ensures early holders and builders are not diluted during the compounding growth phase.
+                <strong className="text-white">Critical timing:</strong> These distributions activate <em>only after</em> the compounding phase completes (approximately 117,691,000 peer-to-peer transactions, when UNIYAA reaches $1,000,000 in UNX terms). This ensures early holders and builders are not diluted during the compounding growth phase.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Delayed Activation?</h3>
@@ -1168,7 +1168,7 @@ export default function WhitepaperPage() {
                 <li><strong className="text-white">The system remains sustainable</strong> for decades, not just years</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                By delaying generosity until the system is strong, UNIYAA ensures that when help arrives, it is <em>meaningful</em>. A scholarship funded by 100 UNIYAA at $500,000 value is worth $50 million in purchasing power—life-changing for a student, sustainable for the network.
+                By delaying generosity until the system is strong, UNIYAA ensures that when help arrives, it is <em>meaningful</em>. A scholarship funded by 100 UNIYAA at $1,000,000 value is worth $100 million in purchasing power—life-changing for a student, sustainable for the network.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-8 mb-3">UNIYAA Is Not Designed for Speculation or Extraction</h3>

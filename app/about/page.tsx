@@ -142,8 +142,8 @@ export default function AboutPage() {
                 UNIYAA uses a <strong className="text-white">9-tier compounding price model</strong> with transparent, predictable growth:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li><strong className="text-white">Tiers 1-8 (Compounding Phase):</strong> Constant 0.01% growth rate per epoch, compounding on the previous value. Price starts at $0.01 and grows to $500,000 based on transaction volume.</li>
-                <li><strong className="text-white">Tier 9 (Linear Phase):</strong> Once UNIYAA reaches $500,000 in UNX terms, growth becomes linear at $250 per epoch (1,000 transactions) with a monthly cap of $25,000 to ensure sustainable, predictable growth indefinitely.</li>
+                <li><strong className="text-white">Tiers 1-8 (Compounding Phase):</strong> Constant 0.01% growth rate per epoch, compounding on the previous value. Price starts at $0.01 and grows to $1,000,000 based on transaction volume.</li>
+                <li><strong className="text-white">Tier 9 (Linear Phase):</strong> Once UNIYAA reaches $1,000,000 in UNX terms, growth becomes linear at $250 per epoch (1,000 transactions) with a monthly cap of $25,000 to ensure sustainable, predictable growth indefinitely.</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
                 <strong className="text-white">Important:</strong> All pricing is denominated in <strong className="text-white">UNX (UNIYAA Index)</strong>—a diversified basket of currencies (57%), gold (35%), and oil (8%). USD values shown are for convenience only. This protects users from single-currency inflation and economic shocks.

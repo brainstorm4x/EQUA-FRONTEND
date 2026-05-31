@@ -124,7 +124,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
       case 'tier7':
         return 'Tier 7 ($10k-$100k)';
       case 'tier8':
-        return 'Tier 8 ($100k-$500k)';
+        return 'Tier 8 ($100k-$1M)';
       case 'tier9':
         return 'Tier 9 (Perpetual)';
       default:

@@ -1,20 +1,27 @@
 /**
  * UNIYAA Token Price Appreciation Calculator
- * 
- * 9-Tier Price Model with Constant 0.01% Growth:
- * 
- * Tier 1: $0.01 to $0.1 (23,027 txns, 1 tx/epoch, 0.01% growth)
- * Tier 2: $0.1 to $1 (23,027 txns, 1 tx/epoch, 0.01% growth)
- * Tier 3: $1 to $10 (230,270 txns, 10 tx/epoch, 0.01% growth)
- * Tier 4: $10 to $100 (230,270 txns, 10 tx/epoch, 0.01% growth)
- * Tier 5: $100 to $1,000 (2,302,700 txns, 100 tx/epoch, 0.01% growth)
- * Tier 6: $1,000 to $10,000 (2,302,700 txns, 100 tx/epoch, 0.01% growth)
- * Tier 7: $10,000 to $100,000 (23,027,002 txns, 1000 tx/epoch, 0.01% growth)
- * Tier 8: $100,000 to $500,000 (16,095,184 txns, 1000 tx/epoch, 0.01% growth)
- * Tier 9: $500,000+ (Linear: $250 per epoch, 1000 tx/epoch, monthly cap $25,000)
- * 
+ *
+ * 9-Tier Price Model with Constant 0.01% Growth (updated 2026-06-01):
+ *
+ * Tier 1: $0.01      → $0.1        (23,027 txns,         1 tx/epoch, 0.01% growth)
+ * Tier 2: $0.1       → $1          (230,270 txns,       10 tx/epoch, 0.01% growth)
+ * Tier 3: $1         → $10         (2,302,700 txns,    100 tx/epoch, 0.01% growth)
+ * Tier 4: $10        → $100        (23,027,000 txns,  1000 tx/epoch, 0.01% growth)
+ * Tier 5: $100       → $1,000      (23,027,000 txns,  1000 tx/epoch, 0.01% growth)
+ * Tier 6: $1,000     → $10,000     (23,027,000 txns,  1000 tx/epoch, 0.01% growth)
+ * Tier 7: $10,000    → $100,000    (23,027,000 txns,  1000 tx/epoch, 0.01% growth)
+ * Tier 8: $100,000   → $1,000,000  (23,027,000 txns,  1000 tx/epoch, 0.01% growth)
+ * Tier 9: $1,000,000+ (Linear: $250 per epoch, 1000 tx/epoch, monthly cap $25,000)
+ *
+ * Cumulative end of compounding (Tier 8 complete): ~117,691,000 transactions.
+ *
+ * Change history:
+ *   2026-06-01: Tiers 2-6 moved to larger epoch sizes (was 1/1/10/10/100/100/1000/1000);
+ *               Tier 8 target extended from $500K to $1M; Tier 9 linear phase
+ *               now begins at $1M (same $250/epoch increment and $25K/month cap).
+ *
  * Formula for Tiers 1-8 (Compounding): Price = StartPrice × (1.0001)^epoch
- * Formula for Tier 9 (Linear): Price = $500,000 + ($250 × epochs)
+ * Formula for Tier 9 (Linear): Price = $1,000,000 + ($250 × epochs)
  */
 
 export type PriceTier = 'tier1' | 'tier2' | 'tier3' | 'tier4' | 'tier5' | 'tier6' | 'tier7' | 'tier8' | 'tier9';
@@ -39,64 +46,65 @@ export class UniyaaPriceCalculator {
   private static readonly GROWTH_RATE = 0.0001; // 0.01% = 1.0001
   
   // Tier price thresholds
-  private static readonly TIER_1_END = 0.1;      // $0.1
-  private static readonly TIER_2_END = 1;        // $1
-  private static readonly TIER_3_END = 10;       // $10
-  private static readonly TIER_4_END = 100;      // $100
-  private static readonly TIER_5_END = 1000;     // $1,000
-  private static readonly TIER_6_END = 10000;    // $10,000
-  private static readonly TIER_7_END = 100000;   // $100,000
-  private static readonly TIER_8_END = 500000;   // $500,000
-  
-  // Epoch sizes
-  private static readonly TIER_1_2_EPOCH_SIZE = 1;     // 1 transaction per epoch
-  private static readonly TIER_3_4_EPOCH_SIZE = 10;    // 10 transactions per epoch
-  private static readonly TIER_5_6_EPOCH_SIZE = 100;   // 100 transactions per epoch
-  private static readonly TIER_7_8_9_EPOCH_SIZE = 1000; // 1000 transactions per epoch
-  
-  // Tier 9 linear growth
+  private static readonly TIER_1_END = 0.1;       // $0.1
+  private static readonly TIER_2_END = 1;         // $1
+  private static readonly TIER_3_END = 10;        // $10
+  private static readonly TIER_4_END = 100;       // $100
+  private static readonly TIER_5_END = 1000;      // $1,000
+  private static readonly TIER_6_END = 10000;     // $10,000
+  private static readonly TIER_7_END = 100000;    // $100,000
+  private static readonly TIER_8_END = 1000000;   // $1,000,000
+
+  // Per-tier epoch sizes (transactions needed to advance one epoch).
+  // Updated 2026-06-01: tiers 2-6 widened from 1/1/10/10/100/100 to 10/100/1000/1000/1000,
+  // making the per-tier transaction counts larger (price climbs slower).
+  private static readonly TIER_1_EPOCH_SIZE = 1;
+  private static readonly TIER_2_EPOCH_SIZE = 10;
+  private static readonly TIER_3_EPOCH_SIZE = 100;
+  private static readonly TIER_4_EPOCH_SIZE = 1000;
+  private static readonly TIER_5_EPOCH_SIZE = 1000;
+  private static readonly TIER_6_EPOCH_SIZE = 1000;
+  private static readonly TIER_7_EPOCH_SIZE = 1000;
+  private static readonly TIER_8_EPOCH_SIZE = 1000;
+  private static readonly TIER_9_EPOCH_SIZE = 1000;
+
+  // Tier 9 linear growth (starts at TIER_8_END = $1,000,000)
   private static readonly TIER_9_LINEAR_INCREMENT = 250; // $250 per epoch
   private static readonly TIER_9_MONTHLY_CAP = 25_000;   // $25,000 max per month
 
   // Calculate epochs needed for each tier (using ln(endPrice/startPrice) / ln(1.0001))
-  // Tier 1: $0.01 to $0.1 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  // All 8 compounding tiers now cover 10x growth, so each needs ~23027 epochs.
   private static readonly TIER_1_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_1_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_1_EPOCHS * UniyaaPriceCalculator.TIER_1_2_EPOCH_SIZE;
-  
-  // Tier 2: $0.1 to $1 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_1_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_1_EPOCHS * UniyaaPriceCalculator.TIER_1_EPOCH_SIZE;
+
   private static readonly TIER_2_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_2_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_1_END_TRANSACTIONS + 
-    (UniyaaPriceCalculator.TIER_2_EPOCHS * UniyaaPriceCalculator.TIER_1_2_EPOCH_SIZE);
-  
-  // Tier 3: $1 to $10 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_2_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_1_END_TRANSACTIONS +
+    (UniyaaPriceCalculator.TIER_2_EPOCHS * UniyaaPriceCalculator.TIER_2_EPOCH_SIZE);
+
   private static readonly TIER_3_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_3_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_2_END_TRANSACTIONS + 
-    (UniyaaPriceCalculator.TIER_3_EPOCHS * UniyaaPriceCalculator.TIER_3_4_EPOCH_SIZE);
-  
-  // Tier 4: $10 to $100 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_3_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_2_END_TRANSACTIONS +
+    (UniyaaPriceCalculator.TIER_3_EPOCHS * UniyaaPriceCalculator.TIER_3_EPOCH_SIZE);
+
   private static readonly TIER_4_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_4_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_3_END_TRANSACTIONS + 
-    (UniyaaPriceCalculator.TIER_4_EPOCHS * UniyaaPriceCalculator.TIER_3_4_EPOCH_SIZE);
-  
-  // Tier 5: $100 to $1,000 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_4_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_3_END_TRANSACTIONS +
+    (UniyaaPriceCalculator.TIER_4_EPOCHS * UniyaaPriceCalculator.TIER_4_EPOCH_SIZE);
+
   private static readonly TIER_5_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_5_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_4_END_TRANSACTIONS + 
-    (UniyaaPriceCalculator.TIER_5_EPOCHS * UniyaaPriceCalculator.TIER_5_6_EPOCH_SIZE);
-  
-  // Tier 6: $1,000 to $10,000 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_5_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_4_END_TRANSACTIONS +
+    (UniyaaPriceCalculator.TIER_5_EPOCHS * UniyaaPriceCalculator.TIER_5_EPOCH_SIZE);
+
   private static readonly TIER_6_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_6_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_5_END_TRANSACTIONS + 
-    (UniyaaPriceCalculator.TIER_6_EPOCHS * UniyaaPriceCalculator.TIER_5_6_EPOCH_SIZE);
-  
-  // Tier 7: $10,000 to $100,000 = 10x = ln(10) / ln(1.0001) ≈ 23027 epochs
+  private static readonly TIER_6_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_5_END_TRANSACTIONS +
+    (UniyaaPriceCalculator.TIER_6_EPOCHS * UniyaaPriceCalculator.TIER_6_EPOCH_SIZE);
+
   private static readonly TIER_7_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
-  private static readonly TIER_7_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_6_END_TRANSACTIONS + 
-    (UniyaaPriceCalculator.TIER_7_EPOCHS * UniyaaPriceCalculator.TIER_7_8_9_EPOCH_SIZE);
-  
-  // Tier 8: $100,000 to $500,000 = 5x = ln(5) / ln(1.0001) ≈ 16095 epochs
-  private static readonly TIER_8_EPOCHS = Math.ceil(Math.log(5) / Math.log(1.0001)); // ~16095
-  private static readonly TIER_8_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_7_END_TRANSACTIONS + 
-    (UniyaaPriceCalculator.TIER_8_EPOCHS * UniyaaPriceCalculator.TIER_7_8_9_EPOCH_SIZE);
+  private static readonly TIER_7_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_6_END_TRANSACTIONS +
+    (UniyaaPriceCalculator.TIER_7_EPOCHS * UniyaaPriceCalculator.TIER_7_EPOCH_SIZE);
+
+  // Tier 8: $100,000 → $1,000,000 = 10x (was 5x before 2026-06-01)
+  private static readonly TIER_8_EPOCHS = Math.ceil(Math.log(10) / Math.log(1.0001)); // ~23027
+  private static readonly TIER_8_END_TRANSACTIONS = UniyaaPriceCalculator.TIER_7_END_TRANSACTIONS +
+    (UniyaaPriceCalculator.TIER_8_EPOCHS * UniyaaPriceCalculator.TIER_8_EPOCH_SIZE);
 
   /**
    * Determine the current price tier based on total transactions
@@ -182,64 +190,64 @@ export class UniyaaPriceCalculator {
    * 1 tx = 1 epoch, 0.01% growth
    */
   private static calculateTier1Price(totalTransactions: number): number {
-    const epoch = Math.floor(totalTransactions / this.TIER_1_2_EPOCH_SIZE);
+    const epoch = Math.floor(totalTransactions / this.TIER_1_EPOCH_SIZE);
     if (epoch === 0) return this.INITIAL_PRICE;
-    
+
     return this.INITIAL_PRICE * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
   /**
    * Tier 2: $0.1 to $1
-   * 1 tx = 1 epoch, 0.01% growth
+   * 10 tx = 1 epoch, 0.01% growth
    */
   private static calculateTier2Price(totalTransactions: number): number {
     const transactionsInTier2 = totalTransactions - this.TIER_1_END_TRANSACTIONS;
-    const epoch = Math.floor(transactionsInTier2 / this.TIER_1_2_EPOCH_SIZE);
-    
+    const epoch = Math.floor(transactionsInTier2 / this.TIER_2_EPOCH_SIZE);
+
     return this.TIER_1_END * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
   /**
    * Tier 3: $1 to $10
-   * 10 tx = 1 epoch, 0.01% growth
+   * 100 tx = 1 epoch, 0.01% growth
    */
   private static calculateTier3Price(totalTransactions: number): number {
     const transactionsInTier3 = totalTransactions - this.TIER_2_END_TRANSACTIONS;
-    const epoch = Math.floor(transactionsInTier3 / this.TIER_3_4_EPOCH_SIZE);
-    
+    const epoch = Math.floor(transactionsInTier3 / this.TIER_3_EPOCH_SIZE);
+
     return this.TIER_2_END * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
   /**
    * Tier 4: $10 to $100
-   * 10 tx = 1 epoch, 0.01% growth
+   * 1000 tx = 1 epoch, 0.01% growth
    */
   private static calculateTier4Price(totalTransactions: number): number {
     const transactionsInTier4 = totalTransactions - this.TIER_3_END_TRANSACTIONS;
-    const epoch = Math.floor(transactionsInTier4 / this.TIER_3_4_EPOCH_SIZE);
-    
+    const epoch = Math.floor(transactionsInTier4 / this.TIER_4_EPOCH_SIZE);
+
     return this.TIER_3_END * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
   /**
    * Tier 5: $100 to $1,000
-   * 100 tx = 1 epoch, 0.01% growth
+   * 1000 tx = 1 epoch, 0.01% growth
    */
   private static calculateTier5Price(totalTransactions: number): number {
     const transactionsInTier5 = totalTransactions - this.TIER_4_END_TRANSACTIONS;
-    const epoch = Math.floor(transactionsInTier5 / this.TIER_5_6_EPOCH_SIZE);
-    
+    const epoch = Math.floor(transactionsInTier5 / this.TIER_5_EPOCH_SIZE);
+
     return this.TIER_4_END * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
   /**
    * Tier 6: $1,000 to $10,000
-   * 100 tx = 1 epoch, 0.01% growth
+   * 1000 tx = 1 epoch, 0.01% growth
    */
   private static calculateTier6Price(totalTransactions: number): number {
     const transactionsInTier6 = totalTransactions - this.TIER_5_END_TRANSACTIONS;
-    const epoch = Math.floor(transactionsInTier6 / this.TIER_5_6_EPOCH_SIZE);
-    
+    const epoch = Math.floor(transactionsInTier6 / this.TIER_6_EPOCH_SIZE);
+
     return this.TIER_5_END * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
@@ -249,38 +257,39 @@ export class UniyaaPriceCalculator {
    */
   private static calculateTier7Price(totalTransactions: number): number {
     const transactionsInTier7 = totalTransactions - this.TIER_6_END_TRANSACTIONS;
-    const epoch = Math.floor(transactionsInTier7 / this.TIER_7_8_9_EPOCH_SIZE);
-    
+    const epoch = Math.floor(transactionsInTier7 / this.TIER_7_EPOCH_SIZE);
+
     return this.TIER_6_END * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
   /**
-   * Tier 8: $100,000 to $500,000
+   * Tier 8: $100,000 to $1,000,000
    * 1000 tx = 1 epoch, 0.01% growth
    */
   private static calculateTier8Price(totalTransactions: number): number {
     const transactionsInTier8 = totalTransactions - this.TIER_7_END_TRANSACTIONS;
-    const epoch = Math.floor(transactionsInTier8 / this.TIER_7_8_9_EPOCH_SIZE);
-    
+    const epoch = Math.floor(transactionsInTier8 / this.TIER_8_EPOCH_SIZE);
+
     return this.TIER_7_END * Math.pow(1 + this.GROWTH_RATE, epoch);
   }
 
   /**
-   * Tier 9: $500,000+
-   * 1000 tx = 1 epoch, $250 linear increase
-   * 0.05% of $500,000 = $250 per epoch
-   * Cap: $25,000 max per month
+   * Tier 9: $1,000,000+
+   * 1000 tx = 1 epoch, $250 linear increase per epoch.
+   * Same absolute increment and $25,000/month cap as before the 2026-06-01
+   * rebase — Tier 9 was kept proportionally constant while Tier 8 ceiling
+   * shifted from $500K to $1M.
    */
   private static calculateTier9Price(totalTransactions: number): number {
     const transactionsInTier9 = totalTransactions - this.TIER_8_END_TRANSACTIONS;
-    const epochsInTier9 = Math.floor(transactionsInTier9 / this.TIER_7_8_9_EPOCH_SIZE);
-    
+    const epochsInTier9 = Math.floor(transactionsInTier9 / this.TIER_9_EPOCH_SIZE);
+
     // Calculate potential price increase
     const potentialIncrease = epochsInTier9 * this.TIER_9_LINEAR_INCREMENT;
-    
+
     // Note: The monthly cap is enforced at the on-chain level
     // Here we show the theoretical price for display purposes
-    
+
     return this.TIER_8_END + potentialIncrease;
   }
 
@@ -292,47 +301,47 @@ export class UniyaaPriceCalculator {
 
     switch (tier) {
       case 'tier1':
-        return Math.floor(totalTransactions / this.TIER_1_2_EPOCH_SIZE);
+        return Math.floor(totalTransactions / this.TIER_1_EPOCH_SIZE);
       case 'tier2': {
         const transactionsInTier2 = totalTransactions - this.TIER_1_END_TRANSACTIONS;
-        return this.TIER_1_EPOCHS + Math.floor(transactionsInTier2 / this.TIER_1_2_EPOCH_SIZE);
+        return this.TIER_1_EPOCHS + Math.floor(transactionsInTier2 / this.TIER_2_EPOCH_SIZE);
       }
       case 'tier3': {
         const transactionsInTier3 = totalTransactions - this.TIER_2_END_TRANSACTIONS;
-        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + 
-               Math.floor(transactionsInTier3 / this.TIER_3_4_EPOCH_SIZE);
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS +
+               Math.floor(transactionsInTier3 / this.TIER_3_EPOCH_SIZE);
       }
       case 'tier4': {
         const transactionsInTier4 = totalTransactions - this.TIER_3_END_TRANSACTIONS;
         return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS +
-               Math.floor(transactionsInTier4 / this.TIER_3_4_EPOCH_SIZE);
+               Math.floor(transactionsInTier4 / this.TIER_4_EPOCH_SIZE);
       }
       case 'tier5': {
         const transactionsInTier5 = totalTransactions - this.TIER_4_END_TRANSACTIONS;
         return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS +
-               Math.floor(transactionsInTier5 / this.TIER_5_6_EPOCH_SIZE);
+               Math.floor(transactionsInTier5 / this.TIER_5_EPOCH_SIZE);
       }
       case 'tier6': {
         const transactionsInTier6 = totalTransactions - this.TIER_5_END_TRANSACTIONS;
-        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + 
-               this.TIER_5_EPOCHS + Math.floor(transactionsInTier6 / this.TIER_5_6_EPOCH_SIZE);
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS +
+               this.TIER_5_EPOCHS + Math.floor(transactionsInTier6 / this.TIER_6_EPOCH_SIZE);
       }
       case 'tier7': {
         const transactionsInTier7 = totalTransactions - this.TIER_6_END_TRANSACTIONS;
-        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + 
-               this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + Math.floor(transactionsInTier7 / this.TIER_7_8_9_EPOCH_SIZE);
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS +
+               this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + Math.floor(transactionsInTier7 / this.TIER_7_EPOCH_SIZE);
       }
       case 'tier8': {
         const transactionsInTier8 = totalTransactions - this.TIER_7_END_TRANSACTIONS;
-        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + 
-               this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + this.TIER_7_EPOCHS + 
-               Math.floor(transactionsInTier8 / this.TIER_7_8_9_EPOCH_SIZE);
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS +
+               this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + this.TIER_7_EPOCHS +
+               Math.floor(transactionsInTier8 / this.TIER_8_EPOCH_SIZE);
       }
       case 'tier9': {
         const transactionsInTier9 = totalTransactions - this.TIER_8_END_TRANSACTIONS;
-        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + 
-               this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + this.TIER_7_EPOCHS + this.TIER_8_EPOCHS + 
-               Math.floor(transactionsInTier9 / this.TIER_7_8_9_EPOCH_SIZE);
+        return this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS +
+               this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + this.TIER_7_EPOCHS + this.TIER_8_EPOCHS +
+               Math.floor(transactionsInTier9 / this.TIER_9_EPOCH_SIZE);
       }
     }
   }
@@ -342,21 +351,17 @@ export class UniyaaPriceCalculator {
    */
   static getTransactionsPerEpoch(totalTransactions: number): number {
     const tier = this.getTier(totalTransactions);
-    
+
     switch (tier) {
-      case 'tier1':
-      case 'tier2':
-        return this.TIER_1_2_EPOCH_SIZE;
-      case 'tier3':
-      case 'tier4':
-        return this.TIER_3_4_EPOCH_SIZE;
-      case 'tier5':
-      case 'tier6':
-        return this.TIER_5_6_EPOCH_SIZE;
-      case 'tier7':
-      case 'tier8':
-      case 'tier9':
-        return this.TIER_7_8_9_EPOCH_SIZE;
+      case 'tier1': return this.TIER_1_EPOCH_SIZE;
+      case 'tier2': return this.TIER_2_EPOCH_SIZE;
+      case 'tier3': return this.TIER_3_EPOCH_SIZE;
+      case 'tier4': return this.TIER_4_EPOCH_SIZE;
+      case 'tier5': return this.TIER_5_EPOCH_SIZE;
+      case 'tier6': return this.TIER_6_EPOCH_SIZE;
+      case 'tier7': return this.TIER_7_EPOCH_SIZE;
+      case 'tier8': return this.TIER_8_EPOCH_SIZE;
+      case 'tier9': return this.TIER_9_EPOCH_SIZE;
     }
   }
 
@@ -382,47 +387,47 @@ export class UniyaaPriceCalculator {
     let transactionsToNextEpoch: number;
     switch (tier) {
       case 'tier1': {
-        transactionsToNextEpoch = this.TIER_1_2_EPOCH_SIZE - (totalTransactions % this.TIER_1_2_EPOCH_SIZE);
+        transactionsToNextEpoch = this.TIER_1_EPOCH_SIZE - (totalTransactions % this.TIER_1_EPOCH_SIZE);
         break;
       }
       case 'tier2': {
         const txInTier2 = totalTransactions - this.TIER_1_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.TIER_1_2_EPOCH_SIZE - (txInTier2 % this.TIER_1_2_EPOCH_SIZE);
+        transactionsToNextEpoch = this.TIER_2_EPOCH_SIZE - (txInTier2 % this.TIER_2_EPOCH_SIZE);
         break;
       }
       case 'tier3': {
         const txInTier3 = totalTransactions - this.TIER_2_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.TIER_3_4_EPOCH_SIZE - (txInTier3 % this.TIER_3_4_EPOCH_SIZE);
+        transactionsToNextEpoch = this.TIER_3_EPOCH_SIZE - (txInTier3 % this.TIER_3_EPOCH_SIZE);
         break;
       }
       case 'tier4': {
         const txInTier4 = totalTransactions - this.TIER_3_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.TIER_3_4_EPOCH_SIZE - (txInTier4 % this.TIER_3_4_EPOCH_SIZE);
+        transactionsToNextEpoch = this.TIER_4_EPOCH_SIZE - (txInTier4 % this.TIER_4_EPOCH_SIZE);
         break;
       }
       case 'tier5': {
         const txInTier5 = totalTransactions - this.TIER_4_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.TIER_5_6_EPOCH_SIZE - (txInTier5 % this.TIER_5_6_EPOCH_SIZE);
+        transactionsToNextEpoch = this.TIER_5_EPOCH_SIZE - (txInTier5 % this.TIER_5_EPOCH_SIZE);
         break;
       }
       case 'tier6': {
         const txInTier6 = totalTransactions - this.TIER_5_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.TIER_5_6_EPOCH_SIZE - (txInTier6 % this.TIER_5_6_EPOCH_SIZE);
+        transactionsToNextEpoch = this.TIER_6_EPOCH_SIZE - (txInTier6 % this.TIER_6_EPOCH_SIZE);
         break;
       }
       case 'tier7': {
         const txInTier7 = totalTransactions - this.TIER_6_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.TIER_7_8_9_EPOCH_SIZE - (txInTier7 % this.TIER_7_8_9_EPOCH_SIZE);
+        transactionsToNextEpoch = this.TIER_7_EPOCH_SIZE - (txInTier7 % this.TIER_7_EPOCH_SIZE);
         break;
       }
       case 'tier8': {
         const txInTier8 = totalTransactions - this.TIER_7_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.TIER_7_8_9_EPOCH_SIZE - (txInTier8 % this.TIER_7_8_9_EPOCH_SIZE);
+        transactionsToNextEpoch = this.TIER_8_EPOCH_SIZE - (txInTier8 % this.TIER_8_EPOCH_SIZE);
         break;
       }
       case 'tier9': {
         const txInTier9 = totalTransactions - this.TIER_8_END_TRANSACTIONS;
-        transactionsToNextEpoch = this.TIER_7_8_9_EPOCH_SIZE - (txInTier9 % this.TIER_7_8_9_EPOCH_SIZE);
+        transactionsToNextEpoch = this.TIER_9_EPOCH_SIZE - (txInTier9 % this.TIER_9_EPOCH_SIZE);
         break;
       }
     }
@@ -534,7 +539,7 @@ export class UniyaaPriceCalculator {
       { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + this.TIER_5_EPOCHS, price: 1000, description: 'Tier 5 Complete - $1,000' },
       { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + this.TIER_5_EPOCHS + this.TIER_6_EPOCHS, price: 10000, description: 'Tier 6 Complete - $10,000' },
       { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + this.TIER_7_EPOCHS, price: 100000, description: 'Tier 7 Complete - $100,000' },
-      { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + this.TIER_7_EPOCHS + this.TIER_8_EPOCHS, price: 500000, description: 'Tier 8 Complete - $500,000 (Compounding Stops)' },
+      { epoch: this.TIER_1_EPOCHS + this.TIER_2_EPOCHS + this.TIER_3_EPOCHS + this.TIER_4_EPOCHS + this.TIER_5_EPOCHS + this.TIER_6_EPOCHS + this.TIER_7_EPOCHS + this.TIER_8_EPOCHS, price: 1000000, description: 'Tier 8 Complete - $1,000,000 (Compounding Stops)' },
     ];
   }
 

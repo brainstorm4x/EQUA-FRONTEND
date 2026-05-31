@@ -195,8 +195,8 @@ export default function HomePage() {
             </div>
 
             {/* 9-Tier Price Appreciation Model
-                - Tiers 1-8: Constant 0.01% compound growth per epoch
-                - Tier 9 ($500k+): Linear growth at $250 per epoch (1000 txns)
+                - Tiers 1-8: Constant 0.01% compound growth per epoch ($0.01 → $1M)
+                - Tier 9 ($1M+): Linear growth at $250 per epoch (1000 txns)
                 - Implementation: src/utils/priceCalculator.ts
                 - Tests: __tests__/pricing/priceCalculator.test.ts
             */}
@@ -204,8 +204,8 @@ export default function HomePage() {
               <div className="text-4xl mb-4">📈</div>
               <h3 className="text-xl font-bold text-white mb-2">Price Appreciation</h3>
               <p className="text-purple-200">
-                9-tier compounding system: Tiers 1-8 grow at constant 0.01% per epoch. 
-                Tier 9 ($500k+) grows linearly at $250 per epoch (1000 transactions).
+                9-tier compounding system: Tiers 1-8 grow at constant 0.01% per epoch.
+                Tier 9 ($1M+) grows linearly at $250 per epoch (1000 transactions).
               </p>
             </div>
           </div>
