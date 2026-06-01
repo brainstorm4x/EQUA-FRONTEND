@@ -13,7 +13,7 @@ import { PROGRAM_ID, GLOBAL_STATE_SEED } from '@/lib/constants';
 import * as anchor from '@coral-xyz/anchor';
 
 /**
- * GlobalState account layout (matches Rust backend):
+ * GlobalState account layout (matches Rust backend, post-2026-06-01 schema):
  * - discriminator: 8 bytes (Anchor account discriminator)
  * - user_count: u32 (4 bytes) at offset 8
  * - total_transactions: u64 (8 bytes) at offset 12
@@ -23,12 +23,19 @@ import * as anchor from '@coral-xyz/anchor';
  * - token_mint: Pubkey (32 bytes) at offset 37
  * - min_sol_balance: u64 (8 bytes) at offset 69
  * - min_slot_gap_for_referrals: u64 (8 bytes) at offset 77
- * Total: 85 bytes
+ * - admin: Pubkey (32 bytes) at offset 85  ← added 2026-06-01 (H2)
+ * - tier9_start_timestamp: i64 (8 bytes) at offset 117  ← added 2026-06-01 (H3)
+ * Total: 125 bytes
+ *
+ * Backward-compat: accounts written by the pre-migration program are 85 bytes.
+ * Parsers below tolerate the short layout by returning 0 / Pubkey.default() for
+ * fields beyond the buffer length.
  */
 
 const GLOBAL_STATE_USER_COUNT_OFFSET = 8;
 const GLOBAL_STATE_TOTAL_TRANSACTIONS_OFFSET = 12;
 const GLOBAL_STATE_CURRENT_EPOCH_OFFSET = 20;
+const GLOBAL_STATE_TIER9_START_TIMESTAMP_OFFSET = 117;
 
 /**
  * Parses user count (u32) from GlobalState account data
@@ -119,10 +126,47 @@ function parseCurrentEpoch(accountData: Buffer | Uint8Array): number {
   }
 }
 
+/**
+ * Parses the on-chain Tier 9 start timestamp (i64 at offset 117).
+ *
+ * Returns `0` when:
+ *   - The account data is shorter than 125 bytes (pre-2026-06-01 layout)
+ *   - The field is the sentinel `0` (Tier 9 hasn't begun yet)
+ *   - Parsing fails for any reason
+ *
+ * Treat `0` as "no Tier 9 cap data available — fall back to conservative
+ * defaults" in the price calculator.
+ */
+function parseTier9StartTimestamp(accountData: Buffer | Uint8Array): number {
+  if (!accountData || accountData.length < GLOBAL_STATE_TIER9_START_TIMESTAMP_OFFSET + 8) {
+    return 0;
+  }
+  try {
+    const ts = new anchor.BN(
+      accountData.slice(
+        GLOBAL_STATE_TIER9_START_TIMESTAMP_OFFSET,
+        GLOBAL_STATE_TIER9_START_TIMESTAMP_OFFSET + 8,
+      ),
+      'le',
+    );
+    if (ts.gt(new anchor.BN(Number.MAX_SAFE_INTEGER))) {
+      console.warn('⚠️ tier9_start_timestamp exceeds MAX_SAFE_INTEGER');
+      return 0;
+    }
+    return ts.toNumber();
+  } catch (error) {
+    console.error('Error parsing tier9_start_timestamp:', error);
+    return 0;
+  }
+}
+
 export interface UseGlobalStateStatsResult {
   totalUsers: number;
   totalTransactions: number;
   currentEpoch: number;
+  /** Unix seconds when total_transactions first crossed TIER_8_END_TX_COUNT.
+   *  0 means Tier 9 has not begun yet (or pre-migration GlobalState). */
+  tier9StartTimestamp: number;
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
@@ -154,6 +198,7 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [totalTransactions, setTotalTransactions] = useState<number>(0);
   const [currentEpoch, setCurrentEpoch] = useState<number>(0);
+  const [tier9StartTimestamp, setTier9StartTimestamp] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -189,27 +234,31 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
           setTotalUsers(0);
           setTotalTransactions(0);
           setCurrentEpoch(0);
+          setTier9StartTimestamp(0);
           setError('GlobalState account not found - possible cluster or program ID mismatch');
           setIsLoading(false);
         }
         return;
       }
-      
+
       // Parse data from account
       const users = parseUserCount(accountInfo.data);
       const transactions = parseTotalTransactions(accountInfo.data);
       const epoch = parseCurrentEpoch(accountInfo.data);
-      
+      const tier9Ts = parseTier9StartTimestamp(accountInfo.data);
+
       if (isMountedRef.current) {
         setTotalUsers(users);
         setTotalTransactions(transactions);
         setCurrentEpoch(epoch);
+        setTier9StartTimestamp(tier9Ts);
         setIsLoading(false);
-        
+
         console.log('✓ Global state fetched:', {
           totalUsers: users,
           totalTransactions: transactions,
-          currentEpoch: epoch
+          currentEpoch: epoch,
+          tier9StartTimestamp: tier9Ts,
         });
       }
     } catch (err: any) {
@@ -245,15 +294,18 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
               const users = parseUserCount(accountInfo.data);
               const transactions = parseTotalTransactions(accountInfo.data);
               const epoch = parseCurrentEpoch(accountInfo.data);
-              
+              const tier9Ts = parseTier9StartTimestamp(accountInfo.data);
+
               setTotalUsers(users);
               setTotalTransactions(transactions);
               setCurrentEpoch(epoch);
-              
+              setTier9StartTimestamp(tier9Ts);
+
               console.log('✓ Global state updated (subscription):', {
                 totalUsers: users,
                 totalTransactions: transactions,
-                currentEpoch: epoch
+                currentEpoch: epoch,
+                tier9StartTimestamp: tier9Ts,
               });
             } else if (!accountInfo && isMountedRef.current) {
               // Account was deleted or doesn't exist on this cluster
@@ -294,6 +346,7 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
     totalUsers,
     totalTransactions,
     currentEpoch,
+    tier9StartTimestamp,
     isLoading,
     error,
     refresh: fetchGlobalState,

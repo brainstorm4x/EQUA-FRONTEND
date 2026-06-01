@@ -48,7 +48,7 @@ export default function WhitepaperPage() {
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                 UNIYAA: A Fair Economy Built on Transparent Rules
               </h1>
-              <p className="text-purple-300 text-lg">Last Updated: May 2026</p>
+              <p className="text-purple-300 text-lg">Last Updated: June 2026</p>
             </div>
 
             {/* Executive Summary */}
@@ -62,6 +62,9 @@ export default function WhitepaperPage() {
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 In traditional systems, your savings lose value over time. With UNIYAA, the opposite happens: as more people use it, its value grows. Every transaction strengthens the network. Every person who holds benefits.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                And the price is <strong className="text-white">verifiable</strong>. There is no off-chain price oracle, no admin keypair that can move the number, no external feed to compromise. The displayed UNIYAA price is a pure deterministic function of the on-chain transaction counter — anyone can fetch <code className="text-purple-300">total_transactions</code> from the program and run the published tier formula to arrive at the same number the app shows them.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 This isn&apos;t about trading. It&apos;s about building an economy where participation matters more than timing, where transparency replaces manipulation, and where ordinary people can see their purchasing power grow simply by being part of something real.
@@ -428,7 +431,7 @@ export default function WhitepaperPage() {
                 You don&apos;t need to think in UNIYAA if you don&apos;t want to. The interface does the work for you.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                Whether you&apos;re in India thinking in rupees, Nigeria thinking in naira, or the Philippines thinking in pesos—<strong className="text-white">UNIYAA meets you where you are</strong>. The conversion happens instantly, transparently, based on current exchange rates pulled from live oracle feeds.
+                Whether you&apos;re in India thinking in rupees, Nigeria thinking in naira, or the Philippines thinking in pesos—<strong className="text-white">UNIYAA meets you where you are</strong>. The conversion happens instantly and transparently, using current exchange rates refreshed automatically. Local-currency display is for your convenience; UNIYAA itself is denominated in USD on the deterministic schedule described in Part IV.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 You see the number that makes sense to you. The blockchain handles the rest.
@@ -459,7 +462,7 @@ export default function WhitepaperPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Confidence in Every Transaction</h3>
               <p className="text-purple-200 leading-relaxed">
-                Because exchange rates update in real-time from Hermes/Pyth oracle feeds (every hour for UNX components, continuously for local currencies), you always know you&apos;re getting fair value.
+                Because the displayed UNIYAA price is computed deterministically from the on-chain transaction counter (and local-currency conversions use real-time FX rates), you always know you&apos;re getting fair value.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 No hidden markups. No surprise conversions. No &quot;platform fees&quot; that quietly drain your balance.
@@ -484,7 +487,7 @@ export default function WhitepaperPage() {
                 Crypto has struggled with real-world adoption because it asks people to change how they think about money. UNIYAA takes the opposite approach: <strong className="text-white">we change the interface, not the user</strong>.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                You think in your currency. You transact the way you always have—scan, confirm, send. The difference is that the money you&apos;re using appreciates with the network, protects against inflation through UNX diversification, and rewards genuine use instead of speculation.
+                You think in your currency. You transact the way you always have—scan, confirm, send. The difference is that the money you&apos;re using appreciates on a fixed, transparent schedule with every network transaction, and rewards genuine use instead of speculation.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 That&apos;s the promise: <strong className="text-white">cryptocurrency that feels like money, not like gambling</strong>.
@@ -508,7 +511,7 @@ export default function WhitepaperPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Linear Phase: When Compounding Ends</h3>
               <p className="text-purple-200 leading-relaxed">
-                When UNIYAA reaches <strong className="text-white">$1,000,000 in UNX terms</strong> (displayed as approximate USD), the system enters the <strong className="text-white">linear phase</strong> (Tier 9). At this point:
+                When UNIYAA reaches <strong className="text-white">$1,000,000</strong>, the system enters the <strong className="text-white">linear phase</strong> (Tier 9). At this point:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li>Compounding stops to prevent runaway appreciation</li>
@@ -543,9 +546,6 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Every single transaction counts. Precise appreciation rewards the earliest believers and network builders.
                 </p>
-                <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in UNX - USD shown for convenience)
-                </p>
               </div>
 
               {/* Tier 2 */}
@@ -565,9 +565,6 @@ export default function WhitepaperPage() {
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Constant growth rate maintains transparency and fairness as the network gains traction.
-                </p>
-                <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -589,9 +586,6 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Larger epochs reflect growing transaction volume. Constant growth rate ensures predictability.
                 </p>
-                <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in UNX - USD shown for convenience)
-                </p>
               </div>
 
               {/* Tier 4 */}
@@ -611,9 +605,6 @@ export default function WhitepaperPage() {
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Network is becoming established. Compounding continues to reward all holders equally.
-                </p>
-                <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -635,9 +626,6 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Even larger epochs reflect substantial transaction volume. Constant 0.01% rate ensures fairness.
                 </p>
-                <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in UNX - USD shown for convenience)
-                </p>
               </div>
 
               {/* Tier 6 */}
@@ -657,9 +645,6 @@ export default function WhitepaperPage() {
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Sustained compounding rewards long-term holders. Constant rate maintains transparency.
-                </p>
-                <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in UNX - USD shown for convenience)
                 </p>
               </div>
 
@@ -681,9 +666,6 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Large epoch sizes reflect massive transaction volume. Constant 0.01% ensures predictability at scale.
                 </p>
-                <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in UNX - USD shown for convenience)
-                </p>
               </div>
 
               {/* Tier 8 */}
@@ -704,9 +686,6 @@ export default function WhitepaperPage() {
                 <p className="text-purple-200 mt-4 text-sm">
                   <strong className="text-white">Why This Mechanism?</strong> Final compounding tier before transition. Reaches $1,000,000 sustainably.
                 </p>
-                <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in UNX - USD shown for convenience)
-                </p>
               </div>
 
               {/* Tier 9 */}
@@ -715,8 +694,8 @@ export default function WhitepaperPage() {
                 <div className="grid md:grid-cols-2 gap-4 text-purple-200">
                   <div>
                     <p><strong className="text-white">Start:</strong> After price reaches ~$1,000,000 USD</p>
-                    <p><strong className="text-white">Mechanism:</strong> 250 UNX per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Monthly Cap:</strong> 25,000 UNX maximum increase</p>
+                    <p><strong className="text-white">Mechanism:</strong> $250 per epoch (1,000 transactions)</p>
+                    <p><strong className="text-white">Monthly Cap:</strong> $25,000 maximum increase</p>
                   </div>
                   <div>
                     <p><strong className="text-white">End Price:</strong> Forever growing</p>
@@ -725,10 +704,7 @@ export default function WhitepaperPage() {
                   </div>
                 </div>
                 <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear 250 UNX/epoch (0.025% of 1,000,000 UNX) provides steady appreciation. The 25,000 UNX/month cap ensures stability while maintaining good returns.
-                </p>
-                <p className="text-xs text-purple-300 mt-2 italic">
-                  (Actual pricing in UNX - USD shown for convenience)
+                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear $250/epoch (0.025% of $1,000,000) provides steady appreciation. The $25,000 / 30-day cap is enforced deterministically: the on-chain <code className="text-purple-300">tier9_start_timestamp</code> is set the moment the counter crosses into Tier 9, and the displayed price computation reads it to clamp growth to at most $25,000 per rolling 30-day window. Anyone can verify the formula against on-chain state.
                 </p>
               </div>
 
@@ -804,163 +780,59 @@ export default function WhitepaperPage() {
                     <tr>
                       <td className="p-3">9</td>
                       <td className="p-3">1,000</td>
-                      <td className="p-3">250 UNX</td>
+                      <td className="p-3">$250/epoch</td>
                       <td className="p-3">1M → ∞</td>
                       <td className="p-3">Linear</td>
                     </tr>
                   </tbody>
                 </table>
                 <p className="text-purple-200 text-xs mt-2 italic">
-                  <strong className="text-white">Note:</strong> All prices denominated in UNX (UNIYAA Index). USD values shown are approximate equivalents for convenience only. Actual pricing uses UNX, which is a diversified basket of 9 active components (57% currencies, 30% precious metals, 13% oil). The on-chain oracle updates UNX/USD exchange rates every hour.
-                </p>
-              </div>
-
-              {/* UNX vs USD Clarification */}
-              <div className="bg-yellow-500/10 rounded-xl p-6 mt-8 border border-yellow-500/30">
-                <h4 className="text-lg font-bold text-yellow-400 mb-3">⚠️ Important: UNX vs USD</h4>
-                <p className="text-purple-200 leading-relaxed">
-                  <strong className="text-white">All price appreciation is calculated in UNX (UNIYAA Index), not USD.</strong> UNX is a diversified basket of 9 active components: 57% major currencies, 30% precious metals (gold, silver), and 13% oil (WTI + Brent). The USD values shown throughout this whitepaper are <strong className="text-white">approximate equivalents for convenience only</strong>—actual pricing on-chain is denominated in UNX.
-                </p>
-                <p className="text-purple-200 leading-relaxed mt-3">
-                  This means that when the whitepaper says &quot;Tier 1: $0.01 to $0.1,&quot; it actually means <strong className="text-white">&quot;0.01 to 0.1 UNX&quot;</strong>, with USD values calculated dynamically based on the current UNX/USD exchange rate (updated every hour from Hermes/Pyth price feeds).
-                </p>
-                <p className="text-purple-200 leading-relaxed mt-3 italic">
-                  <strong className="text-white">Why this matters:</strong> UNX provides inflation resistance and stability by spreading risk across multiple global anchors. Your UNIYAA holdings appreciate in UNX terms—USD is just one of many components affecting UNX&apos;s value.
+                  <strong className="text-white">Note:</strong> All prices are denominated in USD on a deterministic schedule. The displayed UNIYAA price is a pure function of the on-chain transaction counter — no off-chain oracle, no external price feeds. Anyone can verify the displayed price by fetching <code className="text-purple-300">total_transactions</code> from the program and running the tier formula above.
                 </p>
               </div>
             </section>
 
-            {/* Part V - UNX Pricing Model */}
+
+            {/* Part IV.5 - Trust Model: Verifiable, Oracle-Free Pricing */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V: UNX—The True Pricing Foundation</h2>
-              
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part IV.5: The Trust Model—Verifiable, Oracle-Free Pricing</h2>
+
               <p className="text-purple-200 leading-relaxed">
-                UNIYAA&apos;s value is not denominated in US dollars. Instead, it is measured in <strong className="text-white">UNX (UNIYAA Index)</strong>—a diversified basket of major currencies, gold, and essential commodities. USD is shown only as a <strong className="text-white">display convenience</strong>, not as the underlying pricing anchor.
+                Most crypto projects ask you to trust an oracle, an admin key, or a price feed. UNIYAA does not.
               </p>
+
               <p className="text-purple-200 leading-relaxed mt-4">
-                This fundamental design choice means UNIYAA holders are not forced to trust the fate of any one government, central bank, or market. Your value is spread across the real world economy.
+                The displayed UNIYAA price is a <strong className="text-white">pure deterministic function</strong> of a single on-chain number: <code className="text-purple-300">total_transactions</code>, the count of peer-to-peer transfers recorded by the smart contract. There is no admin keypair that can change the price. There is no off-chain feed. There are no hashes that need to be verified because the formula itself is the source of truth — and the formula is published in this whitepaper (Part IV).
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why UNX Matters</h3>
-              <p className="text-purple-200 leading-relaxed">
-                People don&apos;t live in abstract charts; they live in rent, groceries, school fees, and medicines. When a single currency weakens, it quietly steals from all of those things at once. If UNIYAA&apos;s value were tied only to USD, anyone saving in UNIYAA would still be exposed to the long, slow erosion of that one currency&apos;s purchasing power.
-              </p>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What You Can Verify Yourself</h3>
+              <ol className="list-decimal list-inside text-purple-200 space-y-2 mt-2">
+                <li>Read <code className="text-purple-300">total_transactions</code> from the on-chain GlobalState PDA (anyone can; it&apos;s public).</li>
+                <li>Look up which of the 9 tiers that count falls into (Part IV).</li>
+                <li>Apply the tier formula: compound growth for Tiers 1-8, linear with the $25,000 / 30-day cap for Tier 9.</li>
+                <li>Compare to what the app displays. They will match — always.</li>
+              </ol>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">UNX changes that</strong>: it spreads risk across multiple real-world anchors so that your effort today still means something tomorrow, even if one nation&apos;s money stumbles.
+                No proprietary algorithm. No black box. The math is in the code and the code is public.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What UNX Is</h3>
-              <p className="text-purple-200 leading-relaxed">
-                UNX (UNIYAA Index) is a weighted reference basket composed of:
-              </p>
-              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li><strong className="text-white">Widely used global currencies</strong> (USD, EUR, CNH, JPY, GBP) — 57% weight</li>
-                <li><strong className="text-white">Precious metals</strong> (Gold XAU 20%, Silver XAG 10%) — 30% weight, long-term store of value (copper slot retired 2026-05-23 — Pyth feed paused; weight reallocated to silver)</li>
-                <li><strong className="text-white">Energy commodities</strong> (WTI 7%, Brent 6%) — 13% weight, tracking US + global energy costs that drive real-economy inflation</li>
-              </ul>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">10-Component Design:</strong> The basket was rebalanced in May 2026 to reduce concentration risk in gold and oil — gold weight cut from 35% → 20% with the freed weight redistributed across silver, copper, and a Brent crude addition. The resulting basket has lower expected volatility, broader real-economy exposure, and all components remain spot-priced via Pyth Hermes (no futures-rolling complexity).
-              </p>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                UNIYAA does not require users to hold these assets directly. Instead, the system uses UNX as a <strong className="text-white">pricing lens</strong>: when the protocol calculates UNIYAA&apos;s fair value, it references this basket rather than any single currency.
-              </p>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">USD values displayed in the interface are for convenience only.</strong> They help you understand how much buying power you have in common terms, but they are <em>not</em> the actual pricing mechanism. The underlying value is always denominated in UNX.
-              </p>
-
-              {/* UNX Basket Composition */}
-              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-yellow-400 mb-4">UNX (UNIYAA Index) Basket Composition (10 Components)</h4>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/30">
-                    <h5 className="text-blue-300 font-semibold mb-2">Currencies (57%)</h5>
-                    <ul className="text-purple-200 text-sm space-y-1">
-                      <li>USD/USD: 23%</li>
-                      <li>EUR/USD: 17%</li>
-                      <li>CNH/USD: 9%</li>
-                      <li>JPY/USD: 5%</li>
-                      <li>GBP/USD: 3%</li>
-                    </ul>
-                    <p className="text-blue-200 text-xs mt-2">Major global currencies</p>
-                  </div>
-                  <div className="bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/30">
-                    <h5 className="text-yellow-300 font-semibold mb-2">Metals (30%)</h5>
-                    <ul className="text-purple-200 text-sm space-y-1">
-                      <li>XAU/USD (Gold): 20%</li>
-                      <li>XAG/USD (Silver): 10%</li>
-                    </ul>
-                    <p className="text-yellow-200 text-xs mt-2">Monetary metals (copper slot temporarily retired — Pyth feed paused)</p>
-                  </div>
-                  <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/30">
-                    <h5 className="text-green-300 font-semibold mb-2">Energy (13%)</h5>
-                    <ul className="text-purple-200 text-sm space-y-1">
-                      <li>Oil — WTI: 7%</li>
-                      <li>Oil — Brent: 6%</li>
-                    </ul>
-                    <p className="text-green-200 text-xs mt-2">US + global crude, real-economy inflation proxy</p>
-                  </div>
-                </div>
-                <p className="text-purple-300 text-sm mt-4 italic">
-                  <strong className="text-white">Updated June 2026:</strong> UNX basket now uses 9 active spot-priced components. Pyth paused the Metal.XCU/USD copper feed on 2026-05-23; copper&apos;s 5% weight was reallocated to silver (5% → 10%) to keep the metals allocation at 30%. The XCU array slot is preserved for on-chain layout stability and can be restored if Pyth resumes the feed. All other components remain live on Pyth Hermes; weights still sum to 100%.
-                </p>
-              </div>
-
-              <h3 className="text-xl font-semibold text-white mt-8 mb-3">Stability, Inflation Resistance, and Non-Speculative Intent</h3>
-              
-              <h4 className="text-lg font-semibold text-white mt-4 mb-2">Stability Across Economic Shocks</h4>
-              <p className="text-purple-200 leading-relaxed">
-                When USD loses value, UNX does not fall as fast because other components—gold, other currencies, and commodities—may stay stable or even rise. That means UNIYAA&apos;s reference value stays closer to what real people actually need to buy in their lives, instead of following the dollar down.
-              </p>
-
-              <h4 className="text-lg font-semibold text-white mt-4 mb-2">Inflation Resistance Built In</h4>
-              <p className="text-purple-200 leading-relaxed">
-                In many countries, people are hit twice: their local currency weakens, and their savings in a &quot;strong&quot; foreign currency can also be eroded by inflation in that foreign country. By anchoring UNIYAA&apos;s value to UNX—a blend of global value signals—the system reduces the chance that one political decision or one central bank&apos;s policy quietly eats away years of someone&apos;s work.
-              </p>
-
-              <h4 className="text-lg font-semibold text-white mt-4 mb-2">Designed Against Speculation</h4>
-              <p className="text-purple-200 leading-relaxed">
-                Because UNX includes both money (currencies) and things people ultimately care about (gold and key commodities), UNIYAA stays more aligned with the cost of real life—food, energy, safety—rather than just financial market noise. <strong className="text-white">UNIYAA is not designed for speculative trading.</strong> It is designed for people who want their daily participation to protect and grow their purchasing power.
-              </p>
-
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">How UNX Works with UNIYAA&apos;s Transaction-Based Appreciation</h3>
-              <p className="text-purple-200 leading-relaxed">
-                UNX does not replace UNIYAA&apos;s transaction-based appreciation; <strong className="text-white">it anchors it</strong>.
-              </p>
-              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li>The price growth rules (driven by number of transactions and epochs) still determine how UNIYAA appreciates as the network is used.</li>
-                <li>UNX acts as an underlying &quot;reality check&quot;: if a single currency in the basket is inflating away, the other components help keep UNIYAA&apos;s reference tied to a more honest picture of global value.</li>
-                <li>You see USD values for convenience, but the actual appreciation happens in UNX terms.</li>
-              </ul>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">For users, this means:</strong>
-              </p>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What Cannot Be Manipulated</h3>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
-                <li>The more UNIYAA is used, the more it appreciates in UNX terms.</li>
-                <li>The more the world changes, the more UNX helps UNIYAA stay connected to what actually matters—what your money can buy.</li>
-                <li>USD is just one component of many, and you are never at the mercy of USD alone.</li>
+                <li><strong className="text-white">Price up</strong>: nobody can write a higher price on-chain. The contract has no instruction to set the price; the price is derived, not stored.</li>
+                <li><strong className="text-white">Price down</strong>: same. The only way to move the price is by triggering real peer-to-peer transfers that advance the counter.</li>
+                <li><strong className="text-white">Counter inflation</strong>: the only counter-bumping instruction (<code className="text-purple-300">record_transaction</code>) is admin-gated; the public path is <code className="text-purple-300">transfer_tokens</code>, which requires actual token movement between two real wallets.</li>
+                <li><strong className="text-white">Tier 9 runaway</strong>: the on-chain program stamps a <code className="text-purple-300">tier9_start_timestamp</code> the moment Tier 9 begins. The displayed price reads that timestamp and clamps growth to at most $25,000 per 30-day window — not as a documentation claim, but as a math invariant anyone can check.</li>
               </ul>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What This Means for Ordinary People</h3>
-              <div className="space-y-4 mt-4">
-                <div className="bg-white/5 rounded-xl p-4 border border-purple-500/20">
-                  <p className="text-purple-200">
-                    <strong className="text-white">For a shopkeeper in a small town:</strong> &quot;If my local currency or the dollar goes crazy, UNIYAA is not chained to that alone. My value is spread across the global economy.&quot;
-                  </p>
-                </div>
-                <div className="bg-white/5 rounded-xl p-4 border border-purple-500/20">
-                  <p className="text-purple-200">
-                    <strong className="text-white">For a family saving for their children:</strong> &quot;I am not betting everything on one country&apos;s promise. My effort is anchored to a mix of real-world value.&quot;
-                  </p>
-                </div>
-                <div className="bg-white/5 rounded-xl p-4 border border-purple-500/20">
-                  <p className="text-purple-200">
-                    <strong className="text-white">For someone who has seen bank failures, devaluations, or sudden capital controls:</strong> &quot;At least one part of my life is built on transparent rules and a basket of real value, not on panic decisions made overnight.&quot;
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
-                UNIYAA was always designed to reward real participation and protect believers from speculation. UNX extends that same protection to the world beyond crypto: it recognizes that people don&apos;t just need a fair system inside the chain—they need protection from the unfairness outside it too.
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What This Means for You</h3>
+              <p className="text-purple-200 leading-relaxed">
+                You do not have to trust UNIYAA&apos;s team. You do not have to trust a third-party oracle service. You do not have to trust that the off-chain math matches what the contract enforces.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                You trust the <strong className="text-white">on-chain counter</strong>, which is incremented only by genuine peer-to-peer transfers, and the <strong className="text-white">published formula</strong>, which is the same one your wallet, the merchant&apos;s phone, and any third-party explorer will arrive at independently.
+              </p>
+              <p className="text-purple-200 leading-relaxed mt-4 border-l-4 border-purple-500 pl-4 italic">
+                <strong className="text-white">If a price is verifiable by everyone, it cannot be manipulated by anyone.</strong>
               </p>
             </section>
 
@@ -972,7 +844,7 @@ export default function WhitepaperPage() {
                 UNIYAA is designed to create value for everyone—not just token holders. Once the terminal phase is reached and price growth stabilizes, the protocol activates <strong className="text-white">five social purpose accounts</strong> that distribute UNIYAA annually to support education, healthcare, research, grants, and operations.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Critical timing:</strong> These distributions activate <em>only after</em> the compounding phase completes (approximately 117,691,000 peer-to-peer transactions, when UNIYAA reaches $1,000,000 in UNX terms). This ensures early holders and builders are not diluted during the compounding growth phase.
+                <strong className="text-white">Critical timing:</strong> These distributions activate <em>only after</em> the compounding phase completes (approximately 117,691,000 peer-to-peer transactions, when UNIYAA reaches $1,000,000). This ensures early holders and builders are not diluted during the compounding growth phase.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Delayed Activation?</h3>
@@ -1122,6 +994,8 @@ export default function WhitepaperPage() {
               
               <ul className="list-disc list-inside text-purple-200 space-y-3 mt-4">
                 <li><strong className="text-white">No Team Minting</strong>: Every token entering circulation follows transparent rules. There&apos;s no admin wallet that can secretly print tokens.</li>
+                <li><strong className="text-white">No Price Oracle to Compromise</strong>: The displayed UNIYAA price is computed deterministically from the on-chain transaction counter. There is no off-chain feed, no admin keypair in the price path, no hashes that need to be verified — see Part IV.5 for the full trust model. The only way to move the price is through real peer-to-peer transfers.</li>
+                <li><strong className="text-white">Counter Inflation Closed</strong>: The only counter-bumping instruction outside of real transfers (<code className="text-purple-300">record_transaction</code>) is admin-gated. Anyone trying to advance the price tier without doing real transactions hits an authorization check and pays nothing but the rejected transaction fee.</li>
                 <li><strong className="text-white">Diminishing Mint Rate</strong>: As adoption grows, the per-attempt amount each new user can mint steps down according to the published Mint Tier Schedule (Part VIII). UNIYAA does not enforce a fixed total-supply cap; instead, the combination of the tiered step-down and the on-chain mint cooldown holds issuance asymptotic — i.e. each new cohort can add less than the one before it, and no single actor can outrun the schedule.</li>
                 <li><strong className="text-white">Transaction-Based Appreciation</strong>: Price appreciation isn&apos;t driven by marketing hype or speculative enthusiasm. It&apos;s directly tied to actual economic activity.</li>
               </ul>
@@ -1151,7 +1025,7 @@ export default function WhitepaperPage() {
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">Restraint in Growth</h4>
               <p className="text-purple-200 leading-relaxed">
-                Tier 9 caps price growth at $25,000 per month. This prevents runaway speculation and keeps UNIYAA grounded in sustainable, predictable appreciation—not casino-like volatility.
+                Tier 9 caps price growth at $25,000 per 30-day window. This is not a documentation claim — it is enforced deterministically: the on-chain program stamps a <code className="text-purple-300">tier9_start_timestamp</code> the moment the transaction counter crosses into Tier 9, and the price formula clamps growth against that timestamp. Any client running the formula arrives at the same capped number. This prevents runaway speculation and keeps UNIYAA grounded in sustainable, predictable appreciation—not casino-like volatility.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-8 mb-3">Delayed Generosity Leads to Broader, Fairer Impact</h3>
@@ -1225,10 +1099,24 @@ export default function WhitepaperPage() {
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <h4 className="text-lg font-semibold text-white mb-3">Smart Contract Architecture:</h4>
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
-                  <li>Global state tracking: transaction counts, user counts, current phase</li>
-                  <li>User accounts: minting history, referral tracking</li>
-                  <li>Deterministic price calculation based on transaction volume and current phase</li>
+                  <li>Global state tracking: transaction counts, user counts, admin authority, Tier 9 start timestamp</li>
+                  <li>User accounts: minting history, referral tracking, locked-token vesting</li>
+                  <li>Deterministic price calculation derived purely from <code className="text-purple-300">total_transactions</code> — no on-chain price oracle, no admin-writable price field</li>
+                  <li>Admin-gated maintenance instructions: counter bumps via <code className="text-purple-300">record_transaction</code> require the admin signer; ordinary peer-to-peer transfers do not</li>
+                  <li>On-chain Tier 9 cap enforcement: <code className="text-purple-300">tier9_start_timestamp</code> stamped automatically when the counter first crosses into Tier 9; price formula clamps growth to $25,000 per 30-day window deterministically</li>
                 </ul>
+              </div>
+
+              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
+                <h4 className="text-lg font-semibold text-white mb-3">Trust Surface (what you must trust):</h4>
+                <ul className="list-disc list-inside text-purple-200 space-y-2">
+                  <li><strong className="text-white">On-chain state</strong>: the <code className="text-purple-300">total_transactions</code> counter and (for Tier 9) the <code className="text-purple-300">tier9_start_timestamp</code> field on the GlobalState PDA</li>
+                  <li><strong className="text-white">Published formula</strong>: the 9-tier compound + linear curve in Part IV, identical across frontend, mobile, and any third-party explorer that runs it</li>
+                  <li><strong className="text-white">Solana&apos;s settlement guarantees</strong>: standard for any Solana-native asset</li>
+                </ul>
+                <p className="text-purple-200 text-sm mt-3 italic">
+                  Everything else — the team, the frontend operator, any third-party API — is outside the price trust path. If you trust the on-chain counter, you can re-derive the price independently and verify what every interface shows you.
+                </p>
               </div>
 
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">

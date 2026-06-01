@@ -2,29 +2,36 @@
 /**
  * wipe-performance-data.mjs
  *
- * Clears the UNX performance dataset so the next hourly snapshot writes from
- * scratch. Touches:
+ * One-shot teardown of the retired UNX/performance pipeline. After 2026-06-01
+ * UNIYAA is priced in USD directly from the on-chain transaction counter —
+ * the off-chain UNX writer + daily aggregator + performance tables no longer
+ * exist in the codebase, and the data they wrote is now orphaned.
  *
- *   Turso tables:
- *     - unx_price_snapshots     (hourly snapshots written by update-unx-price)
- *     - unx_daily_performance   (daily rollups written by snapshot-daily-performance)
+ * This script DROPS the orphaned Turso tables (so they don't appear in
+ * subsequent backups / observability) and DELETES every blob in the
+ * orphaned Netlify Blobs store. It is idempotent: re-running on an
+ * already-cleaned store is a no-op.
  *
- *   Netlify Blobs stores:
+ *   Turso tables dropped:
+ *     - unx_price_snapshots     (hourly UNX snapshots — writer deleted)
+ *     - unx_daily_performance   (daily UNX rollups — writer deleted)
+ *
+ *   Netlify Blobs stores wiped:
  *     - unx-prices              (hourly snapshot blobs keyed by YYYY-MM-DD-HH)
  *
  * Explicitly LEAVES UNTOUCHED:
- *   - fx-rates blob store (separate from perf data; needed for currency display)
- *   - On-chain UNX oracle (will be overwritten by the next update-unx-price tick)
- *   - Any other Turso tables
+ *   - fx-rates blob store (still in use for multi-currency display)
+ *   - Any other Turso tables / Blobs stores
+ *   - On-chain `unx_oracle` PDA (sits as dead state until next contract upgrade)
  *
  * USAGE:
  *
- *   # 1. Dry-run (default) — shows what WOULD be deleted, deletes nothing.
+ *   # 1. Dry-run (default) — shows what WOULD be touched, touches nothing.
  *   TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... \
  *   NETLIFY_SITE_ID=... NETLIFY_ACCESS_TOKEN=... \
  *     node scripts/wipe-performance-data.mjs
  *
- *   # 2. Actually wipe (requires --confirm).
+ *   # 2. Actually drop + delete (requires --confirm).
  *   TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... \
  *   NETLIFY_SITE_ID=... NETLIFY_ACCESS_TOKEN=... \
  *     node scripts/wipe-performance-data.mjs --confirm
@@ -38,7 +45,8 @@ import { getStore } from '@netlify/blobs';
 
 const CONFIRM = process.argv.includes('--confirm');
 
-const TURSO_TABLES_TO_WIPE = [
+// Each entry is a hard-coded identifier matching /^[a-z_]+$/ — never user input.
+const TURSO_TABLES_TO_DROP = [
   'unx_price_snapshots',
   'unx_daily_performance',
 ];
@@ -46,6 +54,14 @@ const TURSO_TABLES_TO_WIPE = [
 const BLOB_STORES_TO_WIPE = [
   'unx-prices',
 ];
+
+// Defence-in-depth: reject any sneaked-in non-identifier table name before
+// we interpolate into SQL.
+for (const name of TURSO_TABLES_TO_DROP) {
+  if (!/^[a-z_][a-z0-9_]*$/.test(name)) {
+    throw new Error(`Refusing to operate on suspicious table name: ${name}`);
+  }
+}
 
 // ----------------------------------------------------------------------------
 // Pretty banner
@@ -88,24 +104,24 @@ console.log('');
 const turso = createClient({ url: tursoUrl, authToken: tursoAuth });
 
 console.log('--- Turso ---------------------------------------------------------');
-for (const table of TURSO_TABLES_TO_WIPE) {
+for (const table of TURSO_TABLES_TO_DROP) {
   let count = 0;
+  let exists = true;
   try {
     const res = await turso.execute(`SELECT COUNT(*) AS n FROM ${table}`);
     count = Number(res.rows[0]?.n ?? 0);
   } catch (err) {
-    console.log(`  ${table.padEnd(28)} (table missing or unreadable: ${shortErr(err)})`);
+    exists = false;
+    console.log(`  ${table.padEnd(28)} (already gone or unreadable: ${shortErr(err)})`);
     continue;
   }
   console.log(`  ${table.padEnd(28)} ${count} rows`);
 
-  if (CONFIRM && count > 0) {
-    const del = await turso.execute(`DELETE FROM ${table}`);
-    console.log(`    \x1b[31m→ deleted\x1b[0m  (${del.rowsAffected ?? '?'} rows affected)`);
-  } else if (CONFIRM) {
-    console.log(`    → nothing to delete`);
-  } else {
-    console.log(`    → would delete all ${count} rows`);
+  if (CONFIRM && exists) {
+    await turso.execute(`DROP TABLE IF EXISTS ${table}`);
+    console.log(`    \x1b[31m→ DROP TABLE\x1b[0m  (${count} rows discarded)`);
+  } else if (!CONFIRM) {
+    console.log(`    → would DROP TABLE (discards ${count} rows + schema)`);
   }
 }
 

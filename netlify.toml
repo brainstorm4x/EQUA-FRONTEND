@@ -6,11 +6,5 @@
 [build.environment]
   NODE_VERSION = "20.18.0"
 
-[functions."update-unx-price"]
-schedule = "0 * * * *"
-
 [functions."update-fx-rates"]
 schedule = "0 * * * *"
-
-[functions."snapshot-daily-performance"]
-schedule = "0 0 * * *"

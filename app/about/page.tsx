@@ -143,15 +143,10 @@ export default function AboutPage() {
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li><strong className="text-white">Tiers 1-8 (Compounding Phase):</strong> Constant 0.01% growth rate per epoch, compounding on the previous value. Price starts at $0.01 and grows to $1,000,000 based on transaction volume.</li>
-                <li><strong className="text-white">Tier 9 (Linear Phase):</strong> Once UNIYAA reaches $1,000,000 in UNX terms, growth becomes linear at $250 per epoch (1,000 transactions) with a monthly cap of $25,000 to ensure sustainable, predictable growth indefinitely.</li>
+                <li><strong className="text-white">Tier 9 (Linear Phase):</strong> Once UNIYAA reaches $1,000,000, growth becomes linear at $250 per epoch (1,000 transactions) with a monthly cap of $25,000 to ensure sustainable, predictable growth indefinitely.</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Important:</strong> All pricing is denominated in <strong className="text-white">UNX (UNIYAA Index)</strong>—a diversified basket of currencies (57%), gold (35%), and oil (8%). USD values shown are for convenience only. This protects users from single-currency inflation and economic shocks.
-              </p>
-
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">UNX Basket Oracle</h3>
-              <p className="text-purple-200 leading-relaxed">
-                The UNX oracle updates every hour using Hermes/Pyth price feeds, ensuring UNIYAA&apos;s value stays anchored to real-world economic conditions, not just one nation&apos;s monetary policy. This provides inflation resistance and stability across global economic shocks.
+                <strong className="text-white">Trust model:</strong> The displayed UNIYAA price is a pure function of the on-chain transaction counter. There is no off-chain oracle, no admin-controlled price feed, and no external dependency in the price path. Anyone can independently verify the price by reading <code className="text-purple-300">total_transactions</code> from the program and running the published tier formula.
               </p>
             </section>
 

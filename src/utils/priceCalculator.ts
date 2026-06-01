@@ -1,6 +1,13 @@
 /**
  * UNIYAA Token Price Appreciation Calculator
  *
+ * Returns prices in USD directly. The output of `calculatePrice(totalTransactions)`
+ * is the displayed UNIYAA price in USD with no further conversion needed.
+ *
+ * The UNX basket layer was removed in 2026-06-01: UNIYAA is now priced in
+ * plain USD on a deterministic schedule based on `total_transactions`. The
+ * tier-appreciation curve and all other math is unchanged.
+ *
  * 9-Tier Price Model with Constant 0.01% Growth (updated 2026-06-01):
  *
  * Tier 1: $0.01      → $0.1        (23,027 txns,         1 tx/epoch, 0.01% growth)
@@ -70,7 +77,8 @@ export class UniyaaPriceCalculator {
 
   // Tier 9 linear growth (starts at TIER_8_END = $1,000,000)
   private static readonly TIER_9_LINEAR_INCREMENT = 250; // $250 per epoch
-  private static readonly TIER_9_MONTHLY_CAP = 25_000;   // $25,000 max per month
+  private static readonly TIER_9_MONTHLY_CAP = 25_000;   // $25,000 max per 30-day window
+  private static readonly TIER_9_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // 30 days in ms
 
   // Calculate epochs needed for each tier (using ln(endPrice/startPrice) / ln(1.0001))
   // All 8 compounding tiers now cover 10x growth, so each needs ~23027 epochs.
@@ -149,12 +157,20 @@ export class UniyaaPriceCalculator {
   }
 
   /**
-   * Calculate current UNIYAA price based on transaction count
+   * Calculate current UNIYAA price in USD from on-chain transaction count.
+   *
+   * Tiers 1-8 are pure functions of `totalTransactions`. Tier 9 additionally
+   * needs `tier9StartTimestamp` (Unix seconds, read from GlobalState.tier9_start_timestamp)
+   * so the $25,000 / 30-day cap can be applied deterministically.
+   *
+   * If `tier9StartTimestamp` is not supplied while in Tier 9 (e.g. stale
+   * on-chain read), the cap falls back to "single window" (~$25k available)
+   * — conservative degradation rather than uncapped growth.
    */
   static calculatePrice(
     totalTransactions: number,
-    currentEpoch?: number,
-    compoundingComplete?: boolean
+    tier9StartTimestamp?: number,
+    nowMs?: number,
   ): number {
     // If no transactions yet, return initial price
     if (totalTransactions === 0) {
@@ -181,7 +197,7 @@ export class UniyaaPriceCalculator {
       case 'tier8':
         return this.calculateTier8Price(totalTransactions);
       case 'tier9':
-        return this.calculateTier9Price(totalTransactions);
+        return this.calculateTier9Price(totalTransactions, tier9StartTimestamp, nowMs);
     }
   }
 
@@ -275,22 +291,45 @@ export class UniyaaPriceCalculator {
 
   /**
    * Tier 9: $1,000,000+
-   * 1000 tx = 1 epoch, $250 linear increase per epoch.
-   * Same absolute increment and $25,000/month cap as before the 2026-06-01
-   * rebase — Tier 9 was kept proportionally constant while Tier 8 ceiling
-   * shifted from $500K to $1M.
+   *
+   * Linear growth: 1000 tx = 1 epoch, $250 per epoch. Capped at $25,000 per
+   * 30-day window. Cumulative cap available at time `now` is
+   *   (floor((now - tier9_start) / 30 days) + 1) × $25,000
+   * — i.e. one full month's budget unlocks the moment Tier 9 begins, and
+   * each subsequent 30-day boundary unlocks another month's worth.
+   *
+   * On-chain enforcement: `tier9_start_timestamp` is set by
+   * `update_transaction_count` in lib.rs on the first transfer that crosses
+   * `TIER_8_END_TX_COUNT`. Off-chain reads that timestamp via
+   * `useGlobalStateStats` and threads it into this function. If the caller
+   * doesn't have the timestamp yet (e.g. just after the boundary was
+   * crossed), we conservatively use the first 30-day window's $25k cap
+   * rather than returning uncapped growth.
    */
-  private static calculateTier9Price(totalTransactions: number): number {
+  private static calculateTier9Price(
+    totalTransactions: number,
+    tier9StartTimestamp?: number,
+    nowMs?: number,
+  ): number {
     const transactionsInTier9 = totalTransactions - this.TIER_8_END_TRANSACTIONS;
     const epochsInTier9 = Math.floor(transactionsInTier9 / this.TIER_9_EPOCH_SIZE);
+    const uncappedGrowth = epochsInTier9 * this.TIER_9_LINEAR_INCREMENT;
 
-    // Calculate potential price increase
-    const potentialIncrease = epochsInTier9 * this.TIER_9_LINEAR_INCREMENT;
+    // Conservative fallback: when the start timestamp isn't available yet,
+    // act as if we're in the first 30-day window (one window's budget = $25k).
+    if (!tier9StartTimestamp || tier9StartTimestamp <= 0) {
+      const cappedGrowth = Math.min(uncappedGrowth, this.TIER_9_MONTHLY_CAP);
+      return this.TIER_8_END + cappedGrowth;
+    }
 
-    // Note: The monthly cap is enforced at the on-chain level
-    // Here we show the theoretical price for display purposes
+    const startMs = tier9StartTimestamp * 1000;
+    const now = nowMs ?? Date.now();
+    const elapsedMs = Math.max(0, now - startMs);
+    const windowsElapsed = Math.floor(elapsedMs / this.TIER_9_WINDOW_MS);
+    const availableCap = (windowsElapsed + 1) * this.TIER_9_MONTHLY_CAP;
+    const cappedGrowth = Math.min(uncappedGrowth, availableCap);
 
-    return this.TIER_8_END + potentialIncrease;
+    return this.TIER_8_END + cappedGrowth;
   }
 
   /**
@@ -590,13 +629,13 @@ export class UniyaaPriceCalculator {
 // Export convenience function
 export function getCurrentUniyaaPrice(
   totalTransactions: number,
-  currentEpoch?: number,
-  compoundingComplete?: boolean
+  tier9StartTimestamp?: number,
+  nowMs?: number,
 ): number {
   return UniyaaPriceCalculator.calculatePrice(
     totalTransactions,
-    currentEpoch,
-    compoundingComplete
+    tier9StartTimestamp,
+    nowMs,
   );
 }
 

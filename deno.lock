@@ -17,7 +17,6 @@
         "npm:@netlify/functions@^2.8.2",
         "npm:@playwright/test@^1.57.0",
         "npm:@solana-mobile/wallet-adapter-mobile@^2.2.5",
-        "npm:@solana/spl-token@~0.4.14",
         "npm:@solana/wallet-adapter-base@~0.9.23",
         "npm:@solana/wallet-adapter-react-ui@~0.9.35",
         "npm:@solana/wallet-adapter-react@~0.15.35",

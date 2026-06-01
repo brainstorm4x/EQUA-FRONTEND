@@ -2883,6 +2883,14 @@
           {
             "name": "min_slot_gap_for_referrals",
             "type": "u64"
+          },
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "tier9_start_timestamp",
+            "type": "i64"
           }
         ]
       }

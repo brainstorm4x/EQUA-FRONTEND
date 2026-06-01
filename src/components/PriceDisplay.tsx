@@ -1,11 +1,10 @@
 'use client';
 
 import { FC, useEffect, useState } from 'react';
-import { useConnection } from '@solana/wallet-adapter-react';
 import { UniyaaPriceCalculator, PriceTier, formatUniyaaPrice } from '@/utils/priceCalculator';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
-import { getUserLocaleCurrency, formatLocalCurrency, formatLocalCurrencyDynamic } from '@/utils/localeCurrency';
-import { getUniyaaPriceMultiFormat, formatUNXPrice, MultiFormatUniyaaPrice } from '@/utils/unxOracle';
+import { getUserLocaleCurrency, formatLocalCurrencyDynamic } from '@/utils/localeCurrency';
+import { getUniyaaPriceMultiFormat, MultiFormatUniyaaPrice } from '@/utils/multiFormatPrice';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
 
 
@@ -14,22 +13,15 @@ interface PriceDisplayProps {
   showStats?: boolean;
 }
 
-// UNX-related fields for price display
-interface UnxPriceData {
-  unxPrice: number;
-  unxValue: number;
-  priceSource: 'on-chain-oracle';
-  fxRate?: number;
+interface FxState {
+  fxRate: number;
   fxSource?: string;
   fxAge?: number;
   fxIsStale?: boolean;
 }
 
-const DEFAULT_UNX_DATA: UnxPriceData = {
-  unxPrice: 0.01,
-  unxValue: 1.0,
-  priceSource: 'on-chain-oracle',
-  fxRate: 1.0,
+const DEFAULT_FX: FxState = {
+  fxRate: 1,
   fxSource: 'static',
   fxAge: 0,
   fxIsStale: false,
@@ -37,11 +29,15 @@ const DEFAULT_UNX_DATA: UnxPriceData = {
 
 export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats = false }) => {
   // Use authoritative global state hook for real-time stats
-  const { totalUsers, totalTransactions, isLoading: isStatsLoading } = useGlobalStateStats();
-  const { connection } = useConnection();
-  
+  const {
+    totalUsers,
+    totalTransactions,
+    tier9StartTimestamp,
+    isLoading: isStatsLoading,
+  } = useGlobalStateStats();
+
   const [localCurrency, setLocalCurrency] = useState<string>('USD');
-  const [unxData, setUnxData] = useState<UnxPriceData>(DEFAULT_UNX_DATA);
+  const [fxData, setFxData] = useState<FxState>(DEFAULT_FX);
   const [currentPrice, setCurrentPrice] = useState<number>(0.01);
   const [currentTier, setCurrentTier] = useState<PriceTier>('tier1');
   const [mintingRate, setMintingRate] = useState<string>('100,000');
@@ -53,59 +49,55 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
 
   // Calculate price, tier, and minting rate based on authoritative totalTransactions
   useEffect(() => {
-    // Calculate price based on total_transactions from GlobalState (authoritative)
-    const price = UniyaaPriceCalculator.calculatePrice(totalTransactions);
+    // Price comes straight out of the tier curve in USD — no oracle read needed.
+    // tier9StartTimestamp engages the $25k/30-day cap once Tier 9 is reached;
+    // before that it's irrelevant to the math (and ignored).
+    const price = UniyaaPriceCalculator.calculatePrice(totalTransactions, tier9StartTimestamp);
     const tier = UniyaaPriceCalculator.getTier(totalTransactions);
-    
+
     setCurrentPrice(price);
     setCurrentTier(tier);
-    
+
     // Calculate minting rate based on total users
     const nextUserNumber = totalUsers + 1;
-    const currentTier = ELEVATED_MINT_TIERS.find(
-      tier => nextUserNumber >= tier.minUser && nextUserNumber <= tier.maxUser
+    const elevatedTier = ELEVATED_MINT_TIERS.find(
+      t => nextUserNumber >= t.minUser && nextUserNumber <= t.maxUser
     );
-    
-    const rate = currentTier 
-      ? currentTier.uniyaaPerAttempt.toLocaleString() 
+
+    const rate = elevatedTier
+      ? elevatedTier.uniyaaPerAttempt.toLocaleString()
       : '100';
     setMintingRate(rate);
-    
-    // Fetch UNX price data
-    const fetchUnxPrice = async () => {
+
+    // Fetch FX rate for local currency display only.
+    const fetchFx = async () => {
       const currencyCode = getUserLocaleCurrency();
-      let unxPriceData: MultiFormatUniyaaPrice;
+      let data: MultiFormatUniyaaPrice;
       try {
-        unxPriceData = await getUniyaaPriceMultiFormat(price, currencyCode, connection);
-      } catch (unxError) {
-        console.warn('Error fetching UNX price, using defaults:', unxError);
-        unxPriceData = {
-          unx: price,
+        data = await getUniyaaPriceMultiFormat(price, currencyCode);
+      } catch (fxError) {
+        console.warn('FX lookup failed, defaulting to 1:1:', fxError);
+        data = {
           usd: price,
           localCurrency: price,
           localCurrencyCode: currencyCode,
-          unxValue: 1.0,
-          source: 'on-chain-oracle',
-          fxRate: 1.0,
-          fxSource: 'static',
+          fxRate: 1,
+          fxSource: 'fallback',
           fxAge: 0,
-          fxIsStale: false,
+          fxIsStale: true,
         };
       }
-      
-      setUnxData({
-        unxPrice: unxPriceData.unx,
-        unxValue: unxPriceData.unxValue,
-        priceSource: unxPriceData.source,
-        fxRate: unxPriceData.fxRate,
-        fxSource: unxPriceData.fxSource,
-        fxAge: unxPriceData.fxAge,
-        fxIsStale: unxPriceData.fxIsStale,
+
+      setFxData({
+        fxRate: data.fxRate,
+        fxSource: data.fxSource,
+        fxAge: data.fxAge,
+        fxIsStale: data.fxIsStale,
       });
     };
-    
-    fetchUnxPrice();
-  }, [totalTransactions, totalUsers, connection]);
+
+    fetchFx();
+  }, [totalTransactions, totalUsers]);
 
   const getTierLabel = (tier: PriceTier): string => {
     switch (tier) {
@@ -148,43 +140,35 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
       <div className={`grid ${showStats ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'} gap-6`}>
         <div>
           <p className="text-purple-200 text-sm mb-2">Current UNIYAA Price</p>
-          {/* UNX Price (Primary) */}
-          <p className="text-yellow-300 text-2xl font-bold" data-testid="unx-price">
-            {formatUNXPrice(unxData.unxPrice)}
-          </p>
-          {/* USD Price */}
-          <p className="text-white text-lg font-semibold mt-1" data-testid="current-price">
+          {/* USD Price (primary, derived deterministically from on-chain total_transactions) */}
+          <p className="text-white text-2xl font-bold" data-testid="current-price">
             {formatUniyaaPrice(currentPrice)}
           </p>
           {/* Local currency equivalent */}
           {localCurrency !== 'USD' && (
             <div className="mt-1">
               <p className="text-green-300 text-sm" data-testid="local-currency-price">
-                ≈ {formatLocalCurrencyDynamic(currentPrice, localCurrency, unxData.fxRate || 1)}
-                {/* Add stale indicator only when exchange rate data is genuinely outdated */}
-                {unxData.fxIsStale && (
+                ≈ {formatLocalCurrencyDynamic(currentPrice, localCurrency, fxData.fxRate || 1)}
+                {fxData.fxIsStale && (
                   <span className="text-orange-300 text-xs ml-1" title="Exchange rate may be outdated (>24h old)">
                     (stale)
                   </span>
                 )}
               </p>
-              
-              {/* Staleness warning - KEEP THIS */}
-              {unxData.fxIsStale && (
+
+              {fxData.fxIsStale && (
                 <p className="text-yellow-400 text-xs flex items-center gap-1 mt-1">
                   <span>⚠️</span>
                   <span>
-                    Exchange rate is {Math.floor((unxData.fxAge || 0) / (60 * 60 * 1000))}h old
-                    {unxData.fxSource === 'fallback' && ' (using fallback rate)'}
+                    Exchange rate is {Math.floor((fxData.fxAge || 0) / (60 * 60 * 1000))}h old
+                    {fxData.fxSource === 'fallback' && ' (using fallback rate)'}
                   </span>
                 </p>
               )}
             </div>
           )}
           <p className="text-purple-300 text-xs mt-1" data-testid="price-source">
-            <span className="ml-2 text-purple-400">
-              ({unxData.priceSource === 'on-chain-oracle' ? '🟢 On-Chain' : '⚪ Fallback'})
-            </span>
+            <span className="text-purple-400">🟢 On-Chain</span>
           </p>
         </div>
         
