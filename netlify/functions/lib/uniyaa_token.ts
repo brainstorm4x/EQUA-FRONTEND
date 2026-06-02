@@ -1688,6 +1688,73 @@ export type UniyaaToken = {
       ]
     },
     {
+      "name": "migrateGlobalState",
+      "docs": [
+        "One-shot migration to resize the GlobalState PDA after the 2026-06-01",
+        "schema bump (added `admin` and `tier9_start_timestamp`). Call once",
+        "after upgrading from a pre-2026-06-01 deployment. Caller becomes the",
+        "new admin. Safe to re-run on an already-migrated account.",
+        "",
+        "We do the realloc + new-field initialization manually because Anchor's",
+        "automatic `Account<T>` deserialize happens BEFORE the realloc",
+        "constraint applies — which means a growth migration of the wrapped",
+        "struct always fails at constraint time with AccountDidNotDeserialize.",
+        "See the docstring on MigrateGlobalState for the full explanation."
+      ],
+      "discriminator": [
+        252,
+        251,
+        45,
+        153,
+        73,
+        1,
+        168,
+        198
+      ],
+      "accounts": [
+        {
+          "name": "globalState",
+          "docs": [
+            "- PDA derivation (seeds + bump) is enforced by Anchor above.",
+            "- Discriminator and current size are checked in the handler.",
+            "- Realloc + new field initialization are done explicitly."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "mintTokens",
       "docs": [
         "Mint UNIYAA tokens with tier limits based on user index",
@@ -2828,6 +2895,16 @@ export type UniyaaToken = {
       "code": 6046,
       "name": "invalidUserType",
       "msg": "Invalid user type. User type must be 0 (Individual) or 1 (Business)."
+    },
+    {
+      "code": 6047,
+      "name": "unauthorizedRecordTransaction",
+      "msg": "Unauthorized record_transaction call. Only the GlobalState admin can directly bump the counter. Real P2P transfers via transfer_tokens are unaffected."
+    },
+    {
+      "code": 6048,
+      "name": "unexpectedGlobalStateSize",
+      "msg": "Unexpected GlobalState account size during migration. Expected 85 bytes (pre-migration) or 125 bytes (post-migration)."
     }
   ],
   "types": [
@@ -2889,6 +2966,27 @@ export type UniyaaToken = {
           {
             "name": "minSlotGapForReferrals",
             "type": "u64"
+          },
+          {
+            "name": "admin",
+            "docs": [
+              "Admin authority. Gates privileged maintenance instructions (currently",
+              "only `record_transaction`, which is otherwise a public counter-bump",
+              "surface). Set at `initialize()` to whoever calls it; rotate via a",
+              "future `set_global_state_admin` instruction if you ever need to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "tier9StartTimestamp",
+            "docs": [
+              "Unix timestamp when total_transactions first crossed",
+              "`TIER_8_END_TX_COUNT`. `0` means Tier 9 has not begun yet. Set",
+              "idempotently in `update_transaction_count` on the first crossing.",
+              "Used by the off-chain price calculator to apply the Tier 9",
+              "`$25,000 / 30-day` cap deterministically."
+            ],
+            "type": "i64"
           }
         ]
       }
