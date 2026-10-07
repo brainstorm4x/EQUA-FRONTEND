@@ -3,6 +3,9 @@
  *
  * Run: npm run test:functions
  *
+ * Lives outside netlify/functions/: Netlify deploys every file in that folder
+ * as a function, and "apk.test" is not a valid function name.
+ *
  * Nothing here talks to GitHub. The two things worth pinning down are the ones
  * that fail silently in production: the function must NEVER read the asset
  * body (tens of megabytes through a function that can return a few), and a
@@ -18,7 +21,7 @@ async function withToken(value, fn) {
   else process.env.APK_GITHUB_TOKEN = value;
   delete process.env.GITHUB_TOKEN;
   try {
-    return await fn(await import("./apk.mjs"));
+    return await fn(await import("../functions/apk.mjs"));
   } finally {
     if (before === undefined) delete process.env.APK_GITHUB_TOKEN;
     else process.env.APK_GITHUB_TOKEN = before;
@@ -66,7 +69,7 @@ const get = (query = "") => new Request(`https://uniyaa.test/api/apk${query}`);
 /* ────────────────────────────────────────────────── choosing the file ──── */
 
 test("the .apk is picked out of the release's assets, whatever else is there", async () => {
-  const { pickApk } = await import("./apk.mjs");
+  const { pickApk } = await import("../functions/apk.mjs");
   assert.equal(pickApk(RELEASE).name, "uniyaa-1.0.0-abc1234.apk");
   assert.equal(pickApk({ assets: [{ name: "notes.txt" }] }), null);
   assert.equal(pickApk(null), null, "a malformed release is 'no apk', not a crash");
