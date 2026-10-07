@@ -11,6 +11,7 @@ import { useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { PROGRAM_ID, GLOBAL_STATE_SEED } from '@/lib/constants';
 import * as anchor from '@coral-xyz/anchor';
+import { INITIAL_PRICE_USD, PRICE_SCALE, priceIndexToUsd } from '@/utils/priceCalculator';
 
 /**
  * GlobalState account layout (matches Rust backend, post-2026-06-01 schema):
@@ -25,17 +26,34 @@ import * as anchor from '@coral-xyz/anchor';
  * - min_slot_gap_for_referrals: u64 (8 bytes) at offset 77
  * - admin: Pubkey (32 bytes) at offset 85  ← added 2026-06-01 (H2)
  * - tier9_start_timestamp: i64 (8 bytes) at offset 117  ← added 2026-06-01 (H3)
- * Total: 125 bytes
+ * - count_day: u64 (8 bytes) at offset 125      ← participation price model
+ * - payers_today: u64 (8 bytes) at offset 133
+ * - price_index: u64 (8 bytes) at offset 141    (USD × 1e9)
+ * Total: 149 bytes
  *
- * Backward-compat: accounts written by the pre-migration program are 85 bytes.
- * Parsers below tolerate the short layout by returning 0 / Pubkey.default() for
- * fields beyond the buffer length.
+ * Backward-compat: accounts not yet migrated are shorter. Parsers below
+ * tolerate the short layout by returning 0 for fields beyond the buffer
+ * length (and the initial $0.01 for the price).
  */
 
 const GLOBAL_STATE_USER_COUNT_OFFSET = 8;
 const GLOBAL_STATE_TOTAL_TRANSACTIONS_OFFSET = 12;
 const GLOBAL_STATE_CURRENT_EPOCH_OFFSET = 20;
 const GLOBAL_STATE_TIER9_START_TIMESTAMP_OFFSET = 117;
+const GLOBAL_STATE_PAYERS_TODAY_OFFSET = 133;
+const GLOBAL_STATE_PRICE_INDEX_OFFSET = 141;
+
+/**
+ * Parses a u64 that fits in a JS number (prices and daily counts do).
+ * Returns `fallback` when the account is too short (not yet migrated).
+ */
+function parseU64(accountData: Buffer | Uint8Array, offset: number, fallback: number): number {
+  if (!accountData || accountData.length < offset + 8) {
+    return fallback;
+  }
+  const value = new anchor.BN(accountData.slice(offset, offset + 8), 'le');
+  return value.gt(new anchor.BN(Number.MAX_SAFE_INTEGER)) ? Number.MAX_SAFE_INTEGER : value.toNumber();
+}
 
 /**
  * Parses user count (u32) from GlobalState account data
@@ -167,6 +185,10 @@ export interface UseGlobalStateStatsResult {
   /** Unix seconds when total_transactions first crossed TIER_8_END_TX_COUNT.
    *  0 means Tier 9 has not begun yet (or pre-migration GlobalState). */
   tier9StartTimestamp: number;
+  /** On-chain UNIYAA price in USD (GlobalState.price_index). */
+  priceUsd: number;
+  /** Senders counted so far in the current UTC day. */
+  payersToday: number;
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
@@ -232,6 +254,8 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
   const [totalTransactions, setTotalTransactions] = useState<number>(0);
   const [currentEpoch, setCurrentEpoch] = useState<number>(0);
   const [tier9StartTimestamp, setTier9StartTimestamp] = useState<number>(0);
+  const [priceUsd, setPriceUsd] = useState<number>(INITIAL_PRICE_USD);
+  const [payersToday, setPayersToday] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -281,12 +305,16 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
       const transactions = parseTotalTransactions(data);
       const epoch = parseCurrentEpoch(data);
       const tier9Ts = parseTier9StartTimestamp(data);
+      const priceIndex = parseU64(data, GLOBAL_STATE_PRICE_INDEX_OFFSET, INITIAL_PRICE_USD * PRICE_SCALE);
+      const payers = parseU64(data, GLOBAL_STATE_PAYERS_TODAY_OFFSET, 0);
 
       if (isMountedRef.current) {
         setTotalUsers(users);
         setTotalTransactions(transactions);
         setCurrentEpoch(epoch);
         setTier9StartTimestamp(tier9Ts);
+        setPriceUsd(priceIndexToUsd(priceIndex));
+        setPayersToday(payers);
         setIsLoading(false);
       }
     } catch (err: any) {
@@ -322,6 +350,8 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
     totalTransactions,
     currentEpoch,
     tier9StartTimestamp,
+    priceUsd,
+    payersToday,
     isLoading,
     error,
     refresh: fetchGlobalState,

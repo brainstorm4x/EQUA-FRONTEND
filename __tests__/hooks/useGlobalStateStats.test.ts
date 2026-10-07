@@ -224,6 +224,43 @@ describe('useGlobalStateStats', () => {
     expect(mockConnection.getAccountInfo).not.toHaveBeenCalled();
   });
 
+  it('should read the on-chain price and today\'s payers from a migrated account', async () => {
+    const accountData = Buffer.alloc(149);
+    new anchor.BN(10).toArrayLike(Buffer, 'le', 4).copy(accountData, 8);
+    new anchor.BN(4).toArrayLike(Buffer, 'le', 8).copy(accountData, 133); // payers_today
+    new anchor.BN(12_345_678).toArrayLike(Buffer, 'le', 8).copy(accountData, 141); // $0.012345678
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: accountData.toString('base64') }),
+    }) as any;
+
+    const { result } = renderHook(() => useGlobalStateStats());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.priceUsd).toBeCloseTo(0.012345678, 9);
+    expect(result.current.payersToday).toBe(4);
+  });
+
+  it('should show the initial price for an account not yet migrated', async () => {
+    const accountData = Buffer.alloc(125);
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: accountData.toString('base64') }),
+    }) as any;
+
+    const { result } = renderHook(() => useGlobalStateStats());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.priceUsd).toBe(0.01);
+    expect(result.current.payersToday).toBe(0);
+  });
+
   it('should fall back to RPC when the cached endpoint returns an error', async () => {
     const accountData = Buffer.alloc(85);
     new anchor.BN(7).toArrayLike(Buffer, 'le', 4).copy(accountData, 8);
