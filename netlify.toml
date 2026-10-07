@@ -8,3 +8,11 @@
 
 [functions."update-fx-rates"]
 schedule = "0 * * * *"
+
+# The Android APK — 302s to the signed GitHub release asset built by
+# brainstorm4x/equa_flutter_app's android-apk workflow. See apk.mjs.
+[[redirects]]
+  from   = "/api/apk"
+  to     = "/.netlify/functions/apk"
+  status = 200
+  force  = true
