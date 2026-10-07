@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Logo } from '@/components/Logo';
+import { AppDownload } from '@/components/AppDownload';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
 import { isUserRegistered } from '@/utils/registrationCheck';
@@ -166,6 +167,15 @@ export default function HomePage() {
 
           {/* Price, Users, and Transactions Display */}
           <PriceDisplay className="mb-16" showStats={true} />
+
+          {/* Android app download */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30 mb-16 max-w-md mx-auto">
+            <h3 className="text-xl font-bold text-white mb-2 text-center">Get the Android App</h3>
+            <p className="text-purple-200 text-sm mb-4 text-center">
+              Pay, receive and mint UNIYAA from your phone.
+            </p>
+            <AppDownload />
+          </div>
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-6 mt-16">
