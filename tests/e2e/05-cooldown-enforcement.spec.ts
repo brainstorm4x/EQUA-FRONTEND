@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 /**
  * E2E Test: Cooldown Enforcement
  * 
- * Tests off-chain cooldown logic to prevent multiple mints within 24 hours
+ * Tests off-chain cooldown logic to prevent multiple mints within the 30-day cooldown
  * and eliminate UI race conditions.
  */
 
@@ -20,7 +20,7 @@ test.describe('Cooldown Enforcement', () => {
     await page.waitForLoadState('networkidle');
     
     // Look for mint button (only visible for registered users not on cooldown)
-    const mintButton = page.locator('button:has-text("Claim Daily UNIYAA")');
+    const mintButton = page.locator('button:has-text("Claim Monthly UNIYAA")');
     
     const isVisible = await mintButton.isVisible({ timeout: 5000 }).catch(() => false);
     
@@ -74,7 +74,7 @@ test.describe('Cooldown Enforcement', () => {
     await page.waitForLoadState('networkidle');
     
     // Look for mint button
-    const mintButton = page.locator('button:has-text("Claim Daily UNIYAA")');
+    const mintButton = page.locator('button:has-text("Claim Monthly UNIYAA")');
     
     const isVisible = await mintButton.isVisible({ timeout: 5000 }).catch(() => false);
     
@@ -120,7 +120,7 @@ test.describe('Cooldown Enforcement', () => {
     await page.waitForLoadState('networkidle');
     
     // Look for mint button
-    const mintButton = page.locator('button:has-text("Claim Daily UNIYAA")');
+    const mintButton = page.locator('button:has-text("Claim Monthly UNIYAA")');
     
     const isVisible = await mintButton.isVisible({ timeout: 5000 }).catch(() => false);
     
@@ -154,7 +154,7 @@ test.describe('Cooldown Enforcement', () => {
     await newPage.waitForLoadState('networkidle');
     
     // The mint button in the new tab should also be disabled due to in-flight lock
-    const newMintButton = newPage.locator('button:has-text("Claim Daily UNIYAA")');
+    const newMintButton = newPage.locator('button:has-text("Claim Monthly UNIYAA")');
     
     // Wait a moment for localStorage to sync
     await newPage.waitForTimeout(500);
@@ -224,7 +224,7 @@ test.describe('Cooldown Enforcement', () => {
     await expect(page.locator('text=/Claim your.*UNIYAA/i')).toBeVisible();
     
     // Verify mint button is enabled
-    const mintButton = page.locator('button:has-text("Claim Daily UNIYAA")');
+    const mintButton = page.locator('button:has-text("Claim Monthly UNIYAA")');
     await expect(mintButton).toBeEnabled();
     
     // Verify button has correct styling (green background)

@@ -2117,7 +2117,7 @@ export default function MintPage() {
               {registered ? 'Mint UNIYAA Tokens' : 'Get Started with UNIYAA'}
             </h2>
             <p className="text-purple-200 text-xl">
-              {registered ? 'Claim your daily UNIYAA tokens' : 'Register your account to start minting UNIYAA tokens'}
+              {registered ? 'Claim your UNIYAA tokens once every 30 days' : 'Register your account to start minting UNIYAA tokens'}
             </p>
           </div>
 
@@ -2206,7 +2206,7 @@ export default function MintPage() {
                       <Logo size={80} />
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-4">
-                      {canMint ? 'Daily UNIYAA Reward' : 'Cooldown Active'}
+                      {canMint ? 'Monthly UNIYAA Reward' : 'Cooldown Active'}
                     </h3>
                     
                     {/* Countdown Display */}
@@ -2256,7 +2256,7 @@ export default function MintPage() {
                       ) : canMint ? (
                         <span className="flex items-center justify-center gap-2">
                           <Logo size={24} />
-                          <span>Claim Daily UNIYAA</span>
+                          <span>Claim Monthly UNIYAA</span>
                         </span>
                       ) : (
                         `Cooldown: ${formatTimeRemaining(timeUntilNextMint)}`
