@@ -61,10 +61,10 @@ export default function WhitepaperPage() {
                 Most digital economies reward speculation. UNIYAA rewards use.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                In traditional systems, your savings lose value over time. With UNIYAA, the opposite happens: as more people use it, its value grows. Every transaction strengthens the network. Every person who holds benefits.
+                In traditional systems, your savings lose value over time. With UNIYAA, the opposite is the goal: as more of its people use it, its value can grow. Every day of real use strengthens the network.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                And the price is <strong className="text-white">verifiable</strong>. There is no off-chain price oracle, no admin keypair that can move the number, no external feed to compromise. The displayed UNIYAA price is a pure deterministic function of the on-chain transaction counter — anyone can fetch <code className="text-purple-300">total_transactions</code> from the program and run the published tier formula to arrive at the same number the app shows them.
+                And the price is <strong className="text-white">verifiable</strong>. There is no off-chain price oracle, no admin keypair that can move the number, no external feed to compromise. The UNIYAA price is kept by the smart contract in the public <code className="text-purple-300">price_index</code> field and changes only by the published participation rule (Part IV); no instruction can set it.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 This isn&apos;t about trading. It&apos;s about building an economy where participation matters more than timing, where transparency replaces manipulation, and where ordinary people can see their purchasing power grow simply by being part of something real.
@@ -326,7 +326,7 @@ export default function WhitepaperPage() {
                 ...the value of the entire system moves forward—slowly at first, then steadily, without relying on hype cycles or a handful of large players.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                UNIYAA&apos;s price appreciation model is already tied directly to transaction counts across structured tiers and epochs. This daily rhythm of small actions is exactly what that model is designed to reward.
+                UNIYAA&apos;s price grows with the share of its people who pay each day (Part IV). This daily rhythm of small actions is exactly what that model is designed to reward.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why UNIYAA Is Different</h3>
@@ -507,496 +507,89 @@ export default function WhitepaperPage() {
 
             {/* Part IV - Price Appreciation Logic */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part IV: Price Appreciation Logic—9-Tier Compounding System</h2>
-              
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Understanding the Compounding Phase</h3>
-              <p className="text-purple-200 leading-relaxed">
-                UNIYAA&apos;s price appreciation follows a structured, transparent mathematical model with two major periods: the <strong className="text-white">compounding phase</strong> and the <strong className="text-white">linear phase</strong>.
-              </p>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                During the <strong className="text-white">compounding phase</strong> (Tiers 1-8), UNIYAA&apos;s value grows exponentially based on transaction volume with a <strong className="text-white">constant 0.01% growth rate</strong>. Each epoch of transactions triggers this percentage increase that compounds on the previous value. This rewards early builders and provides steady, predictable growth during scaling.
-              </p>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                The compounding phase is <em>designed</em> to end. Infinite exponential growth would be unsustainable and eventually destructive. Instead, UNIYAA transitions to linear growth at a predictable point.
-              </p>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part IV: Price Appreciation—Growth Through Participation</h2>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Linear Phase: When Compounding Ends</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">How the Price Grows</h3>
               <p className="text-purple-200 leading-relaxed">
-                When UNIYAA reaches <strong className="text-white">$1,000,000</strong>, the system enters the <strong className="text-white">linear phase</strong> (Tier 9). At this point:
+                UNIYAA starts at <strong className="text-white">$0.01</strong>. Once a day, the price can grow a little, and how much depends on one thing: <strong className="text-white">what share of UNIYAA users paid with UNIYAA that day</strong>.
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li>Compounding stops to prevent runaway appreciation</li>
-                <li>Growth becomes linear: $250 per epoch (1,000 transactions)</li>
-                <li>A monthly cap of $25,000 ensures stability</li>
-                <li>The system maintains sustainable, predictable growth indefinitely</li>
+                <li>If every user paid that day, the price grows by <strong className="text-white">0.5%</strong>, the most it can grow in one day.</li>
+                <li>If 30% of users paid, it grows by 0.15%. If 10% paid, 0.05%.</li>
+                <li>If nobody paid, it does not grow.</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">This is the terminal price—the point where exponential growth ends and linear, capped growth begins.</strong>
+                Each person counts at most once a day, however many payments they make. The price never jumps; it climbs slowly, one day at a time.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The 9-Tier Model in Detail</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Participation, Not Volume</h3>
               <p className="text-purple-200 leading-relaxed">
-                Below is the complete journey from initial growth to perpetual sustainability. <strong className="text-white">All tiers use a constant 0.01% growth rate</strong>, providing predictable and transparent appreciation:
+                A system that rewards the number of transactions rewards whoever can generate the most of them, and a large network would race through its targets. UNIYAA measures something harder to fake: <strong className="text-white">how many of its people actually use it</strong>. A network of a thousand people and a network of ten million grow at the same pace when the same share of their members take part.
               </p>
 
-              {/* Tier 1 */}
-              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-green-400 mb-3">Tier 1: Foundation ($0.01 to $0.1)</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Duration:</strong> ~23,027 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1 transaction)</p>
-                    <p><strong className="text-white">Starting Price:</strong> ~$0.01 USD</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">End Price:</strong> ~$0.1 USD</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 0.01 × (1.0001)^epoch</p>
-                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
-                  </div>
-                </div>
-                <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Every single transaction counts. Precise appreciation rewards the earliest believers and network builders.
-                </p>
-              </div>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Linear Phase</h3>
+              <p className="text-purple-200 leading-relaxed">
+                When the price reaches <strong className="text-white">$1,000,000</strong>, compounding stops. From then on, growth is linear: at most <strong className="text-white">$25,000 per 30 days</strong>, again in proportion to the share of users who pay each day.
+              </p>
 
-              {/* Tier 2 */}
-              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-teal-400 mb-3">Tier 2: Early Growth ($0.1 to $1)</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Duration:</strong> ~230,270 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (10 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> ~$0.1 USD</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">End Price:</strong> ~$1 USD</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 0.1 × (1.0001)^epoch</p>
-                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
-                  </div>
-                </div>
-                <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Constant growth rate maintains transparency and fairness as the network gains traction.
-                </p>
-              </div>
-
-              {/* Tier 3 */}
-              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-blue-400 mb-3">Tier 3: Network Scaling ($1 to $10)</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Duration:</strong> ~2,302,700 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (100 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> ~$1 USD</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">End Price:</strong> ~$10 USD</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 1 × (1.0001)^epoch</p>
-                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
-                  </div>
-                </div>
-                <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Larger epochs reflect growing transaction volume. Constant growth rate ensures predictability.
-                </p>
-              </div>
-
-              {/* Tier 4 */}
-              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-indigo-400 mb-3">Tier 4: Market Expansion ($10 to $100)</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Duration:</strong> ~23,027,000 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> ~$10 USD</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">End Price:</strong> ~$100 USD</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 10 × (1.0001)^epoch</p>
-                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
-                  </div>
-                </div>
-                <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Network is becoming established. Compounding continues to reward all holders equally.
-                </p>
-              </div>
-
-              {/* Tier 5 */}
-              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-violet-400 mb-3">Tier 5: Early Maturity ($100 to $1k)</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Duration:</strong> ~23,027,000 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> ~$100 USD</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">End Price:</strong> ~$1,000 USD</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 100 × (1.0001)^epoch</p>
-                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
-                  </div>
-                </div>
-                <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Even larger epochs reflect substantial transaction volume. Constant 0.01% rate ensures fairness.
-                </p>
-              </div>
-
-              {/* Tier 6 */}
-              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-pink-400 mb-3">Tier 6: Strong Adoption ($1k to $10k)</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Duration:</strong> ~23,027,000 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> ~$1,000 USD</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">End Price:</strong> ~$10,000 USD</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 1,000 × (1.0001)^epoch</p>
-                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
-                  </div>
-                </div>
-                <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Sustained compounding rewards long-term holders. Constant rate maintains transparency.
-                </p>
-              </div>
-
-              {/* Tier 7 */}
-              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-orange-400 mb-3">Tier 7: Mass Market ($10k to $100k)</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Duration:</strong> ~23,027,000 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> ~$10,000 USD</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">End Price:</strong> ~$100,000 USD</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 10,000 × (1.0001)^epoch</p>
-                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
-                  </div>
-                </div>
-                <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Large epoch sizes reflect massive transaction volume. Constant 0.01% ensures predictability at scale.
-                </p>
-              </div>
-
-              {/* Tier 8 */}
-              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-red-400 mb-3">Tier 8: Final Compounding ($100k to $1M)</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Duration:</strong> ~23,027,000 transactions</p>
-                    <p><strong className="text-white">Mechanism:</strong> 0.01% per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Starting Price:</strong> ~$100,000 USD</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">End Price:</strong> ~$1,000,000 USD</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 100,000 × (1.0001)^epoch</p>
-                    <p><strong className="text-white">Growth Type:</strong> Compounded</p>
-                  </div>
-                </div>
-                <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Final compounding tier before transition. Reaches $1,000,000 sustainably.
-                </p>
-              </div>
-
-              {/* Tier 9 */}
-              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-purple-500/20">
-                <h4 className="text-lg font-bold text-purple-400 mb-3">Tier 9: Perpetual Sustainable Growth ($1M+)</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Start:</strong> After price reaches ~$1,000,000 USD</p>
-                    <p><strong className="text-white">Mechanism:</strong> $250 per epoch (1,000 transactions)</p>
-                    <p><strong className="text-white">Monthly Cap:</strong> $25,000 maximum increase</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">End Price:</strong> Forever growing</p>
-                    <p><strong className="text-white">Formula:</strong> Price = 1,000,000 + (250 × epochs)</p>
-                    <p><strong className="text-white">Growth Type:</strong> Linear</p>
-                  </div>
-                </div>
-                <p className="text-purple-200 mt-4 text-sm">
-                  <strong className="text-white">Why This Mechanism?</strong> Compounding stops to prevent unsustainable growth. Linear $250/epoch (0.025% of $1,000,000) provides steady appreciation. The $25,000 / 30-day cap is enforced deterministically: the on-chain <code className="text-purple-300">tier9_start_timestamp</code> is set the moment the counter crosses into Tier 9, and the displayed price computation reads it to clamp growth to at most $25,000 per rolling 30-day window. Anyone can verify the formula against on-chain state.
-                </p>
-              </div>
-
-              {/* Comparison Table */}
-              <div className="overflow-x-auto mt-8">
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What This Means in Time</h3>
+              <p className="text-purple-200 leading-relaxed">
+                These are the <strong className="text-white">fastest possible</strong> times, assuming the same share of users pays every single day. Real growth will be slower, and no outcome is promised.
+              </p>
+              <div className="overflow-x-auto mt-4">
                 <table className="w-full text-purple-200 border-collapse text-sm">
                   <thead>
                     <tr className="border-b border-purple-500/30">
-                      <th className="text-left p-3 text-white">Tier</th>
-                      <th className="text-left p-3 text-white">Tx/Epoch</th>
-                      <th className="text-left p-3 text-white">Growth</th>
-                      <th className="text-left p-3 text-white">Price Range (USD equiv.)</th>
-                      <th className="text-left p-3 text-white">Type</th>
+                      <th className="text-left p-2 text-white">From $0.01 to</th>
+                      <th className="text-left p-2 text-white">Everyone pays daily</th>
+                      <th className="text-left p-2 text-white">30% pay daily</th>
+                      <th className="text-left p-2 text-white">10% pay daily</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-purple-500/20">
-                      <td className="p-3">1</td>
-                      <td className="p-3">1</td>
-                      <td className="p-3">0.01%</td>
-                      <td className="p-3">0.01 → 0.1</td>
-                      <td className="p-3">Compound</td>
-                    </tr>
-                    <tr className="border-b border-purple-500/20">
-                      <td className="p-3">2</td>
-                      <td className="p-3">10</td>
-                      <td className="p-3">0.01%</td>
-                      <td className="p-3">0.1 → 1</td>
-                      <td className="p-3">Compound</td>
-                    </tr>
-                    <tr className="border-b border-purple-500/20">
-                      <td className="p-3">3</td>
-                      <td className="p-3">100</td>
-                      <td className="p-3">0.01%</td>
-                      <td className="p-3">1 → 10</td>
-                      <td className="p-3">Compound</td>
-                    </tr>
-                    <tr className="border-b border-purple-500/20">
-                      <td className="p-3">4</td>
-                      <td className="p-3">1,000</td>
-                      <td className="p-3">0.01%</td>
-                      <td className="p-3">10 → 100</td>
-                      <td className="p-3">Compound</td>
-                    </tr>
-                    <tr className="border-b border-purple-500/20">
-                      <td className="p-3">5</td>
-                      <td className="p-3">1,000</td>
-                      <td className="p-3">0.01%</td>
-                      <td className="p-3">100 → 1k</td>
-                      <td className="p-3">Compound</td>
-                    </tr>
-                    <tr className="border-b border-purple-500/20">
-                      <td className="p-3">6</td>
-                      <td className="p-3">1,000</td>
-                      <td className="p-3">0.01%</td>
-                      <td className="p-3">1k → 10k</td>
-                      <td className="p-3">Compound</td>
-                    </tr>
-                    <tr className="border-b border-purple-500/20">
-                      <td className="p-3">7</td>
-                      <td className="p-3">1,000</td>
-                      <td className="p-3">0.01%</td>
-                      <td className="p-3">10k → 100k</td>
-                      <td className="p-3">Compound</td>
-                    </tr>
-                    <tr className="border-b border-purple-500/20">
-                      <td className="p-3">8</td>
-                      <td className="p-3">1,000</td>
-                      <td className="p-3">0.01%</td>
-                      <td className="p-3">100k → 1M</td>
-                      <td className="p-3">Compound</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3">9</td>
-                      <td className="p-3">1,000</td>
-                      <td className="p-3">$250/epoch</td>
-                      <td className="p-3">1M → ∞</td>
-                      <td className="p-3">Linear</td>
-                    </tr>
+                    <tr className="border-b border-purple-500/20"><td className="p-2">$1</td><td className="p-2">2.5 years</td><td className="p-2">8.4 years</td><td className="p-2">25 years</td></tr>
+                    <tr className="border-b border-purple-500/20"><td className="p-2">$100</td><td className="p-2">5.1 years</td><td className="p-2">17 years</td><td className="p-2">50 years</td></tr>
+                    <tr className="border-b border-purple-500/20"><td className="p-2">$10,000</td><td className="p-2">7.6 years</td><td className="p-2">25 years</td><td className="p-2">76 years</td></tr>
+                    <tr><td className="p-2">$1,000,000</td><td className="p-2">10 years</td><td className="p-2">34 years</td><td className="p-2">101 years</td></tr>
                   </tbody>
                 </table>
-                <p className="text-purple-200 text-xs mt-2 italic">
-                  <strong className="text-white">Note:</strong> All prices are denominated in USD on a deterministic schedule. The displayed UNIYAA price is a pure function of the on-chain transaction counter — no off-chain oracle, no external price feeds. Anyone can verify the displayed price by fetching <code className="text-purple-300">total_transactions</code> from the program and running the tier formula above.
-                </p>
               </div>
+              <p className="text-purple-200 leading-relaxed mt-4 border-l-4 border-purple-500 pl-4 italic">
+                UNIYAA is built for steady use over years, not for quick gains.
+              </p>
             </section>
-
 
             {/* Part IV.5 - Trust Model: Verifiable, Oracle-Free Pricing */}
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part IV.5: The Trust Model—Verifiable, Oracle-Free Pricing</h2>
 
               <p className="text-purple-200 leading-relaxed">
-                Most crypto projects ask you to trust an oracle, an admin key, or a price feed. UNIYAA does not.
+                UNIYAA does not depend on an oracle or an outside price feed.
               </p>
 
               <p className="text-purple-200 leading-relaxed mt-4">
-                The displayed UNIYAA price is a <strong className="text-white">pure deterministic function</strong> of a single on-chain number: <code className="text-purple-300">total_transactions</code>, the count of peer-to-peer transfers recorded by the smart contract. There is no admin keypair that can change the price. There is no off-chain feed. There are no hashes that need to be verified because the formula itself is the source of truth — and the formula is published in this whitepaper (Part IV).
+                The price is kept by the smart contract itself, in the public <code className="text-purple-300">price_index</code> field. The contract changes it in exactly one way: once per day, by the participation rule in Part IV. <strong className="text-white">No instruction can set the price</strong>, and no admin key can change it.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">What You Can Verify Yourself</h3>
               <ol className="list-decimal list-inside text-purple-200 space-y-2 mt-2">
-                <li>Read <code className="text-purple-300">total_transactions</code> from the on-chain GlobalState PDA (anyone can; it&apos;s public).</li>
-                <li>Look up which of the 9 tiers that count falls into (Part IV).</li>
-                <li>Apply the tier formula: compound growth for Tiers 1-8, linear with the $25,000 / 30-day cap for Tier 9.</li>
-                <li>Compare to what the app displays. They will match — always.</li>
+                <li>Read <code className="text-purple-300">price_index</code>, <code className="text-purple-300">payers_today</code> and <code className="text-purple-300">user_count</code> from the public on-chain GlobalState account.</li>
+                <li>Apply the rule in Part IV to see how the price will move at the next day&apos;s first payment.</li>
+                <li>Compare with what the app displays.</li>
               </ol>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                No proprietary algorithm. No black box. The math is in the code and the code is public.
-              </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">What Cannot Be Manipulated</h3>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
-                <li><strong className="text-white">Price up</strong>: nobody can write a higher price on-chain. The contract has no instruction to set the price; the price is derived, not stored.</li>
-                <li><strong className="text-white">Price down</strong>: same. The only way to move the price is by triggering real peer-to-peer transfers that advance the counter.</li>
-                <li><strong className="text-white">Counter inflation</strong>: the only counter-bumping instruction (<code className="text-purple-300">record_transaction</code>) is admin-gated; the public path is <code className="text-purple-300">transfer_tokens</code>, which requires actual token movement between two real wallets.</li>
-                <li><strong className="text-white">Tier 9 runaway</strong>: the on-chain program stamps a <code className="text-purple-300">tier9_start_timestamp</code> the moment Tier 9 begins. The displayed price reads that timestamp and clamps growth to at most $25,000 per 30-day window — not as a documentation claim, but as a math invariant anyone can check.</li>
+                <li><strong className="text-white">Setting the price</strong>: there is no instruction to write a price, up or down.</li>
+                <li><strong className="text-white">Repeat payments</strong>: each person counts once a day; sending more payments, payments of zero, or payments to yourself adds nothing.</li>
+                <li><strong className="text-white">Admin counter</strong>: the admin-only <code className="text-purple-300">record_transaction</code> instruction updates a statistics counter and does not affect the price.</li>
+                <li><strong className="text-white">Runaway growth</strong>: growth is capped at 0.5% a day, and at $25,000 per 30 days after $1,000,000.</li>
               </ul>
-
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What This Means for You</h3>
-              <p className="text-purple-200 leading-relaxed">
-                You do not have to trust UNIYAA&apos;s team. You do not have to trust a third-party oracle service. You do not have to trust that the off-chain math matches what the contract enforces.
-              </p>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                You trust the <strong className="text-white">on-chain counter</strong>, which is incremented only by genuine peer-to-peer transfers, and the <strong className="text-white">published formula</strong>, which is the same one your wallet, the merchant&apos;s phone, and any third-party explorer will arrive at independently.
-              </p>
-              <p className="text-purple-200 leading-relaxed mt-4 border-l-4 border-purple-500 pl-4 italic">
-                <strong className="text-white">If a price is verifiable by everyone, it cannot be manipulated by anyone.</strong>
-              </p>
             </section>
 
-            {/* Part V - Social Purpose Accounts */}
+            {/* Part V */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V: Social Purpose Accounts—Generosity Through Restraint</h2>
-              
-              <p className="text-purple-200 leading-relaxed">
-                UNIYAA is designed to create value for everyone—not just token holders. Once the terminal phase is reached and price growth stabilizes, the protocol activates <strong className="text-white">five social purpose accounts</strong> that distribute UNIYAA annually to support education, healthcare, research, grants, and operations.
-              </p>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Critical timing:</strong> These distributions activate <em>only after</em> the compounding phase completes (approximately 117,691,000 peer-to-peer transactions, when UNIYAA reaches $1,000,000). This ensures early holders and builders are not diluted during the compounding growth phase.
-              </p>
-
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Delayed Activation?</h3>
-              <p className="text-purple-200 leading-relaxed">
-                Many projects promise generosity from day one, then fail to deliver because they dilute their own value before it has time to grow. UNIYAA takes the opposite approach: <strong className="text-white">patience first, generosity second</strong>.
-              </p>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                By waiting until the terminal phase, UNIYAA ensures:
-              </p>
-              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li>The token has reached substantial value before any social distributions begin</li>
-                <li>Early believers who took the risk are rewarded without dilution</li>
-                <li>Social distributions come from a position of strength, not desperation</li>
-                <li>Each UNIYAA distributed has real purchasing power to make a difference</li>
-              </ul>
-
-              <h3 className="text-xl font-semibold text-white mt-8 mb-3">The Five Social Purpose Accounts</h3>
-              
-              {/* Education Fund */}
-              <div className="bg-white/5 rounded-xl p-6 mt-6 border border-blue-500/30">
-                <h4 className="text-lg font-bold text-blue-400 mb-3">1. Education Fund</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Purpose:</strong> Support scholarships, learning materials, and educational infrastructure</p>
-                    <p className="mt-2"><strong className="text-white">Annual Allocation:</strong> 100 UNIYAA</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">Why Constrained?</strong></p>
-                    <p className="text-sm mt-1">A steady, predictable stream allows schools and students to plan. Flooding the system with tokens would create dependency and chaos, not opportunity.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Healthcare Fund */}
-              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-green-500/30">
-                <h4 className="text-lg font-bold text-green-400 mb-3">2. Healthcare Fund</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Purpose:</strong> Fund medical care, medicines, and health clinics in underserved communities</p>
-                    <p className="mt-2"><strong className="text-white">Annual Allocation:</strong> 100 UNIYAA</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">Why Constrained?</strong></p>
-                    <p className="text-sm mt-1">Healthcare needs discipline and long-term commitment. A measured approach ensures funds reach those who need them most, not just those who ask loudest.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Research & Development Fund */}
-              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/30">
-                <h4 className="text-lg font-bold text-purple-400 mb-3">3. Research & Development Fund</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Purpose:</strong> Support open research, protocol improvements, and technological innovation</p>
-                    <p className="mt-2"><strong className="text-white">Annual Allocation:</strong> 100 UNIYAA</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">Why Constrained?</strong></p>
-                    <p className="text-sm mt-1">Good research takes time. Smaller allocations filter for serious projects and prevent waste on trendy experiments that won&apos;t last.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* General Grants Fund */}
-              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-yellow-500/30">
-                <h4 className="text-lg font-bold text-yellow-400 mb-3">4. General Grants Fund</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Purpose:</strong> Support community projects, local businesses, and public goods initiatives</p>
-                    <p className="mt-2"><strong className="text-white">Annual Allocation:</strong> 100 UNIYAA</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">Why Constrained?</strong></p>
-                    <p className="text-sm mt-1">Scarcity drives quality. Limited grants mean applicants must demonstrate real value, not just good intentions.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Operations Fund */}
-              <div className="bg-white/5 rounded-xl p-6 mt-4 border border-teal-500/30">
-                <h4 className="text-lg font-bold text-teal-400 mb-3">5. Operations Fund</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-purple-200">
-                  <div>
-                    <p><strong className="text-white">Purpose:</strong> Maintain infrastructure, pay for audits, and ensure protocol sustainability</p>
-                    <p className="mt-2"><strong className="text-white">Annual Allocation:</strong> 10 UNIYAA</p>
-                  </div>
-                  <div>
-                    <p><strong className="text-white">Why Constrained?</strong></p>
-                    <p className="text-sm mt-1">Lean operations stay focused. Excess funding breeds bloat and inefficiency. A tight budget forces discipline and clear priorities.</p>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
-                <strong className="text-white">Total Annual Distribution: 410 UNIYAA</strong> across all five accounts. By terminal phase, each UNIYAA has substantial value, making even these constrained allocations meaningful for real-world impact.
-              </p>
-            </section>
-
-            {/* Part V.6 - Annual Distribution Safety */}
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Annual Distribution Safety—Predictability Over Speed</h2>
-              
-              <p className="text-purple-200 leading-relaxed">
-                Social purpose distributions occur <strong className="text-white">exactly once per calendar year, in January</strong>. Not daily. Not per transaction. Not based on volume. Once per year, on a predictable schedule.
-              </p>
-
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why Annual, Not More Frequent?</h3>
-              
-              <h4 className="text-lg font-semibold text-white mt-4 mb-2">1. Predictability for Recipients</h4>
-              <p className="text-purple-200 leading-relaxed">
-                A school planning a scholarship program or a clinic ordering medicines needs to know <em>when</em> funds arrive. Annual cadence allows organizations to plan, budget, and deliver real outcomes.
-              </p>
-
-              <h4 className="text-lg font-semibold text-white mt-4 mb-2">2. Auditability for All</h4>
-              <p className="text-purple-200 leading-relaxed">
-                Annual distributions are easy to track, verify, and audit. Anyone can check that funds went to the right places. High-frequency distributions create noise that hides manipulation.
-              </p>
-
-              <h4 className="text-lg font-semibold text-white mt-4 mb-2">3. Abuse Resistance</h4>
-              <p className="text-purple-200 leading-relaxed">
-                Volume-based or high-frequency distributions create incentives to game the system—fake transactions, wash trading, and extraction schemes. Annual caps eliminate these attack vectors.
-              </p>
-
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">What We Explicitly Reject</h3>
-              <div className="bg-red-500/10 rounded-xl p-6 mt-4 border border-red-500/30">
-                <ul className="list-disc list-inside text-purple-200 space-y-2">
-                  <li><strong className="text-white">High-frequency grants</strong>: Create complexity and manipulation opportunities</li>
-                  <li><strong className="text-white">Volume-based distributions</strong>: Reward noise and spam, not genuine need</li>
-                  <li><strong className="text-white">Uncapped generosity</strong>: Dilutes value and undermines sustainability</li>
-                  <li><strong className="text-white">Speculative extraction</strong>: UNIYAA funds are for use, not for trading schemes</li>
-                </ul>
-              </div>
-
-              <p className="text-purple-200 leading-relaxed mt-6 border-l-4 border-purple-500 pl-4 italic">
-                Restraint is not cruelty. It is the foundation of fairness. By limiting distributions to annual cadence and fixed amounts, UNIYAA ensures that generosity is sustainable, auditable, and immune to exploitation.
-              </p>
-            </section>
-
-            {/* Part VI */}
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VI: How UNIYAA Protects Against Exploitation</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part V: How UNIYAA Protects Against Exploitation</h2>
               
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Immutable Fairness Through Code</h3>
               <p className="text-purple-200 leading-relaxed">
@@ -1005,23 +598,23 @@ export default function WhitepaperPage() {
               
               <ul className="list-disc list-inside text-purple-200 space-y-3 mt-4">
                 <li><strong className="text-white">No Team Minting</strong>: Every token entering circulation follows transparent rules. There&apos;s no admin wallet that can secretly print tokens.</li>
-                <li><strong className="text-white">No Price Oracle to Compromise</strong>: The displayed UNIYAA price is computed deterministically from the on-chain transaction counter. There is no off-chain feed, no admin keypair in the price path, no hashes that need to be verified — see Part IV.5 for the full trust model. The only way to move the price is through real peer-to-peer transfers.</li>
-                <li><strong className="text-white">Counter Inflation Closed</strong>: The only counter-bumping instruction outside of real transfers (<code className="text-purple-300">record_transaction</code>) is admin-gated. Anyone trying to advance the price tier without doing real transactions hits an authorization check and pays nothing but the rejected transaction fee.</li>
-                <li><strong className="text-white">Diminishing Mint Rate</strong>: As adoption grows, the per-attempt amount each new user can mint steps down according to the published Mint Tier Schedule (Part VIII). UNIYAA does not enforce a fixed total-supply cap; instead, the combination of the tiered step-down and the on-chain mint cooldown holds issuance asymptotic — i.e. each new cohort can add less than the one before it, and no single actor can outrun the schedule.</li>
-                <li><strong className="text-white">Transaction-Based Appreciation</strong>: Price appreciation isn&apos;t driven by marketing hype or speculative enthusiasm. It&apos;s directly tied to actual economic activity.</li>
+                <li><strong className="text-white">No Price Oracle to Compromise</strong>: The UNIYAA price is kept on-chain and changes only by the participation rule. There is no off-chain feed and no admin key in the price path — see Part IV.5 for the full trust model.</li>
+                <li><strong className="text-white">Spam Does Not Count</strong>: Each person counts at most once a day. Payments of zero, payments to yourself, and extra payments on the same day add nothing.</li>
+                <li><strong className="text-white">Diminishing Mint Rate</strong>: As adoption grows, the per-attempt amount each new user can mint steps down according to the published Mint Tier Schedule (Part VII). UNIYAA does not enforce a fixed total-supply cap; instead, the combination of the tiered step-down and the on-chain mint cooldown holds issuance asymptotic — i.e. each new cohort can add less than the one before it, and no single actor can outrun the schedule.</li>
+                <li><strong className="text-white">Participation-Based Appreciation</strong>: Price appreciation isn&apos;t driven by marketing hype or by the size of the network. It follows the share of people who actually use UNIYAA each day.</li>
               </ul>
             </section>
 
-            {/* Part VII - Philosophy & Values */}
+            {/* Part VI - Philosophy & Values */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VII: Philosophy & Values—Restraint Over Excess</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VI: Philosophy & Values—Restraint Over Excess</h2>
               
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why UNIYAA Prioritizes Restraint</h3>
               <p className="text-purple-200 leading-relaxed">
                 The world is full of promises of abundance: unlimited growth, endless rewards, instant riches. UNIYAA rejects this illusion.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Restraint is not limitation—it is discipline.</strong> By imposing clear boundaries on minting, distributions, and growth, UNIYAA creates a system that can last for generations, not just cycles of hype and collapse.
+                <strong className="text-white">Restraint is not limitation—it is discipline.</strong> By imposing clear boundaries on minting and growth, UNIYAA creates a system that can last for generations, not just cycles of hype and collapse.
               </p>
               
               <h4 className="text-lg font-semibold text-white mt-6 mb-2">Restraint in Minting</h4>
@@ -1029,31 +622,9 @@ export default function WhitepaperPage() {
                 Every new UNIYAA token must be earned through participation, not printed by a team. Algorithmic scarcity ensures that as the network grows, each token becomes more valuable—not diluted.
               </p>
 
-              <h4 className="text-lg font-semibold text-white mt-4 mb-2">Restraint in Social Distributions</h4>
-              <p className="text-purple-200 leading-relaxed">
-                UNIYAA waits until the terminal phase to activate social purpose accounts. This patience ensures that when generosity begins, it comes from a position of strength and each UNIYAA distributed has real purchasing power to change lives.
-              </p>
-
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">Restraint in Growth</h4>
               <p className="text-purple-200 leading-relaxed">
-                Tier 9 caps price growth at $25,000 per 30-day window. This is not a documentation claim — it is enforced deterministically: the on-chain program stamps a <code className="text-purple-300">tier9_start_timestamp</code> the moment the transaction counter crosses into Tier 9, and the price formula clamps growth against that timestamp. Any client running the formula arrives at the same capped number. This prevents runaway speculation and keeps UNIYAA grounded in sustainable, predictable appreciation—not casino-like volatility.
-              </p>
-
-              <h3 className="text-xl font-semibold text-white mt-8 mb-3">Delayed Generosity Leads to Broader, Fairer Impact</h3>
-              <p className="text-purple-200 leading-relaxed">
-                Many projects promise to change the world from day one. They distribute tokens freely, create dependencies, and collapse when the well runs dry.
-              </p>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                UNIYAA takes the opposite path: <strong className="text-white">build value first, distribute generosity second.</strong>
-              </p>
-              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li><strong className="text-white">Early holders are rewarded</strong> for taking the risk during the compounding phase</li>
-                <li><strong className="text-white">Social purpose accounts activate</strong> only when each UNIYAA has substantial value</li>
-                <li><strong className="text-white">Annual distributions are constrained</strong> to prevent dependency and abuse</li>
-                <li><strong className="text-white">The system remains sustainable</strong> for decades, not just years</li>
-              </ul>
-              <p className="text-purple-200 leading-relaxed mt-4">
-                By delaying generosity until the system is strong, UNIYAA ensures that when help arrives, it is <em>meaningful</em>. A scholarship funded by 100 UNIYAA at $1,000,000 value is worth $100 million in purchasing power—life-changing for a student, sustainable for the network.
+                The price can grow at most 0.5% a day, and only when people use UNIYAA. After $1,000,000, growth is limited to $25,000 per 30 days. Both limits are enforced by the smart contract. This keeps UNIYAA grounded in slow, steady appreciation—not casino-like volatility.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-8 mb-3">UNIYAA Is Not Designed for Speculation or Extraction</h3>
@@ -1067,7 +638,6 @@ export default function WhitepaperPage() {
                 <li><strong className="text-white">People who use it</strong> to buy and sell goods and services</li>
                 <li><strong className="text-white">People who believe in it</strong> and hold through growth phases</li>
                 <li><strong className="text-white">People who build with it</strong> and contribute to the ecosystem</li>
-                <li><strong className="text-white">Communities who benefit from it</strong> through education, healthcare, and grants</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
                 If you are looking for quick profits or trading volatility, UNIYAA is not for you. If you are looking for dignity, fairness, and long-term thinking, you are in the right place.
@@ -1098,9 +668,9 @@ export default function WhitepaperPage() {
               </p>
             </section>
 
-            {/* Part VIII - Technical Summary */}
+            {/* Part VII - Technical Summary */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VIII: Technical Summary</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 border-b border-purple-500/30 pb-2">Part VII: Technical Summary</h2>
               
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">For the Technically Curious</h3>
               <p className="text-purple-200 leading-relaxed">
@@ -1110,24 +680,23 @@ export default function WhitepaperPage() {
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <h4 className="text-lg font-semibold text-white mb-3">Smart Contract Architecture:</h4>
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
-                  <li>Global state tracking: transaction counts, user counts, admin authority, Tier 9 start timestamp</li>
+                  <li>Global state tracking: user count, counted payments, today&apos;s payers, and the price</li>
                   <li>User accounts: minting history, referral attribution, locked-token vesting, and the day of each user&apos;s last counted payment</li>
                   <li>Counting rule enforced on-chain by <code className="text-purple-300">transfer_tokens</code>: non-zero amount, sender ≠ recipient, token accounts owned by sender and recipient, and at most one counted payment per sender per UTC day</li>
-                  <li>Deterministic price calculation derived purely from <code className="text-purple-300">total_transactions</code> — no on-chain price oracle, no admin-writable price field</li>
-                  <li>Admin-gated maintenance instructions: counter bumps via <code className="text-purple-300">record_transaction</code> require the admin signer; ordinary peer-to-peer transfers do not</li>
-                  <li>On-chain Tier 9 cap enforcement: <code className="text-purple-300">tier9_start_timestamp</code> stamped automatically when the counter first crosses into Tier 9; price formula clamps growth to $25,000 per 30-day window deterministically</li>
+                  <li>Price kept on-chain in <code className="text-purple-300">price_index</code> and updated once per UTC day by participation (at most 0.5%/day; at most $25,000 per 30 days after $1,000,000) — no price oracle, no instruction that writes the price</li>
+                  <li>Admin-gated maintenance: <code className="text-purple-300">record_transaction</code> updates a statistics counter only and cannot move the price</li>
                 </ul>
               </div>
 
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <h4 className="text-lg font-semibold text-white mb-3">Trust Surface (what you must trust):</h4>
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
-                  <li><strong className="text-white">On-chain state</strong>: the <code className="text-purple-300">total_transactions</code> counter and (for Tier 9) the <code className="text-purple-300">tier9_start_timestamp</code> field on the GlobalState PDA</li>
-                  <li><strong className="text-white">Published formula</strong>: the 9-tier compound + linear curve in Part IV, identical across frontend, mobile, and any third-party explorer that runs it</li>
+                  <li><strong className="text-white">On-chain state</strong>: the <code className="text-purple-300">price_index</code>, <code className="text-purple-300">payers_today</code> and <code className="text-purple-300">user_count</code> fields on the GlobalState PDA</li>
+                  <li><strong className="text-white">Published rule</strong>: the daily participation rule in Part IV, enforced by the open-source program</li>
                   <li><strong className="text-white">Solana&apos;s settlement guarantees</strong>: standard for any Solana-native asset</li>
                 </ul>
                 <p className="text-purple-200 text-sm mt-3 italic">
-                  Everything else — the team, the frontend operator, any third-party API — is outside the price trust path. If you trust the on-chain counter, you can re-derive the price independently and verify what every interface shows you.
+                  Everything else — the team, the frontend operator, any third-party API — is outside the price trust path. If you trust the on-chain state, you can check the price yourself and verify what every interface shows you.
                 </p>
               </div>
 
@@ -1144,7 +713,7 @@ export default function WhitepaperPage() {
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <h4 className="text-lg font-semibold text-white mb-3">Mint Tier Schedule (per-attempt cap by user registration index):</h4>
                 <p className="text-purple-300 text-sm mb-3">
-                  Each user&apos;s per-attempt mint amount is determined by the order in which they registered. As more users join, the per-attempt amount steps down, so newcomers can&apos;t flood the supply faster than the early cohort. This is independent of the 9-tier <em>price</em> model in Part IV — the price tiers describe how UNIYAA <em>appreciates</em> per transaction; the mint tiers below describe how much each user can <em>create</em> per attempt.
+                  Each user&apos;s per-attempt mint amount is determined by the order in which they registered. As more users join, the per-attempt amount steps down, so newcomers can&apos;t flood the supply faster than the early cohort. This is independent of the <em>price</em> model in Part IV — the price describes how UNIYAA <em>appreciates</em>; the mint tiers below describe how much each user can <em>create</em> per mint, once every 30 days.
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-purple-200 border-collapse text-sm">
