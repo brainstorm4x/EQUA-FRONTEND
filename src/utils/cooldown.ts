@@ -2,7 +2,7 @@
  * Cooldown Guard - Enforce off-chain cooldown logic uniformly
  * 
  * This module provides shared cooldown enforcement across web and mobile to:
- * - Prevent multiple mints within 24 hours
+ * - Prevent multiple mints within the 30-day cooldown
  * - Eliminate UI race conditions with optimistic cooldown + in-flight lock
  * - Align schema parsing with on-chain account layouts
  * 
@@ -17,21 +17,15 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 import { safeParseTimestamp } from './safeAccountParsing';
 
-/**
- * Mint type for cooldown differentiation
- * - regular: Standard minting (enforces 24-hour cooldown)
- * - bonus: Bonus mint from referral credits (NO cooldown, only monthly cap)
- */
-export type MintType = 'regular' | 'bonus';
-
 // Constants
 const LAST_MINT_TIME_OFFSET = 136; // Offset in UserAccount for last_mint_time (i64)
 const MIN_USER_ACCOUNT_SIZE = LAST_MINT_TIME_OFFSET + 8; // Minimum size to read last_mint_time (i64 = 8 bytes)
 const IN_FLIGHT_LOCK_TTL = 120; // In-flight lock TTL in seconds (2 minutes)
 
-// Get cooldown period from environment variable (default 86400 = 24 hours)
+// Get cooldown period from environment variable (default 2592000 = 30 days,
+// matching MINTING_COOLDOWN_SECONDS in the on-chain program)
 const MINT_COOLDOWN_SECONDS = parseInt(
-  process.env.NEXT_PUBLIC_MINT_COOLDOWN_SECONDS || '86400',
+  process.env.NEXT_PUBLIC_MINT_COOLDOWN_SECONDS || '2592000',
   10
 );
 
@@ -232,29 +226,19 @@ export async function getOnchainLastMintTime(
  * Check if user can mint now (not on cooldown and no in-flight transaction)
  * 
  * @param walletAddress - Wallet address to check
- * @param mintType - Type of mint ('regular' or 'bonus')
  * @returns true if user can mint, false if on cooldown or transaction in-flight
  */
-export function canMintNow(
-  walletAddress: string,
-  mintType: MintType = 'regular' // Default to safe behavior (enforce cooldown)
-): boolean {
+export function canMintNow(walletAddress: string): boolean {
   const now = Math.floor(Date.now() / 1000);
   
-  // Check in-flight lock first (applies to ALL mint types)
+  // Check in-flight lock first
   const inFlightLock = getInFlightLock(walletAddress);
   if (inFlightLock) {
     console.log('🔒 Mint blocked: Transaction in-flight');
     return false;
   }
   
-  // ✅ BONUS MINTS: Bypass cooldown check (only monthly cap applies on-chain)
-  if (mintType === 'bonus') {
-    console.log('✅ Bonus mint - bypassing cooldown check (only monthly cap applies)');
-    return true; // No cooldown for bonus mints!
-  }
-  
-  // REGULAR MINTS: Check cooldown
+  // Check cooldown
   const cooldownState = getCooldownState(walletAddress);
   if (!cooldownState) {
     // No cooldown state, user can mint
@@ -276,30 +260,21 @@ export function canMintNow(
  * Call this immediately when user clicks mint button
  * 
  * @param walletAddress - Wallet address
- * @param mintType - Type of mint ('regular' or 'bonus')
  */
-export function startMint(
-  walletAddress: string,
-  mintType: MintType = 'regular'
-): void {
+export function startMint(walletAddress: string): void {
   const now = Math.floor(Date.now() / 1000);
   
-  // Set in-flight lock for ALL mint types (prevents double-clicks)
+  // Set in-flight lock (prevents double-clicks)
   setInFlightLock(walletAddress);
   
-  // Only set optimistic cooldown for REGULAR mints
-  if (mintType === 'regular') {
-    const cooldownState: CooldownState = {
-      lastMintTime: now,
-      cooldownUntil: now + MINT_COOLDOWN_SECONDS,
-      isOptimistic: true,
-    };
-    setCooldownState(walletAddress, cooldownState);
-    
-    console.log(`🚀 Regular mint started - optimistic cooldown set until ${new Date(cooldownState.cooldownUntil * 1000).toLocaleString()}`);
-  } else {
-    console.log(`🚀 Bonus mint started - no cooldown applied`);
-  }
+  const cooldownState: CooldownState = {
+    lastMintTime: now,
+    cooldownUntil: now + MINT_COOLDOWN_SECONDS,
+    isOptimistic: true,
+  };
+  setCooldownState(walletAddress, cooldownState);
+  
+  console.log(`🚀 Mint started - optimistic cooldown set until ${new Date(cooldownState.cooldownUntil * 1000).toLocaleString()}`);
 }
 
 /**

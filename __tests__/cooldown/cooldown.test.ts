@@ -43,8 +43,8 @@ describe('Cooldown Guard', () => {
   });
 
   describe('getCooldownPeriod', () => {
-    it('should return 86400 seconds (24 hours) by default', () => {
-      expect(getCooldownPeriod()).toBe(86400);
+    it('should return 2592000 seconds (30 days) by default', () => {
+      expect(getCooldownPeriod()).toBe(2592000);
     });
   });
 
@@ -68,7 +68,7 @@ describe('Cooldown Guard', () => {
 
     it('should return true when cooldown has expired', () => {
       const now = Math.floor(Date.now() / 1000);
-      const lastMintTime = now - 86401; // More than 24 hours ago
+      const lastMintTime = now - 2592001; // More than 30 days ago
       endMint(testWallet, true, now, lastMintTime);
       
       expect(canMintNow(testWallet)).toBe(true);
@@ -83,7 +83,7 @@ describe('Cooldown Guard', () => {
       expect(hasInFlightMint(testWallet)).toBe(true);
     });
 
-    it('should set cooldown until 24 hours from now', () => {
+    it('should set cooldown until 30 days from now', () => {
       const before = Math.floor(Date.now() / 1000);
       startMint(testWallet);
       const after = Math.floor(Date.now() / 1000);
@@ -92,8 +92,8 @@ describe('Cooldown Guard', () => {
       expect(cooldownUntil).not.toBeNull();
       
       if (cooldownUntil) {
-        const expectedMin = before + 86400;
-        const expectedMax = after + 86400;
+        const expectedMin = before + 2592000;
+        const expectedMax = after + 2592000;
         expect(cooldownUntil).toBeGreaterThanOrEqual(expectedMin);
         expect(cooldownUntil).toBeLessThanOrEqual(expectedMax);
       }
@@ -139,7 +139,7 @@ describe('Cooldown Guard', () => {
       
       expect(canMintNow(testWallet)).toBe(false);
       const cooldownUntil = getCooldownUntil(testWallet);
-      expect(cooldownUntil).toBe(lastMintTime + 86400);
+      expect(cooldownUntil).toBe(lastMintTime + 2592000);
     });
   });
 
@@ -154,7 +154,7 @@ describe('Cooldown Guard', () => {
       endMint(testWallet, true, now, lastMintTime);
       
       const remaining = timeRemaining(testWallet);
-      const expected = 86400 - 1000; // 24 hours - 1000 seconds
+      const expected = 2592000 - 1000; // 30 days - 1000 seconds
       
       // Allow 1 second tolerance for test execution time
       expect(remaining).toBeGreaterThanOrEqual(expected - 1);
@@ -163,7 +163,7 @@ describe('Cooldown Guard', () => {
 
     it('should return 0 when cooldown has expired', () => {
       const now = Math.floor(Date.now() / 1000);
-      const lastMintTime = now - 86401; // More than 24 hours ago
+      const lastMintTime = now - 2592001; // More than 30 days ago
       endMint(testWallet, true, now, lastMintTime);
       
       expect(timeRemaining(testWallet)).toBe(0);
@@ -233,107 +233,6 @@ describe('Cooldown Guard', () => {
       // Should still be on cooldown (just transitioned from optimistic to confirmed)
       expect(canMintNow(testWallet)).toBe(false);
       expect(hasInFlightMint(testWallet)).toBe(false); // But lock should be cleared
-    });
-  });
-
-  describe('Bonus Mint Cooldown Bypass', () => {
-    it('should allow bonus mint even when regular mint cooldown is active', () => {
-      const now = Math.floor(Date.now() / 1000);
-      const lastMintTime = now - 100; // 100 seconds ago (within cooldown)
-      
-      // Simulate regular mint cooldown
-      endMint(testWallet, true, now, lastMintTime);
-      
-      // Regular mint should be blocked
-      expect(canMintNow(testWallet, 'regular')).toBe(false);
-      
-      // Bonus mint should be ALLOWED
-      expect(canMintNow(testWallet, 'bonus')).toBe(true);
-    });
-
-    it('should not set cooldown for bonus mints', () => {
-      startMint(testWallet, 'bonus');
-      
-      // Should have in-flight lock (prevents double-clicks)
-      expect(hasInFlightMint(testWallet)).toBe(true);
-      
-      // For bonus mints, clear in-flight lock without setting cooldown
-      // by calling endMint with success=false (which clears optimistic cooldown)
-      endMint(testWallet, false);
-      
-      // Should be able to mint immediately again (no cooldown was set)
-      expect(canMintNow(testWallet, 'bonus')).toBe(true);
-      expect(canMintNow(testWallet, 'regular')).toBe(true);
-    });
-
-    it('should allow consecutive bonus mints', () => {
-      // First bonus mint
-      startMint(testWallet, 'bonus');
-      endMint(testWallet, false); // Clear in-flight lock without setting cooldown
-      
-      // Second bonus mint should be allowed immediately
-      expect(canMintNow(testWallet, 'bonus')).toBe(true);
-      
-      // Start second bonus mint
-      startMint(testWallet, 'bonus');
-      endMint(testWallet, false); // Clear in-flight lock without setting cooldown
-      
-      // Third bonus mint should still be allowed
-      expect(canMintNow(testWallet, 'bonus')).toBe(true);
-    });
-
-    it('should apply in-flight lock to bonus mints', () => {
-      // Start bonus mint
-      startMint(testWallet, 'bonus');
-      
-      // Should be blocked by in-flight lock
-      expect(canMintNow(testWallet, 'bonus')).toBe(false);
-      expect(hasInFlightMint(testWallet)).toBe(true);
-      
-      // Clear in-flight lock
-      endMint(testWallet, false);
-      
-      // Should be able to mint again
-      expect(canMintNow(testWallet, 'bonus')).toBe(true);
-    });
-
-    it('should block bonus mint when regular mint is in-flight', () => {
-      // Start regular mint
-      startMint(testWallet, 'regular');
-      
-      // Both regular and bonus mints should be blocked by in-flight lock
-      expect(canMintNow(testWallet, 'regular')).toBe(false);
-      expect(canMintNow(testWallet, 'bonus')).toBe(false);
-      expect(hasInFlightMint(testWallet)).toBe(true);
-    });
-
-    it('should default to regular mint when mintType not specified', () => {
-      const now = Math.floor(Date.now() / 1000);
-      const lastMintTime = now - 100; // 100 seconds ago (within cooldown)
-      
-      // Simulate regular mint cooldown
-      endMint(testWallet, true, now, lastMintTime);
-      
-      // Default behavior (no mintType) should enforce cooldown
-      expect(canMintNow(testWallet)).toBe(false);
-    });
-
-    it('should allow regular mint after bonus mint without cooldown', () => {
-      // Bonus mint doesn't set cooldown
-      startMint(testWallet, 'bonus');
-      endMint(testWallet, false); // Clear in-flight lock without setting cooldown
-      
-      // Regular mint should still be allowed (no cooldown was set)
-      expect(canMintNow(testWallet, 'regular')).toBe(true);
-      
-      // Now do a regular mint
-      startMint(testWallet, 'regular');
-      endMint(testWallet, true);
-      
-      // Now regular mint should be blocked by cooldown
-      expect(canMintNow(testWallet, 'regular')).toBe(false);
-      // But bonus mint should still be allowed
-      expect(canMintNow(testWallet, 'bonus')).toBe(true);
     });
   });
 });

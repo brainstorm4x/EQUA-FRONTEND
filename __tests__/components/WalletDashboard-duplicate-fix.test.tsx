@@ -4,7 +4,7 @@
  * Issue: Multiple transaction requests were being triggered for a single user action
  * causing "Transaction simulation failed: This transaction has already been processed" errors
  * 
- * Fix: Added early return guards in handleSend and handleClaimCredits to prevent
+ * Fix: Added early return guards in handleSend to prevent
  * duplicate submissions when already processing
  */
 
@@ -57,51 +57,6 @@ describe('WalletDashboard - Duplicate Transaction Prevention', () => {
         expect(isLoadingCheckIndex).toBeGreaterThan(-1);
         expect(setLoadingIndex).toBeGreaterThan(-1);
         expect(isLoadingCheckIndex).toBeLessThan(setLoadingIndex);
-      }
-    });
-  });
-
-  describe('handleClaimCredits function', () => {
-    it('should check isClaiming state before processing', () => {
-      // Verify the duplicate submission guard is present
-      expect(sourceCode).toMatch(/if \(isClaiming\) \{[\s\S]*?console\.warn\(['"]⚠️ Claim already in progress/);
-    });
-
-    it('should return early if already claiming', () => {
-      // The pattern should be:
-      // if (isClaiming) {
-      //   console.warn('...');
-      //   return;
-      // }
-      const handleClaimMatch = sourceCode.match(/const handleClaimCredits = useCallback\(async \(\) => \{[\s\S]*?setIsClaiming\(true\)/);
-      expect(handleClaimMatch).toBeTruthy();
-      
-      if (handleClaimMatch) {
-        const handleClaimCode = handleClaimMatch[0];
-        expect(handleClaimCode).toContain('if (isClaiming)');
-        expect(handleClaimCode).toContain('return;');
-      }
-    });
-
-    it('should warn about duplicate claim requests in console', () => {
-      // Verify warning message is included
-      expect(sourceCode).toContain('Claim already in progress, ignoring duplicate request');
-    });
-
-    it('should have duplicate guard BEFORE setIsClaiming(true)', () => {
-      // The guard must be before setting claiming state
-      const handleClaimMatch = sourceCode.match(/const handleClaimCredits = useCallback\(async \(\) => \{[\s\S]*?setIsClaiming\(true\);/);
-      expect(handleClaimMatch).toBeTruthy();
-      
-      if (handleClaimMatch) {
-        const codeSection = handleClaimMatch[0];
-        const isClaimingCheckIndex = codeSection.indexOf('if (isClaiming)');
-        const setClaimingIndex = codeSection.indexOf('setIsClaiming(true)');
-        
-        // isClaiming check should come BEFORE setIsClaiming(true)
-        expect(isClaimingCheckIndex).toBeGreaterThan(-1);
-        expect(setClaimingIndex).toBeGreaterThan(-1);
-        expect(isClaimingCheckIndex).toBeLessThan(setClaimingIndex);
       }
     });
   });

@@ -455,8 +455,8 @@ export function createInitializeUserInstruction(
   return instruction;
 }
 
-// ✅ Create mint_uniyaa instruction (daily minting with cooldown)
-// This is the correct instruction to use for daily UNIYAA minting
+// ✅ Create mint_uniyaa instruction (monthly minting with a 30-day cooldown)
+// This is the correct instruction to use for regular UNIYAA minting
 export function createMintUniyaaInstruction(
   userAccount: PublicKey,
   authority: PublicKey,
@@ -497,7 +497,7 @@ export function createMintUniyaaInstruction(
 }
 
 // ✅ Create mint_uniyaa_tokens instruction (low-level token minting)
-// This is used internally by mint_uniyaa, not for direct daily minting
+// This is used internally by mint_uniyaa, not for direct regular minting
 export function createMintUniyaaTokensInstruction(
   userAccount: PublicKey,
   userTokenAccount: PublicKey,

@@ -109,7 +109,7 @@ describe('Home/Landing Page', () => {
       
       expect(screen.getByText('Higher-Minting-Rate')).toBeInTheDocument();
       expect(screen.getByText('Price Appreciation')).toBeInTheDocument();
-      expect(screen.getByText('Referral Rewards')).toBeInTheDocument();
+      expect(screen.getByText('Grows With Use')).toBeInTheDocument();
     });
   });
 
@@ -270,7 +270,7 @@ describe('Home/Landing Page', () => {
       // Features should be visible
       expect(screen.getByText('Higher-Minting-Rate')).toBeInTheDocument();
       expect(screen.getByText('Price Appreciation')).toBeInTheDocument();
-      expect(screen.getByText('Referral Rewards')).toBeInTheDocument();
+      expect(screen.getByText('Grows With Use')).toBeInTheDocument();
       
       // Platform info should be visible
       expect(screen.getByText('Solana Devnet')).toBeInTheDocument();

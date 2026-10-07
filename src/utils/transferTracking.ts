@@ -20,7 +20,8 @@
  * - Transfers from/to unregistered users (instruction fails if UserAccount PDA missing)
  * - Mint operations (separate mint_tokens instruction)
  * - Registration transfers (initialize_user instruction)
- * - Reward claims (claim_referral_rewards instruction)
+ * - Zero-amount and self transfers (rejected by transfer_tokens)
+ * - Repeat transfers from a sender who already counted this UTC day
  * 
  * BACKEND ALIGNMENT:
  * - Backend source: programs/uniyaa_token/src/lib.rs (transfer_tokens instruction)

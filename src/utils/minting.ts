@@ -38,7 +38,7 @@ export function prevailingRateByUserIndex(userIndex: number): number {
 
 
 /**
- * Compute the allowed daily mint for a specific user.
+ * Compute the allowed per-mint amount for a specific user.
  * @param userIndex The user's registration order (1-based index)
  * @param daysSinceMintStart Days since user's mint_start timestamp
  */
