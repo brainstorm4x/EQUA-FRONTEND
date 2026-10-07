@@ -250,7 +250,7 @@ export default function WhitepaperPage() {
                 You don&apos;t need to buy, flip, or speculate on UNIYAA for it to matter.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                All that&apos;s required is <strong className="text-white">one simple action: accept UNIYAA once a day when someone sends it to you.</strong>
+                All that&apos;s required is <strong className="text-white">one simple action: pay with UNIYAA once a day.</strong>
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">One Small Action, Once a Day</h3>
@@ -267,25 +267,28 @@ export default function WhitepaperPage() {
                 You only need to do this:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
-                <li><strong className="text-white">When someone sends you UNIYAA, receive it</strong></li>
-                <li>Let that transfer be recorded on-chain as real use between real people</li>
-                <li>The protocol counts this as genuine participation, not speculation</li>
+                <li><strong className="text-white">Pay for something with UNIYAA</strong>—groceries, a bill, a friend you owe</li>
+                <li>Let that payment be recorded on-chain as real use between real people</li>
+                <li>The protocol counts your first payment of the day as genuine participation, not speculation</li>
               </ul>
+              <p className="text-purple-200 leading-relaxed mt-4">
+                <strong className="text-white">Receiving is never limited.</strong> A shopkeeper can accept UNIYAA from every customer who walks in, all day long. Each customer&apos;s first payment of the day counts, so a busy shop helps the whole network grow.
+              </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Why This Matters So Much</h3>
               <p className="text-purple-200 leading-relaxed">
-                One person accepting UNIYAA once a day is a tiny event on its own.
+                One person paying with UNIYAA once a day is a tiny event on its own.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 But scaled even a little, the picture changes:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
-                <li><strong className="text-white">1 person × 1 acceptance per day</strong> → very small</li>
-                <li><strong className="text-white">10,000 people × 1 acceptance per day</strong> → system-level signal</li>
-                <li><strong className="text-white">1,000,000 people × 1 acceptance per day</strong> → impossible to ignore</li>
+                <li><strong className="text-white">1 person × 1 payment per day</strong> → very small</li>
+                <li><strong className="text-white">10,000 people × 1 payment per day</strong> → system-level signal</li>
+                <li><strong className="text-white">1,000,000 people × 1 payment per day</strong> → impossible to ignore</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                Every time UNIYAA moves from one person to another, the network becomes stronger. The price appreciation logic <strong className="text-white">only considers peer-to-peer transfers</strong>, not registrations, minting, or rewards. The system grows not because someone bought UNIYAA, but because someone <strong className="text-white">used</strong> it.
+                Every time UNIYAA moves from one person to another, the network becomes stronger. The price appreciation logic <strong className="text-white">only considers peer-to-peer payments</strong>, not registrations or minting, and it counts each person at most once a day. The system grows not because someone bought UNIYAA, but because someone <strong className="text-white">used</strong> it.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">No Pressure, No Rush</h3>
@@ -296,12 +299,12 @@ export default function WhitepaperPage() {
                 You don&apos;t need to:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
-                <li>Accept UNIYAA multiple times a day. <strong className="text-white">Once is enough.</strong></li>
+                <li>Pay with UNIYAA many times a day just to be counted. <strong className="text-white">Once is enough.</strong> Pay as often as you need; only your first payment of the day counts.</li>
                 <li>Force use cases that don&apos;t feel natural</li>
                 <li>Participate when it doesn&apos;t make sense</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                Simply accept UNIYAA when it fits your normal life—paying someone back, settling a small bill, sending value to a friend.
+                Simply pay with UNIYAA when it fits your normal life—paying someone back, settling a small bill, sending value to a friend.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 This keeps the system simple and fair. Growth remains organic, not forced.
@@ -334,7 +337,7 @@ export default function WhitepaperPage() {
                 UNIYAA is built around the opposite idea: <strong className="text-white">Many users doing a little.</strong>
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
-                One acceptance. Once a day. From each person.
+                One payment. Once a day. From each person.
               </p>
               <p className="text-purple-200 leading-relaxed mt-4">
                 Because price appreciation only considers genuine peer-to-peer transfers, the protocol directly aligns value growth with real usage instead of pure buying pressure. That&apos;s enough to create a durable, user-driven network where participation is simple, low-pressure, and meaningful.
@@ -378,13 +381,21 @@ export default function WhitepaperPage() {
               <p className="text-purple-200 leading-relaxed">
                 UNIYAA&apos;s minting rate naturally slows as adoption increases. This creates <strong className="text-white">organic scarcity</strong>—each new token becomes slightly more valuable as the growth phase progresses.
               </p>
-
-              <h4 className="text-lg font-semibold text-white mt-4 mb-2">3. Referral Merit System (Not Recruitment)</h4>
-              <p className="text-purple-200 leading-relaxed">
-                <strong className="text-white">Referrals are optional at every tier.</strong> UNIYAA never requires a referral to register, mint, or transact—the on-chain program will never reject a missing one. The referral system exists purely as a bonus mechanism for users who choose to participate.
+              <p className="text-purple-200 leading-relaxed mt-2">
+                Each person can mint <strong className="text-white">once every 30 days</strong>. Minting is never counted as use, and it never moves the price.
               </p>
+
+              <h4 className="text-lg font-semibold text-white mt-4 mb-2">3. Only Real Use Counts</h4>
+              <p className="text-purple-200 leading-relaxed">
+                The on-chain program decides what counts, and it is strict:
+              </p>
+              <ul className="list-disc list-inside text-purple-200 space-y-2 mt-2">
+                <li>Each person&apos;s <strong className="text-white">first payment of the day</strong> counts. Further payments that day go through normally but do not count again.</li>
+                <li>Payments of zero, and payments to yourself, are rejected.</li>
+                <li>Receiving is unlimited and never restricted.</li>
+              </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                UNIYAA&apos;s referral system is fundamentally different: <strong className="text-white">rewards come only when real value is created.</strong> When someone you refer becomes active and contributes to the network, you earn referral credits—not as tokens handed to you, but as recognition of your contribution to bringing them into the ecosystem. Individual referrals earn +1 credit; business referrals earn +2 credits. Credits can be redeemed for bonus mint attempts (5 credits = 1 bonus mint, up to 5 bonus mints per month).
+                <strong className="text-white">Referrals are optional</strong> and simply record who invited whom. They earn no credits, tokens, or bonus mints.
               </p>
             </section>
 
@@ -1100,7 +1111,8 @@ export default function WhitepaperPage() {
                 <h4 className="text-lg font-semibold text-white mb-3">Smart Contract Architecture:</h4>
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
                   <li>Global state tracking: transaction counts, user counts, admin authority, Tier 9 start timestamp</li>
-                  <li>User accounts: minting history, referral tracking, locked-token vesting</li>
+                  <li>User accounts: minting history, referral attribution, locked-token vesting, and the day of each user&apos;s last counted payment</li>
+                  <li>Counting rule enforced on-chain by <code className="text-purple-300">transfer_tokens</code>: non-zero amount, sender ≠ recipient, token accounts owned by sender and recipient, and at most one counted payment per sender per UTC day</li>
                   <li>Deterministic price calculation derived purely from <code className="text-purple-300">total_transactions</code> — no on-chain price oracle, no admin-writable price field</li>
                   <li>Admin-gated maintenance instructions: counter bumps via <code className="text-purple-300">record_transaction</code> require the admin signer; ordinary peer-to-peer transfers do not</li>
                   <li>On-chain Tier 9 cap enforcement: <code className="text-purple-300">tier9_start_timestamp</code> stamped automatically when the counter first crosses into Tier 9; price formula clamps growth to $25,000 per 30-day window deterministically</li>
@@ -1124,7 +1136,8 @@ export default function WhitepaperPage() {
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
                   <li>Variable minting rate tied to user adoption (see Mint Tier Schedule below)</li>
                   <li>Utility-first design: use UNIYAA to buy and sell goods and services</li>
-                  <li>Referral rewards via credit-based system: individual referral = +1 credit, business referral = +2 credits; 5 credits = 1 bonus mint attempt (max 5/month). Referrals are optional at every tier.</li>
+                  <li>One regular mint per user every 30 days</li>
+                  <li>No referral rewards: referrals are optional and record attribution only</li>
                 </ul>
               </div>
 
@@ -1159,7 +1172,7 @@ export default function WhitepaperPage() {
                   </table>
                 </div>
                 <p className="text-purple-300 text-xs mt-3 italic">
-                  Repeat mints are gated by an on-chain cooldown; bonus mints can be earned by redeeming referral credits (5 credits = 1 bonus mint, max 5/month). There is no hard total-supply cap — the design relies on the per-attempt step-down plus cooldowns to keep issuance asymptotic, not on a fixed maximum.
+                  Repeat mints are gated by an on-chain 30-day cooldown. There is no hard total-supply cap — the design relies on the per-attempt step-down plus cooldowns to keep issuance asymptotic, not on a fixed maximum.
                 </p>
               </div>
 
@@ -1168,7 +1181,7 @@ export default function WhitepaperPage() {
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
                   <li>Sub-second finality: transactions complete instantly</li>
                   <li>Near-zero fees: transactions cost &lt;$0.001</li>
-                  <li>Scalability: millions of transactions per second capacity</li>
+                  <li>Scalability: thousands of transactions per second in practice</li>
                   <li>Accessibility: anyone with a browser can participate</li>
                 </ul>
               </div>
