@@ -126,9 +126,9 @@ export default function PrivacyPage() {
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li>Processing UNIYAA token minting and transfers</li>
-                <li>Calculating and distributing referral rewards</li>
+                <li>Recording who invited whom (referral attribution)</li>
                 <li>Enforcing cooldown periods and minting limits</li>
-                <li>Tracking transaction volume for price appreciation calculations</li>
+                <li>Counting each person&apos;s first payment of the day for the price model</li>
               </ul>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">No Third-Party Sharing</h3>

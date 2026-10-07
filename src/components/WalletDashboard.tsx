@@ -27,7 +27,6 @@ import { formatUniyaaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRa
 import { getUserLocaleCurrency, getPreferredCurrency, setPreferredCurrency, getSavedPreferredCurrency, formatLocalCurrency, DEFAULT_RATES } from '@/utils/localeCurrency';
 import { fetchFxRates } from '@/utils/fxRateClient';
 import { getUniyaaPriceMultiFormat } from '@/utils/multiFormatPrice';
-import { UniyaaPriceCalculator } from '@/utils/priceCalculator';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
 import { useUniyaaBalance } from '@/hooks/useUniyaaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
@@ -304,9 +303,8 @@ const SendModal: FC<SendModalProps> = ({
   const animationFrameRef = useRef<number | null>(null);
   const jsQRRef = useRef<typeof import('jsqr').default | null>(null);
 
-  // Fetch totalTransactions + tier9StartTimestamp from GlobalState for the
-  // capped Tier 9 price calculation.
-  const { totalTransactions, tier9StartTimestamp } = useGlobalStateStats();
+  // On-chain UNIYAA price (GlobalState.price_index) for currency conversion.
+  const { priceUsd } = useGlobalStateStats();
 
   // Resolve currency symbol dynamically for any currency code
   const getCurrencySymbol = (code: string): string => {
@@ -339,14 +337,11 @@ const SendModal: FC<SendModalProps> = ({
     loadCurrencies();
   }, []);
 
-  // Fetch UNIYAA price based on current transaction count (re-runs when localCurrency changes)
+  // Convert the on-chain UNIYAA price to local currency (re-runs when localCurrency changes)
   useEffect(() => {
     const fetchPrice = async () => {
       setIsLoadingPrice(true);
-      // Compute price from on-chain transaction count + Tier 9 start timestamp
-      // (matches PriceDisplay.tsx pattern). The timestamp engages the
-      // $25k/30-day cap once Tier 9 is reached; ignored otherwise.
-      const uniyaaPriceUsd = UniyaaPriceCalculator.calculatePrice(totalTransactions, tier9StartTimestamp);
+      const uniyaaPriceUsd = priceUsd;
       try {
         // Use the already-initialized localCurrency state
         const currencyCode = localCurrency;
@@ -369,7 +364,7 @@ const SendModal: FC<SendModalProps> = ({
       }
     };
     fetchPrice();
-  }, [connection, localCurrency, totalTransactions, tier9StartTimestamp]);
+  }, [connection, localCurrency, priceUsd]);
 
   // Handle local currency amount change
   const handleLocalCurrencyChange = (value: string) => {

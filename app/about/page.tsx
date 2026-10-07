@@ -114,14 +114,14 @@ export default function AboutPage() {
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">Price Appreciation Mechanism</h3>
               <p className="text-purple-200 leading-relaxed">
-                UNIYAA uses a <strong className="text-white">9-tier compounding price model</strong> with transparent, predictable growth:
+                UNIYAA&apos;s price grows <strong className="text-white">with participation</strong>, once a day:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li><strong className="text-white">Tiers 1-8 (Compounding Phase):</strong> Constant 0.01% growth rate per epoch, compounding on the previous value. Price starts at $0.01 and grows to $1,000,000 based on transaction volume.</li>
-                <li><strong className="text-white">Tier 9 (Linear Phase):</strong> Once UNIYAA reaches $1,000,000, growth becomes linear at $250 per epoch (1,000 transactions) with a monthly cap of $25,000 to ensure sustainable, predictable growth indefinitely.</li>
+                <li><strong className="text-white">Compounding phase:</strong> starting at $0.01, the price grows each day by up to 1% × the share of users who paid with UNIYAA that day. Each person counts at most once a day.</li>
+                <li><strong className="text-white">Linear phase:</strong> once UNIYAA reaches $1,000,000, growth is limited to $25,000 per 30 days, again in proportion to daily participation.</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Trust model:</strong> The displayed UNIYAA price is a pure function of the on-chain transaction counter. There is no off-chain oracle, no admin-controlled price feed, and no external dependency in the price path. Anyone can independently verify the price by reading <code className="text-purple-300">total_transactions</code> from the program and running the published tier formula.
+                <strong className="text-white">Trust model:</strong> the price is kept by the smart contract in the public <code className="text-purple-300">price_index</code> field and changes only by this rule. There is no off-chain oracle and no instruction that can set the price.
               </p>
             </section>
 

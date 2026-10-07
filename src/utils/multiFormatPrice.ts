@@ -2,9 +2,9 @@
  * Multi-currency UNIYAA price display helper.
  *
  * Replaces the previous `getUniyaaPriceMultiFormat` in unxOracle.ts after
- * the UNX basket was removed (2026-06-01). UNIYAA is now priced in USD
- * directly by `UniyaaPriceCalculator.calculatePrice(totalTransactions)`;
- * this helper just adds an FX conversion for the user's local currency.
+ * the UNX basket was removed (2026-06-01). UNIYAA is priced in USD on-chain
+ * (GlobalState.price_index, read by useGlobalStateStats); this helper just
+ * adds an FX conversion for the user's local currency.
  *
  * FX rates still come from the off-chain `getFxRate()` (ExchangeRate-API
  * via the Netlify Function `get-fx-rates`). A future phase will replace

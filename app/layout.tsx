@@ -4,7 +4,7 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "UNIYAA Token - Solana DApp",
-  description: "A revolutionary token system on Solana blockchain with price appreciation and referral bonuses.",
+  description: "A payment token on Solana whose value grows with everyday use.",
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

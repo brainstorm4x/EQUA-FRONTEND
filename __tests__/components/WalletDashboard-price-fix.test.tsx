@@ -10,7 +10,7 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { UniyaaPriceCalculator } from '../../src/utils/priceCalculator';
+import { INITIAL_PRICE_USD } from '../../src/utils/priceCalculator';
 
 describe('WalletDashboard - UNIYAA Price Calculation Fix', () => {
   const walletDashboardPath = join(__dirname, '../../src/components/WalletDashboard.tsx');
@@ -21,13 +21,9 @@ describe('WalletDashboard - UNIYAA Price Calculation Fix', () => {
     expect(sourceCode).not.toMatch(/const DEFAULT_UNIYAA_PRICE_USD/);
   });
 
-  it('should import UniyaaPriceCalculator from priceCalculator', () => {
-    expect(sourceCode).toMatch(/UniyaaPriceCalculator/);
-    expect(sourceCode).toMatch(/from '@\/utils\/priceCalculator'/);
-  });
-
-  it('should call UniyaaPriceCalculator.calculatePrice with totalTransactions', () => {
-    expect(sourceCode).toMatch(/UniyaaPriceCalculator\.calculatePrice\(totalTransactions\)/);
+  it('should read the on-chain price from useGlobalStateStats', () => {
+    expect(sourceCode).toMatch(/const \{ priceUsd \} = useGlobalStateStats\(\)/);
+    expect(sourceCode).toMatch(/const uniyaaPriceUsd = priceUsd;/);
   });
 
   it('should use the calculated price as the catch-block fallback', () => {
@@ -35,15 +31,13 @@ describe('WalletDashboard - UNIYAA Price Calculation Fix', () => {
     expect(sourceCode).toMatch(/setUniyaaPrice\(uniyaaPriceUsd\)/);
   });
 
-  it('should return $0.01 from UniyaaPriceCalculator when totalTransactions is 0', () => {
-    // With 0 transactions the calculator naturally returns the initial price of $0.01
-    const price = UniyaaPriceCalculator.calculatePrice(0);
-    expect(price).toBe(0.01);
+  it('should start at the initial price of $0.01', () => {
+    expect(INITIAL_PRICE_USD).toBe(0.01);
   });
 
   it('should calculate correct UNIYAA-to-INR conversion', () => {
-    // Given: price from calculator at 0 txns = 0.01 USD and FX rate = 90.77
-    const uniyaaPriceUsd = UniyaaPriceCalculator.calculatePrice(0);
+    // Given: initial price = 0.01 USD and FX rate = 90.77
+    const uniyaaPriceUsd = INITIAL_PRICE_USD;
     const fxRateInr = 90.77;
 
     // When: Calculate UNIYAA price in INR

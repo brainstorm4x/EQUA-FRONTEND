@@ -126,8 +126,7 @@ export default function HomePage() {
           </h1>
           
           <p className="text-xl text-purple-200 mb-8 max-w-2xl mx-auto">
-            A revolutionary token system on Solana blockchain with price appreciation 
-            and referral bonuses.
+            A payment token on Solana whose value grows with everyday use.
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center mb-16">
@@ -186,18 +185,12 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* 9-Tier Price Appreciation Model
-                - Tiers 1-8: Constant 0.01% compound growth per epoch ($0.01 → $1M)
-                - Tier 9 ($1M+): Linear growth at $250 per epoch (1000 txns)
-                - Implementation: src/utils/priceCalculator.ts
-                - Tests: __tests__/pricing/priceCalculator.test.ts
-            */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
               <div className="text-4xl mb-4">📈</div>
               <h3 className="text-xl font-bold text-white mb-2">Price Appreciation</h3>
               <p className="text-purple-200">
-                9-tier compounding system: Tiers 1-8 grow at constant 0.01% per epoch.
-                Tier 9 ($1M+) grows linearly at $250 per epoch (1000 transactions).
+                Grows once a day with the share of people who pay with UNIYAA, by at
+                most 1% a day. Slow and steady by design.
               </p>
             </div>
           </div>

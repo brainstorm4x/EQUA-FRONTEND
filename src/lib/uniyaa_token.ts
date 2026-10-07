@@ -1207,16 +1207,19 @@ export type UniyaaToken = {
     {
       "name": "migrateGlobalState",
       "docs": [
-        "One-shot migration to resize the GlobalState PDA after the 2026-06-01",
-        "schema bump (added `admin` and `tier9_start_timestamp`). Call once",
-        "after upgrading from a pre-2026-06-01 deployment. Caller becomes the",
-        "new admin. Safe to re-run on an already-migrated account.",
+        "One-shot migration that grows GlobalState from 125 to 149 bytes to add",
+        "the participation price model fields (`count_day`, `payers_today`,",
+        "`price_index`). Admin only. Safe to re-run on an already-migrated",
+        "account.",
         "",
-        "We do the realloc + new-field initialization manually because Anchor's",
-        "automatic `Account<T>` deserialize happens BEFORE the realloc",
-        "constraint applies — which means a growth migration of the wrapped",
-        "struct always fails at constraint time with AccountDidNotDeserialize.",
-        "See the docstring on MigrateGlobalState for the full explanation."
+        "The price starts at INITIAL_PRICE_INDEX ($0.01) — there is no admin-",
+        "chosen price. (At migration time devnet had counted 1 transaction, worth",
+        "$0.000001 under the old formula; mainnet had no deployment.)",
+        "",
+        "The realloc + new-field initialization is done manually because Anchor's",
+        "automatic `Account<T>` deserialize happens BEFORE a realloc constraint",
+        "applies, so a growth migration of the wrapped struct always fails with",
+        "AccountDidNotDeserialize."
       ],
       "discriminator": [
         252,
@@ -2358,6 +2361,11 @@ export type UniyaaToken = {
       "code": 6051,
       "name": "invalidTokenAccount",
       "msg": "Token account does not belong to the expected user or is not a UNIYAA token account."
+    },
+    {
+      "code": 6052,
+      "name": "unauthorizedMigration",
+      "msg": "Only the GlobalState admin can run the GlobalState migration."
     }
   ],
   "types": [
@@ -2433,13 +2441,33 @@ export type UniyaaToken = {
           {
             "name": "tier9StartTimestamp",
             "docs": [
-              "Unix timestamp when total_transactions first crossed",
-              "`TIER_8_END_TX_COUNT`. `0` means Tier 9 has not begun yet. Set",
-              "idempotently in `update_transaction_count` on the first crossing.",
-              "Used by the off-chain price calculator to apply the Tier 9",
-              "`$25,000 / 30-day` cap deterministically."
+              "Unix timestamp when price_index first reached TERMINAL_PRICE_INDEX",
+              "(start of the linear phase). `0` means it has not been reached yet."
             ],
             "type": "i64"
+          },
+          {
+            "name": "countDay",
+            "docs": [
+              "UTC day number (unix_timestamp / 86400) currently being counted."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "payersToday",
+            "docs": [
+              "Senders counted so far during `count_day` (each at most once)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "priceIndex",
+            "docs": [
+              "UNIYAA price in USD, scaled by PRICE_SCALE ($1 = 1_000_000_000).",
+              "Grows once per UTC day by participation; see record_counted_payment.",
+              "No instruction can set it directly."
+            ],
+            "type": "u64"
           }
         ]
       }

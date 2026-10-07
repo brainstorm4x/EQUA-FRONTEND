@@ -13,12 +13,6 @@ import { ReferralStatusIndicator } from './ReferralStatusIndicator';
 import { useReferralResolution } from '@/hooks/useReferralResolution';
 import { ReferralState } from '@/types/referral';
 import { createFingerprintMetadata, FingerprintMetadata } from '@/utils/deviceFingerprint';
-import { 
-  recordReferral, 
-  getRateLimitStatus, 
-  REFERRAL_RATE_LIMIT,
-  REWARD_REDUCTION_PERCENT 
-} from '@/utils/referralRateLimit';
 
 interface RegistrationFormProps {
   totalUsers: number;
@@ -26,15 +20,10 @@ interface RegistrationFormProps {
   onRegister: (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => void;
   isLoading: boolean;
   validateReferrer?: (referrer: string) => Promise<boolean>;
-  userWalletAddress?: string;
 }
 
 export interface RegistrationMetadata {
   fingerprint: FingerprintMetadata;
-  referrerRateLimited?: boolean;
-  adjustedRewardMultiplier?: number;
-  /** Callback to record the referral - should be called by parent after successful registration */
-  onSuccessfulRegistration?: () => void;
 }
 
 export const RegistrationForm: FC<RegistrationFormProps> = ({
@@ -43,36 +32,17 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   onRegister,
   isLoading,
   validateReferrer,
-  userWalletAddress,
 }) => {
   const [accountType, setAccountType] = useState<AccountType>('individual');
   const [referrer, setReferrer] = useState('');
   const [referrerError, setReferrerError] = useState('');
   const [isValidatingReferrer, setIsValidatingReferrer] = useState(false);
-  const [referrerRateLimited, setReferrerRateLimited] = useState(false);
   
   // Use the referral resolution hook for code validation
   const referralResolution = useReferralResolution(referrer);
 
   const hasSufficientBalance = hasMinimumSolBalance(walletBalance);
   const balanceSOL = formatSolBalance(walletBalance);
-
-  // Check referrer rate limit when referrer changes. The status now comes
-  // from the server (Netlify Blobs) instead of localStorage, so the fetch is
-  // async; we guard against stale resolves with `cancelled` since the
-  // referrer can change before this promise settles.
-  useEffect(() => {
-    const referrerPubkey = referralResolution.referrerPubkey;
-    if (!referrerPubkey) {
-      setReferrerRateLimited(false);
-      return;
-    }
-    let cancelled = false;
-    getRateLimitStatus(referrerPubkey).then((status) => {
-      if (!cancelled) setReferrerRateLimited(status.isRateLimited);
-    });
-    return () => { cancelled = true; };
-  }, [referralResolution.referrerPubkey]);
 
   // Validate referrer when it changes (now uses onchain validation).
   // Referrals are optional at every tier, so an empty input is always valid.
@@ -138,20 +108,8 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
     const fingerprint = createFingerprintMetadata();
     
     // Create registration metadata without geographic data or account type
-    // Note: referral recording should be done by the parent component after successful registration
-    // The metadata includes a callback for this purpose
     const metadata: RegistrationMetadata = {
       fingerprint,
-      referrerRateLimited,
-      adjustedRewardMultiplier: referrerRateLimited ? (1 - REWARD_REDUCTION_PERCENT / 100) : 1,
-      // Callback for parent to record referral after successful registration.
-      // The recordReferral helper now posts to the Netlify counter endpoint;
-      // failures are swallowed there so this does not block the user flow.
-      onSuccessfulRegistration: effectiveReferrer && userWalletAddress
-        ? async () => {
-            await recordReferral(effectiveReferrer, userWalletAddress);
-          }
-        : undefined,
     };
     
     // Register with selected account type
@@ -293,16 +251,6 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
             referrerPubkey={referralResolution.referrerPubkey}
           />
         </div>
-        
-        {/* Referrer Rate Limit Warning */}
-        {referrerRateLimited && referralResolution.isValid && (
-          <div className="bg-orange-500/20 border border-orange-500/50 rounded-xl p-3 mt-3">
-            <p className="text-orange-200 text-sm">
-              ⚠️ This referrer has exceeded {REFERRAL_RATE_LIMIT} referrals in the past 24 hours.
-              Their referral reward will be reduced by {REWARD_REDUCTION_PERCENT}%.
-            </p>
-          </div>
-        )}
         
         {referrerError && (
           <p id="referrer-error" className="text-red-400 text-sm mt-2" role="alert">
