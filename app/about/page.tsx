@@ -117,7 +117,7 @@ export default function AboutPage() {
                 UNIYAA&apos;s price grows <strong className="text-white">with participation</strong>, once a day:
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li><strong className="text-white">Compounding phase:</strong> starting at $0.01, the price grows each day by up to 0.5% × the share of users who paid with UNIYAA that day. Each person counts at most once a day.</li>
+                <li><strong className="text-white">Compounding phase:</strong> starting at $0.01, the price grows each day by up to 1% × the share of users who paid with UNIYAA that day. Each person counts at most once a day.</li>
                 <li><strong className="text-white">Linear phase:</strong> once UNIYAA reaches $1,000,000, growth is limited to $25,000 per 30 days, again in proportion to daily participation.</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">

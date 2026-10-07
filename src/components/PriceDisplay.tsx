@@ -150,7 +150,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           <p className="text-purple-300 text-xs mt-1">UNIYAA per mint, once every 30 days</p>
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
             {isCompounding
-              ? `Growing up to ${(MAX_DAILY_GROWTH * 100).toFixed(1)}% a day`
+              ? `Growing up to ${MAX_DAILY_GROWTH * 100}% a day`
               : 'Linear phase: up to $25,000 per 30 days'}
           </p>
           <p className="text-purple-300 text-xs mt-1" data-testid="participation-today">

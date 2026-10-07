@@ -514,8 +514,8 @@ export default function WhitepaperPage() {
                 UNIYAA starts at <strong className="text-white">$0.01</strong>. Once a day, the price can grow a little, and how much depends on one thing: <strong className="text-white">what share of UNIYAA users paid with UNIYAA that day</strong>.
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
-                <li>If every user paid that day, the price grows by <strong className="text-white">0.5%</strong>, the most it can grow in one day.</li>
-                <li>If 30% of users paid, it grows by 0.15%. If 10% paid, 0.05%.</li>
+                <li>If every user paid that day, the price grows by <strong className="text-white">1%</strong>, the most it can grow in one day.</li>
+                <li>If 30% of users paid, it grows by 0.3%. If 10% paid, 0.1%.</li>
                 <li>If nobody paid, it does not grow.</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
@@ -547,10 +547,10 @@ export default function WhitepaperPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-purple-500/20"><td className="p-2">$1</td><td className="p-2">2.5 years</td><td className="p-2">8.4 years</td><td className="p-2">25 years</td></tr>
-                    <tr className="border-b border-purple-500/20"><td className="p-2">$100</td><td className="p-2">5.1 years</td><td className="p-2">17 years</td><td className="p-2">50 years</td></tr>
-                    <tr className="border-b border-purple-500/20"><td className="p-2">$10,000</td><td className="p-2">7.6 years</td><td className="p-2">25 years</td><td className="p-2">76 years</td></tr>
-                    <tr><td className="p-2">$1,000,000</td><td className="p-2">10 years</td><td className="p-2">34 years</td><td className="p-2">101 years</td></tr>
+                    <tr className="border-b border-purple-500/20"><td className="p-2">$1</td><td className="p-2">1.3 years</td><td className="p-2">4.2 years</td><td className="p-2">13 years</td></tr>
+                    <tr className="border-b border-purple-500/20"><td className="p-2">$100</td><td className="p-2">2.5 years</td><td className="p-2">8.4 years</td><td className="p-2">25 years</td></tr>
+                    <tr className="border-b border-purple-500/20"><td className="p-2">$10,000</td><td className="p-2">3.8 years</td><td className="p-2">13 years</td><td className="p-2">38 years</td></tr>
+                    <tr><td className="p-2">$1,000,000</td><td className="p-2">5.1 years</td><td className="p-2">17 years</td><td className="p-2">50 years</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -583,7 +583,7 @@ export default function WhitepaperPage() {
                 <li><strong className="text-white">Setting the price</strong>: there is no instruction to write a price, up or down.</li>
                 <li><strong className="text-white">Repeat payments</strong>: each person counts once a day; sending more payments, payments of zero, or payments to yourself adds nothing.</li>
                 <li><strong className="text-white">Admin counter</strong>: the admin-only <code className="text-purple-300">record_transaction</code> instruction updates a statistics counter and does not affect the price.</li>
-                <li><strong className="text-white">Runaway growth</strong>: growth is capped at 0.5% a day, and at $25,000 per 30 days after $1,000,000.</li>
+                <li><strong className="text-white">Runaway growth</strong>: growth is capped at 1% a day, and at $25,000 per 30 days after $1,000,000.</li>
               </ul>
             </section>
 
@@ -624,7 +624,7 @@ export default function WhitepaperPage() {
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">Restraint in Growth</h4>
               <p className="text-purple-200 leading-relaxed">
-                The price can grow at most 0.5% a day, and only when people use UNIYAA. After $1,000,000, growth is limited to $25,000 per 30 days. Both limits are enforced by the smart contract. This keeps UNIYAA grounded in slow, steady appreciation—not casino-like volatility.
+                The price can grow at most 1% a day, and only when people use UNIYAA. After $1,000,000, growth is limited to $25,000 per 30 days. Both limits are enforced by the smart contract. This keeps UNIYAA grounded in slow, steady appreciation—not casino-like volatility.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-8 mb-3">UNIYAA Is Not Designed for Speculation or Extraction</h3>
@@ -683,7 +683,7 @@ export default function WhitepaperPage() {
                   <li>Global state tracking: user count, counted payments, today&apos;s payers, and the price</li>
                   <li>User accounts: minting history, referral attribution, locked-token vesting, and the day of each user&apos;s last counted payment</li>
                   <li>Counting rule enforced on-chain by <code className="text-purple-300">transfer_tokens</code>: non-zero amount, sender ≠ recipient, token accounts owned by sender and recipient, and at most one counted payment per sender per UTC day</li>
-                  <li>Price kept on-chain in <code className="text-purple-300">price_index</code> and updated once per UTC day by participation (at most 0.5%/day; at most $25,000 per 30 days after $1,000,000) — no price oracle, no instruction that writes the price</li>
+                  <li>Price kept on-chain in <code className="text-purple-300">price_index</code> and updated once per UTC day by participation (at most 1%/day; at most $25,000 per 30 days after $1,000,000) — no price oracle, no instruction that writes the price</li>
                   <li>Admin-gated maintenance: <code className="text-purple-300">record_transaction</code> updates a statistics counter only and cannot move the price</li>
                 </ul>
               </div>

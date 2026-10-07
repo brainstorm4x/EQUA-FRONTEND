@@ -24,7 +24,7 @@ describe('price helpers', () => {
   it('matches the program constants', () => {
     expect(INITIAL_PRICE_USD).toBe(0.01);
     expect(TERMINAL_PRICE_USD).toBe(1_000_000);
-    expect(MAX_DAILY_GROWTH).toBe(0.005);
+    expect(MAX_DAILY_GROWTH).toBe(0.01);
     expect(MAX_DAILY_LINEAR_INCREMENT_USD * 30).toBeCloseTo(25_000, 6);
   });
 

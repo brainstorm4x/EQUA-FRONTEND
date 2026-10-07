@@ -190,7 +190,7 @@ export default function HomePage() {
               <h3 className="text-xl font-bold text-white mb-2">Price Appreciation</h3>
               <p className="text-purple-200">
                 Grows once a day with the share of people who pay with UNIYAA, by at
-                most 0.5% a day. Slow and steady by design.
+                most 1% a day. Slow and steady by design.
               </p>
             </div>
           </div>
