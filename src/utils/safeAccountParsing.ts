@@ -220,7 +220,7 @@ export function safeParseAmount(
  * - token_account: 72 (32 bytes, pubkey)
  * - minted_amount: 104 (8 bytes, u64)
  * - mint_start: 112 (8 bytes, i64)
- * - referral_rewards: 120 (8 bytes, u64)
+ * - last_counted_day: 120 (8 bytes, u64; was referral_rewards)
  * - last_mint_time: 128 (8 bytes, i64)
  * Total size: 136 bytes
  */
@@ -231,7 +231,7 @@ export const USER_ACCOUNT_OFFSETS = {
   TOKEN_ACCOUNT: 72,
   MINTED_AMOUNT: 104,
   MINT_START: 112,
-  REFERRAL_REWARDS: 120,
+  LAST_COUNTED_DAY: 120,
   LAST_MINT_TIME: 128,
 } as const;
 
@@ -246,7 +246,7 @@ export interface DecodedUserAccount {
   tokenAccount: string; // Base58 encoded public key
   mintedAmount: number;
   mintStart: number;
-  referralRewards: number;
+  lastCountedDay: number;
   lastMintTime: number;
 }
 
@@ -298,9 +298,9 @@ export function decodeUserAccount(
       accountData,
       USER_ACCOUNT_OFFSETS.MINT_START
     );
-    const referralRewards = safeParseAmount(
+    const lastCountedDay = safeParseAmount(
       accountData,
-      USER_ACCOUNT_OFFSETS.REFERRAL_REWARDS
+      USER_ACCOUNT_OFFSETS.LAST_COUNTED_DAY
     );
     const lastMintTime = safeParseTimestamp(
       accountData,
@@ -313,7 +313,7 @@ export function decodeUserAccount(
       tokenAccount,
       mintedAmount,
       mintStart,
-      referralRewards,
+      lastCountedDay,
       lastMintTime,
     };
   } catch (error) {

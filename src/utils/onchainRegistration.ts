@@ -18,7 +18,7 @@ export interface UserAccountData {
   tokenAccount: PublicKey;
   mintedAmount: BN;
   mintStart: BN;
-  referralRewards: BN;
+  lastCountedDay: BN;
   lastMintTime: BN;
 }
 
@@ -85,7 +85,7 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
     // 32 bytes: token_account (Pubkey)
     // 8 bytes: minted_amount (u64)
     // 8 bytes: mint_start (i64)
-    // 8 bytes: referral_rewards (u64)
+    // 8 bytes: last_counted_day (u64, UTC day of last counted transfer; was referral_rewards)
     // 8 bytes: last_mint_time (i64)
     // Note: locked_until field removed per UNIYAA Whitepaper 2025
     
@@ -110,7 +110,7 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
     // but for timestamp values, we treat them as unsigned since timestamps are always positive.
     // If negative values are encountered, they would wrap around in the BN representation.
     
-    const referralRewards = new BN(accountData.slice(offset, offset + 8), 'le');
+    const lastCountedDay = new BN(accountData.slice(offset, offset + 8), 'le');
     offset += 8;
     
     const lastMintTime = new BN(accountData.slice(offset, offset + 8), 'le');
@@ -121,7 +121,7 @@ export function parseUserAccountData(accountData: Buffer): UserAccountData | nul
       tokenAccount,
       mintedAmount,
       mintStart,
-      referralRewards,
+      lastCountedDay,
       lastMintTime,
     };
   } catch (error) {
@@ -173,6 +173,5 @@ export function getReferralInfo(accountData: UserAccountData) {
   return {
     hasReferrer,
     referralAddress: hasReferrer ? accountData.referral.toBase58() : null,
-    referralRewards: accountData.referralRewards.toNumber(),
   };
 }

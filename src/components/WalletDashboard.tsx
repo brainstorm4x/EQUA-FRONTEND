@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey, Transaction, SystemProgram, SendTransactionError } from '@solana/web3.js';
 import {
@@ -14,13 +14,13 @@ import {
   getUserAccountPDA, 
   TOKEN_PROGRAM_ID, 
   ASSOCIATED_TOKEN_PROGRAM_ID, 
-  getUniyaaMintDecimals,
   getMintAuthorityPDA,
   getGlobalStatePDA,
   verifyMintOwner,
   createTransferTokensInstruction,
   clearRpcCache
 } from '@/lib/program';
+import { UNIYAA_DECIMALS } from '@/lib/constants';
 import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatUniyaaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRaw } from '@/utils/tokenFormat';
@@ -29,21 +29,14 @@ import { fetchFxRates } from '@/utils/fxRateClient';
 import { getUniyaaPriceMultiFormat } from '@/utils/multiFormatPrice';
 import { UniyaaPriceCalculator } from '@/utils/priceCalculator';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
-import { useUserAccount } from '@/hooks/useUserAccount';
 import { useUniyaaBalance } from '@/hooks/useUniyaaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
 import { isUserRegistered } from '@/utils/registrationCheck';
-import { claimBonusMint, getReferralStats } from '@/utils/referralRewards';
-import { fetchUserMetadata } from '@/utils/userMetadata';
-import { decodeGlobalState } from '@/utils/safeAccountParsing';
-import { calculateTierLimit, describeTierCalculation } from '@/utils/tierLimits';
 
 interface WalletDashboardProps {
   className?: string;
 }
 
-// UNIYAA Token decimals will be fetched from on-chain mint
-// Default to 6 decimals as per the on-chain mint configuration
 
 // Shared constants for referral messages
 const UNIYAA_SHARE_BASE_URL = 'https://uniyaa.live/mint';
@@ -73,33 +66,17 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   // Use real-time balance hook instead of manual fetching
   const { balance, isLoading: isBalanceLoading } = useUniyaaBalance();
   
-  const [mintDecimals, setMintDecimals] = useState<number>(6); // Default to 6
+  const mintDecimals = UNIYAA_DECIMALS; // Fixed by the on-chain mint; never changes
   const [isLoading, setIsLoading] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
-  const [referralCount, setReferralCount] = useState<number>(0);
-  const [referralCredits, setReferralCredits] = useState<number | null>(null);
-  const [isClaiming, setIsClaiming] = useState(false);
-  const [claimError, setClaimError] = useState('');
-  const [claimSuccess, setClaimSuccess] = useState('');
   
   // ✅ Registration check state
   const [isRegistered, setIsRegistered] = useState(false);
   const [isCheckingRegistration, setIsCheckingRegistration] = useState(true);
-
-  // Get user account PDA derived from connected wallet (memoized to prevent repeated calls)
-  const userAccountPDA = useMemo(() => {
-    return publicKey ? getUserAccountPDA(publicKey)[0] : null;
-  }, [publicKey]); // Recompute when wallet changes
-  
-  // Fetch user account data from blockchain (includes referral info)
-  const { data: userAccountData } = useUserAccount(
-    userAccountPDA,
-    { enabled: connected && !!userAccountPDA }
-  );
 
   // ✅ Check registration status
   useEffect(() => {
@@ -132,46 +109,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     checkRegistration();
   }, [publicKey, connection]);
 
-  // Fetch mint decimals and referral data from onchain
-  useEffect(() => {
-    if (!publicKey || !connected) {
-      setMintDecimals(6);
-      setReferralCount(0);
-      setReferralCredits(null);
-      return;
-    }
-
-    const fetchData = async () => {
-      try {
-        // Fetch mint decimals from on-chain
-        const decimals = await getUniyaaMintDecimals(connection);
-        setMintDecimals(decimals);
-        
-        // Get referral credits from on-chain (integer count, not UNIYAA amounts)
-        if (userAccountPDA) {
-          const stats = await getReferralStats(connection, userAccountPDA);
-          
-          if (stats) {
-            // Use integer credits from backend
-            setReferralCredits(stats.credits);
-            // Use on-chain referred user count
-            setReferralCount(stats.referredCount);
-            if (process.env.NODE_ENV === 'development') {
-              console.log('✓ Referral credits:', stats.credits);
-              console.log('✓ On-chain referral count:', stats.referredCount);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
-  }, [publicKey, connected, connection, userAccountPDA]);
 
   // Copy public key to clipboard
   const copyPublicKey = useCallback(async () => {
@@ -192,175 +129,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     setShowShareModal(true);
   }, [publicKey]);
 
-  // Claim referral credits for bonus mint
-  const handleClaimCredits = useCallback(async () => {
-    if (!publicKey || !signTransaction) {
-      setClaimError('Wallet not connected properly');
-      return;
-    }
-
-    // ✅ ADDED: Prevent duplicate submissions
-    if (isClaiming) {
-      console.warn('⚠️ Claim already in progress, ignoring duplicate request');
-      return;
-    }
-
-    if (!referralCredits || referralCredits < 5) {
-      setClaimError('You need at least 5 credits to claim');
-      return;
-    }
-
-    setIsClaiming(true);
-    setClaimError('');
-    setClaimSuccess('');
-
-    try {
-      // 1. Fetch UserMetadata to get user_index and elevated_mint_attempts_used
-      const userMetadata = await fetchUserMetadata(connection, publicKey);
-      
-      if (!userMetadata) {
-        throw new Error('User metadata not found. Please register first.');
-      }
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📊 UserMetadata fetched:', {
-          userIndex: userMetadata.user_index,
-          elevatedAttemptsUsed: userMetadata.elevated_mint_attempts_used,
-        });
-      }
-      
-      // 2. Fetch GlobalState to get total user count
-      const [globalStatePDA] = getGlobalStatePDA();
-      const globalStateInfo = await connection.getAccountInfo(globalStatePDA);
-      
-      if (!globalStateInfo) {
-        throw new Error('Global state not found.');
-      }
-      
-      const globalState = decodeGlobalState(globalStateInfo.data);
-      
-      if (!globalState) {
-        throw new Error('Failed to decode global state.');
-      }
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📊 GlobalState fetched:', {
-          userCount: globalState.userCount,
-        });
-      }
-      
-      // 3. Calculate tier-based mint amount
-      const tierLimitBaseUnits = calculateTierLimit(
-        userMetadata.user_index,
-        userMetadata.elevated_mint_attempts_used,
-        globalState.userCount
-      );
-      
-      // Convert to number for transaction (safe for reasonable tier limits)
-      const amountInBaseUnits = Number(tierLimitBaseUnits);
-      const tierLimitUniyaa = rawToDecimal(amountInBaseUnits, 6);
-
-      if (process.env.NODE_ENV === 'development') {
-        // Get detailed tier calculation for logging
-        const tierDetails = describeTierCalculation(
-          userMetadata.user_index,
-          userMetadata.elevated_mint_attempts_used,
-          globalState.userCount
-        );
-        
-        console.log(`📊 Tier Calculation:
-  - User Index: ${userMetadata.user_index}
-  - Elevated Attempts Used: ${userMetadata.elevated_mint_attempts_used}
-  - Total Users: ${globalState.userCount}
-  - Tier: ${tierDetails.tierName}
-  - Is Elevated: ${tierDetails.isElevated}
-  - User Tier Rate: ${Number(tierDetails.userTierRate) / 1_000_000} UNIYAA
-  - Prevailing Rate: ${Number(tierDetails.prevailingRate) / 1_000_000} UNIYAA
-  - Limited By: ${tierDetails.limitedBy}
-  - Final Tier Limit: ${tierLimitUniyaa} UNIYAA (${amountInBaseUnits} base units)`);
-      }
-
-      // Call claimBonusMint utility
-      const signature = await claimBonusMint(
-        connection,
-        { signTransaction, publicKey },
-        amountInBaseUnits
-      );
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Bonus mint claimed. Signature:', signature);
-      }
-
-      // Show success message
-      const creditsRemaining = referralCredits - 5;
-      setClaimSuccess(
-        `✅ Successfully claimed ${tierLimitUniyaa} UNIYAA! ` +
-        `${creditsRemaining} credits remaining. You can claim another bonus mint immediately if you have 5+ credits.`
-      );
-
-      // Auto-dismiss success message after 5 seconds
-      setTimeout(() => setClaimSuccess(''), 5000);
-
-      // Refresh referral data after successful claim
-      const [userPDA] = getUserAccountPDA(publicKey);
-      const stats = await getReferralStats(connection, userPDA);
-      if (stats) {
-        setReferralCredits(stats.credits);
-        setReferralCount(stats.referredCount);
-      }
-
-    } catch (err: any) {
-      console.error('Error claiming bonus mint:', err);
-      
-      // ✅ NEW: Check if transaction actually succeeded (credits deducted)
-      if (err.message?.includes('already been processed')) {
-        // Verify credits were deducted
-        const [userPDA] = getUserAccountPDA(publicKey);
-        const stats = await getReferralStats(connection, userPDA);
-        
-        if (stats && stats.credits < referralCredits) {
-          // Transaction succeeded on-chain despite error
-          setClaimSuccess(
-            `✅ Bonus mint claimed successfully! ` +
-            `${stats.credits} credits remaining.`
-          );
-          
-          // Refresh data
-          setReferralCredits(stats.credits);
-          setReferralCount(stats.referredCount);
-          
-          // Auto-dismiss success message
-          setTimeout(() => setClaimSuccess(''), 5000);
-          setIsClaiming(false);
-          return; // Exit early
-        }
-      }
-      
-      // Parse specific error messages
-      let errorMessage = 'Failed to claim bonus mint. ';
-      
-      if (err.message?.includes('InsufficientReferralCredits')) {
-        errorMessage += 'You need at least 5 credits.';
-      } else if (err.message?.includes('MonthlyBonusMintCapReached')) {
-        errorMessage += 'You have reached the monthly limit of 5 bonus mints.';
-      } else if (err.message?.includes('MintAmountExceedsTierLimit')) {
-        errorMessage += 'Amount exceeds your tier limit.';
-      } else if (err.message?.includes('MintingCooldownNotExpired')) {
-        errorMessage += 'Unexpected cooldown error. Bonus mints should bypass cooldowns. Please contact support.';
-      } else if (err.message) {
-        errorMessage += err.message;
-      } else {
-        errorMessage += 'Please try again.';
-      }
-      
-      setClaimError(errorMessage);
-      
-      // Auto-dismiss error message after 8 seconds
-      setTimeout(() => setClaimError(''), 8000);
-    } finally {
-      setIsClaiming(false);
-    }
-  }, [publicKey, signTransaction, connection, referralCredits]);
 
   if (!connected || !publicKey) {
     return null;
@@ -418,71 +186,13 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
       <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-white text-lg font-bold flex items-center gap-2">
-            <span className="text-2xl">🎁</span>
-            Refer & Earn
+            <span className="text-2xl">🤝</span>
+            Invite Friends
           </h3>
-          {/* Referral Count Badge */}
-          <div className="bg-purple-600/30 px-3 py-1 rounded-full">
-            <span className="text-purple-200 text-sm font-medium">
-              {referralCount} {referralCount === 1 ? 'referral' : 'referrals'}
-            </span>
-          </div>
         </div>
         <p className="text-purple-200 text-sm mb-4">
-          Earn referral credits: 1 credit per individual referral, 2 credits per business referral. 
-          Redeem 5 credits for bonus minting attempts!
+          Invite friends to UNIYAA with your referral link.
         </p>
-        
-        {/* Referral Credits Display */}
-        {referralCredits !== null && referralCredits > 0 && (
-          <div className="space-y-3 mb-4">
-            {/* Error Message */}
-            {claimError && (
-              <div className="bg-red-500/20 border-2 border-red-500 rounded-xl p-3">
-                <p className="text-red-200 text-xs">{claimError}</p>
-              </div>
-            )}
-
-            {/* Success Message */}
-            {claimSuccess && (
-              <div className="bg-green-500/20 border-2 border-green-500 rounded-xl p-3">
-                <p className="text-green-200 text-xs">{claimSuccess}</p>
-              </div>
-            )}
-
-            {/* Credits Display Card */}
-            <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-3">
-              <p className="text-green-300 text-xs mb-1">Referral Credits</p>
-              <p className="text-white text-lg font-bold">
-                {referralCredits} Credit{referralCredits !== 1 ? 's' : ''}
-              </p>
-              {referralCredits >= 5 && (
-                <p className="text-yellow-300 text-xs mt-1">
-                  ✨ Ready to claim bonus mint!
-                </p>
-              )}
-              <p className="text-purple-300 text-xs mt-2">
-                💡 Bonus mints bypass the 24-hour cooldown that applies to regular minting
-              </p>
-            </div>
-
-            {/* Claim Button - Only show when credits >= 5 */}
-            {referralCredits >= 5 && (
-              <button
-                onClick={handleClaimCredits}
-                disabled={isClaiming}
-                className={`w-full font-bold py-3 px-4 rounded-xl transition-all text-sm ${
-                  isClaiming
-                    ? 'bg-gray-500/50 text-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
-                }`}
-                title={isClaiming ? 'Claiming...' : 'Claim your referral credits for a bonus mint'}
-              >
-                {isClaiming ? '⏳ Claiming...' : '💰 Claim Credits'}
-              </button>
-            )}
-          </div>
-        )}
         
         <div className="bg-black/20 rounded-xl p-3 mb-4">
           <p className="text-purple-300 text-xs mb-1">Your Referral Key</p>
@@ -886,6 +596,10 @@ const SendModal: FC<SendModalProps> = ({
         throw new Error('Invalid recipient address');
       }
 
+      if (recipientPubkey.equals(publicKey)) {
+        throw new Error('You cannot send UNIYAA to yourself');
+      }
+
       const [mintPDA] = getMintPDA();
       const [mintAuthorityPDA] = getMintAuthorityPDA();
       const [globalStatePDA] = getGlobalStatePDA();
@@ -1017,7 +731,14 @@ const SendModal: FC<SendModalProps> = ({
         // Check for common error patterns in logs
         if (logs) {
           const logsString = logs.join('\n');
-          if (logsString.includes('insufficient funds') || logsString.includes('0x1')) {
+          // Program errors by name first: their codes (0x17..) also contain '0x1'
+          if (logsString.includes('ZeroAmountTransfer')) {
+            errorMessage = 'Amount must be greater than zero.';
+          } else if (logsString.includes('SelfTransfer')) {
+            errorMessage = 'You cannot send UNIYAA to yourself.';
+          } else if (logsString.includes('InvalidTokenAccount')) {
+            errorMessage = "The recipient's UNIYAA token account does not match their wallet.";
+          } else if (logsString.includes('insufficient funds') || logsString.includes('0x1')) {
             errorMessage = 'Insufficient funds. Please check your balance and try again.';
           } else if (logsString.includes('custom program error')) {
             // Extract error code if available
@@ -1514,7 +1235,7 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
 
         <div className="text-center">
           <p className="text-purple-200 text-sm mb-6">
-            Share your referral link and earn credits: 1 credit per individual referral, 2 credits per business referral!
+            Share your referral link to invite friends to UNIYAA.
           </p>
 
           {/* Referral Link Preview */}

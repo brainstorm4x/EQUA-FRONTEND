@@ -134,7 +134,7 @@ function categorizeError(error: any, logs: string[] = []): string {
   
   // Check for specific Anchor error codes
   if (hasPattern(ERROR_CODE_COOLDOWN)) {
-    return '⏰ Cooldown Active: You can only mint once every 24 hours. Please wait for the cooldown period to expire.';
+    return '⏰ Cooldown Active: You can only mint once every 30 days. Please wait for the cooldown period to expire.';
   }
   
   if (hasPattern(ERROR_CODE_TIER_LIMIT) || hasPattern(ERROR_KEYWORD_MINT_AMOUNT_EXCEEDS)) {
@@ -188,7 +188,7 @@ function categorizeError(error: any, logs: string[] = []): string {
     if (anchorLog) {
       return `❌ Transaction Simulation Failed: ${anchorLog}\n\nPlease check your account status and try again.`;
     }
-    return '⚠️ Transaction Simulation Failed: The transaction could not be simulated successfully. Common causes:\n• Cooldown period not expired (wait 24 hours between mints)\n• Insufficient SOL balance (need at least 0.01 SOL)\n• Account state mismatch\n\nPlease verify your account status and try again.';
+    return '⚠️ Transaction Simulation Failed: The transaction could not be simulated successfully. Common causes:\n• Cooldown period not expired (wait 30 days between mints)\n• Insufficient SOL balance (need at least 0.01 SOL)\n• Account state mismatch\n\nPlease verify your account status and try again.';
   }
   
   // User rejected transaction
@@ -272,11 +272,14 @@ function handleAtaCreationError(ataError: unknown, context: 'registration' | 'mi
 function formatTimeRemaining(seconds: number): string {
   if (seconds <= 0) return 'Ready to mint!';
   
-  const hours = Math.floor(seconds / 3600);
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
   
-  if (hours > 0) {
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  } else if (hours > 0) {
     return `${hours}h ${minutes}m`;
   } else if (minutes > 0) {
     return `${minutes}m ${secs}s`;
@@ -477,9 +480,15 @@ export default function MintPage() {
     };
 
     fetchWalletBalance();
-    // Refresh balance every 30 seconds
-    const interval = setInterval(fetchWalletBalance, 30000);
-    return () => clearInterval(interval);
+    // Push updates when the wallet's lamports change instead of polling
+    const subscriptionId = connection.onAccountChange(
+      publicKey,
+      (accountInfo) => setWalletBalance(accountInfo.lamports),
+      'confirmed'
+    );
+    return () => {
+      connection.removeAccountChangeListener(subscriptionId);
+    };
   }, [publicKey, connection]);
 
   // Fetch total users from global state
@@ -663,7 +672,7 @@ export default function MintPage() {
     const updateCooldown = () => {
       const now = Math.floor(Date.now() / 1000);
       const timeSinceLastMint = now - lastMintTime;
-      const cooldownPeriod = 86400; // 24 hours in seconds
+      const cooldownPeriod = CooldownGuard.getCooldownPeriod();
       
       if (timeSinceLastMint >= cooldownPeriod) {
         setCanMint(true);
@@ -1453,14 +1462,14 @@ export default function MintPage() {
     
     // ✅ COOLDOWN GUARD: Check cooldown with CooldownGuard (prevents race conditions)
     const walletAddress = publicKey.toBase58();
-    if (!CooldownGuard.canMintNow(walletAddress, 'regular')) {
+    if (!CooldownGuard.canMintNow(walletAddress)) {
       const remaining = CooldownGuard.timeRemaining(walletAddress);
       setError(`⏰ Please wait ${formatTimeRemaining(remaining)} before minting again`);
       return;
     }
     
     // ✅ COOLDOWN GUARD: Start mint - set optimistic cooldown and in-flight lock
-    CooldownGuard.startMint(walletAddress, 'regular');
+    CooldownGuard.startMint(walletAddress);
     
     // Update UI state immediately
     setIsLoading(true);
@@ -1936,34 +1945,6 @@ export default function MintPage() {
   };
 
 
-  // TODO: Implement bonus mint handler with:
-  // - CooldownGuard.canMintNow(walletAddress, 'bonus')
-  // - CooldownGuard.startMint(walletAddress, 'bonus')
-  // - CooldownGuard.endMint(walletAddress, false) after completion (clears in-flight lock without setting cooldown)
-  // Example:
-  // const handleBonusMint = async () => {
-  //   if (!publicKey || !wallet.sendTransaction) {
-  //     setError('Wallet not connected');
-  //     return;
-  //   }
-  //
-  //   const walletAddress = publicKey.toBase58();
-  //   if (!CooldownGuard.canMintNow(walletAddress, 'bonus')) {
-  //     setError('A transaction is already in progress');
-  //     return;
-  //   }
-  //
-  //   CooldownGuard.startMint(walletAddress, 'bonus');
-  //   try {
-  //     // ... bonus mint logic using claim_bonus_mint instruction
-  //     // ... on success or error: CooldownGuard.endMint(walletAddress, false);
-  //   } catch (err) {
-  //     CooldownGuard.endMint(walletAddress, false);
-  //     throw err;
-  //   }
-  // };
-
-
 // ... existing code ...
 
   if (!mounted) return null;
@@ -2259,7 +2240,7 @@ export default function MintPage() {
                             {formatTimeRemaining(timeUntilNextMint)}
                           </p>
                           <p className="text-yellow-200 text-sm">
-                            Come back at {new Date((lastMintTime + 86400) * 1000).toLocaleTimeString()}
+                            Come back on {new Date((lastMintTime + CooldownGuard.getCooldownPeriod()) * 1000).toLocaleString()}
                           </p>
                         </>
                       )}

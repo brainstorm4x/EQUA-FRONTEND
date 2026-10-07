@@ -154,438 +154,6 @@ export type UniyaaToken = {
       ]
     },
     {
-      "name": "claimBonusMint",
-      "docs": [
-        "Claim a bonus mint attempt by redeeming referral credits",
-        "",
-        "Redemption Rules:",
-        "- 5 Referral Credits = 1 Bonus Mint Attempt",
-        "- Bonus mints use the user's current mint tier",
-        "- Bonus mints obey price appreciation logic",
-        "- Bonus mints consume elevated_mint_attempts_used",
-        "",
-        "Monthly Caps:",
-        "- Absolute cap: 5 bonus mints per calendar month",
-        "- No rollover between months",
-        "",
-        "Cooldown: NO cooldown for bonus mints (cooldown only applies to regular mints)",
-        "",
-        "Note: This instruction does NOT increment GlobalState.total_transactions.",
-        "Only P2P transfers (transfer_tokens) increment the transaction counter."
-      ],
-      "discriminator": [
-        165,
-        189,
-        110,
-        164,
-        88,
-        80,
-        20,
-        71
-      ],
-      "accounts": [
-        {
-          "name": "userAccount",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  115,
-                  101,
-                  114,
-                  45,
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "userMetadata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  115,
-                  101,
-                  114,
-                  45,
-                  109,
-                  101,
-                  116,
-                  97
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "globalState",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  115,
-                  116,
-                  97,
-                  116,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "userTokenAccount",
-          "writable": true
-        },
-        {
-          "name": "mint",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  110,
-                  105,
-                  121,
-                  97,
-                  97,
-                  45,
-                  109,
-                  105,
-                  110,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "mintAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116,
-                  45,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true,
-          "relations": [
-            "userAccount"
-          ]
-        },
-        {
-          "name": "lockedTokenAccount",
-          "docs": [
-            "Locked token account PDA (only for tiers 1-3)"
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  111,
-                  99,
-                  107,
-                  101,
-                  100,
-                  45,
-                  116,
-                  111,
-                  107,
-                  101,
-                  110,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "lockedTokenAta",
-          "docs": [
-            "Associated token account for locked tokens"
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "lockedTokenPda"
-              },
-              {
-                "kind": "account",
-                "path": "tokenProgram"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "lockedTokenPda",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  111,
-                  99,
-                  107,
-                  101,
-                  100,
-                  45,
-                  116,
-                  111,
-                  107,
-                  101,
-                  110,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "tokenProgram"
-        },
-        {
-          "name": "associatedTokenProgram",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "claimReferralRewards",
-      "docs": [
-        "Claim accumulated referral rewards (LEGACY - DEPRECATED)",
-        "",
-        "This instruction is deprecated as of the referral credits update.",
-        "Referral rewards are now stored as credits, not UNIYAA tokens.",
-        "Use claim_bonus_mint instead to redeem credits for bonus mint attempts.",
-        "",
-        "Note: This instruction does NOT increment GlobalState.total_transactions.",
-        "Only P2P transfers (transfer_tokens) increment the transaction counter."
-      ],
-      "discriminator": [
-        23,
-        112,
-        76,
-        162,
-        157,
-        106,
-        203,
-        246
-      ],
-      "accounts": [
-        {
-          "name": "userAccount",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  115,
-                  101,
-                  114,
-                  45,
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "userTokenAccount",
-          "writable": true
-        },
-        {
-          "name": "mint",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  110,
-                  105,
-                  121,
-                  97,
-                  97,
-                  45,
-                  109,
-                  105,
-                  110,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "mintAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116,
-                  45,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true,
-          "relations": [
-            "userAccount"
-          ]
-        },
-        {
-          "name": "tokenProgram"
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "createTokenMint",
       "docs": [
         "Create the UNIYAA token mint (call once during deployment)"
@@ -1383,57 +951,6 @@ export type UniyaaToken = {
       "args": []
     },
     {
-      "name": "initializeUnxOracle",
-      "docs": [
-        "Initialize the UNX Oracle (call once during deployment)"
-      ],
-      "discriminator": [
-        86,
-        221,
-        156,
-        129,
-        21,
-        157,
-        47,
-        127
-      ],
-      "accounts": [
-        {
-          "name": "unxOracle",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  110,
-                  120,
-                  45,
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "initializeUser",
       "docs": [
         "Register a new user with account type (Individual/Business) and metadata.",
@@ -1914,7 +1431,9 @@ export type UniyaaToken = {
         {
           "name": "referrerAccount",
           "docs": [
-            "NOTE: Must be writable. When no referrer exists, pass user's own account as self-reference"
+            "written. Kept (still writable) so existing clients' hand-built account",
+            "lists for mint_tokens keep matching. Drop it in a coordinated",
+            "program + frontend release."
           ],
           "writable": true
         },
@@ -2211,15 +1730,22 @@ export type UniyaaToken = {
       "docs": [
         "Transfer UNIYAA tokens between users (P2P)",
         "",
-        "This is the PRIMARY instruction that increments GlobalState.total_transactions.",
-        "The counter tracks peer-to-peer user transfers for price appreciation calculations.",
+        "This is the only user instruction that increments GlobalState.total_transactions,",
+        "which drives the price appreciation model. To keep that counter a measure of",
+        "real use rather than spam:",
+        "- the amount must be non-zero and the recipient must be a different user;",
+        "- both token accounts must be UNIYAA accounts owned by sender and recipient;",
+        "- each sender counts at most ONCE per UTC day, however many transfers they",
+        "send (several transfers in one transaction count once too).",
+        "",
+        "The token program enforces the actual balance, so tokens a user RECEIVED can",
+        "be sent on like any others.",
         "",
         "Operations that do NOT increment the counter:",
         "- mint_tokens (token creation/minting)",
         "- initialize_user (user registration)",
-        "- claim_referral_rewards (reward claims)",
         "",
-        "Note: record_transaction() is a separate utility instruction for testing/simulation"
+        "Note: record_transaction() is a separate admin-only instruction"
       ],
       "discriminator": [
         54,
@@ -2490,81 +2016,6 @@ export type UniyaaToken = {
         }
       ],
       "args": []
-    },
-    {
-      "name": "updateUnxPrice",
-      "docs": [
-        "Update the UNX Oracle price (admin only)",
-        "All basket calculations occur OFF-CHAIN. This instruction only stores the final price.",
-        "",
-        "# Arguments",
-        "* `unx_price` - Final UNX price in fixed-point format (1e8 precision)",
-        "* `component_prices_hash` - Hash of component prices used in off-chain calculation",
-        "* `weights_hash` - Hash of weights used in off-chain calculation"
-      ],
-      "discriminator": [
-        0,
-        109,
-        121,
-        69,
-        140,
-        228,
-        116,
-        109
-      ],
-      "accounts": [
-        {
-          "name": "unxOracle",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  110,
-                  120,
-                  45,
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "unxPrice",
-          "type": "u64"
-        },
-        {
-          "name": "componentPricesHash",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "weightsHash",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        }
-      ]
     }
   ],
   "accounts": [
@@ -2618,19 +2069,6 @@ export type UniyaaToken = {
         186,
         232,
         185
-      ]
-    },
-    {
-      "name": "unxOracle",
-      "discriminator": [
-        72,
-        131,
-        105,
-        78,
-        127,
-        19,
-        89,
-        168
       ]
     },
     {
@@ -2879,7 +2317,7 @@ export type UniyaaToken = {
     {
       "code": 6043,
       "name": "mintingCooldownNotExpired",
-      "msg": "Minting cooldown has not expired. You must wait 24 hours between regular mints."
+      "msg": "Minting cooldown has not expired. You must wait 30 days between regular mints."
     },
     {
       "code": 6044,
@@ -2905,6 +2343,21 @@ export type UniyaaToken = {
       "code": 6048,
       "name": "unexpectedGlobalStateSize",
       "msg": "Unexpected GlobalState account size during migration. Expected 85 bytes (pre-migration) or 125 bytes (post-migration)."
+    },
+    {
+      "code": 6049,
+      "name": "zeroAmountTransfer",
+      "msg": "Transfer amount must be greater than zero."
+    },
+    {
+      "code": 6050,
+      "name": "selfTransfer",
+      "msg": "Sender and recipient must be different users."
+    },
+    {
+      "code": 6051,
+      "name": "invalidTokenAccount",
+      "msg": "Token account does not belong to the expected user or is not a UNIYAA token account."
     }
   ],
   "types": [
@@ -3057,77 +2510,6 @@ export type UniyaaToken = {
       }
     },
     {
-      "name": "unxOracle",
-      "docs": [
-        "UNX Oracle PDA Account",
-        "Seeds: [b\"unx-oracle\"]"
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "price",
-            "docs": [
-              "Final UNX price in fixed-point (1e8 precision)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "lastUpdated",
-            "docs": [
-              "Timestamp when price was last updated"
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "lastUpdatedSlot",
-            "docs": [
-              "Slot when price was last updated"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "componentPricesHash",
-            "docs": [
-              "Hash of basket component prices used in off-chain calculation (for auditability)"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "weightsHash",
-            "docs": [
-              "Hash of basket weights used in off-chain calculation (for auditability)"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "authority",
-            "docs": [
-              "Authority that can update the oracle (admin)"
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "version",
-            "docs": [
-              "Version number for governance tracking"
-            ],
-            "type": "u32"
-          }
-        ]
-      }
-    },
-    {
       "name": "userAccount",
       "docs": [
         "User account storing registration and minting data",
@@ -3158,7 +2540,16 @@ export type UniyaaToken = {
             "type": "i64"
           },
           {
-            "name": "referralRewards",
+            "name": "lastCountedDay",
+            "docs": [
+              "UTC day number (unix_timestamp / 86400) of this user's last transfer",
+              "that counted toward GlobalState.total_transactions.",
+              "",
+              "Reuses the u64 slot that held referral credits before referral rewards",
+              "were removed, so existing accounts need no migration. Leftover credit",
+              "values are small integers that never equal a current day number",
+              "(~20,000+), and the check is `!=`, so they simply allow the next count."
+            ],
             "type": "u64"
           },
           {

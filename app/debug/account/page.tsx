@@ -6,6 +6,7 @@ import { useProgram } from '@/hooks/useProgram';
 import { Logo } from '@/components/Logo';
 import Link from 'next/link';
 import { safeParseTimestamp } from '@/utils/safeAccountParsing';
+import { getCooldownPeriod } from '@/utils/cooldown';
 
 // Dynamically import WalletButton with no SSR
 const WalletButton = dynamic(
@@ -90,7 +91,7 @@ export default function AccountDebugPage() {
     const updateCooldown = () => {
       const now = Math.floor(Date.now() / 1000);
       const timeSinceLastMint = now - lastMintTime;
-      const cooldownPeriod = 86400; // 24 hours in seconds
+      const cooldownPeriod = getCooldownPeriod();
       
       if (timeSinceLastMint >= cooldownPeriod) {
         setCooldownRemaining(0);
@@ -247,7 +248,7 @@ export default function AccountDebugPage() {
                         </div>
                         {cooldownRemaining > 0 && (
                           <div className="mt-2 text-sm text-purple-400">
-                            Next mint available at: {new Date((lastMintTime + 86400) * 1000).toLocaleString()}
+                            Next mint available at: {new Date((lastMintTime + getCooldownPeriod()) * 1000).toLocaleString()}
                           </div>
                         )}
                       </div>

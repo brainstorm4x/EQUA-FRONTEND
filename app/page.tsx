@@ -170,19 +170,11 @@ export default function HomePage() {
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-6 mt-16">
-            {/* Referral Credit System (Integer-Based)
-                - Individual referrals: 1 credit per successful registration
-                - Business referrals: 2 credits per successful registration
-                - Credits are redeemable for bonus minting attempts (5 credits = 1 bonus mint)
-                - Backend source: brainstorm4x/UNIYAA repo - programs/uniyaa_token/src/lib.rs (lines 765-790)
-                - Frontend implementation: src/utils/referralRewards.ts (getReferralCredits)
-            */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
-              <div className="text-4xl mb-4">🎁</div>
-              <h3 className="text-xl font-bold text-white mb-2">Referral Rewards</h3>
+              <div className="text-4xl mb-4">🤝</div>
+              <h3 className="text-xl font-bold text-white mb-2">Grows With Use</h3>
               <p className="text-purple-200">
-                Earn referral credits: 1 credit per individual referral, 2 credits per business referral. 
-                Redeem credits for bonus minting attempts.
+                Every person who pays with UNIYAA counts once a day toward its growth, so real use moves it, not spam.
               </p>
             </div>
 

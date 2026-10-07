@@ -41,6 +41,8 @@ describe('useGlobalStateStats', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Cached endpoint unavailable by default, so tests exercise the RPC path
+    global.fetch = jest.fn().mockRejectedValue(new Error('endpoint unavailable')) as any;
     
     (useConnection as jest.Mock).mockReturnValue({
       connection: mockConnection,
@@ -200,55 +202,15 @@ describe('useGlobalStateStats', () => {
     expect(mockConnection.getAccountInfo).toHaveBeenCalled();
   });
 
-  it('should set up account subscription on mount', async () => {
-    const mockSubscriptionId = 456;
-    mockConnection.onAccountChange = jest.fn().mockReturnValue(mockSubscriptionId);
-    mockConnection.getAccountInfo = jest.fn().mockResolvedValue(null);
-
-    const { unmount } = renderHook(() => useGlobalStateStats());
-
-    await waitFor(() => {
-      expect(mockConnection.onAccountChange).toHaveBeenCalled();
-    });
-
-    // Verify subscription was created with 'confirmed' commitment
-    expect(mockConnection.onAccountChange).toHaveBeenCalledWith(
-      expect.any(PublicKey),
-      expect.any(Function),
-      'confirmed'
-    );
-
-    // Cleanup should remove listener
-    unmount();
-
-    await waitFor(() => {
-      expect(mockConnection.removeAccountChangeListener).toHaveBeenCalledWith(mockSubscriptionId);
-    });
-  });
-
-  it('should update state when subscription receives new data', async () => {
-    type AccountChangeCallback = (accountInfo: any) => void;
-    let subscriptionCallback: AccountChangeCallback | null = null;
-    
-    mockConnection.onAccountChange = jest.fn().mockImplementation(
-      (_pubkey: PublicKey, callback: AccountChangeCallback, _commitment: string) => {
-        subscriptionCallback = callback;
-        return 789;
-      }
-    ) as any;
-    
-    // Initial account info
-    const initialAccountData = Buffer.alloc(85);
-    Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]).copy(initialAccountData, 0);
-    new anchor.BN(100).toArrayLike(Buffer, 'le', 4).copy(initialAccountData, 8);
-    new anchor.BN(500).toArrayLike(Buffer, 'le', 8).copy(initialAccountData, 12);
-    
-    mockConnection.getAccountInfo = jest.fn().mockResolvedValue({
-      data: initialAccountData,
-      executable: false,
-      lamports: 5000000,
-      owner: new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ'),
-    });
+  it('should read the cached endpoint and skip RPC when it responds', async () => {
+    const accountData = Buffer.alloc(85);
+    new anchor.BN(42).toArrayLike(Buffer, 'le', 4).copy(accountData, 8);
+    new anchor.BN(1234).toArrayLike(Buffer, 'le', 8).copy(accountData, 12);
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: accountData.toString('base64') }),
+    }) as any;
+    mockConnection.getAccountInfo = jest.fn();
 
     const { result } = renderHook(() => useGlobalStateStats());
 
@@ -256,27 +218,45 @@ describe('useGlobalStateStats', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.totalUsers).toBe(100);
-    expect(result.current.totalTransactions).toBe(500);
+    expect(global.fetch).toHaveBeenCalledWith('/.netlify/functions/get-global-state');
+    expect(result.current.totalUsers).toBe(42);
+    expect(result.current.totalTransactions).toBe(1234);
+    expect(mockConnection.getAccountInfo).not.toHaveBeenCalled();
+  });
 
-    // Simulate subscription update with new data
-    const updatedAccountData = Buffer.alloc(85);
-    Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]).copy(updatedAccountData, 0);
-    new anchor.BN(150).toArrayLike(Buffer, 'le', 4).copy(updatedAccountData, 8); // 150 users
-    new anchor.BN(750).toArrayLike(Buffer, 'le', 8).copy(updatedAccountData, 12); // 750 transactions
-    
-    if (subscriptionCallback) {
-      (subscriptionCallback as AccountChangeCallback)({
-        data: updatedAccountData,
-        executable: false,
-        lamports: 5000000,
-        owner: new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ'),
-      });
-    }
+  it('should fall back to RPC when the cached endpoint returns an error', async () => {
+    const accountData = Buffer.alloc(85);
+    new anchor.BN(7).toArrayLike(Buffer, 'le', 4).copy(accountData, 8);
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, json: async () => ({}) }) as any;
+    mockConnection.getAccountInfo = jest.fn().mockResolvedValue({ data: accountData });
+
+    const { result } = renderHook(() => useGlobalStateStats());
 
     await waitFor(() => {
-      expect(result.current.totalUsers).toBe(150);
-      expect(result.current.totalTransactions).toBe(750);
+      expect(result.current.isLoading).toBe(false);
     });
+
+    expect(mockConnection.getAccountInfo).toHaveBeenCalled();
+    expect(result.current.totalUsers).toBe(7);
+  });
+
+  it('should re-read on an interval and never subscribe to GlobalState', async () => {
+    jest.useFakeTimers();
+    try {
+      mockConnection.getAccountInfo = jest.fn().mockResolvedValue(null);
+
+      const { unmount } = renderHook(() => useGlobalStateStats());
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+
+      await jest.advanceTimersByTimeAsync(20_000);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(mockConnection.onAccountChange).not.toHaveBeenCalled();
+
+      unmount();
+      await jest.advanceTimersByTimeAsync(20_000);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

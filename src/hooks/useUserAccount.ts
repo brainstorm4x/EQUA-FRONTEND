@@ -5,8 +5,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { PublicKey, Connection } from '@solana/web3.js';
 import { 
-  getUserAccountData, 
-  UserAccountData,
   isUserAccountRegisteredOnchain,
   validateReferrerOnchain
 } from '@/utils/onchainRegistration';
@@ -24,54 +22,6 @@ interface UseUserAccountOptions {
    * Default: true
    */
   enabled?: boolean;
-}
-
-/**
- * Hook to fetch and manage a user account from the blockchain
- * 
- * @param userAccountPubkey The user account public key to fetch
- * @param options Query options
- * @returns React Query result with user account data
- * 
- * @example
- * ```tsx
- * const { data: userAccount, isLoading, error, refetch } = useUserAccount(
- *   userAccountKeypair.publicKey
- * );
- * 
- * if (isLoading) return <div>Loading...</div>;
- * if (error) return <div>Error loading account</div>;
- * if (!userAccount) return <div>Account not found</div>;
- * 
- * return (
- *   <div>
- *     <p>Authority: {userAccount.authority.toBase58()}</p>
- *     <p>Minted: {userAccount.mintedAmount.toString()}</p>
- *   </div>
- * );
- * ```
- */
-export function useUserAccount(
-  userAccountPubkey: PublicKey | null | undefined,
-  options: UseUserAccountOptions = {}
-) {
-  const { connection } = useConnection();
-  const { refetchInterval = 30000, enabled = true } = options;
-  
-  return useQuery<UserAccountData | null, Error>({
-    queryKey: ['userAccount', userAccountPubkey?.toBase58()],
-    queryFn: async () => {
-      if (!userAccountPubkey) {
-        return null;
-      }
-      
-      return await getUserAccountData(connection, userAccountPubkey);
-    },
-    enabled: enabled && !!userAccountPubkey,
-    refetchInterval,
-    staleTime: 10000, // Consider data stale after 10 seconds
-    retry: 2, // Retry failed requests twice
-  });
 }
 
 /**

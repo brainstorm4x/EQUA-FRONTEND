@@ -19,7 +19,7 @@ describe('UserAccount Parsing Updates', () => {
       expect(USER_ACCOUNT_OFFSETS.TOKEN_ACCOUNT).toBe(72);
       expect(USER_ACCOUNT_OFFSETS.MINTED_AMOUNT).toBe(104);
       expect(USER_ACCOUNT_OFFSETS.MINT_START).toBe(112);
-      expect(USER_ACCOUNT_OFFSETS.REFERRAL_REWARDS).toBe(120);
+      expect(USER_ACCOUNT_OFFSETS.LAST_COUNTED_DAY).toBe(120);
       expect(USER_ACCOUNT_OFFSETS.LAST_MINT_TIME).toBe(128);
     });
 
@@ -64,8 +64,8 @@ describe('UserAccount Parsing Updates', () => {
       buffer.writeBigInt64LE(BigInt(mintStart), USER_ACCOUNT_OFFSETS.MINT_START);
       
       // Referral rewards (8 bytes, u64)
-      const referralRewards = 500000000; // 0.5 UNIYAA
-      buffer.writeBigUInt64LE(BigInt(referralRewards), USER_ACCOUNT_OFFSETS.REFERRAL_REWARDS);
+      const lastCountedDay = 20733; // UTC day number
+      buffer.writeBigUInt64LE(BigInt(lastCountedDay), USER_ACCOUNT_OFFSETS.LAST_COUNTED_DAY);
       
       // Last mint time (8 bytes, i64)
       const lastMintTime = Math.floor(Date.now() / 1000) - 3600; // 1 hour ago
@@ -79,7 +79,7 @@ describe('UserAccount Parsing Updates', () => {
       expect(decoded?.tokenAccount).toBe('11111111111111111111111111111113');
       expect(decoded?.mintedAmount).toBe(mintedAmount);
       expect(decoded?.mintStart).toBe(mintStart);
-      expect(decoded?.referralRewards).toBe(referralRewards);
+      expect(decoded?.lastCountedDay).toBe(lastCountedDay);
       expect(decoded?.lastMintTime).toBe(lastMintTime);
     });
 
@@ -99,7 +99,7 @@ describe('UserAccount Parsing Updates', () => {
       expect(decoded).not.toBeNull();
       expect(decoded?.mintedAmount).toBe(0);
       expect(decoded?.mintStart).toBe(0);
-      expect(decoded?.referralRewards).toBe(0);
+      expect(decoded?.lastCountedDay).toBe(0);
       expect(decoded?.lastMintTime).toBe(0);
     });
   });
