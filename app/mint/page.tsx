@@ -1062,11 +1062,6 @@ export default function MintPage() {
           console.log('📢 Registration complete event dispatched');
         }
         
-        // Call the metadata callback for referral/registration recording
-        if (metadata?.onSuccessfulRegistration) {
-          metadata.onSuccessfulRegistration();
-          console.log('📝 Registration metadata recorded');
-        }
 
         await checkUserRegistration();
         return; // Skip the desktop path below
@@ -1236,11 +1231,6 @@ export default function MintPage() {
           console.log('📢 Registration complete event dispatched');
         }
         
-        // Call the metadata callback for referral/registration recording
-        if (metadata?.onSuccessfulRegistration) {
-          metadata.onSuccessfulRegistration();
-          console.log('📝 Registration metadata recorded');
-        }
 
         await checkUserRegistration();
       } catch (txErr: any) {
@@ -2206,7 +2196,6 @@ export default function MintPage() {
                   onRegister={handleRegisterWithForm}
                   isLoading={isLoading}
                   validateReferrer={validateReferrer}
-                  userWalletAddress={publicKey?.toBase58()}
                 />
               </>
             ) : (

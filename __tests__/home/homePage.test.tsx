@@ -92,7 +92,7 @@ describe('Home/Landing Page', () => {
       expect(screen.getByText('Welcome to UNIYAA Token')).toBeInTheDocument();
       
       // Check for description
-      expect(screen.getByText(/A revolutionary token system/i)).toBeInTheDocument();
+      expect(screen.getByText(/A payment token on Solana whose value grows with everyday use/i)).toBeInTheDocument();
       
       // Check for CTA button
       expect(screen.getByText(/Get Started/i)).toBeInTheDocument();
