@@ -477,9 +477,15 @@ export default function MintPage() {
     };
 
     fetchWalletBalance();
-    // Refresh balance every 30 seconds
-    const interval = setInterval(fetchWalletBalance, 30000);
-    return () => clearInterval(interval);
+    // Push updates when the wallet's lamports change instead of polling
+    const subscriptionId = connection.onAccountChange(
+      publicKey,
+      (accountInfo) => setWalletBalance(accountInfo.lamports),
+      'confirmed'
+    );
+    return () => {
+      connection.removeAccountChangeListener(subscriptionId);
+    };
   }, [publicKey, connection]);
 
   // Fetch total users from global state

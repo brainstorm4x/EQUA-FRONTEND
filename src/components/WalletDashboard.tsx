@@ -14,13 +14,13 @@ import {
   getUserAccountPDA, 
   TOKEN_PROGRAM_ID, 
   ASSOCIATED_TOKEN_PROGRAM_ID, 
-  getUniyaaMintDecimals,
   getMintAuthorityPDA,
   getGlobalStatePDA,
   verifyMintOwner,
   createTransferTokensInstruction,
   clearRpcCache
 } from '@/lib/program';
+import { UNIYAA_DECIMALS } from '@/lib/constants';
 import { Logo } from './Logo';
 import Image from 'next/image';
 import { formatUniyaaBalance, rawToDecimal, parseDecimalStringToRaw, decimalToRaw } from '@/utils/tokenFormat';
@@ -29,7 +29,6 @@ import { fetchFxRates } from '@/utils/fxRateClient';
 import { getUniyaaPriceMultiFormat } from '@/utils/multiFormatPrice';
 import { UniyaaPriceCalculator } from '@/utils/priceCalculator';
 import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
-import { useUserAccount } from '@/hooks/useUserAccount';
 import { useUniyaaBalance } from '@/hooks/useUniyaaBalance';
 import { NetworkDiagnosticsBanner } from './NetworkDiagnosticsBanner';
 import { isUserRegistered } from '@/utils/registrationCheck';
@@ -42,8 +41,6 @@ interface WalletDashboardProps {
   className?: string;
 }
 
-// UNIYAA Token decimals will be fetched from on-chain mint
-// Default to 6 decimals as per the on-chain mint configuration
 
 // Shared constants for referral messages
 const UNIYAA_SHARE_BASE_URL = 'https://uniyaa.live/mint';
@@ -73,7 +70,7 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   // Use real-time balance hook instead of manual fetching
   const { balance, isLoading: isBalanceLoading } = useUniyaaBalance();
   
-  const [mintDecimals, setMintDecimals] = useState<number>(6); // Default to 6
+  const mintDecimals = UNIYAA_DECIMALS; // Fixed by the on-chain mint; never changes
   const [isLoading, setIsLoading] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
@@ -94,12 +91,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const userAccountPDA = useMemo(() => {
     return publicKey ? getUserAccountPDA(publicKey)[0] : null;
   }, [publicKey]); // Recompute when wallet changes
-  
-  // Fetch user account data from blockchain (includes referral info)
-  const { data: userAccountData } = useUserAccount(
-    userAccountPDA,
-    { enabled: connected && !!userAccountPDA }
-  );
 
   // ✅ Check registration status
   useEffect(() => {
@@ -132,10 +123,11 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     checkRegistration();
   }, [publicKey, connection]);
 
-  // Fetch mint decimals and referral data from onchain
+  // Fetch referral data from onchain once per wallet. Credits only change
+  // when this user claims (handleClaimCredits refreshes them) or a referee
+  // registers, so polling would re-run getProgramAccounts for nothing.
   useEffect(() => {
     if (!publicKey || !connected) {
-      setMintDecimals(6);
       setReferralCount(0);
       setReferralCredits(null);
       return;
@@ -143,10 +135,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
 
     const fetchData = async () => {
       try {
-        // Fetch mint decimals from on-chain
-        const decimals = await getUniyaaMintDecimals(connection);
-        setMintDecimals(decimals);
-        
         // Get referral credits from on-chain (integer count, not UNIYAA amounts)
         if (userAccountPDA) {
           const stats = await getReferralStats(connection, userAccountPDA);
@@ -168,9 +156,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     };
 
     fetchData();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
   }, [publicKey, connected, connection, userAccountPDA]);
 
   // Copy public key to clipboard

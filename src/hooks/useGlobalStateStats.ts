@@ -1,9 +1,9 @@
 /**
  * useGlobalStateStats Hook
  * 
- * Provides real-time global statistics from the on-chain GlobalState account.
+ * Provides global statistics from the on-chain GlobalState account.
  * This is the authoritative source for registered user count and total transactions.
- * Subscribes to account changes for live updates.
+ * Reads through a CDN-cached Netlify function (see get-global-state.ts).
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -188,8 +188,41 @@ function getGlobalStatePDA(): PublicKey {
 }
 
 /**
- * Hook to fetch and subscribe to global state statistics
- * 
+ * Cached GlobalState endpoint (same-origin Netlify function, CDN-cached for
+ * ~10 s). Every visitor shares one RPC read per cache window. Can be
+ * overridden via NEXT_PUBLIC_GLOBAL_STATE_URL for local dev.
+ */
+const GLOBAL_STATE_URL =
+  process.env.NEXT_PUBLIC_GLOBAL_STATE_URL || '/.netlify/functions/get-global-state';
+
+/** How often the hook re-reads the cached endpoint. */
+const POLL_INTERVAL_MS = 20_000;
+
+/**
+ * Reads the raw GlobalState bytes from the cached endpoint.
+ * Returns null when the endpoint is unavailable (e.g. plain `next dev`,
+ * where Netlify functions don't run) so the caller can read RPC directly.
+ */
+async function fetchCachedGlobalStateData(): Promise<Buffer | null> {
+  try {
+    const response = await fetch(GLOBAL_STATE_URL);
+    if (!response.ok) return null;
+    const body = await response.json();
+    if (typeof body?.data !== 'string') return null;
+    return Buffer.from(body.data, 'base64');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Hook to fetch global state statistics
+ *
+ * Reads the CDN-cached endpoint and re-reads it every POLL_INTERVAL_MS. It
+ * does NOT open a websocket subscription on GlobalState: that account changes
+ * on every counted transfer, so a per-visitor subscription would push every
+ * transfer to every open tab and bill each push.
+ *
  * @returns Global stats data and utility functions
  */
 export function useGlobalStateStats(): UseGlobalStateStatsResult {
@@ -202,50 +235,52 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Track subscription ID for cleanup
-  const subscriptionIdRef = useRef<number | null>(null);
   // Track if component is mounted
   const isMountedRef = useRef<boolean>(true);
 
   /**
-   * Fetches the current global state data
+   * Fetches the current global state data: cached endpoint first, then a
+   * direct RPC read if the endpoint is unavailable.
    */
   const fetchGlobalState = useCallback(async () => {
     try {
       setError(null);
       
-      const globalStatePDA = getGlobalStatePDA();
-      
-      // Fetch account info
-      const accountInfo = await connection.getAccountInfo(globalStatePDA);
-      
-      if (!accountInfo) {
-        // Global state account doesn't exist yet
-        // This likely means wrong cluster or program not initialized
-        console.error(
-          '❌ GlobalState account not found at',
-          globalStatePDA.toBase58(),
-          '\nThis usually indicates:',
-          '\n  1. Wrong cluster/RPC endpoint (check NEXT_PUBLIC_RPC_ENDPOINT)',
-          '\n  2. Wrong program ID (check NEXT_PUBLIC_PROGRAM_ID)',
-          '\n  3. Program not initialized on this cluster'
-        );
-        if (isMountedRef.current) {
-          setTotalUsers(0);
-          setTotalTransactions(0);
-          setCurrentEpoch(0);
-          setTier9StartTimestamp(0);
-          setError('GlobalState account not found - possible cluster or program ID mismatch');
-          setIsLoading(false);
+      let data = await fetchCachedGlobalStateData();
+
+      if (!data) {
+        const globalStatePDA = getGlobalStatePDA();
+        const accountInfo = await connection.getAccountInfo(globalStatePDA);
+
+        if (!accountInfo) {
+          // Global state account doesn't exist yet
+          // This likely means wrong cluster or program not initialized
+          console.error(
+            '❌ GlobalState account not found at',
+            globalStatePDA.toBase58(),
+            '\nThis usually indicates:',
+            '\n  1. Wrong cluster/RPC endpoint (check NEXT_PUBLIC_RPC_ENDPOINT)',
+            '\n  2. Wrong program ID (check NEXT_PUBLIC_PROGRAM_ID)',
+            '\n  3. Program not initialized on this cluster'
+          );
+          if (isMountedRef.current) {
+            setTotalUsers(0);
+            setTotalTransactions(0);
+            setCurrentEpoch(0);
+            setTier9StartTimestamp(0);
+            setError('GlobalState account not found - possible cluster or program ID mismatch');
+            setIsLoading(false);
+          }
+          return;
         }
-        return;
+        data = accountInfo.data;
       }
 
       // Parse data from account
-      const users = parseUserCount(accountInfo.data);
-      const transactions = parseTotalTransactions(accountInfo.data);
-      const epoch = parseCurrentEpoch(accountInfo.data);
-      const tier9Ts = parseTier9StartTimestamp(accountInfo.data);
+      const users = parseUserCount(data);
+      const transactions = parseTotalTransactions(data);
+      const epoch = parseCurrentEpoch(data);
+      const tier9Ts = parseTier9StartTimestamp(data);
 
       if (isMountedRef.current) {
         setTotalUsers(users);
@@ -253,13 +288,6 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
         setCurrentEpoch(epoch);
         setTier9StartTimestamp(tier9Ts);
         setIsLoading(false);
-
-        console.log('✓ Global state fetched:', {
-          totalUsers: users,
-          totalTransactions: transactions,
-          currentEpoch: epoch,
-          tier9StartTimestamp: tier9Ts,
-        });
       }
     } catch (err: any) {
       console.error('Error fetching global state:', err);
@@ -271,68 +299,15 @@ export function useGlobalStateStats(): UseGlobalStateStatsResult {
   }, [connection]);
 
   /**
-   * Subscribe to global state account changes for real-time updates
+   * Initial fetch, then re-read the cached endpoint on an interval
    */
   useEffect(() => {
-    // Initial fetch
     setIsLoading(true);
     fetchGlobalState();
 
-    // Set up subscription
-    let subscriptionId: number | null = null;
-    
-    const setupSubscription = () => {
-      try {
-        const globalStatePDA = getGlobalStatePDA();
-
-        // Subscribe to account changes with 'confirmed' commitment
-        subscriptionId = connection.onAccountChange(
-          globalStatePDA,
-          (accountInfo) => {
-            if (accountInfo && accountInfo.data.length > 0 && isMountedRef.current) {
-              // Parse updated data
-              const users = parseUserCount(accountInfo.data);
-              const transactions = parseTotalTransactions(accountInfo.data);
-              const epoch = parseCurrentEpoch(accountInfo.data);
-              const tier9Ts = parseTier9StartTimestamp(accountInfo.data);
-
-              setTotalUsers(users);
-              setTotalTransactions(transactions);
-              setCurrentEpoch(epoch);
-              setTier9StartTimestamp(tier9Ts);
-
-              console.log('✓ Global state updated (subscription):', {
-                totalUsers: users,
-                totalTransactions: transactions,
-                currentEpoch: epoch,
-                tier9StartTimestamp: tier9Ts,
-              });
-            } else if (!accountInfo && isMountedRef.current) {
-              // Account was deleted or doesn't exist on this cluster
-              console.error('❌ GlobalState subscription returned null - cluster/program mismatch likely');
-              setError('GlobalState subscription lost - check cluster and program ID configuration');
-            }
-          },
-          'confirmed' // Use confirmed commitment for balance between speed and reliability
-        );
-
-        subscriptionIdRef.current = subscriptionId;
-      } catch (err) {
-        console.error('Error setting up global state subscription:', err);
-        // Don't set error state here - the initial fetch will handle that
-      }
-    };
-
-    setupSubscription();
-
-    // Cleanup subscription on unmount or dependency change
-    return () => {
-      if (subscriptionId !== null) {
-        connection.removeAccountChangeListener(subscriptionId);
-      }
-      subscriptionIdRef.current = null;
-    };
-  }, [connection, fetchGlobalState]);
+    const interval = setInterval(fetchGlobalState, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [fetchGlobalState]);
 
   // Cleanup on unmount
   useEffect(() => {
