@@ -6,8 +6,7 @@ import {
   WalletProvider as SolanaWalletProvider,
 } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { clusterApiUrl } from '@solana/web3.js';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { walletRpcEndpoint } from './walletEndpoint';
 
 interface Props {
   children: ReactNode;
@@ -38,8 +37,8 @@ interface Props {
  * wallet app, using the cached connection state.
  */
 export const MobileExternalWalletProvider: FC<Props> = ({ children }) => {
-  const network = WalletAdapterNetwork.Devnet;
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  // Same endpoint as the rest of the app (was hard-coded public devnet).
+  const endpoint = useMemo(() => walletRpcEndpoint(), []);
 
   console.log('📱 [MobileExternalProvider] Initializing with Wallet Standard auto-detection (autoConnect)');
 
