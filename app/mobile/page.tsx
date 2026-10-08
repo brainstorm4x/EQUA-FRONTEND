@@ -1,24 +1,39 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { AppDownload } from '@/components/AppDownload';
+import { phantomBrowseLink, solflareBrowseLink } from '@/utils/walletBrowseLinks';
 
 /**
  * Dedicated Mobile Browser Landing Page
  *
  * Shown when a user visits the UNIYAA site from a mobile external browser
- * (Chrome / Safari on Android / iOS).  Deep-linking to Solana wallet
- * extensions is unreliable in these environments, so we guide the user toward
- * the two supported paths:
+ * (Chrome / Safari on Android / iOS).  Those browsers have no Solana wallet
+ * inside the page, so sign-up cannot work there.  We offer the paths that do:
  *
- *   1. Download the UNIYAA Android app (APK, served by /.netlify/functions/apk)
- *   2. Switch to a desktop browser with Phantom or Solflare installed
+ *   1. Open the site inside Phantom's or Solflare's in-app browser, where the
+ *      wallet is injected (see src/utils/walletBrowseLinks.ts)
+ *   2. Download the UNIYAA Android app (APK, served by /.netlify/functions/apk)
+ *   3. Switch to a desktop browser with Phantom or Solflare installed
  *
  * Users are redirected here automatically from both app/page.tsx and
  * src/components/ui/WalletButton.tsx when mobile-browser is detected.
  */
 export default function MobilePage() {
+  // Built after mount: the links need window.location.origin.
+  const [links, setLinks] = useState<{ phantom: string; solflare: string } | null>(null);
+
+  useEffect(() => {
+    const origin = window.location.origin;
+    const target = `${origin}/mint`;
+    setLinks({
+      phantom: phantomBrowseLink(target, origin),
+      solflare: solflareBrowseLink(target, origin),
+    });
+  }, []);
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-600 flex items-center justify-center px-6 py-12">
       <div className="flex flex-col items-center gap-8 text-center max-w-sm w-full">
@@ -31,16 +46,40 @@ export default function MobilePage() {
         {/* Headline */}
         <div className="space-y-3">
           <h1 className="text-2xl font-bold text-white leading-snug">
-            UNIYAA works best on desktop or in our mobile app
+            Sign up from your wallet app
           </h1>
           <p className="text-purple-300 text-sm leading-relaxed">
-            For the best experience, download the UNIYAA app for your phone or visit
-            this page in a desktop browser with a Solana wallet extension installed.
+            Your phone&apos;s browser cannot reach your wallet. Open UNIYAA inside
+            Phantom or Solflare and sign up there, or use the UNIYAA app.
+          </p>
+        </div>
+
+        {/* Open in wallet */}
+        <div className="flex flex-col gap-3 w-full">
+          <a
+            href={links?.phantom}
+            aria-disabled={!links}
+            data-testid="open-in-phantom"
+            className="flex items-center justify-center bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-5 rounded-xl transition-colors text-sm"
+          >
+            Open in Phantom
+          </a>
+          <a
+            href={links?.solflare}
+            aria-disabled={!links}
+            data-testid="open-in-solflare"
+            className="flex items-center justify-center bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-5 rounded-xl transition-colors text-sm"
+          >
+            Open in Solflare
+          </a>
+          <p className="text-purple-400 text-xs leading-relaxed">
+            No wallet yet? Install Phantom or Solflare from your app store, then
+            come back and tap the button.
           </p>
         </div>
 
         {/* App downloads */}
-        <div className="flex flex-col gap-3 w-full">
+        <div className="flex flex-col gap-3 w-full border-t border-purple-500/30 pt-6">
           <div
             className="flex items-center justify-center gap-3 bg-white/10 text-purple-200 font-semibold py-3 px-5 rounded-xl text-sm"
             aria-label="iPhone app coming soon"
