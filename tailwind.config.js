@@ -8,7 +8,23 @@ module.exports = {
   // Note: JIT mode is now the default in Tailwind CSS v3+ and doesn't need to be specified
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-ui)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
       colors: {
+        // STYLE PREVIEW: palettes come from CSS variables (app/style-preview.css)
+        purple: Object.fromEntries(
+          [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((k) => [
+            k,
+            `rgb(var(--c-p-${k}) / <alpha-value>)`,
+          ])
+        ),
+        yellow: Object.fromEntries(
+          [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((k) => [
+            k,
+            `rgb(var(--c-y-${k}) / <alpha-value>)`,
+          ])
+        ),
         primary: {
           900: '#4C1D95',
           800: '#5B21B6',
