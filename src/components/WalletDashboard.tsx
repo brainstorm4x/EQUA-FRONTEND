@@ -1260,7 +1260,7 @@ const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
             {typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'share' in navigator && (
               <button
                 onClick={handleNativeShare}
-                className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 col-span-2"
+                className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 col-span-2"
               >
                 <span className="text-xl">🔗</span>
                 More Options

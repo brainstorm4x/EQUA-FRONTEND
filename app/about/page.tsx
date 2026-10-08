@@ -9,12 +9,12 @@ export default function AboutPage() {
       {/* Header */}
       <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-y-3">
             <Link href="/" className="flex items-center gap-3">
               <Logo size={40} />
-              <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-white">UNIYAA Token</h1>
             </Link>
-            <nav className="flex items-center gap-6">
+            <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm md:text-base md:gap-6">
               <Link href="/" className="text-purple-200 hover:text-white transition-colors">
                 Home
               </Link>
@@ -215,7 +215,7 @@ export default function AboutPage() {
 
             {/* Get Started CTA */}
             <section className="mb-8">
-              <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-8 border border-purple-500/30 text-center">
+              <div className="bg-gradient-to-r from-purple-500/20 to-yellow-500/20 rounded-xl p-8 border border-purple-500/30 text-center">
                 <h2 className="text-2xl font-bold text-white mb-4">Ready to Get Started?</h2>
                 <p className="text-purple-200 text-lg leading-relaxed mb-6">
                   Join the UNIYAA ecosystem today and be part of building a fairer economic future.

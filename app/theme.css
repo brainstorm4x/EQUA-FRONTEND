@@ -1,0 +1,15 @@
+/* Theme "Ink & Sky" (chosen 2026-10-09): navy base, sky blue, warm orange accent.
+   Tailwind's purple-* classes read --c-p-* and yellow-* read --c-y-*
+   (see tailwind.config.js), so the whole site changes from this one file.
+   Values are "R G B" so Tailwind opacity modifiers (bg-purple-900/50) work. */
+:root {
+  --c-p-50: 240 249 255; --c-p-100: 224 242 254; --c-p-200: 186 230 253;
+  --c-p-300: 125 211 252; --c-p-400: 56 189 248; --c-p-500: 14 165 233;
+  --c-p-600: 2 132 199; --c-p-700: 3 105 161; --c-p-800: 22 36 64;
+  --c-p-900: 13 22 42; --c-p-950: 5 10 24;
+  --c-y-50: 255 247 237; --c-y-100: 255 237 213; --c-y-200: 254 215 170;
+  --c-y-300: 253 186 116; --c-y-400: 251 146 60; --c-y-500: 249 115 22;
+  --c-y-600: 234 88 12; --c-y-700: 194 65 12; --c-y-800: 154 52 18;
+  --c-y-900: 124 45 18; --c-y-950: 67 20 7;
+  --font-ui: var(--font-dmsans), ui-sans-serif, system-ui, sans-serif;
+}
