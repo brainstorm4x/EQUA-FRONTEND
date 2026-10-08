@@ -31,13 +31,12 @@ function isMobileDevice(): boolean {
   const userAgent = navigator.userAgent.toLowerCase();
   const hasMobileUserAgent = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(userAgent);
 
-  // Check for touch capability (more reliable than UA alone)
-  const hasTouchCapability = 
-    'ontouchstart' in window ||
-    navigator.maxTouchPoints > 0 ||
-    (navigator as any).msMaxTouchPoints > 0;
+  // Touch alone is NOT a mobile signal: touchscreen laptops have it and would be
+  // sent to /mobile. The one touch case that matters is iPadOS, which reports a
+  // desktop Mac user agent.
+  const isIPadDesktopMode = /macintosh/.test(userAgent) && navigator.maxTouchPoints > 1;
 
-  return hasMobileUserAgent || hasTouchCapability;
+  return hasMobileUserAgent || isIPadDesktopMode;
 }
 
 /**
