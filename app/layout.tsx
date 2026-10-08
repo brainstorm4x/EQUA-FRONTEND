@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./theme.css";
+import { DM_Sans } from "next/font/google";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
@@ -14,13 +16,15 @@ export const metadata: Metadata = {
   },
 };
 
+const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dmsans", display: "swap" });
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={dmSans.variable}>
       <head>
         {/* DNS prefetch for external services */}
         <link rel="dns-prefetch" href="https://api.devnet.solana.com" />

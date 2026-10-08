@@ -9,12 +9,12 @@ export default function WhitepaperPage() {
       {/* Header */}
       <header className="border-b border-purple-700 bg-purple-900/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-y-3">
             <Link href="/" className="flex items-center gap-3">
               <Logo size={40} />
-              <h1 className="text-2xl font-bold text-white">UNIYAA Token</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-white">UNIYAA Token</h1>
             </Link>
-            <nav className="flex items-center gap-6">
+            <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm md:text-base md:gap-6">
               <Link href="/" className="text-purple-200 hover:text-white transition-colors">
                 Home
               </Link>

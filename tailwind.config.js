@@ -1,3 +1,12 @@
+// A Tailwind colour scale whose shades read CSS variables (--c-<name>-<shade>)
+const themeScale = (name) =>
+  Object.fromEntries(
+    [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((k) => [
+      k,
+      `rgb(var(--c-${name}-${k}) / <alpha-value>)`,
+    ])
+  );
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -8,19 +17,15 @@ module.exports = {
   // Note: JIT mode is now the default in Tailwind CSS v3+ and doesn't need to be specified
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-ui)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
       colors: {
-        primary: {
-          900: '#4C1D95',
-          800: '#5B21B6',
-          700: '#6D28D9',
-          600: '#7C3AED',
-          500: '#8B5CF6',
-          400: '#A78BFA',
-          300: '#C4B5FD',
-          200: '#DDD6FE',
-          100: '#EDE9FE',
-          50: '#F5F3FF',
-        },
+        // Theme "Ink & Sky": the purple-* classes are the brand blue scale and
+        // yellow-* the warm accent; the colours live in app/theme.css.
+        purple: themeScale('p'),
+        yellow: themeScale('y'),
+        primary: themeScale('p'),
       },
     },
   },
