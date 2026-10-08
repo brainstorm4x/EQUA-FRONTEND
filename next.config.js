@@ -9,6 +9,12 @@ const nextConfig = {
   // Optimize production builds
   productionBrowserSourceMaps: false,
 
+  // Next 16.3 type-checks every file tsconfig.json includes, test files too.
+  // The build checks app code only; `npm run typecheck` still covers tests.
+  typescript: {
+    tsconfigPath: 'tsconfig.build.json',
+  },
+
   // Optimize images with Next.js Image component
   images: {
     formats: ['image/avif', 'image/webp'],
