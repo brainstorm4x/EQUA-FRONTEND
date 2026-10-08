@@ -1282,7 +1282,7 @@ export type UniyaaToken = {
         "Users #2-10: 100 attempts at 10,000 UNIYAA each",
         "Users #11+: Normal limit (1,000 UNIYAA)",
         "",
-        "Cooldown: 24-hour cooldown enforced between regular mints",
+        "Cooldown: 24 hours between a wallet's first 100 mints, 30 days after that",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
         "Only P2P transfers (transfer_tokens) increment the transaction counter."
@@ -1902,8 +1902,8 @@ export type UniyaaToken = {
         "Unlock tokens after 4-year cliff vesting period",
         "",
         "Can only be called after unlock_timestamp has passed",
-        "Transfers all locked tokens from locked ATA to user's ATA",
-        "One-time operation per user"
+        "Transfers all locked tokens from locked ATA to user's ATA.",
+        "Can be repeated: a later locked mint starts a new lock."
       ],
       "discriminator": [
         233,
@@ -2320,7 +2320,7 @@ export type UniyaaToken = {
     {
       "code": 6043,
       "name": "mintingCooldownNotExpired",
-      "msg": "Minting cooldown has not expired. You must wait 30 days between regular mints."
+      "msg": "Minting cooldown has not expired. Wait 24 hours between your first 100 mints, then 30 days."
     },
     {
       "code": 6044,

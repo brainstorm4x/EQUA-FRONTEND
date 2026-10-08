@@ -455,7 +455,7 @@ export function createInitializeUserInstruction(
   return instruction;
 }
 
-// ✅ Create mint_uniyaa instruction (monthly minting with a 30-day cooldown)
+// ✅ Create mint_uniyaa instruction (daily for a wallet's first 100 mints, then a 30-day cooldown)
 // This is the correct instruction to use for regular UNIYAA minting
 export function createMintUniyaaInstruction(
   userAccount: PublicKey,

@@ -134,7 +134,7 @@ function categorizeError(error: any, logs: string[] = []): string {
   
   // Check for specific Anchor error codes
   if (hasPattern(ERROR_CODE_COOLDOWN)) {
-    return '⏰ Cooldown Active: You can only mint once every 30 days. Please wait for the cooldown period to expire.';
+    return '⏰ Cooldown Active: Your first 100 mints are once a day, then once every 30 days. Please wait for the cooldown period to expire.';
   }
   
   if (hasPattern(ERROR_CODE_TIER_LIMIT) || hasPattern(ERROR_KEYWORD_MINT_AMOUNT_EXCEEDS)) {
@@ -352,6 +352,8 @@ export default function MintPage() {
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [userMetadata, setUserMetadata] = useState<UserMetadata | null>(null);
   const [totalMints, setTotalMints] = useState<number>(0);
+  // Mints made so far (on-chain counter, stops at 100): sets the daily or 30-day cooldown
+  const mintsMade = userMetadata?.elevated_mint_attempts_used ?? 0;
   const [minLoadingComplete, setMinLoadingComplete] = useState(false);
   // Migration support: Track users who registered before PR#198 and need locked token ATA created
   const [needsRepair, setNeedsRepair] = useState(false);
@@ -672,7 +674,7 @@ export default function MintPage() {
     const updateCooldown = () => {
       const now = Math.floor(Date.now() / 1000);
       const timeSinceLastMint = now - lastMintTime;
-      const cooldownPeriod = CooldownGuard.getCooldownPeriod();
+      const cooldownPeriod = CooldownGuard.getCooldownPeriod(mintsMade);
       
       if (timeSinceLastMint >= cooldownPeriod) {
         setCanMint(true);
@@ -686,7 +688,7 @@ export default function MintPage() {
     updateCooldown();
     const interval = setInterval(updateCooldown, 1000);
     return () => clearInterval(interval);
-  }, [lastMintTime]);
+  }, [lastMintTime, mintsMade]);
 
   // Listen for registration completion events
   useEffect(() => {
@@ -1459,7 +1461,8 @@ export default function MintPage() {
     }
     
     // ✅ COOLDOWN GUARD: Start mint - set optimistic cooldown and in-flight lock
-    CooldownGuard.startMint(walletAddress);
+    const mintsBefore = mintsMade;
+    CooldownGuard.startMint(walletAddress, mintsBefore);
     
     // Update UI state immediately
     setIsLoading(true);
@@ -1854,7 +1857,7 @@ export default function MintPage() {
       
       // ✅ COOLDOWN GUARD: End mint successfully - reconcile with on-chain data
       const now = Math.floor(Date.now() / 1000);
-      CooldownGuard.endMint(walletAddress, true, now, newLastMintTime);
+      CooldownGuard.endMint(walletAddress, true, now, newLastMintTime, mintsBefore + 1);
 
     } catch (err: any) {
       console.error('❌ Minting error:', err);
@@ -2229,7 +2232,7 @@ export default function MintPage() {
                             {formatTimeRemaining(timeUntilNextMint)}
                           </p>
                           <p className="text-yellow-200 text-sm">
-                            Come back on {new Date((lastMintTime + CooldownGuard.getCooldownPeriod()) * 1000).toLocaleString()}
+                            Come back on {new Date((lastMintTime + CooldownGuard.getCooldownPeriod(mintsMade)) * 1000).toLocaleString()}
                           </p>
                         </>
                       )}

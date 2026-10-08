@@ -147,7 +147,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
         <div>
           <p className="text-purple-200 text-sm mb-2">Minting Rate</p>
           <p className="text-white text-3xl font-bold" data-testid="mint-rate">{mintingRate}</p>
-          <p className="text-purple-300 text-xs mt-1">UNIYAA per mint, once every 30 days</p>
+          <p className="text-purple-300 text-xs mt-1">UNIYAA per mint, daily for the first 100 mints, then every 30 days</p>
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
             {isCompounding
               ? `Growing up to ${MAX_DAILY_GROWTH * 100}% a day`

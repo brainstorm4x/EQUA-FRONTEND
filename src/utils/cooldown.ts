@@ -2,13 +2,14 @@
  * Cooldown Guard - Enforce off-chain cooldown logic uniformly
  * 
  * This module provides shared cooldown enforcement across web and mobile to:
- * - Prevent multiple mints within the 30-day cooldown
+ * - Prevent multiple mints within the cooldown (24 hours for a wallet's
+ *   first 100 mints, 30 days after that)
  * - Eliminate UI race conditions with optimistic cooldown + in-flight lock
  * - Align schema parsing with on-chain account layouts
  * 
  * The guard:
  * 1. Reads last_mint_time from UserAccount PDA (offset 136, i64 little-endian)
- * 2. Calculates cooldownUntil = last_mint_time + MINT_COOLDOWN_SECONDS
+ * 2. Calculates cooldownUntil = last_mint_time + getCooldownPeriod(mintsMade)
  * 3. Applies optimistic cooldown and in-flight lock at click time
  * 4. Reconciles with on-chain last_mint_time after confirmation
  * 5. Persists cooldown state keyed by wallet across sessions
@@ -28,6 +29,12 @@ const MINT_COOLDOWN_SECONDS = parseInt(
   process.env.NEXT_PUBLIC_MINT_COOLDOWN_SECONDS || '2592000',
   10
 );
+
+// A wallet's first DAILY_MINT_ATTEMPTS mints are 24 hours apart (matching
+// DAILY_MINT_ATTEMPTS and DAILY_MINTING_COOLDOWN_SECONDS on-chain).
+// The on-chain mint counter is UserMetadata.elevated_mint_attempts_used.
+export const DAILY_MINT_ATTEMPTS = 100;
+const DAILY_MINT_COOLDOWN_SECONDS = 86400;
 
 // LocalStorage keys
 const COOLDOWN_KEY_PREFIX = 'uniyaa:cooldown:';
@@ -260,8 +267,9 @@ export function canMintNow(walletAddress: string): boolean {
  * Call this immediately when user clicks mint button
  * 
  * @param walletAddress - Wallet address
+ * @param mintsBefore - Mints the wallet made before this one (on-chain counter)
  */
-export function startMint(walletAddress: string): void {
+export function startMint(walletAddress: string, mintsBefore: number = DAILY_MINT_ATTEMPTS): void {
   const now = Math.floor(Date.now() / 1000);
   
   // Set in-flight lock (prevents double-clicks)
@@ -269,7 +277,7 @@ export function startMint(walletAddress: string): void {
   
   const cooldownState: CooldownState = {
     lastMintTime: now,
-    cooldownUntil: now + MINT_COOLDOWN_SECONDS,
+    cooldownUntil: now + getCooldownPeriod(mintsBefore + 1),
     isOptimistic: true,
   };
   setCooldownState(walletAddress, cooldownState);
@@ -285,12 +293,14 @@ export function startMint(walletAddress: string): void {
  * @param success - Whether the mint was successful
  * @param currentTime - Current Unix timestamp in seconds (for reconciliation)
  * @param onchainLastMintTime - On-chain last_mint_time after confirmation (optional)
+ * @param mintsMade - Mints the wallet has made, including this one
  */
 export function endMint(
   walletAddress: string,
   success: boolean,
   currentTime?: number,
-  onchainLastMintTime?: number
+  onchainLastMintTime?: number,
+  mintsMade: number = DAILY_MINT_ATTEMPTS
 ): void {
   // Always clear in-flight lock
   clearInFlightLock(walletAddress);
@@ -314,7 +324,7 @@ export function endMint(
   
   const cooldownState: CooldownState = {
     lastMintTime,
-    cooldownUntil: lastMintTime + MINT_COOLDOWN_SECONDS,
+    cooldownUntil: lastMintTime + getCooldownPeriod(mintsMade),
     isOptimistic: false, // Now confirmed on-chain
   };
   setCooldownState(walletAddress, cooldownState);
@@ -370,11 +380,13 @@ export function hasInFlightMint(walletAddress: string): boolean {
  * @param connection - Solana connection
  * @param userAccountPDA - UserAccount PDA address
  * @param walletAddress - Wallet address
+ * @param mintsMade - Mints the wallet has made (on-chain counter)
  */
 export async function syncCooldownState(
   connection: Connection,
   userAccountPDA: PublicKey,
-  walletAddress: string
+  walletAddress: string,
+  mintsMade: number = DAILY_MINT_ATTEMPTS
 ): Promise<void> {
   try {
     const onchainLastMintTime = await getOnchainLastMintTime(connection, userAccountPDA);
@@ -391,7 +403,7 @@ export async function syncCooldownState(
     // Update cooldown state with on-chain data
     const cooldownState: CooldownState = {
       lastMintTime: onchainLastMintTime,
-      cooldownUntil: onchainLastMintTime + MINT_COOLDOWN_SECONDS,
+      cooldownUntil: onchainLastMintTime + getCooldownPeriod(mintsMade),
       isOptimistic: false,
     };
     setCooldownState(walletAddress, cooldownState);
@@ -403,9 +415,12 @@ export async function syncCooldownState(
 }
 
 /**
- * Get the cooldown period in seconds
+ * Get the cooldown before the next mint, given how many mints the wallet has
+ * made: 24 hours while under DAILY_MINT_ATTEMPTS, 30 days after that.
+ * Without a count it returns the longer, 30-day period.
+ * @param mintsMade - Mints the wallet has made (on-chain counter)
  * @returns Cooldown period in seconds
  */
-export function getCooldownPeriod(): number {
-  return MINT_COOLDOWN_SECONDS;
+export function getCooldownPeriod(mintsMade: number = DAILY_MINT_ATTEMPTS): number {
+  return mintsMade < DAILY_MINT_ATTEMPTS ? DAILY_MINT_COOLDOWN_SECONDS : MINT_COOLDOWN_SECONDS;
 }

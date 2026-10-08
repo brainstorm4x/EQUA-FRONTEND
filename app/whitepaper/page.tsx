@@ -382,7 +382,7 @@ export default function WhitepaperPage() {
                 UNIYAA&apos;s minting rate naturally slows as adoption increases. This creates <strong className="text-white">organic scarcity</strong>—each new token becomes slightly more valuable as the growth phase progresses.
               </p>
               <p className="text-purple-200 leading-relaxed mt-2">
-                Each person can mint <strong className="text-white">once every 30 days</strong>. Minting is never counted as use, and it never moves the price.
+                Each person can mint <strong className="text-white">once a day for their first 100 mints</strong>, so they have enough for everyday purchases, and <strong className="text-white">once every 30 days</strong> after that. Minting is never counted as use, and it never moves the price.
               </p>
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">3. Only Real Use Counts</h4>
@@ -705,7 +705,7 @@ export default function WhitepaperPage() {
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
                   <li>Variable minting rate tied to user adoption (see Mint Tier Schedule below)</li>
                   <li>Utility-first design: use UNIYAA to buy and sell goods and services</li>
-                  <li>One regular mint per user every 30 days</li>
+                  <li>One regular mint per user per day for the first 100 mints, then one every 30 days</li>
                   <li>No referral rewards: referrals are optional and record attribution only</li>
                 </ul>
               </div>
@@ -741,7 +741,7 @@ export default function WhitepaperPage() {
                   </table>
                 </div>
                 <p className="text-purple-300 text-xs mt-3 italic">
-                  Repeat mints are gated by an on-chain 30-day cooldown. There is no hard total-supply cap — the design relies on the per-attempt step-down plus cooldowns to keep issuance asymptotic, not on a fixed maximum.
+                  Repeat mints are gated by an on-chain cooldown: 24 hours for a user&apos;s first 100 mints, 30 days after that. There is no hard total-supply cap — the design relies on the per-attempt step-down plus cooldowns to keep issuance asymptotic, not on a fixed maximum.
                 </p>
               </div>
 

@@ -46,6 +46,35 @@ describe('Cooldown Guard', () => {
     it('should return 2592000 seconds (30 days) by default', () => {
       expect(getCooldownPeriod()).toBe(2592000);
     });
+
+    it('should be 24 hours while fewer than 100 mints have been made', () => {
+      expect(getCooldownPeriod(1)).toBe(86400);
+      expect(getCooldownPeriod(99)).toBe(86400);
+    });
+
+    it('should be 30 days once 100 mints have been made', () => {
+      expect(getCooldownPeriod(100)).toBe(2592000);
+    });
+  });
+
+  describe('daily then monthly', () => {
+    it('should wait 24 hours after the 99th mint', () => {
+      const before = Math.floor(Date.now() / 1000);
+      startMint(testWallet, 98); // this is the 99th mint
+      expect(getCooldownUntil(testWallet)! - before).toBeLessThanOrEqual(86400 + 1);
+    });
+
+    it('should wait 30 days after the 100th mint', () => {
+      const now = Math.floor(Date.now() / 1000);
+      endMint(testWallet, true, now, now, 100);
+      expect(getCooldownUntil(testWallet)).toBe(now + 2592000);
+    });
+
+    it('should wait 24 hours after an earlier mint', () => {
+      const now = Math.floor(Date.now() / 1000);
+      endMint(testWallet, true, now, now, 1);
+      expect(getCooldownUntil(testWallet)).toBe(now + 86400);
+    });
   });
 
   describe('canMintNow', () => {
