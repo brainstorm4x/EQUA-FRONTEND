@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useProgram } from '@/hooks/useProgram';
+import { useGlobalStateStats } from '@/hooks/useGlobalStateStats';
 import { Logo } from '@/components/Logo';
 import { PublicKey, Transaction, TransactionInstruction, Connection, SystemProgram, ComputeBudgetProgram } from '@solana/web3.js';
 import {
@@ -42,7 +43,7 @@ import {
   getUserMintTier,
   accountTypeToUserType,
 } from '@/utils/registration';
-import { safeParseUserCount, safeParseTimestamp } from '@/utils/safeAccountParsing';
+import { safeParseTimestamp } from '@/utils/safeAccountParsing';
 import { isUserAccountRegisteredOnchain } from '@/utils/onchainRegistration';
 import * as CooldownGuard from '@/utils/cooldown';
 import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
@@ -291,7 +292,16 @@ function formatTimeRemaining(seconds: number): string {
 // Helper to get last mint time from user account
 async function getLastMintTime(connection: any, userPubkey: PublicKey): Promise<number> {
   try {
-    const accountInfo = await connection.getAccountInfo(userPubkey);
+    return parseLastMintTime(await connection.getAccountInfo(userPubkey));
+  } catch (error) {
+    console.error('Error getting last mint time:', error);
+    return 0;
+  }
+}
+
+// Last mint time from an already-fetched UserAccount (0 if missing)
+function parseLastMintTime(accountInfo: { data: Buffer } | null): number {
+  try {
     if (!accountInfo || accountInfo.data.length === 0) {
       console.log('⚠️ User account not found');
       return 0;
@@ -349,7 +359,8 @@ export default function MintPage() {
   const [timeUntilNextMint, setTimeUntilNextMint] = useState<number>(0);
   const [canMint, setCanMint] = useState<boolean>(true);
   const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [totalUsers, setTotalUsers] = useState<number>(0);
+  // Total users from the CDN-cached GlobalState (no RPC call per visitor)
+  const { totalUsers } = useGlobalStateStats();
   const [userMetadata, setUserMetadata] = useState<UserMetadata | null>(null);
   const [totalMints, setTotalMints] = useState<number>(0);
   const [minLoadingComplete, setMinLoadingComplete] = useState(false);
@@ -491,32 +502,6 @@ export default function MintPage() {
     };
   }, [publicKey, connection]);
 
-  // Fetch total users from global state
-  useEffect(() => {
-    if (!connection || !globalStatePDA) return;
-
-    const fetchTotalUsers = async () => {
-      try {
-        const accountInfo = await connection.getAccountInfo(globalStatePDA);
-        if (accountInfo) {
-          // Global state structure: 8 discriminator + 8 total_users
-          // Use safe parsing to handle overflow, uninitialized, or corrupted values
-          const totalUsersCount = safeParseUserCount(accountInfo.data);
-          setTotalUsers(totalUsersCount);
-          console.log('✅ Total users fetched safely:', totalUsersCount);
-        } else {
-          console.warn('⚠️ Global state account not found, setting totalUsers to 0');
-          setTotalUsers(0);
-        }
-      } catch (err) {
-        console.error('Error fetching total users:', err);
-        // Set to 0 on error to ensure safe behavior
-        setTotalUsers(0);
-      }
-    };
-
-    fetchTotalUsers();
-  }, [connection, globalStatePDA]);
 
   const checkUserRegistration = useCallback(async () => {
     if (!publicKey || !isReady || !userAccountPDA) {
@@ -554,8 +539,9 @@ export default function MintPage() {
           tokenBalanceRaw = 0;
         }
         
-        // Get last mint time for cooldown
-        const lastMint = await getLastMintTime(connection, userAccountPDA);
+        // Read the UserAccount once: last mint time here, minted amount below
+        const userAccountInfo = await connection.getAccountInfo(userAccountPDA);
+        const lastMint = parseLastMintTime(userAccountInfo);
         setLastMintTime(lastMint);
         console.log('⏰ Last mint time:', lastMint);
 
@@ -593,7 +579,7 @@ export default function MintPage() {
         
         // Get user's registration number and total mints from account
         try {
-          const accountInfo = await connection.getAccountInfo(userAccountPDA);
+          const accountInfo = userAccountInfo;
           console.log('📋 User account data:', {
             exists: accountInfo !== null,
             dataLength: accountInfo?.data.length || 0,
@@ -655,7 +641,7 @@ export default function MintPage() {
       setIsCheckingRegistration(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [publicKey, isReady, userAccountPDA, checkRegistration, mintPDA, connection, totalUsers]);
+  }, [publicKey, isReady, userAccountPDA, checkRegistration, mintPDA, connection]);
 
   useEffect(() => {
     checkUserRegistration();
