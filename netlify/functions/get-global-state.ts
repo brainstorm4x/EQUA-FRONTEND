@@ -21,11 +21,13 @@ const BASE_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-// Same env names, in the same order, as RPC_ENDPOINT and PROGRAM_ID in
-// src/lib/constants.ts, so this function always reads the same cluster and
-// program the frontend is configured for.
+// SOLANA_RPC_URL is server-only (never sent to browsers), so it can hold an
+// RPC key with no domain restriction. Otherwise the same env names, in the
+// same order, as RPC_ENDPOINT and PROGRAM_ID in src/lib/constants.ts, so this
+// function always reads the same cluster and program the frontend uses.
 function getRpcUrl(): string {
   return (
+    process.env.SOLANA_RPC_URL ||
     process.env.NEXT_PUBLIC_RPC_ENDPOINT ||
     process.env.NEXT_PUBLIC_SOLANA_RPC_HOST ||
     'https://api.devnet.solana.com'
