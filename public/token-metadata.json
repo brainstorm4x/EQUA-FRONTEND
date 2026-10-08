@@ -2,7 +2,7 @@
   "name": "UNIYAA Token",
   "symbol": "UNIYAA",
   "description": "UNIYAA is a utility-first token on Solana with transaction-based price appreciation. Equal Access. Equal Opportunity. Equal Economy.",
-  "image": "https://raw.githubusercontent.com/brainstorm4x/UNIYAA-FRONTEND/main/public/branding/uniyaa-logo-dark.svg",
+  "image": "https://uniyaatoken.netlify.app/branding/uniyaa-logo.png",
   "attributes": [
     {
       "trait_type": "Network",
@@ -25,8 +25,8 @@
   "properties": {
     "files": [
       {
-        "uri": "https://raw.githubusercontent.com/brainstorm4x/UNIYAA-FRONTEND/main/public/branding/uniyaa-logo-dark.svg",
-        "type": "image/svg+xml"
+        "uri": "https://uniyaatoken.netlify.app/branding/uniyaa-logo.png",
+        "type": "image/png"
       }
     ],
     "category": "fungible"
