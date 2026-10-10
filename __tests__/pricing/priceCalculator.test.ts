@@ -8,9 +8,10 @@
 import {
   PRICE_SCALE,
   INITIAL_PRICE_USD,
-  TERMINAL_PRICE_USD,
   MAX_DAILY_GROWTH,
-  MAX_DAILY_LINEAR_INCREMENT_USD,
+  PRICE_CURVE_K_USD,
+  maxDailyGrowthAt,
+  formatDailyRate,
   priceIndexToUsd,
   formatUniyaaPrice,
 } from '@/utils/priceCalculator';
@@ -23,9 +24,16 @@ describe('price helpers', () => {
 
   it('matches the program constants', () => {
     expect(INITIAL_PRICE_USD).toBe(0.01);
-    expect(TERMINAL_PRICE_USD).toBe(1_000_000);
     expect(MAX_DAILY_GROWTH).toBe(0.01);
-    expect(MAX_DAILY_LINEAR_INCREMENT_USD * 30).toBeCloseTo(25_000, 6);
+    expect(PRICE_CURVE_K_USD).toBe(150_000);
+  });
+
+  it('slows the daily rate smoothly as the price rises', () => {
+    expect(formatDailyRate(maxDailyGrowthAt(0.01))).toBe('1%');
+    expect(formatDailyRate(maxDailyGrowthAt(150_000))).toBe('0.5%');
+    // Far above K the daily increase levels off at $1,500
+    expect(maxDailyGrowthAt(10_000_000) * 10_000_000).toBeCloseTo(1_478, 0);
+    expect(formatDailyRate(maxDailyGrowthAt(10_000_000))).toBe('0.015%');
   });
 
   it('formats with 6 decimals', () => {
