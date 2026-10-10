@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useEffect, useState } from 'react';
-import { formatUniyaaPrice, MAX_DAILY_GROWTH, TERMINAL_PRICE_USD } from '@/utils/priceCalculator';
+import { formatUniyaaPrice, formatDailyRate, maxDailyGrowthAt } from '@/utils/priceCalculator';
 import { ELEVATED_MINT_TIERS } from '@/utils/registration';
 import { getUserLocaleCurrency, formatLocalCurrencyDynamic } from '@/utils/localeCurrency';
 import { getUniyaaPriceMultiFormat, MultiFormatUniyaaPrice } from '@/utils/multiFormatPrice';
@@ -50,7 +50,6 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
   // rate and the FX conversion are derived here.
   const currentPrice = priceUsd;
   const participation = totalUsers > 0 ? Math.min(payersToday / totalUsers, 1) : 0;
-  const isCompounding = currentPrice < TERMINAL_PRICE_USD;
 
   useEffect(() => {
     const price = currentPrice;
@@ -149,9 +148,7 @@ export const PriceDisplay: FC<PriceDisplayProps> = ({ className = '', showStats 
           <p className="text-white text-3xl font-bold" data-testid="mint-rate">{mintingRate}</p>
           <p className="text-purple-300 text-xs mt-1">UNIYAA per mint, once every 30 days</p>
           <p className="text-purple-300 text-xs mt-1" data-testid="current-phase">
-            {isCompounding
-              ? `Growing up to ${MAX_DAILY_GROWTH * 100}% a day`
-              : 'Linear phase: up to $25,000 per 30 days'}
+            {`Growing up to ${formatDailyRate(maxDailyGrowthAt(currentPrice))} a day`}
           </p>
           <p className="text-purple-300 text-xs mt-1" data-testid="participation-today">
             Today: {payersToday.toLocaleString()} paid ({(participation * 100).toFixed(1)}% of users)

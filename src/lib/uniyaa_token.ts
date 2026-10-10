@@ -2442,7 +2442,7 @@ export type UniyaaToken = {
             "name": "tier9StartTimestamp",
             "docs": [
               "Unix timestamp when price_index first reached TERMINAL_PRICE_INDEX",
-              "(start of the linear phase). `0` means it has not been reached yet."
+              "(the $1,000,000 milestone). `0` means it has not been reached yet."
             ],
             "type": "i64"
           },

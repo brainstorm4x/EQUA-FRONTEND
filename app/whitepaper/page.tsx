@@ -527,9 +527,9 @@ export default function WhitepaperPage() {
                 A system that rewards the number of transactions rewards whoever can generate the most of them, and a large network would race through its targets. UNIYAA measures something harder to fake: <strong className="text-white">how many of its people actually use it</strong>. A network of a thousand people and a network of ten million grow at the same pace when the same share of their members take part.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">The Linear Phase</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Slowing Down Gently</h3>
               <p className="text-purple-200 leading-relaxed">
-                When the price reaches <strong className="text-white">$1,000,000</strong>, compounding stops. From then on, growth is linear: at most <strong className="text-white">$25,000 per 30 days</strong>, again in proportion to the share of users who pay each day.
+                The 1% daily maximum applies while the price is small. As the price rises, the maximum shrinks smoothly: at <strong className="text-white">$150,000</strong> it is 0.5% a day, and far above that the daily increase levels off at about <strong className="text-white">$1,500 a day ($45,000 per 30 days)</strong>, always in proportion to the share of users who pay. There is no cut-off point where growth suddenly stops; it simply slows as UNIYAA matures.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">What This Means in Time</h3>
@@ -550,7 +550,7 @@ export default function WhitepaperPage() {
                     <tr className="border-b border-purple-500/20"><td className="p-2">$1</td><td className="p-2">1.3 years</td><td className="p-2">4.2 years</td><td className="p-2">13 years</td></tr>
                     <tr className="border-b border-purple-500/20"><td className="p-2">$100</td><td className="p-2">2.5 years</td><td className="p-2">8.4 years</td><td className="p-2">25 years</td></tr>
                     <tr className="border-b border-purple-500/20"><td className="p-2">$10,000</td><td className="p-2">3.8 years</td><td className="p-2">13 years</td><td className="p-2">38 years</td></tr>
-                    <tr><td className="p-2">$1,000,000</td><td className="p-2">5.1 years</td><td className="p-2">17 years</td><td className="p-2">50 years</td></tr>
+                    <tr><td className="p-2">$1,000,000</td><td className="p-2">6.9 years</td><td className="p-2">23 years</td><td className="p-2">69 years</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -583,7 +583,7 @@ export default function WhitepaperPage() {
                 <li><strong className="text-white">Setting the price</strong>: there is no instruction to write a price, up or down.</li>
                 <li><strong className="text-white">Repeat payments</strong>: each person counts once a day; sending more payments, payments of zero, or payments to yourself adds nothing.</li>
                 <li><strong className="text-white">Admin counter</strong>: the admin-only <code className="text-purple-300">record_transaction</code> instruction updates a statistics counter and does not affect the price.</li>
-                <li><strong className="text-white">Runaway growth</strong>: growth is capped at 1% a day, and at $25,000 per 30 days after $1,000,000.</li>
+                <li><strong className="text-white">Runaway growth</strong>: growth is capped at 1% a day, and the cap shrinks smoothly as the price rises, to about $45,000 per 30 days at most.</li>
               </ul>
             </section>
 
@@ -624,7 +624,7 @@ export default function WhitepaperPage() {
 
               <h4 className="text-lg font-semibold text-white mt-4 mb-2">Restraint in Growth</h4>
               <p className="text-purple-200 leading-relaxed">
-                The price can grow at most 1% a day, and only when people use UNIYAA. After $1,000,000, growth is limited to $25,000 per 30 days. Both limits are enforced by the smart contract. This keeps UNIYAA grounded in slow, steady appreciation—not casino-like volatility.
+                The price can grow at most 1% a day, and only when people use UNIYAA. As the price rises the daily maximum shrinks smoothly, levelling off at about $45,000 per 30 days. Both limits are enforced by the smart contract. This keeps UNIYAA grounded in slow, steady appreciation—not casino-like volatility.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-8 mb-3">UNIYAA Is Not Designed for Speculation or Extraction</h3>
@@ -683,7 +683,7 @@ export default function WhitepaperPage() {
                   <li>Global state tracking: user count, counted payments, today&apos;s payers, and the price</li>
                   <li>User accounts: minting history, referral attribution, locked-token vesting, and the day of each user&apos;s last counted payment</li>
                   <li>Counting rule enforced on-chain by <code className="text-purple-300">transfer_tokens</code>: non-zero amount, sender ≠ recipient, token accounts owned by sender and recipient, and at most one counted payment per sender per UTC day</li>
-                  <li>Price kept on-chain in <code className="text-purple-300">price_index</code> and updated once per UTC day by participation (at most 1%/day; at most $25,000 per 30 days after $1,000,000) — no price oracle, no instruction that writes the price</li>
+                  <li>Price kept on-chain in <code className="text-purple-300">price_index</code> and updated once per UTC day by participation (at most 1%/day × $150,000 / ($150,000 + price), so about $1,500/day at most at high prices) — no price oracle, no instruction that writes the price</li>
                   <li>Admin-gated maintenance: <code className="text-purple-300">record_transaction</code> updates a statistics counter only and cannot move the price</li>
                 </ul>
               </div>
