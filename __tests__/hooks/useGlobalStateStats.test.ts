@@ -17,7 +17,7 @@ const mockGlobalStatePDA = new PublicKey('7Z8vCjHAXJ4zzHvZePTn6bfuRoSZVCcv4uWKh3
 jest.mock('@/lib/constants', () => {
   const { PublicKey } = require('@solana/web3.js');
   return {
-    PROGRAM_ID: new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ'),
+    PROGRAM_ID: new PublicKey('6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed'),
     GLOBAL_STATE_SEED: 'global-state',
   };
 });
@@ -88,7 +88,7 @@ describe('useGlobalStateStats', () => {
       data: mockAccountData,
       executable: false,
       lamports: 5000000,
-      owner: new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ'),
+      owner: new PublicKey('6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed'),
     });
 
     const { result } = renderHook(() => useGlobalStateStats());
@@ -125,7 +125,7 @@ describe('useGlobalStateStats', () => {
       data: mockAccountData,
       executable: false,
       lamports: 5000000,
-      owner: new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ'),
+      owner: new PublicKey('6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed'),
     });
 
     const { result } = renderHook(() => useGlobalStateStats());
@@ -154,7 +154,7 @@ describe('useGlobalStateStats', () => {
       data: mockAccountData,
       executable: false,
       lamports: 5000000,
-      owner: new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ'),
+      owner: new PublicKey('6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed'),
     });
 
     const { result } = renderHook(() => useGlobalStateStats());

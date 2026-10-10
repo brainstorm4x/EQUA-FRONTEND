@@ -153,7 +153,7 @@ export default function HomePage() {
               Read Whitepaper
             </Link>
             <a
-              href="https://explorer.solana.com/address/2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ?cluster=devnet"
+              href="https://explorer.solana.com/address/6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed?cluster=devnet"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-xl transition-all text-lg backdrop-blur-sm"

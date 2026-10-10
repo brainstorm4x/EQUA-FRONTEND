@@ -96,7 +96,7 @@ describe('resolveReferralInput', () => {
 
     it('should handle longer valid public keys', () => {
       // Another valid format public key
-      const validPubkey = '2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ';
+      const validPubkey = '6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed';
       const result = resolveReferralInput(validPubkey, mockRegistry);
 
       expect(result.state).toBe(ReferralState.PUBLIC_KEY);

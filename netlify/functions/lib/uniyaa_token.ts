@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/uniyaa_token.json`.
  */
 export type UniyaaToken = {
-  "address": "2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ",
+  "address": "6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed",
   "metadata": {
     "name": "uniyaaToken",
     "version": "0.1.0",
@@ -1902,8 +1902,8 @@ export type UniyaaToken = {
         "Unlock tokens after 4-year cliff vesting period",
         "",
         "Can only be called after unlock_timestamp has passed",
-        "Transfers all locked tokens from locked ATA to user's ATA",
-        "One-time operation per user"
+        "Transfers all locked tokens from locked ATA to user's ATA.",
+        "Can be repeated: a later locked mint starts a new lock."
       ],
       "discriminator": [
         233,
