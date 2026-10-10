@@ -1,7 +1,7 @@
 import { PublicKey, Connection } from '@solana/web3.js';
 
 // UNIYAA Token Program ID (Token-2022)
-const PROGRAM_ID = new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ');
+const PROGRAM_ID = new PublicKey('6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed');
 const MINT_SEED = 'uniyaa-mint';
 
 async function checkMint() {

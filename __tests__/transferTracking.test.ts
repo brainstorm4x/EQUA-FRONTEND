@@ -19,7 +19,7 @@ import {
 // Mock the program module to provide known PDA values
 jest.mock('@/lib/program', () => {
   const { PublicKey } = jest.requireActual('@solana/web3.js');
-  const PROGRAM_ID = new PublicKey('2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ');
+  const PROGRAM_ID = new PublicKey('6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed');
   const MINT_AUTHORITY_PDA = new PublicKey('HGkf8CpCU8GZbD6JS2WcYeJCdJnG7qAh6TiDErUMktVC');
   const GLOBAL_STATE_PDA = new PublicKey('F6HyQcuQfMc1RuSCxq5dAYNoERMkdyAt65fUPajudPpc');
   
@@ -677,7 +677,7 @@ describe('transferTracking', () => {
                     source: 'SourceAddr1',
                     destination: 'DestAddr1',
                     amount: '1000000',
-                    authority: '2iuL9YEKGJtdFbPAMkGz3i8huSJZuUih3yonjpCPNQqQ', // Program ID
+                    authority: '6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed', // Program ID
                   },
                 },
               },
