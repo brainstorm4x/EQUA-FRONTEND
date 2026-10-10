@@ -214,8 +214,8 @@ describe('Home/Landing Page', () => {
     it('should display program ID information', () => {
       render(<HomePage />);
       
-      // The program ID is displayed in shortened form
-      expect(screen.getByText('B2zocF...kDfx2')).toBeInTheDocument();
+      // The configured program ID is displayed in shortened form
+      expect(screen.getByText('6UgzWK...dLZed')).toBeInTheDocument();
     });
   });
 

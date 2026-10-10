@@ -7,6 +7,10 @@ import { AppDownload } from '@/components/AppDownload';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
 import { isUserRegistered } from '@/utils/registrationCheck';
+import { PROGRAM_ID } from '@/lib/constants';
+
+const programId = PROGRAM_ID.toBase58();
+const PROGRAM_ID_SHORT = `${programId.slice(0, 6)}...${programId.slice(-5)}`;
 
 // Loading placeholder components
 const WalletButtonLoading = () => (
@@ -218,7 +222,7 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="text-purple-300 text-sm mb-2">Program ID</p>
-                <p className="text-white text-sm font-mono">B2zocF...kDfx2</p>
+                <p className="text-white text-sm font-mono" title={programId}>{PROGRAM_ID_SHORT}</p>
               </div>
             </div>
           </div>
