@@ -273,7 +273,7 @@ export const MintTierCard: FC<MintTierCardProps> = ({ userNumber, totalMints }) 
       </div>
 
       {/* Locked Token Information (Tiers 1-3 only) */}
-      {hasLocking && lockedTokenData && !lockedTokenData.isUnlocked && (
+      {hasLocking && lockedTokenData && !lockedTokenData.isUnlocked && !lockedTokenData.lockedAmount.isZero() && (
         <div className="mt-4 p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-white font-semibold flex items-center gap-2">
