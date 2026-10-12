@@ -1,14 +1,15 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * E2E Test: Registration as Individual
+ * E2E Test: Registration
  * 
- * Tests the registration flow for an individual user with the new user_type UI.
+ * Tests the registration flow. Every account is the same kind: there is no
+ * account type to choose and no referral field.
  * 
  * Note: This test assumes a wallet is connected. In practice, it will be skipped
  * until wallet connection can be automated.
  */
-test.describe('Registration - Individual', () => {
+test.describe('Registration', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/mint');
   });
@@ -31,64 +32,21 @@ test.describe('Registration - Individual', () => {
     }
   });
   
-  test('should display Individual and Business account type options', async ({ page }) => {
-    // Look for account type selection cards
-    const individualCard = page.locator('button:has-text("Individual")');
-    const businessCard = page.locator('button:has-text("Business")');
-    
-    // Check if account type selection is visible
-    const individualVisible = await individualCard.isVisible({ timeout: 5000 }).catch(() => false);
-    const businessVisible = await businessCard.isVisible({ timeout: 5000 }).catch(() => false);
-    
-    if (individualVisible && businessVisible) {
-      await expect(individualCard).toBeVisible();
-      await expect(businessCard).toBeVisible();
-      
-      // Verify Individual is selected by default
-      await expect(individualCard).toHaveClass(/border-purple-500/);
-    }
-  });
-  
-  test('should allow selecting Individual account type', async ({ page }) => {
-    // Wait for account type cards
-    const individualCard = page.locator('button:has-text("Individual")');
-    
-    const isVisible = await individualCard.isVisible({ timeout: 5000 }).catch(() => false);
-    
+  test('should not offer an account type or a referral field', async ({ page }) => {
+    const registrationHeading = page.locator('h3:has-text("Register Account")');
+    const isVisible = await registrationHeading.isVisible({ timeout: 5000 }).catch(() => false);
+
     if (isVisible) {
-      // Click Individual card
-      await individualCard.click();
-      
-      // Verify it's selected (should have purple border and checkmark)
-      await expect(individualCard).toHaveClass(/border-purple-500/);
-      await expect(individualCard.locator('text=✓')).toBeVisible();
+      await expect(page.locator('button:has-text("Business")')).toHaveCount(0);
+      await expect(page.locator('input[data-testid="referral-input"]')).toHaveCount(0);
     }
   });
   
-  test('should show referral input field', async ({ page }) => {
-    // Look for referral input
-    const referralInput = page.locator('input[data-testid="referral-input"]');
-    
-    const isVisible = await referralInput.isVisible({ timeout: 5000 }).catch(() => false);
-    
-    if (isVisible) {
-      await expect(referralInput).toBeVisible();
-      await expect(referralInput).toHaveAttribute('placeholder', /referral code/i);
-    }
-  });
-  
-  test.skip('should successfully register as Individual', async ({ page }) => {
+  test.skip('should successfully register', async ({ page }) => {
     // TODO: This test requires:
     // 1. Wallet connection
     // 2. Sufficient SOL balance
     // 3. Not already registered
-    // 4. Optional: Valid referral code (for users 101+)
-    
-    // Select Individual
-    await page.click('button:has-text("Individual")');
-    
-    // Fill referral code if needed (optional for first 100 users)
-    // await page.fill('input[data-testid="referral-input"]', 'ValidCode1');
     
     // Click register button
     await page.click('button:has-text("Register Now")');
@@ -125,13 +83,10 @@ test.describe('Registration - Individual', () => {
  *    - Network connectivity issues
  *    - Transaction failures
  * 
- * 3. Referral Requirements: After user 100, referral is required.
- *    Tests need to account for this threshold.
- * 
- * 4. Transaction Timing: Blockchain transactions can take 10-30 seconds,
+ * 3. Transaction Timing: Blockchain transactions can take 10-30 seconds,
  *    requiring longer timeouts than typical UI tests.
  * 
- * 5. Test Data: Need fresh wallets with SOL for each test run,
+ * 4. Test Data: Need fresh wallets with SOL for each test run,
  *    making automated testing on Devnet challenging.
  * 
  * Recommended Approach:

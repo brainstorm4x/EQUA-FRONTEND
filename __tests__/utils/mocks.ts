@@ -2,63 +2,9 @@
  * Mock data and utilities for testing
  */
 
-import { ReferralRegistry, ReferralCodeEntry } from '@/types/referral';
 
 const NOW = Math.floor(Date.now() / 1000);
 const CODE_TTL_SECONDS = 900; // 15 minutes
-
-/**
- * Generate a mock referral code entry
- */
-export function createMockReferralEntry(
-  overrides?: Partial<ReferralCodeEntry>
-): ReferralCodeEntry {
-  return {
-    referrer_pubkey: '11111111111111111111111111111111',
-    created_at: NOW - 60,
-    expires_at: NOW + CODE_TTL_SECONDS - 60,
-    used: false,
-    ...overrides,
-  };
-}
-
-/**
- * Mock referral registry with various states for testing
- */
-export const MOCK_REFERRAL_REGISTRY: ReferralRegistry = {
-  // Valid code - not used, not expired
-  ValidCode1: createMockReferralEntry({
-    referrer_pubkey: '11111111111111111111111111111112',
-  }),
-  
-  // Used code
-  UsedCode01: createMockReferralEntry({
-    referrer_pubkey: '22222222222222222222222222222222',
-    used: true,
-  }),
-  
-  // Expired code
-  ExpiredCd1: createMockReferralEntry({
-    referrer_pubkey: '33333333333333333333333333333333',
-    created_at: NOW - CODE_TTL_SECONDS - 60,
-    expires_at: NOW - 60,
-  }),
-  
-  // About to expire (1 minute left)
-  Expiring01: createMockReferralEntry({
-    referrer_pubkey: '44444444444444444444444444444444',
-    created_at: NOW - CODE_TTL_SECONDS + 60,
-    expires_at: NOW + 60,
-  }),
-  
-  // Multiple valid codes for different users
-  ValidCode2: createMockReferralEntry({
-    referrer_pubkey: '55555555555555555555555555555555',
-  }),
-  ValidCode3: createMockReferralEntry({
-    referrer_pubkey: '66666666666666666666666666666666',
-  }),
-};
 
 /**
  * Mock valid Solana public keys for testing
@@ -106,7 +52,6 @@ export const MOCK_ERRORS = {
   INSUFFICIENT_BALANCE: new Error('Insufficient SOL balance'),
   INVALID_ACCOUNT: new Error('Account does not exist'),
   TRANSACTION_FAILED: new Error('Transaction failed'),
-  REGISTRY_FETCH_FAILED: new Error('Failed to fetch referral registry'),
 };
 
 /**
@@ -151,22 +96,4 @@ export function mockRpcError(error: Error) {
  */
 export function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-/**
- * Mock fetch implementation for registry
- */
-export function mockFetchReferralRegistry(
-  registry: ReferralRegistry = MOCK_REFERRAL_REGISTRY
-): jest.Mock {
-  return jest.fn().mockResolvedValue(registry);
-}
-
-/**
- * Mock fetch implementation that fails
- */
-export function mockFetchReferralRegistryError(
-  error: Error = MOCK_ERRORS.REGISTRY_FETCH_FAILED
-): jest.Mock {
-  return jest.fn().mockRejectedValue(error);
 }

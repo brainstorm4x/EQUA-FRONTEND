@@ -82,7 +82,6 @@ export default function PrivacyPage() {
                 <li><strong className="text-white">Wallet Addresses:</strong> Your Solana wallet address is publicly visible on the blockchain</li>
                 <li><strong className="text-white">Transaction History:</strong> All UNIYAA minting, transfers, and transactions are permanently recorded on-chain</li>
                 <li><strong className="text-white">Token Balances:</strong> Your UNIYAA token balance is publicly queryable via Solana Explorer or RPC endpoints</li>
-                <li><strong className="text-white">Referral Relationships:</strong> Referral connections between users are stored on-chain for reward distribution</li>
                 <li><strong className="text-white">Minting Attempts:</strong> The number of minting attempts and cooldown periods are tracked on-chain</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4 italic">
@@ -126,7 +125,6 @@ export default function PrivacyPage() {
               </p>
               <ul className="list-disc list-inside text-purple-200 space-y-2 mt-4">
                 <li>Processing UNIYAA token minting and transfers</li>
-                <li>Recording who invited whom (referral attribution)</li>
                 <li>Enforcing cooldown periods and minting limits</li>
                 <li>Counting each person&apos;s first payment of the day for the price model</li>
               </ul>

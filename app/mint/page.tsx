@@ -37,11 +37,10 @@ import { formatUniyaaBalance, decimalToRaw } from '@/utils/tokenFormat';
 import { RegistrationForm, RegistrationMetadata } from '@/components/RegistrationForm';
 import { MintTierCard } from '@/components/MintTierCard';
 import {
-  AccountType,
   MIN_SOL_BALANCE,
   hasMinimumSolBalance,
   getUserMintTier,
-  accountTypeToUserType,
+  UserType,
 } from '@/utils/registration';
 import { safeParseTimestamp } from '@/utils/safeAccountParsing';
 import { isUserAccountRegisteredOnchain } from '@/utils/onchainRegistration';
@@ -695,26 +694,6 @@ export default function MintPage() {
     };
   }, [publicKey, checkUserRegistration]);
 
-  // Validate referrer address on-chain (blockchain is source of truth)
-  const validateReferrer = useCallback(async (referrerAddress: string): Promise<boolean> => {
-    if (!connection) return false;
-    
-    try {
-      const referrerPubkey = new PublicKey(referrerAddress);
-      // Derive the UserAccount PDA for the referrer's wallet
-      // The referrerAddress is the wallet public key (authority), not the PDA itself
-      const [referrerUserAccountPDA] = getUserAccountPDA(referrerPubkey);
-      
-      // Check if the referrer's UserAccount PDA exists on-chain
-      // This is the source of truth - no database checks
-      const accountInfo = await connection.getAccountInfo(referrerUserAccountPDA);
-      // Check that account exists and has sufficient data to be a UserAccount (136 bytes)
-      return accountInfo !== null && accountInfo.data.length >= 136;
-    } catch {
-      return false;
-    }
-  }, [connection]);
-
   /**
    * Check if locked token ATA exists (migration support for pre-PR#198 users)
    * 
@@ -745,10 +724,8 @@ export default function MintPage() {
     }
   }, [publicKey, connection, mintPDA]);
 
-  const handleRegisterWithForm = async (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => {
+  const handleRegisterWithForm = async (metadata?: RegistrationMetadata) => {
     console.log('🚀 [Registration] Starting registration process...');
-    console.log('  📍 Account type:', accountType);
-    console.log('  📍 Referrer:', referrer || 'None');
     console.log('  📍 Wallet connected:', wallet.connected);
     console.log('  📍 Wallet name:', wallet.wallet?.adapter?.name || 'Unknown');
     console.log('  📍 Public key:', publicKey?.toBase58() || 'None');
@@ -778,8 +755,6 @@ export default function MintPage() {
       console.log('📝 [Registration] Wallet info:');
       console.log('  - Wallet connected:', wallet.connected);
       console.log('  - Public key:', publicKey.toBase58());
-      console.log('  - Account type:', accountType);
-      console.log('  - Referrer:', referrer || 'None');
       console.log('  - Wallet has signTransaction:', !!wallet.signTransaction);
       console.log('  - Wallet has sendTransaction:', !!wallet.sendTransaction);
       
@@ -866,46 +841,15 @@ export default function MintPage() {
       const [userMetadataPDA] = getUserMetadataPDA(publicKey);
       console.log('- User Metadata (PDA):', userMetadataPDA.toBase58());
 
-      // Determine referral accounts - derive PDAs if referrer provided
-      let referralAccountPubkey: PublicKey;
-      let referrerPubkey: PublicKey;
-      let referrerMetadataPubkey: PublicKey;
-      
-      if (referrer) {
-        try {
-          // referrer is the wallet address, derive the user_account PDA and user_metadata PDA
-          referrerPubkey = new PublicKey(referrer);
-          const [referrerUserAccountPDA] = getUserAccountPDA(referrerPubkey);
-          const [referrerUserMetadataPDA] = getUserMetadataPDA(referrerPubkey);
-          referralAccountPubkey = referrerUserAccountPDA;
-          referrerMetadataPubkey = referrerUserMetadataPDA;
-          
-          console.log('- Referrer:', referrerPubkey.toBase58());
-          console.log('- Referral Account (PDA):', referralAccountPubkey.toBase58());
-          console.log('- Referrer Metadata (PDA):', referrerMetadataPubkey.toBase58());
-        } catch {
-          console.log('- Invalid referrer address, using self-referral');
-          // Invalid referrer: use user's own PDAs to avoid ConstraintMut error
-          // Anchor program won't mutate when referrer param is PublicKey.default
-          referrerPubkey = PublicKey.default;
-          referralAccountPubkey = userAccountPDA;
-          referrerMetadataPubkey = userMetadataPDA;
-        }
-      } else {
-        // No referral - use user's own PDAs for referral_account and referrer_metadata
-        // This satisfies #[account(mut)] constraint without causing ConstraintMut error
-        // Anchor program won't mutate these when referrer param is PublicKey.default
-        referrerPubkey = PublicKey.default;
-        referralAccountPubkey = userAccountPDA;
-        referrerMetadataPubkey = userMetadataPDA;
-        console.log('- No referral provided (self-referral)');
-      }
+      // Every account is the same kind and has no referrer: the program
+      // still takes referral accounts, so pass the user's own PDAs (it skips
+      // referral logic when referral is PublicKey.default).
+      const referrerPubkey = PublicKey.default;
+      const referralAccountPubkey = userAccountPDA;
+      const referrerMetadataPubkey = userMetadataPDA;
+      const userType = UserType.Individual;
 
-      // Convert account type to user_type enum
-      const userType = accountTypeToUserType(accountType);
-      console.log('- User Type:', userType, `(${accountType})`);
-
-      // Derive business registry PDA (global account for business registrations)
+      // Derive business registry PDA (still a required account of initialize_user)
       const [businessRegistryPDA] = getBusinessRegistryPDA();
       console.log('- Business Registry (PDA):', businessRegistryPDA.toBase58());
 
@@ -1080,7 +1024,7 @@ export default function MintPage() {
           .initializeUser(
             referrerPubkey ?? PublicKey.default,  // referral: PublicKey
             new anchor.BN(now),                   // mint_start: i64
-            accountTypeToUserType(accountType)    // user_type: u8
+            userType                              // user_type: u8
           )
           .accounts({
             userAccount: userAccountPDA,
@@ -1301,7 +1245,7 @@ export default function MintPage() {
       }
       // Simulation failures
       else if (errorMessage.includes('Simulation failed') || errorMessage.includes('simulation failed')) {
-        errorMessage = '❌ Transaction simulation failed. This may be due to insufficient SOL or invalid referral code. Please check and try again.';
+        errorMessage = '❌ Transaction simulation failed. This may be due to insufficient SOL. Please check and try again.';
       }
       // Constraint violations
       else if (errorMessage.includes('ConstraintMut') || errorMessage.includes('2000')) {
@@ -1332,7 +1276,7 @@ export default function MintPage() {
 
   // Keep the old handleRegister for backward compatibility
   const handleRegister = async () => {
-    handleRegisterWithForm('individual', null);
+    handleRegisterWithForm();
   };
 
   /**
@@ -2181,7 +2125,6 @@ export default function MintPage() {
                   walletBalance={walletBalance}
                   onRegister={handleRegisterWithForm}
                   isLoading={isLoading}
-                  validateReferrer={validateReferrer}
                 />
               </>
             ) : (
