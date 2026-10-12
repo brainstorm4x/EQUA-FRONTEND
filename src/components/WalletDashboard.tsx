@@ -37,27 +37,6 @@ interface WalletDashboardProps {
 }
 
 
-// Shared constants for referral messages
-const UNIYAA_SHARE_BASE_URL = 'https://uniyaa.live/mint';
-
-/**
- * Generates a referral message for sharing
- * @param pubkeyBase58 - The public key in base58 format
- * @returns The formatted referral message
- */
-function generateReferralMessage(pubkeyBase58: string): string {
-  return `Join UNIYAA Token - A revolutionary token system on Solana with price appreciation! Use my referral: ${pubkeyBase58}\n\nGet started: ${UNIYAA_SHARE_BASE_URL}`;
-}
-
-/**
- * Generates a referral URL for sharing
- * @param pubkeyBase58 - The public key in base58 format
- * @returns The referral URL with ref parameter
- */
-function generateReferralUrl(pubkeyBase58: string): string {
-  return `${UNIYAA_SHARE_BASE_URL}?ref=${pubkeyBase58}`;
-}
-
 export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) => {
   const { publicKey, connected, signTransaction } = useWallet();
   const { connection } = useConnection();
@@ -69,9 +48,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
   const [isLoading, setIsLoading] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [shareMessage, setShareMessage] = useState('');
   
   // ✅ Registration check state
   const [isRegistered, setIsRegistered] = useState(false);
@@ -107,26 +83,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
     
     checkRegistration();
   }, [publicKey, connection]);
-
-
-  // Copy public key to clipboard
-  const copyPublicKey = useCallback(async () => {
-    if (!publicKey) return;
-    
-    try {
-      await navigator.clipboard.writeText(publicKey.toBase58());
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
-    }
-  }, [publicKey]);
-
-  // Share referral - opens modal
-  const shareReferral = useCallback(() => {
-    if (!publicKey) return;
-    setShowShareModal(true);
-  }, [publicKey]);
 
 
   if (!connected || !publicKey) {
@@ -181,45 +137,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         </button>
       </div>
 
-      {/* Referral Card */}
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-purple-500/30">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-white text-lg font-bold flex items-center gap-2">
-            <span className="text-2xl">🤝</span>
-            Invite Friends
-          </h3>
-        </div>
-        <p className="text-purple-200 text-sm mb-4">
-          Invite friends to UNIYAA with your referral link.
-        </p>
-        
-        <div className="bg-black/20 rounded-xl p-3 mb-4">
-          <p className="text-purple-300 text-xs mb-1">Your Referral Key</p>
-          <p className="text-white text-xs font-mono break-all">
-            {publicKey.toBase58()}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={copyPublicKey}
-            className="bg-purple-500/30 hover:bg-purple-500/50 text-white py-3 px-4 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2"
-          >
-            {copied ? '✅ Copied!' : '📋 Copy Key'}
-          </button>
-          <button
-            onClick={shareReferral}
-            className="bg-green-500/30 hover:bg-green-500/50 text-white py-3 px-4 rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2"
-          >
-            📲 Share
-          </button>
-        </div>
-        
-        {shareMessage && (
-          <p className="text-green-400 text-sm text-center mt-3">{shareMessage}</p>
-        )}
-      </div>
-
       {/* Send Modal */}
       {showSendModal && (
         <SendModal
@@ -245,13 +162,6 @@ export const WalletDashboard: FC<WalletDashboardProps> = ({ className = '' }) =>
         />
       )}
 
-      {/* Share Modal */}
-      {showShareModal && (
-        <ShareModal
-          publicKey={publicKey}
-          onClose={() => setShowShareModal(false)}
-        />
-      )}
     </div>
   );
 };
@@ -1128,157 +1038,6 @@ const ReceiveModal: FC<ReceiveModalProps> = ({ publicKey, onClose }) => {
               {publicKey.toBase58()}
             </p>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Share Modal Component
-interface ShareModalProps {
-  publicKey: PublicKey;
-  onClose: () => void;
-}
-
-const ShareModal: FC<ShareModalProps> = ({ publicKey, onClose }) => {
-  const [copied, setCopied] = useState(false);
-  const [shareMessage, setShareMessage] = useState('');
-  
-  const pubkeyBase58 = publicKey.toBase58();
-  const referralMessage = generateReferralMessage(pubkeyBase58);
-  const referralUrl = generateReferralUrl(pubkeyBase58);
-  const encodedMessage = encodeURIComponent(referralMessage);
-  const encodedUrl = encodeURIComponent(referralUrl);
-  
-  // Share via different platforms
-  const shareOptions = [
-    {
-      name: 'WhatsApp',
-      icon: '💬',
-      url: `https://wa.me/?text=${encodedMessage}`,
-      color: 'bg-green-600 hover:bg-green-700',
-    },
-    {
-      name: 'Telegram',
-      icon: '✈️',
-      url: `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent('Join UNIYAA Token - A revolutionary token system on Solana! Use my referral: ' + pubkeyBase58)}`,
-      color: 'bg-blue-500 hover:bg-blue-600',
-    },
-    {
-      name: 'Email',
-      icon: '📧',
-      url: `mailto:?subject=${encodeURIComponent('Join UNIYAA Token')}&body=${encodedMessage}`,
-      color: 'bg-red-500 hover:bg-red-600',
-    },
-    {
-      name: 'X (Twitter)',
-      icon: '🐦',
-      url: `https://twitter.com/intent/tweet?text=${encodedMessage}`,
-      color: 'bg-slate-700 hover:bg-slate-800',
-    },
-    {
-      name: 'SMS',
-      icon: '📱',
-      url: `sms:?body=${encodedMessage}`,
-      color: 'bg-purple-500 hover:bg-purple-600',
-    },
-  ];
-
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(referralMessage);
-      setCopied(true);
-      setShareMessage('Message copied to clipboard!');
-      setTimeout(() => {
-        setCopied(false);
-        setShareMessage('');
-      }, 2000);
-    } catch (err) {
-      setShareMessage('Failed to copy');
-    }
-  };
-
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Join UNIYAA Token',
-          text: referralMessage,
-          url: referralUrl,
-        });
-      } catch (err) {
-        // User cancelled
-      }
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-purple-900 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-white text-xl font-bold flex items-center gap-2">
-            <span className="text-2xl">📲</span>
-            Share Your Referral
-          </h3>
-          <button 
-            onClick={onClose}
-            className="text-purple-300 hover:text-white text-2xl"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="text-center">
-          <p className="text-purple-200 text-sm mb-6">
-            Share your referral link to invite friends to UNIYAA.
-          </p>
-
-          {/* Referral Link Preview */}
-          <div className="bg-black/20 rounded-xl p-4 mb-6">
-            <p className="text-purple-300 text-xs mb-2">Your Referral Link</p>
-            <p className="text-white text-sm font-mono break-all">
-              https://uniyaa.live/mint?ref={publicKey.toBase58().slice(0, 8)}...
-            </p>
-          </div>
-
-          {/* Share Options Grid */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {shareOptions.map((option) => (
-              <a
-                key={option.name}
-                href={option.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`${option.color} text-white font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2`}
-              >
-                <span className="text-xl">{option.icon}</span>
-                {option.name}
-              </a>
-            ))}
-            
-            {/* Native Share (if supported) */}
-            {typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'share' in navigator && (
-              <button
-                onClick={handleNativeShare}
-                className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 col-span-2"
-              >
-                <span className="text-xl">🔗</span>
-                More Options
-              </button>
-            )}
-          </div>
-
-          {/* Copy Button */}
-          <button
-            onClick={copyToClipboard}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all mb-4"
-          >
-            {copied ? '✅ Copied!' : '📋 Copy Message'}
-          </button>
-
-          {shareMessage && (
-            <p className="text-green-400 text-sm">{shareMessage}</p>
-          )}
         </div>
       </div>
     </div>

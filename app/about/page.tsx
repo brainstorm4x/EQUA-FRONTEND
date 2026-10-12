@@ -89,7 +89,7 @@ export default function AboutPage() {
                 UNIYAA&apos;s fundamental design principle is elegant: <strong className="text-white">token value appreciation is directly linked to genuine economic activity</strong>. Every time someone uses UNIYAA to buy something, sell something, or transfer value, the entire network benefits through measurable price appreciation.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Minting Tiers and Referral System</h3>
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Minting Tiers</h3>
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
                 <h4 className="text-lg font-semibold text-white mb-3">User-Based Minting Tiers</h4>
                 <p className="text-purple-200 leading-relaxed mb-3">
@@ -106,9 +106,9 @@ export default function AboutPage() {
               </div>
 
               <div className="bg-white/5 rounded-xl p-6 mt-4 border border-purple-500/20">
-                <h4 className="text-lg font-semibold text-white mb-3">Referrals</h4>
+                <h4 className="text-lg font-semibold text-white mb-3">One Kind of Account</h4>
                 <p className="text-purple-200 leading-relaxed">
-                  <strong className="text-white">Referrals are always optional.</strong> When you sign up with someone&apos;s referral link, UNIYAA records who invited you. Referrals do not earn credits or bonus mints.
+                  <strong className="text-white">Everyone signs up the same way.</strong> There are no separate business accounts and no referral codes. A shop accepts UNIYAA with the same account as anyone else.
                 </p>
               </div>
 

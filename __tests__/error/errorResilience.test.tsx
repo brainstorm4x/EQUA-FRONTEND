@@ -3,35 +3,14 @@
  * Validates handling of:
  * - Implausible user counts
  * - Network failures
- * - Registry fetch failures
  * - Rapid state changes
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { RegistrationForm } from '@/components/RegistrationForm';
-import { ReferralState } from '@/types/referral';
 import { MOCK_USER_COUNTS } from '../utils/mocks';
-
-// Mock the referral resolution hook with controllable behavior
-let mockReferralHook: any;
-
-jest.mock('@/hooks/useReferralResolution', () => ({
-  useReferralResolution: jest.fn((input: string) => {
-    if (mockReferralHook) {
-      return mockReferralHook(input);
-    }
-    return {
-      status: ReferralState.IDLE,
-      referrerPubkey: null,
-      error: null,
-      expiresInSeconds: null,
-      isLoading: false,
-      isValid: false,
-    };
-  }),
-}));
 
 describe('Error Resilience and Edge Cases', () => {
   const defaultProps = {
@@ -43,7 +22,6 @@ describe('Error Resilience and Edge Cases', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockReferralHook = null;
   });
 
   describe('Implausible User Count Handling', () => {
@@ -63,7 +41,7 @@ describe('Error Resilience and Edge Cases', () => {
       expect(userCountDisplay).toBeInTheDocument();
     });
 
-    it('should allow registration with no referral for implausible user count', () => {
+    it('should allow registration for implausible user count', () => {
       render(
         <RegistrationForm
           {...defaultProps}
@@ -71,7 +49,6 @@ describe('Error Resilience and Edge Cases', () => {
         />
       );
 
-      // Referrals are optional at every tier, so the button stays enabled.
       const registerButton = screen.getByTestId('register-button');
       expect(registerButton).not.toBeDisabled();
     });
@@ -95,7 +72,6 @@ describe('Error Resilience and Edge Cases', () => {
         />
       );
 
-      // Referrals are optional at every tier, including very large user counts.
       const registerButton = screen.getByTestId('register-button');
       expect(registerButton).not.toBeDisabled();
     });
@@ -112,9 +88,6 @@ describe('Error Resilience and Edge Cases', () => {
       );
 
       expect(screen.getByTestId('register-button')).toBeInTheDocument();
-      
-      // Referral field is labelled optional at every tier
-      expect(screen.getByText(/optional/i)).toBeInTheDocument();
     });
 
     it('should not block registration when user count is unavailable', () => {
@@ -127,216 +100,6 @@ describe('Error Resilience and Edge Cases', () => {
 
       const registerButton = screen.getByTestId('register-button');
       expect(registerButton).not.toBeDisabled();
-    });
-  });
-
-  describe('Referral Registry Fetch Failure', () => {
-    it('should show recoverable error state when registry fails to load', async () => {
-      mockReferralHook = (input: string) => {
-        if (!input.trim()) {
-          return {
-            status: ReferralState.IDLE,
-            referrerPubkey: null,
-            error: null,
-            expiresInSeconds: null,
-            isLoading: false,
-            isValid: false,
-          };
-        }
-        
-        return {
-          status: ReferralState.IDLE,
-          referrerPubkey: null,
-          error: 'Unable to validate referral codes. Please try again later.',
-          expiresInSeconds: null,
-          isLoading: false,
-          isValid: false,
-        };
-      };
-
-      render(<RegistrationForm {...defaultProps} />);
-
-      const referralInput = screen.getByTestId('referral-input');
-      fireEvent.change(referralInput, { target: { value: 'TestCode12' } });
-
-      // Should still render without crashing
-      expect(referralInput).toBeInTheDocument();
-    });
-
-    it('should allow retry after registry fetch failure', async () => {
-      let shouldFail = true;
-      
-      mockReferralHook = (input: string) => {
-        if (!input.trim()) {
-          return {
-            status: ReferralState.IDLE,
-            referrerPubkey: null,
-            error: null,
-            expiresInSeconds: null,
-            isLoading: false,
-            isValid: false,
-          };
-        }
-        
-        if (shouldFail) {
-          return {
-            status: ReferralState.IDLE,
-            referrerPubkey: null,
-            error: 'Unable to validate referral codes. Please try again later.',
-            expiresInSeconds: null,
-            isLoading: false,
-            isValid: false,
-          };
-        }
-        
-        return {
-          status: ReferralState.VALID,
-          referrerPubkey: '11111111111111111111111111111112',
-          error: null,
-          expiresInSeconds: 840,
-          isLoading: false,
-          isValid: true,
-        };
-      };
-
-      render(<RegistrationForm {...defaultProps} />);
-
-      const referralInput = screen.getByTestId('referral-input');
-      
-      // First attempt - fails
-      fireEvent.change(referralInput, { target: { value: 'ValidCode1' } });
-      
-      // Simulate retry - succeeds
-      shouldFail = false;
-      fireEvent.change(referralInput, { target: { value: '' } });
-      fireEvent.change(referralInput, { target: { value: 'ValidCode1' } });
-      
-      await waitFor(() => {
-        expect(referralInput).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('Rapid State Changes', () => {
-    it('should handle rapid referral input changes', async () => {
-      mockReferralHook = (input: string) => {
-        const trimmed = input.trim();
-        
-        if (!trimmed) {
-          return {
-            status: ReferralState.IDLE,
-            referrerPubkey: null,
-            error: null,
-            expiresInSeconds: null,
-            isLoading: false,
-            isValid: false,
-          };
-        }
-        
-        // Always show loading for any input to test debouncing
-        return {
-          status: ReferralState.LOADING,
-          referrerPubkey: null,
-          error: null,
-          expiresInSeconds: null,
-          isLoading: true,
-          isValid: false,
-        };
-      };
-
-      render(<RegistrationForm {...defaultProps} />);
-
-      const referralInput = screen.getByTestId('referral-input');
-
-      // Rapid typing simulation
-      const inputs = ['V', 'Va', 'Val', 'Vali', 'Valid', 'ValidC', 'ValidCo', 'ValidCod', 'ValidCode', 'ValidCode1'];
-      
-      for (const input of inputs) {
-        fireEvent.change(referralInput, { target: { value: input } });
-      }
-
-      // Should handle all changes without crashing
-      expect(referralInput).toHaveValue('ValidCode1');
-    });
-  });
-
-  describe('Clearing Referral Input', () => {
-    it('should reset all indicators when input is cleared', async () => {
-      mockReferralHook = (input: string) => {
-        const trimmed = input.trim();
-        
-        if (!trimmed) {
-          return {
-            status: ReferralState.IDLE,
-            referrerPubkey: null,
-            error: null,
-            expiresInSeconds: null,
-            isLoading: false,
-            isValid: false,
-          };
-        }
-        
-        if (trimmed === 'ValidCode1') {
-          return {
-            status: ReferralState.VALID,
-            referrerPubkey: '11111111111111111111111111111112',
-            error: null,
-            expiresInSeconds: 840,
-            isLoading: false,
-            isValid: true,
-          };
-        }
-        
-        return {
-          status: ReferralState.IDLE,
-          referrerPubkey: null,
-          error: null,
-          expiresInSeconds: null,
-          isLoading: false,
-          isValid: false,
-        };
-      };
-
-      render(<RegistrationForm {...defaultProps} />);
-
-      const referralInput = screen.getByTestId('referral-input');
-
-      // Enter valid code
-      fireEvent.change(referralInput, { target: { value: 'ValidCode1' } });
-
-      await waitFor(() => {
-        expect(referralInput).toHaveClass('border-green-500');
-      });
-
-      // Clear input
-      fireEvent.change(referralInput, { target: { value: '' } });
-
-      await waitFor(() => {
-        expect(referralInput).not.toHaveClass('border-green-500');
-        expect(referralInput).not.toHaveClass('border-red-500');
-      });
-    });
-
-    it('should maintain form state when clearing referral input', async () => {
-      mockReferralHook = (input: string) => ({
-        status: input ? ReferralState.LOADING : ReferralState.IDLE,
-        referrerPubkey: null,
-        error: null,
-        expiresInSeconds: null,
-        isLoading: !!input,
-        isValid: false,
-      });
-
-      render(<RegistrationForm {...defaultProps} />);
-
-      const referralInput = screen.getByTestId('referral-input');
-
-      // Enter and clear referral
-      fireEvent.change(referralInput, { target: { value: 'test' } });
-      fireEvent.change(referralInput, { target: { value: '' } });
-
-      // Form should still be in valid state
-      expect(referralInput).toBeInTheDocument();
     });
   });
 

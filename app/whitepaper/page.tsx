@@ -395,7 +395,7 @@ export default function WhitepaperPage() {
                 <li>Receiving is unlimited and never restricted.</li>
               </ul>
               <p className="text-purple-200 leading-relaxed mt-4">
-                <strong className="text-white">Referrals are optional</strong> and simply record who invited whom. They earn no credits, tokens, or bonus mints.
+                <strong className="text-white">Everyone has the same kind of account.</strong> There are no business accounts and no referrals; a shop receives payments with an ordinary account.
               </p>
             </section>
 
@@ -681,7 +681,7 @@ export default function WhitepaperPage() {
                 <h4 className="text-lg font-semibold text-white mb-3">Smart Contract Architecture:</h4>
                 <ul className="list-disc list-inside text-purple-200 space-y-2">
                   <li>Global state tracking: user count, counted payments, today&apos;s payers, and the price</li>
-                  <li>User accounts: minting history, referral attribution, locked-token vesting, and the day of each user&apos;s last counted payment</li>
+                  <li>User accounts: minting history, locked-token vesting, and the day of each user&apos;s last counted payment</li>
                   <li>Counting rule enforced on-chain by <code className="text-purple-300">transfer_tokens</code>: non-zero amount, sender ≠ recipient, token accounts owned by sender and recipient, and at most one counted payment per sender per UTC day</li>
                   <li>Price kept on-chain in <code className="text-purple-300">price_index</code> and updated once per UTC day by participation (at most 1%/day × $150,000 / ($150,000 + price), so about $1,500/day at most at high prices) — no price oracle, no instruction that writes the price</li>
                   <li>Admin-gated maintenance: <code className="text-purple-300">record_transaction</code> updates a statistics counter only and cannot move the price</li>
@@ -706,7 +706,7 @@ export default function WhitepaperPage() {
                   <li>Variable minting rate tied to user adoption (see Mint Tier Schedule below)</li>
                   <li>Utility-first design: use UNIYAA to buy and sell goods and services</li>
                   <li>One regular mint per user every 30 days</li>
-                  <li>No referral rewards: referrals are optional and record attribution only</li>
+                  <li>One kind of account for everyone: no business accounts, no referrals</li>
                 </ul>
               </div>
 

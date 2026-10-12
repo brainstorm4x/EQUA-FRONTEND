@@ -1,25 +1,18 @@
 'use client';
 
-import { FC, useState, useCallback, useEffect } from 'react';
-import { PublicKey } from '@solana/web3.js';
+import { FC } from 'react';
 import {
-  AccountType,
-  DEFAULT_ACCOUNT_TYPE,
   MIN_SOL_BALANCE,
   hasMinimumSolBalance,
   formatSolBalance
 } from '@/utils/registration';
-import { ReferralStatusIndicator } from './ReferralStatusIndicator';
-import { useReferralResolution } from '@/hooks/useReferralResolution';
-import { ReferralState } from '@/types/referral';
 import { createFingerprintMetadata, FingerprintMetadata } from '@/utils/deviceFingerprint';
 
 interface RegistrationFormProps {
   totalUsers: number;
   walletBalance: number; // in lamports
-  onRegister: (accountType: AccountType, referrer: string | null, metadata?: RegistrationMetadata) => void;
+  onRegister: (metadata?: RegistrationMetadata) => void;
   isLoading: boolean;
-  validateReferrer?: (referrer: string) => Promise<boolean>;
 }
 
 export interface RegistrationMetadata {
@@ -31,104 +24,21 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
   walletBalance,
   onRegister,
   isLoading,
-  validateReferrer,
 }) => {
-  const [accountType, setAccountType] = useState<AccountType>('individual');
-  const [referrer, setReferrer] = useState('');
-  const [referrerError, setReferrerError] = useState('');
-  const [isValidatingReferrer, setIsValidatingReferrer] = useState(false);
-  
-  // Use the referral resolution hook for code validation
-  const referralResolution = useReferralResolution(referrer);
-
   const hasSufficientBalance = hasMinimumSolBalance(walletBalance);
   const balanceSOL = formatSolBalance(walletBalance);
 
-  // Validate referrer when it changes (now uses onchain validation).
-  // Referrals are optional at every tier, so an empty input is always valid.
-  const validateReferrerInput = useCallback(async (value: string) => {
-    if (!value.trim()) {
-      setReferrerError('');
-      return;
-    }
-
-    // If it's a valid referral code (10-char), let the referral resolution hook handle it
-    if (/^[A-Za-z0-9]{10}$/.test(value.trim())) {
-      // The hook will validate the code
-      setReferrerError('');
-      return;
-    }
-
-    // Validate public key format
-    try {
-      new PublicKey(value);
-    } catch {
-      setReferrerError('Invalid wallet address format');
-      return;
-    }
-
-    // Validate referrer exists on-chain (no database check)
-    if (validateReferrer) {
-      setIsValidatingReferrer(true);
-      try {
-        const isValid = await validateReferrer(value);
-        if (!isValid) {
-          setReferrerError('This address is not a registered user on-chain');
-        } else {
-          setReferrerError('');
-        }
-      } catch (error) {
-        setReferrerError('Failed to validate referrer on-chain');
-      } finally {
-        setIsValidatingReferrer(false);
-      }
-    } else {
-      setReferrerError('');
-    }
-  }, [validateReferrer]);
-
-  // Debounced validation
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (referrer) {
-        validateReferrerInput(referrer);
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [referrer, validateReferrerInput]);
-
   const handleSubmit = () => {
     if (!hasSufficientBalance) return;
-    if (referrerError) return;
-    
-    // Use the resolved referrer public key from the hook if available
-    const effectiveReferrer = referralResolution.referrerPubkey || referrer.trim() || null;
-    
-    // Generate fingerprint metadata
-    const fingerprint = createFingerprintMetadata();
-    
-    // Create registration metadata without geographic data or account type
+
     const metadata: RegistrationMetadata = {
-      fingerprint,
+      fingerprint: createFingerprintMetadata(),
     };
-    
-    // Register with selected account type
-    onRegister(accountType, effectiveReferrer, metadata);
+
+    onRegister(metadata);
   };
 
-  // Check if referral code validation has an error state
-  const hasReferralCodeError = referralResolution.status === ReferralState.USED ||
-    referralResolution.status === ReferralState.EXPIRED ||
-    referralResolution.status === ReferralState.NOT_FOUND ||
-    referralResolution.status === ReferralState.MALFORMED;
-
-  const canSubmit =
-    hasSufficientBalance &&
-    !isLoading &&
-    !isValidatingReferrer &&
-    !referralResolution.isLoading &&
-    !referrerError &&
-    !hasReferralCodeError;
+  const canSubmit = hasSufficientBalance && !isLoading;
 
   return (
     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30">
@@ -138,50 +48,6 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
         <p className="text-purple-200">
           Create your on-chain user account to start minting UNIYAA tokens
         </p>
-      </div>
-
-      {/* Account Type Selection */}
-      <div className="mb-6">
-        <label className="block text-white font-medium mb-3">
-          Select Account Type
-        </label>
-        <div className="grid grid-cols-2 gap-4">
-          {/* Individual Card */}
-          <button
-            type="button"
-            onClick={() => setAccountType('individual')}
-            className={`relative p-4 rounded-xl border-2 transition-all ${
-              accountType === 'individual'
-                ? 'border-purple-500 bg-purple-500/20'
-                : 'border-purple-500/30 bg-white/5 hover:border-purple-500/50'
-            }`}
-          >
-            <div className="text-4xl mb-2">👤</div>
-            <div className="text-white font-semibold mb-1">Individual</div>
-            <div className="text-purple-300 text-sm">Personal account</div>
-            {accountType === 'individual' && (
-              <div className="absolute top-2 right-2 text-green-400">✓</div>
-            )}
-          </button>
-
-          {/* Business Card */}
-          <button
-            type="button"
-            onClick={() => setAccountType('business')}
-            className={`relative p-4 rounded-xl border-2 transition-all ${
-              accountType === 'business'
-                ? 'border-purple-500 bg-purple-500/20'
-                : 'border-purple-500/30 bg-white/5 hover:border-purple-500/50'
-            }`}
-          >
-            <div className="text-4xl mb-2">🏢</div>
-            <div className="text-white font-semibold mb-1">Business</div>
-            <div className="text-purple-300 text-sm">Company account</div>
-            {accountType === 'business' && (
-              <div className="absolute top-2 right-2 text-green-400">✓</div>
-            )}
-          </button>
-        </div>
       </div>
 
       {/* SOL Balance Warning */}
@@ -205,59 +71,6 @@ export const RegistrationForm: FC<RegistrationFormProps> = ({
           </div>
         </div>
       )}
-
-      {/* Referral Field */}
-      <div className="mb-6">
-        <label 
-          htmlFor="referrer-input"
-          className="block text-white font-medium mb-2"
-        >
-          Referral Code or Wallet Address
-          <span className="text-purple-400 ml-1">(optional)</span>
-        </label>
-
-
-        <div className="relative">
-          <input
-            id="referrer-input"
-            data-testid="referral-input"
-            type="text"
-            value={referrer}
-            onChange={(e) => setReferrer(e.target.value)}
-            placeholder="Enter referral code or wallet address"
-            className={`w-full bg-white/10 border-2 rounded-xl px-4 py-3 text-white placeholder-purple-400/60 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-              referrerError || hasReferralCodeError
-                ? 'border-red-500' 
-                : referralResolution.isValid
-                  ? 'border-green-500'
-                  : 'border-purple-500/30 focus:border-purple-500'
-            }`}
-            aria-invalid={!!referrerError || hasReferralCodeError}
-            aria-describedby={referrerError ? 'referrer-error' : undefined}
-          />
-          {(isValidatingReferrer || referralResolution.isLoading) && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <span className="text-purple-400 animate-spin">⏳</span>
-            </div>
-          )}
-        </div>
-        
-        {/* Referral Status Indicator (for code validation) */}
-        <div data-testid="referral-status">
-          <ReferralStatusIndicator
-            status={referralResolution.status}
-            error={referralResolution.error}
-            expiresInSeconds={referralResolution.expiresInSeconds}
-            referrerPubkey={referralResolution.referrerPubkey}
-          />
-        </div>
-        
-        {referrerError && (
-          <p id="referrer-error" className="text-red-400 text-sm mt-2" role="alert">
-            {referrerError}
-          </p>
-        )}
-      </div>
 
       {/* Register Button */}
       <button
