@@ -93,67 +93,6 @@ export type UniyaaToken = {
       "args": []
     },
     {
-      "name": "addBusinessReferrer",
-      "docs": [
-        "Add a business referrer to the registry (admin only)"
-      ],
-      "discriminator": [
-        110,
-        7,
-        225,
-        205,
-        126,
-        199,
-        112,
-        219
-      ],
-      "accounts": [
-        {
-          "name": "businessRegistry",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  117,
-                  115,
-                  105,
-                  110,
-                  101,
-                  115,
-                  115,
-                  45,
-                  114,
-                  101,
-                  103,
-                  105,
-                  115,
-                  116,
-                  114,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true,
-          "relations": [
-            "businessRegistry"
-          ]
-        }
-      ],
-      "args": [
-        {
-          "name": "businessReferrer",
-          "type": "pubkey"
-        }
-      ]
-    },
-    {
       "name": "createTokenMint",
       "docs": [
         "Create the UNIYAA token mint (call once during deployment)"
@@ -834,64 +773,6 @@ export type UniyaaToken = {
       "args": []
     },
     {
-      "name": "initializeBusinessRegistry",
-      "docs": [
-        "Initialize the business registry (call once during deployment)"
-      ],
-      "discriminator": [
-        151,
-        80,
-        227,
-        76,
-        115,
-        6,
-        7,
-        254
-      ],
-      "accounts": [
-        {
-          "name": "businessRegistry",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  117,
-                  115,
-                  105,
-                  110,
-                  101,
-                  115,
-                  115,
-                  45,
-                  114,
-                  101,
-                  103,
-                  105,
-                  115,
-                  116,
-                  114,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "initializeSocialFunds",
       "docs": [
         "Initialize the social funds state (call once during deployment)"
@@ -953,12 +834,13 @@ export type UniyaaToken = {
     {
       "name": "initializeUser",
       "docs": [
-        "Register a new user with account type (Individual/Business) and metadata.",
+        "Register a new user and their metadata.",
         "",
-        "Referrals are OPTIONAL for every tier — the program never rejects a",
-        "missing referral. When a referral IS supplied past",
-        "REFERRAL_ANTISYBIL_THRESHOLD, extra anti-sybil checks (PDA validation +",
-        "rapid-referral slot gap) are applied to the referrer.",
+        "Every account is the same kind: user_type must be USER_TYPE_INDIVIDUAL,",
+        "and there are no referrals. The `referral` argument and the",
+        "referral_account / referrer_metadata / business_registry accounts are",
+        "still accepted so existing clients' account lists keep matching, but",
+        "they are ignored; the stored referral is always Pubkey::default().",
         "",
         "Note: This instruction does NOT increment GlobalState.total_transactions.",
         "Only P2P transfers (transfer_tokens) increment the transaction counter."
@@ -1149,6 +1031,10 @@ export type UniyaaToken = {
         },
         {
           "name": "businessRegistry",
+          "docs": [
+            "written and need not exist. Kept so existing clients' account lists",
+            "for initialize_user keep matching."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -1442,6 +1328,10 @@ export type UniyaaToken = {
         },
         {
           "name": "businessRegistry",
+          "docs": [
+            "written and need not exist. Kept so existing clients' account lists",
+            "for mint_tokens keep matching."
+          ],
           "pda": {
             "seeds": [
               {
@@ -1666,67 +1556,6 @@ export type UniyaaToken = {
         }
       ],
       "args": []
-    },
-    {
-      "name": "removeBusinessReferrer",
-      "docs": [
-        "Remove a business referrer from the registry (admin only)"
-      ],
-      "discriminator": [
-        160,
-        152,
-        102,
-        113,
-        219,
-        128,
-        159,
-        117
-      ],
-      "accounts": [
-        {
-          "name": "businessRegistry",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  117,
-                  115,
-                  105,
-                  110,
-                  101,
-                  115,
-                  115,
-                  45,
-                  114,
-                  101,
-                  103,
-                  105,
-                  115,
-                  116,
-                  114,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true,
-          "relations": [
-            "businessRegistry"
-          ]
-        }
-      ],
-      "args": [
-        {
-          "name": "businessReferrer",
-          "type": "pubkey"
-        }
-      ]
     },
     {
       "name": "transferTokens",
@@ -2022,19 +1851,6 @@ export type UniyaaToken = {
     }
   ],
   "accounts": [
-    {
-      "name": "businessRegistry",
-      "discriminator": [
-        177,
-        43,
-        70,
-        144,
-        19,
-        164,
-        169,
-        191
-      ]
-    },
     {
       "name": "globalState",
       "discriminator": [
@@ -2369,28 +2185,6 @@ export type UniyaaToken = {
     }
   ],
   "types": [
-    {
-      "name": "businessRegistry",
-      "docs": [
-        "Business Registry for tracking business-type referrers",
-        "PDA Seeds: [b\"business-registry\"]"
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "authority",
-            "type": "pubkey"
-          },
-          {
-            "name": "businessReferrers",
-            "type": {
-              "vec": "pubkey"
-            }
-          }
-        ]
-      }
-    },
     {
       "name": "globalState",
       "type": {
