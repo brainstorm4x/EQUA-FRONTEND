@@ -2117,7 +2117,7 @@ export default function MintPage() {
             </div>
           )}
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className={registered ? 'grid md:grid-cols-2 gap-6' : 'max-w-xl mx-auto'}>
             {!registered ? (
               <>
                 <RegistrationForm

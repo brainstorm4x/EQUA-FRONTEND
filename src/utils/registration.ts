@@ -11,7 +11,9 @@ export enum UserType {
 }
 
 // Minimum SOL balance required for registration
-export const MIN_SOL_BALANCE = 0.01;
+// The program requires 0.01 SOL left AFTER the new accounts' rent (~0.0041 SOL)
+// is paid, so a wallet with less than ~0.0142 SOL fails the transaction.
+export const MIN_SOL_BALANCE = 0.015;
 
 // Elevated mint tier configuration
 export interface ElevatedMintTier {

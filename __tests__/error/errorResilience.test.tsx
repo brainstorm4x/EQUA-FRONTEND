@@ -120,7 +120,7 @@ describe('Error Resilience and Edge Cases', () => {
       render(
         <RegistrationForm
           {...defaultProps}
-          walletBalance={10_000_000} // Exactly 0.01 SOL
+          walletBalance={15_000_000} // Exactly 0.015 SOL
         />
       );
 
@@ -132,7 +132,7 @@ describe('Error Resilience and Edge Cases', () => {
       render(
         <RegistrationForm
           {...defaultProps}
-          walletBalance={9_999_999} // Just below 0.01 SOL
+          walletBalance={12_000_000} // 0.012 SOL: passes the program's 0.01 check only before rent
         />
       );
 
