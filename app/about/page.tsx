@@ -159,7 +159,7 @@ export default function AboutPage() {
                   UNIYAA is currently deployed on Solana Devnet for testing and community validation. This allows us to refine the mechanics, gather feedback, and ensure everything works flawlessly before mainnet launch.
                 </p>
                 <p className="text-purple-200 leading-relaxed mt-3">
-                  <strong className="text-white">Program ID (Devnet):</strong> <code className="text-purple-300 text-sm">6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed</code>
+                  <strong className="text-white">Program ID (Devnet):</strong> <code className="text-purple-300 text-sm">HFg64becVHyoFuHaLVHEVa7cpG6ejyQztDi8zMh4kLSK</code>
                 </p>
               </div>
             </section>

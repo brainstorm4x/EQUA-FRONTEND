@@ -46,7 +46,7 @@ function info(msg) {
 
 // Configuration
 // UNIYAA Token Program ID (Token-2022 only)
-const PROGRAM_ID = new PublicKey('6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed');
+const PROGRAM_ID = new PublicKey('HFg64becVHyoFuHaLVHEVa7cpG6ejyQztDi8zMh4kLSK');
 const MINT_SEED = 'uniyaa-mint';
 const TOKEN_2022_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
 const ASSOCIATED_TOKEN_PROGRAM = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
