@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/uniyaa_token.json`.
  */
 export type UniyaaToken = {
-  "address": "6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed",
+  "address": "HFg64becVHyoFuHaLVHEVa7cpG6ejyQztDi8zMh4kLSK",
   "metadata": {
     "name": "uniyaaToken",
     "version": "0.1.0",
@@ -95,7 +95,15 @@ export type UniyaaToken = {
     {
       "name": "createTokenMint",
       "docs": [
-        "Create the UNIYAA token mint (call once during deployment)"
+        "Create the UNIYAA token mint (call once during deployment).",
+        "",
+        "Token-2022 mint with the DefaultAccountState = Frozen extension: every",
+        "new UNIYAA token account starts frozen and can neither send nor",
+        "receive. The freeze authority is the GlobalState PDA, and the program",
+        "thaws only accounts that belong to registered users (their own token",
+        "account at registration, their locked-token account, the social fund",
+        "accounts). So no exchange pool or other outside account can ever hold",
+        "UNIYAA."
       ],
       "discriminator": [
         35,
@@ -160,7 +168,28 @@ export type UniyaaToken = {
         },
         {
           "name": "globalState",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "payer",
@@ -168,7 +197,12 @@ export type UniyaaToken = {
           "signer": true
         },
         {
-          "name": "tokenProgram"
+          "name": "tokenProgram",
+          "docs": [
+            "Token-2022 only: the DefaultAccountState extension does not exist in",
+            "the original token program."
+          ],
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         },
         {
           "name": "systemProgram",
@@ -715,6 +749,34 @@ export type UniyaaToken = {
         {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "globalState",
+          "docs": [
+            "Freeze authority that thaws the fund accounts (appended last so the",
+            "earlier account positions are unchanged)."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
         }
       ],
       "args": []
@@ -841,9 +903,10 @@ export type UniyaaToken = {
         "referral_account / referrer_metadata / business_registry accounts are",
         "still accepted so existing clients' account lists keep matching, but",
         "they are ignored; the stored referral is always Pubkey::default().",
+        "The user_account, user_metadata, global_state and mint PDAs are",
+        "enforced by their `seeds` constraints.",
         "",
-        "Note: This instruction does NOT increment GlobalState.total_transactions.",
-        "Only P2P transfers (transfer_tokens) increment the transaction counter."
+        "Does NOT increment GlobalState.total_transactions; only P2P transfers do."
       ],
       "discriminator": [
         111,
@@ -1032,8 +1095,7 @@ export type UniyaaToken = {
         {
           "name": "businessRegistry",
           "docs": [
-            "written and need not exist. Kept so existing clients' account lists",
-            "for initialize_user keep matching."
+            "written and need not exist. Kept for client compatibility."
           ],
           "writable": true,
           "pda": {
@@ -1096,16 +1158,8 @@ export type UniyaaToken = {
         "One-shot migration that grows GlobalState from 125 to 149 bytes to add",
         "the participation price model fields (`count_day`, `payers_today`,",
         "`price_index`). Admin only. Safe to re-run on an already-migrated",
-        "account.",
-        "",
-        "The price starts at INITIAL_PRICE_INDEX ($0.01) — there is no admin-",
-        "chosen price. (At migration time devnet had counted 1 transaction, worth",
-        "$0.000001 under the old formula; mainnet had no deployment.)",
-        "",
-        "The realloc + new-field initialization is done manually because Anchor's",
-        "automatic `Account<T>` deserialize happens BEFORE a realloc constraint",
-        "applies, so a growth migration of the wrapped struct always fails with",
-        "AccountDidNotDeserialize."
+        "account. The price starts at INITIAL_PRICE_INDEX ($0.01); there is no",
+        "admin-chosen price."
       ],
       "discriminator": [
         252,
@@ -1121,9 +1175,7 @@ export type UniyaaToken = {
         {
           "name": "globalState",
           "docs": [
-            "- PDA derivation (seeds + bump) is enforced by Anchor above.",
-            "- Discriminator and current size are checked in the handler.",
-            "- Realloc + new field initialization are done explicitly."
+            "checked in the handler."
           ],
           "writable": true,
           "pda": {
@@ -1163,15 +1215,11 @@ export type UniyaaToken = {
     {
       "name": "mintTokens",
       "docs": [
-        "Mint UNIYAA tokens with tier limits based on user index",
-        "User #1: 100 attempts at 100,000 UNIYAA each",
-        "Users #2-10: 100 attempts at 10,000 UNIYAA each",
-        "Users #11+: Normal limit (1,000 UNIYAA)",
+        "Mint UNIYAA tokens with tier limits based on user index (see",
+        "calculate_tier_limit). Only elevated mints are partly locked (see",
+        "calculate_lock_split). One mint per MINTING_COOLDOWN_SECONDS.",
         "",
-        "Cooldown: 24-hour cooldown enforced between regular mints",
-        "",
-        "Note: This instruction does NOT increment GlobalState.total_transactions.",
-        "Only P2P transfers (transfer_tokens) increment the transaction counter."
+        "Does NOT increment GlobalState.total_transactions; only P2P transfers do."
       ],
       "discriminator": [
         59,
@@ -1320,17 +1368,14 @@ export type UniyaaToken = {
         {
           "name": "referrerAccount",
           "docs": [
-            "written. Kept (still writable) so existing clients' hand-built account",
-            "lists for mint_tokens keep matching. Drop it in a coordinated",
-            "program + frontend release."
+            "writable) for client compatibility."
           ],
           "writable": true
         },
         {
           "name": "businessRegistry",
           "docs": [
-            "written and need not exist. Kept so existing clients' account lists",
-            "for mint_tokens keep matching."
+            "written and need not exist. Kept for client compatibility."
           ],
           "pda": {
             "seeds": [
@@ -1367,7 +1412,7 @@ export type UniyaaToken = {
         {
           "name": "lockedTokenAccount",
           "docs": [
-            "Locked token account PDA (only for tiers 1-3)"
+            "Locked token account PDA (only used by elevated mints)"
           ],
           "writable": true,
           "pda": {
@@ -1508,11 +1553,8 @@ export type UniyaaToken = {
     {
       "name": "recordTransaction",
       "docs": [
-        "Record a transaction for price tracking",
-        "",
-        "Note: This is a utility instruction for testing/simulation purposes.",
-        "In production, the primary transaction counter is incremented by transfer_tokens.",
-        "This allows off-chain systems to simulate transaction counts for price calculations."
+        "Admin-only counter bump for testing/simulation. Real P2P volume is",
+        "counted by transfer_tokens, which is unaffected by this gate."
       ],
       "discriminator": [
         134,
@@ -1562,22 +1604,16 @@ export type UniyaaToken = {
       "docs": [
         "Transfer UNIYAA tokens between users (P2P)",
         "",
-        "This is the only user instruction that increments GlobalState.total_transactions,",
-        "which drives the price appreciation model. To keep that counter a measure of",
-        "real use rather than spam:",
+        "The only user instruction that increments GlobalState.total_transactions,",
+        "which drives the price model. To keep that counter a measure of real use",
+        "rather than spam:",
         "- the amount must be non-zero and the recipient must be a different user;",
         "- both token accounts must be UNIYAA accounts owned by sender and recipient;",
         "- each sender counts at most ONCE per UTC day, however many transfers they",
         "send (several transfers in one transaction count once too).",
         "",
         "The token program enforces the actual balance, so tokens a user RECEIVED can",
-        "be sent on like any others.",
-        "",
-        "Operations that do NOT increment the counter:",
-        "- mint_tokens (token creation/minting)",
-        "- initialize_user (user registration)",
-        "",
-        "Note: record_transaction() is a separate admin-only instruction"
+        "be sent on like any others."
       ],
       "discriminator": [
         54,
@@ -1626,8 +1662,8 @@ export type UniyaaToken = {
         {
           "name": "recipientUserAccount",
           "docs": [
-            "Recipient's user account - caller must provide the correct PDA for recipient's wallet",
-            "Validation: Must be a valid UserAccount (Anchor checks discriminator and deserialization)"
+            "Recipient's user account. Anchor checks owner and discriminator; the",
+            "recipient token account below must belong to its authority."
           ],
           "writable": true
         },
@@ -1728,11 +1764,9 @@ export type UniyaaToken = {
     {
       "name": "unlockTokens",
       "docs": [
-        "Unlock tokens after 4-year cliff vesting period",
-        "",
-        "Can only be called after unlock_timestamp has passed",
-        "Transfers all locked tokens from locked ATA to user's ATA.",
-        "Can be repeated: a later locked mint starts a new lock."
+        "Unlock tokens after the lock period. Transfers all locked tokens from",
+        "the locked ATA to the user's ATA. Can be repeated: a later locked mint",
+        "starts a new lock."
       ],
       "discriminator": [
         233,
@@ -2182,6 +2216,11 @@ export type UniyaaToken = {
       "code": 6052,
       "name": "unauthorizedMigration",
       "msg": "Only the GlobalState admin can run the GlobalState migration."
+    },
+    {
+      "code": 6053,
+      "name": "registrationViaCpi",
+      "msg": "Registration must be sent directly by the user's wallet, not through another program."
     }
   ],
   "types": [
@@ -2225,10 +2264,9 @@ export type UniyaaToken = {
           {
             "name": "admin",
             "docs": [
-              "Admin authority. Gates privileged maintenance instructions (currently",
-              "only `record_transaction`, which is otherwise a public counter-bump",
-              "surface). Set at `initialize()` to whoever calls it; rotate via a",
-              "future `set_global_state_admin` instruction if you ever need to."
+              "Admin authority. Gates privileged maintenance instructions",
+              "(`record_transaction`, `migrate_global_state`). Set at `initialize()`",
+              "to whoever calls it."
             ],
             "type": "pubkey"
           },

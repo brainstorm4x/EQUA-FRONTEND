@@ -38,7 +38,7 @@ function getProgramId(): PublicKey {
   return new PublicKey(
     process.env.NEXT_PUBLIC_PROGRAM_ID ||
       process.env.NEXT_PUBLIC_UNIYAA_PROGRAM_ID ||
-      '6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed'
+      'HFg64becVHyoFuHaLVHEVa7cpG6ejyQztDi8zMh4kLSK'
   );
 }
 

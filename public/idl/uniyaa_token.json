@@ -1,5 +1,5 @@
 {
-  "address": "6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed",
+  "address": "HFg64becVHyoFuHaLVHEVa7cpG6ejyQztDi8zMh4kLSK",
   "metadata": {
     "name": "uniyaa_token",
     "version": "0.1.0",
@@ -87,70 +87,17 @@
       "args": []
     },
     {
-      "name": "add_business_referrer",
-      "docs": [
-        "Add a business referrer to the registry (admin only)"
-      ],
-      "discriminator": [
-        110,
-        7,
-        225,
-        205,
-        126,
-        199,
-        112,
-        219
-      ],
-      "accounts": [
-        {
-          "name": "business_registry",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  117,
-                  115,
-                  105,
-                  110,
-                  101,
-                  115,
-                  115,
-                  45,
-                  114,
-                  101,
-                  103,
-                  105,
-                  115,
-                  116,
-                  114,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true,
-          "relations": [
-            "business_registry"
-          ]
-        }
-      ],
-      "args": [
-        {
-          "name": "business_referrer",
-          "type": "pubkey"
-        }
-      ]
-    },
-    {
       "name": "create_token_mint",
       "docs": [
-        "Create the UNIYAA token mint (call once during deployment)"
+        "Create the UNIYAA token mint (call once during deployment).",
+        "",
+        "Token-2022 mint with the DefaultAccountState = Frozen extension: every",
+        "new UNIYAA token account starts frozen and can neither send nor",
+        "receive. The freeze authority is the GlobalState PDA, and the program",
+        "thaws only accounts that belong to registered users (their own token",
+        "account at registration, their locked-token account, the social fund",
+        "accounts). So no exchange pool or other outside account can ever hold",
+        "UNIYAA."
       ],
       "discriminator": [
         35,
@@ -215,7 +162,28 @@
         },
         {
           "name": "global_state",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "payer",
@@ -223,7 +191,12 @@
           "signer": true
         },
         {
-          "name": "token_program"
+          "name": "token_program",
+          "docs": [
+            "Token-2022 only: the DefaultAccountState extension does not exist in",
+            "the original token program."
+          ],
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         },
         {
           "name": "system_program",
@@ -770,6 +743,34 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "global_state",
+          "docs": [
+            "Freeze authority that thaws the fund accounts (appended last so the",
+            "earlier account positions are unchanged)."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
         }
       ],
       "args": []
@@ -810,64 +811,6 @@
                   97,
                   116,
                   101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "initialize_business_registry",
-      "docs": [
-        "Initialize the business registry (call once during deployment)"
-      ],
-      "discriminator": [
-        151,
-        80,
-        227,
-        76,
-        115,
-        6,
-        7,
-        254
-      ],
-      "accounts": [
-        {
-          "name": "business_registry",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  117,
-                  115,
-                  105,
-                  110,
-                  101,
-                  115,
-                  115,
-                  45,
-                  114,
-                  101,
-                  103,
-                  105,
-                  115,
-                  116,
-                  114,
-                  121
                 ]
               }
             ]
@@ -947,15 +890,17 @@
     {
       "name": "initialize_user",
       "docs": [
-        "Register a new user with account type (Individual/Business) and metadata.",
+        "Register a new user and their metadata.",
         "",
-        "Referrals are OPTIONAL for every tier — the program never rejects a",
-        "missing referral. When a referral IS supplied past",
-        "REFERRAL_ANTISYBIL_THRESHOLD, extra anti-sybil checks (PDA validation +",
-        "rapid-referral slot gap) are applied to the referrer.",
+        "Every account is the same kind: user_type must be USER_TYPE_INDIVIDUAL,",
+        "and there are no referrals. The `referral` argument and the",
+        "referral_account / referrer_metadata / business_registry accounts are",
+        "still accepted so existing clients' account lists keep matching, but",
+        "they are ignored; the stored referral is always Pubkey::default().",
+        "The user_account, user_metadata, global_state and mint PDAs are",
+        "enforced by their `seeds` constraints.",
         "",
-        "Note: This instruction does NOT increment GlobalState.total_transactions.",
-        "Only P2P transfers (transfer_tokens) increment the transaction counter."
+        "Does NOT increment GlobalState.total_transactions; only P2P transfers do."
       ],
       "discriminator": [
         111,
@@ -1143,6 +1088,9 @@
         },
         {
           "name": "business_registry",
+          "docs": [
+            "written and need not exist. Kept for client compatibility."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -1204,16 +1152,8 @@
         "One-shot migration that grows GlobalState from 125 to 149 bytes to add",
         "the participation price model fields (`count_day`, `payers_today`,",
         "`price_index`). Admin only. Safe to re-run on an already-migrated",
-        "account.",
-        "",
-        "The price starts at INITIAL_PRICE_INDEX ($0.01) — there is no admin-",
-        "chosen price. (At migration time devnet had counted 1 transaction, worth",
-        "$0.000001 under the old formula; mainnet had no deployment.)",
-        "",
-        "The realloc + new-field initialization is done manually because Anchor's",
-        "automatic `Account<T>` deserialize happens BEFORE a realloc constraint",
-        "applies, so a growth migration of the wrapped struct always fails with",
-        "AccountDidNotDeserialize."
+        "account. The price starts at INITIAL_PRICE_INDEX ($0.01); there is no",
+        "admin-chosen price."
       ],
       "discriminator": [
         252,
@@ -1229,9 +1169,7 @@
         {
           "name": "global_state",
           "docs": [
-            "- PDA derivation (seeds + bump) is enforced by Anchor above.",
-            "- Discriminator and current size are checked in the handler.",
-            "- Realloc + new field initialization are done explicitly."
+            "checked in the handler."
           ],
           "writable": true,
           "pda": {
@@ -1271,15 +1209,11 @@
     {
       "name": "mint_tokens",
       "docs": [
-        "Mint UNIYAA tokens with tier limits based on user index",
-        "User #1: 100 attempts at 100,000 UNIYAA each",
-        "Users #2-10: 100 attempts at 10,000 UNIYAA each",
-        "Users #11+: Normal limit (1,000 UNIYAA)",
+        "Mint UNIYAA tokens with tier limits based on user index (see",
+        "calculate_tier_limit). Only elevated mints are partly locked (see",
+        "calculate_lock_split). One mint per MINTING_COOLDOWN_SECONDS.",
         "",
-        "Cooldown: 24-hour cooldown enforced between regular mints",
-        "",
-        "Note: This instruction does NOT increment GlobalState.total_transactions.",
-        "Only P2P transfers (transfer_tokens) increment the transaction counter."
+        "Does NOT increment GlobalState.total_transactions; only P2P transfers do."
       ],
       "discriminator": [
         59,
@@ -1428,14 +1362,15 @@
         {
           "name": "referrer_account",
           "docs": [
-            "written. Kept (still writable) so existing clients' hand-built account",
-            "lists for mint_tokens keep matching. Drop it in a coordinated",
-            "program + frontend release."
+            "writable) for client compatibility."
           ],
           "writable": true
         },
         {
           "name": "business_registry",
+          "docs": [
+            "written and need not exist. Kept for client compatibility."
+          ],
           "pda": {
             "seeds": [
               {
@@ -1471,7 +1406,7 @@
         {
           "name": "locked_token_account",
           "docs": [
-            "Locked token account PDA (only for tiers 1-3)"
+            "Locked token account PDA (only used by elevated mints)"
           ],
           "writable": true,
           "pda": {
@@ -1612,11 +1547,8 @@
     {
       "name": "record_transaction",
       "docs": [
-        "Record a transaction for price tracking",
-        "",
-        "Note: This is a utility instruction for testing/simulation purposes.",
-        "In production, the primary transaction counter is incremented by transfer_tokens.",
-        "This allows off-chain systems to simulate transaction counts for price calculations."
+        "Admin-only counter bump for testing/simulation. Real P2P volume is",
+        "counted by transfer_tokens, which is unaffected by this gate."
       ],
       "discriminator": [
         134,
@@ -1662,87 +1594,20 @@
       "args": []
     },
     {
-      "name": "remove_business_referrer",
-      "docs": [
-        "Remove a business referrer from the registry (admin only)"
-      ],
-      "discriminator": [
-        160,
-        152,
-        102,
-        113,
-        219,
-        128,
-        159,
-        117
-      ],
-      "accounts": [
-        {
-          "name": "business_registry",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  117,
-                  115,
-                  105,
-                  110,
-                  101,
-                  115,
-                  115,
-                  45,
-                  114,
-                  101,
-                  103,
-                  105,
-                  115,
-                  116,
-                  114,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true,
-          "relations": [
-            "business_registry"
-          ]
-        }
-      ],
-      "args": [
-        {
-          "name": "business_referrer",
-          "type": "pubkey"
-        }
-      ]
-    },
-    {
       "name": "transfer_tokens",
       "docs": [
         "Transfer UNIYAA tokens between users (P2P)",
         "",
-        "This is the only user instruction that increments GlobalState.total_transactions,",
-        "which drives the price appreciation model. To keep that counter a measure of",
-        "real use rather than spam:",
+        "The only user instruction that increments GlobalState.total_transactions,",
+        "which drives the price model. To keep that counter a measure of real use",
+        "rather than spam:",
         "- the amount must be non-zero and the recipient must be a different user;",
         "- both token accounts must be UNIYAA accounts owned by sender and recipient;",
         "- each sender counts at most ONCE per UTC day, however many transfers they",
         "send (several transfers in one transaction count once too).",
         "",
         "The token program enforces the actual balance, so tokens a user RECEIVED can",
-        "be sent on like any others.",
-        "",
-        "Operations that do NOT increment the counter:",
-        "- mint_tokens (token creation/minting)",
-        "- initialize_user (user registration)",
-        "",
-        "Note: record_transaction() is a separate admin-only instruction"
+        "be sent on like any others."
       ],
       "discriminator": [
         54,
@@ -1791,8 +1656,8 @@
         {
           "name": "recipient_user_account",
           "docs": [
-            "Recipient's user account - caller must provide the correct PDA for recipient's wallet",
-            "Validation: Must be a valid UserAccount (Anchor checks discriminator and deserialization)"
+            "Recipient's user account. Anchor checks owner and discriminator; the",
+            "recipient token account below must belong to its authority."
           ],
           "writable": true
         },
@@ -1893,11 +1758,9 @@
     {
       "name": "unlock_tokens",
       "docs": [
-        "Unlock tokens after 4-year cliff vesting period",
-        "",
-        "Can only be called after unlock_timestamp has passed",
-        "Transfers all locked tokens from locked ATA to user's ATA.",
-        "Can be repeated: a later locked mint starts a new lock."
+        "Unlock tokens after the lock period. Transfers all locked tokens from",
+        "the locked ATA to the user's ATA. Can be repeated: a later locked mint",
+        "starts a new lock."
       ],
       "discriminator": [
         233,
@@ -2016,19 +1879,6 @@
     }
   ],
   "accounts": [
-    {
-      "name": "BusinessRegistry",
-      "discriminator": [
-        177,
-        43,
-        70,
-        144,
-        19,
-        164,
-        169,
-        191
-      ]
-    },
     {
       "name": "GlobalState",
       "discriminator": [
@@ -2360,31 +2210,14 @@
       "code": 6052,
       "name": "UnauthorizedMigration",
       "msg": "Only the GlobalState admin can run the GlobalState migration."
+    },
+    {
+      "code": 6053,
+      "name": "RegistrationViaCpi",
+      "msg": "Registration must be sent directly by the user's wallet, not through another program."
     }
   ],
   "types": [
-    {
-      "name": "BusinessRegistry",
-      "docs": [
-        "Business Registry for tracking business-type referrers",
-        "PDA Seeds: [b\"business-registry\"]"
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "authority",
-            "type": "pubkey"
-          },
-          {
-            "name": "business_referrers",
-            "type": {
-              "vec": "pubkey"
-            }
-          }
-        ]
-      }
-    },
     {
       "name": "GlobalState",
       "type": {
@@ -2425,10 +2258,9 @@
           {
             "name": "admin",
             "docs": [
-              "Admin authority. Gates privileged maintenance instructions (currently",
-              "only `record_transaction`, which is otherwise a public counter-bump",
-              "surface). Set at `initialize()` to whoever calls it; rotate via a",
-              "future `set_global_state_admin` instruction if you ever need to."
+              "Admin authority. Gates privileged maintenance instructions",
+              "(`record_transaction`, `migrate_global_state`). Set at `initialize()`",
+              "to whoever calls it."
             ],
             "type": "pubkey"
           },

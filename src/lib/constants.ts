@@ -7,7 +7,7 @@ import {
 
 // Support both NEXT_PUBLIC_PROGRAM_ID (preferred) and legacy NEXT_PUBLIC_UNIYAA_PROGRAM_ID
 export const PROGRAM_ID = new PublicKey(
-  process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_UNIYAA_PROGRAM_ID || '6UgzWKDEJvKrKSRRBwYJzzYoYfVFdYhDGpwXa6adLZed'
+  process.env.NEXT_PUBLIC_PROGRAM_ID || process.env.NEXT_PUBLIC_UNIYAA_PROGRAM_ID || 'HFg64becVHyoFuHaLVHEVa7cpG6ejyQztDi8zMh4kLSK'
 );
 
 // Token Program Selection
