@@ -159,7 +159,7 @@ describe('Home/Landing Page', () => {
       
       const logos = screen.getAllByAltText('UNIYAA Logo');
       logos.forEach(logo => {
-        expect(logo).toHaveAttribute('src', '/branding/uniyaa-logo-dark.svg');
+        expect(logo).toHaveAttribute('src', '/branding/uniyaa-logo-light.svg');
       });
     });
 
@@ -411,10 +411,10 @@ describe('Home/Landing Page', () => {
       // Should NOT show "Mint UNIYAA" button
       expect(screen.queryByTestId('mint-uniyaa-cta')).not.toBeInTheDocument();
       
-      // Should have logged error
+      // Should have logged error (isUserRegistered catches it and logs)
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith(
-          expect.stringContaining('Error checking registration'),
+          expect.stringContaining('Unexpected error during registration check'),
           expect.any(Error)
         );
       });

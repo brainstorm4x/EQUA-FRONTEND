@@ -308,7 +308,7 @@ export async function getGlobalState(
  * This prevents InvalidProgramId errors when the mint is owned by a different program
  * @param connection - Solana connection
  * @param mintPubkey - Mint account public key
- * @returns true if mint owner matches TOKEN_PROGRAM_ID, false otherwise
+ * @returns the mint's token program (Token-2022) to use in instructions
  * @throws Error with actionable message if mint doesn't exist or owner mismatch
  */
 export async function verifyMintOwner(
@@ -342,6 +342,7 @@ export async function verifyMintOwner(
     throw new Error(
       `❌ Mint owner mismatch.\n` +
       `UNIYAA requires Token-2022.\n` +
+      `Expected: ${TOKEN_2022_PROGRAM_ADDRESS}\n` +
       `Found: ${mintOwner.toBase58()}`
     );
   }

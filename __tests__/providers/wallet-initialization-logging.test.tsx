@@ -36,11 +36,6 @@ jest.mock('@solana/wallet-adapter-react-ui', () => ({
   ),
 }));
 
-jest.mock('@solana/wallet-adapter-wallets', () => ({
-  PhantomWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Phantom' })),
-  SolflareWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Solflare' })),
-}));
-
 jest.mock('@solana-mobile/wallet-adapter-mobile', () => ({
   SolanaMobileWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Mobile Wallet Adapter' })),
   createDefaultAddressSelector: jest.fn(),

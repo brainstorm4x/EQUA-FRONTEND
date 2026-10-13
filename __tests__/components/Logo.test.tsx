@@ -21,7 +21,7 @@ describe('Logo Component', () => {
       render(<Logo />);
       
       const logo = screen.getByAltText('UNIYAA Logo');
-      expect(logo).toHaveAttribute('src', '/branding/uniyaa-logo-dark.svg');
+      expect(logo).toHaveAttribute('src', '/branding/uniyaa-logo-light.svg');
     });
 
     it('should use standard img tag, not Next.js Image', () => {

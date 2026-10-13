@@ -138,13 +138,14 @@ describe('FX Rate Client', () => {
       
       expect(result.rates).toEqual(MOCK_FX_DATA.rates);
       expect(result.source).toBe('exchangerate-api');
+      // Same-origin function URL; no 'no-store' so the browser honours the
+      // function's Cache-Control header (14d4da2).
+      expect(global.fetch).toHaveBeenCalledTimes(1);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('netlify.app'),
-        expect.objectContaining({
-          method: 'GET',
-          cache: 'no-store',
-        })
+        '/.netlify/functions/get-fx-rates',
+        expect.objectContaining({ method: 'GET' })
       );
+      expect((global.fetch as jest.Mock).mock.calls[0][1].cache).toBeUndefined();
     });
     
     it('should cache successful response in localStorage', async () => {
@@ -175,14 +176,12 @@ describe('FX Rate Client', () => {
       expect(global.fetch).not.toHaveBeenCalled(); // Should not call API
     });
     
-    it('should fall back to fallback URL if primary fails', async () => {
-      // Primary URL fails
+    it('should make a single request when the function fails (no fallback URL)', async () => {
+      // The second URL was removed in 14d4da2: one request per cold load.
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 404,
       } as Response);
-      
-      // Fallback URL succeeds
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => createMockApiResponse(1735000000000),
@@ -190,13 +189,8 @@ describe('FX Rate Client', () => {
       
       const result = await fetchFxRates();
       
-      expect(result.source).toBe('exchangerate-api');
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(global.fetch).toHaveBeenNthCalledWith(
-        2,
-        expect.stringContaining('netlify.app'),
-        expect.any(Object)
-      );
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(result.source).toBe('fallback');
     });
     
     it('should use stale cache if all API calls fail', async () => {
@@ -207,7 +201,7 @@ describe('FX Rate Client', () => {
       };
       mockLocalStorage['uniyaa_fx_rates_cache_v2'] = JSON.stringify(staleData);
       
-      // Both API calls fail
+      // The API call fails
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
         status: 500,
@@ -216,7 +210,7 @@ describe('FX Rate Client', () => {
       const result = await fetchFxRates();
       
       expect(result).toEqual(MOCK_FX_DATA);
-      expect(global.fetch).toHaveBeenCalledTimes(2); // Tried both URLs
+      expect(global.fetch).toHaveBeenCalledTimes(1);
     });
     
     it('should fall back to DEFAULT_RATES if all sources fail', async () => {
@@ -245,15 +239,11 @@ describe('FX Rate Client', () => {
         json: async () => { throw new Error('Invalid JSON'); },
       } as Response);
       
-      // Should try fallback
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => createMockApiResponse(1735000000000),
-      } as Response);
-      
       const result = await fetchFxRates();
       
-      expect(result.source).toBe('exchangerate-api');
+      // No cache: falls through to static DEFAULT_RATES instead of throwing
+      expect(result.source).toBe('fallback');
+      expect(result.rates.USD).toBe(1);
     });
     
     it('should validate required fields in response', async () => {
@@ -267,15 +257,11 @@ describe('FX Rate Client', () => {
         json: async () => invalidData,
       } as Response);
       
-      // Should try fallback
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => createMockApiResponse(1735000000000),
-      } as Response);
-      
       const result = await fetchFxRates();
       
-      expect(result.source).toBe('exchangerate-api');
+      // The invalid response is rejected, not cached or returned
+      expect(result.source).toBe('fallback');
+      expect(mockLocalStorage['uniyaa_fx_rates_cache_v2']).toBeUndefined();
     });
   });
   

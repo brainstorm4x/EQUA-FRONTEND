@@ -64,7 +64,7 @@ describe('Mint Rate Display', () => {
 
       await waitFor(() => {
         const mintRate = screen.getByTestId('mint-rate');
-        expect(mintRate).toHaveTextContent('100,000');
+        expect(mintRate).toHaveTextContent((100000).toLocaleString());
       }, { timeout: 3000 });
     });
   });
@@ -92,7 +92,8 @@ describe('Mint Rate Display', () => {
       await waitFor(() => {
         const mintRate = screen.getByTestId('mint-rate');
         // Should show range for early users
-        expect(mintRate.textContent).toMatch(/10,000|100,000/);
+        // PriceDisplay uses the viewer's locale (e.g. 1,00,000 in en-IN)
+        expect([(10000).toLocaleString(), (100000).toLocaleString()]).toContain(mintRate.textContent);
       }, { timeout: 3000 });
     });
   });
@@ -180,7 +181,7 @@ describe('Mint Rate Display', () => {
       }, { timeout: 3000 });
     });
 
-    it('should display current phase', async () => {
+    it('should display the daily growth maximum', async () => {
       const mockAccountInfo = {
         data: Buffer.concat([
           Buffer.alloc(8), // discriminator
@@ -201,9 +202,9 @@ describe('Mint Rate Display', () => {
 
       await waitFor(() => {
         const phaseElement = screen.getByTestId('current-phase');
-        // Check that phase is displayed
+        // Phases were replaced by the smooth price curve (0288544)
         expect(phaseElement).toBeInTheDocument();
-        expect(phaseElement.textContent).toMatch(/Phase/);
+        expect(phaseElement.textContent).toMatch(/^Growing up to \d+(\.\d+)?% a day$/);
       }, { timeout: 3000 });
     });
   });
@@ -244,7 +245,7 @@ describe('Mint Rate Display', () => {
 
       await waitFor(() => {
         const mintRate = screen.getByTestId('mint-rate');
-        expect(mintRate).toHaveTextContent('100,000');
+        expect(mintRate).toHaveTextContent((100000).toLocaleString());
       }, { timeout: 3000 });
     });
 

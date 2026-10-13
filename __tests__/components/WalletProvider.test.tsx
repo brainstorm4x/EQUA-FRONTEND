@@ -9,7 +9,7 @@ import { WalletProvider } from '@/providers/WalletProvider';
 // Mock the wallet adapter modules
 jest.mock('@solana/wallet-adapter-react', () => ({
   ConnectionProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="connection-provider">{children}</div>,
-  WalletProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="wallet-provider">{children}</div>,
+  WalletProvider: jest.fn(({ children }: { children: React.ReactNode }) => <div data-testid="wallet-provider">{children}</div>),
   useConnection: jest.fn(),
   useWallet: jest.fn(() => ({
     connected: false,
@@ -19,11 +19,6 @@ jest.mock('@solana/wallet-adapter-react', () => ({
 
 jest.mock('@solana/wallet-adapter-react-ui', () => ({
   WalletModalProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="wallet-modal-provider">{children}</div>,
-}));
-
-jest.mock('@solana/wallet-adapter-wallets', () => ({
-  PhantomWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Phantom' })),
-  SolflareWalletAdapter: jest.fn().mockImplementation(() => ({ name: 'Solflare' })),
 }));
 
 describe('WalletProvider Configuration', () => {
@@ -85,34 +80,33 @@ describe('WalletProvider Configuration', () => {
   });
 
   describe('Wallet Adapters', () => {
-    it('should initialize with Phantom and Solflare wallet adapters', () => {
-      const { PhantomWalletAdapter, SolflareWalletAdapter } = 
-        require('@solana/wallet-adapter-wallets');
+    // Legacy Phantom/Solflare adapters (@solana/wallet-adapter-wallets) were
+    // dropped in 63bdd0f: wallets self-register via the Wallet Standard, so
+    // the Solana WalletProvider gets an empty adapter list.
+    const solanaWalletProviderProps = () => {
+      const { WalletProvider: SolanaWalletProvider } = require('@solana/wallet-adapter-react');
+      expect(SolanaWalletProvider).toHaveBeenCalled();
+      return SolanaWalletProvider.mock.calls[0][0];
+    };
 
+    it('should rely on Wallet Standard auto-detection (no legacy adapters)', () => {
       render(
         <WalletProvider>
           <div>Test</div>
         </WalletProvider>
       );
 
-      // Verify that wallet adapters were instantiated
-      expect(PhantomWalletAdapter).toHaveBeenCalled();
-      expect(SolflareWalletAdapter).toHaveBeenCalled();
+      expect(solanaWalletProviderProps().wallets).toEqual([]);
     });
 
-    it('should not use SolanaMobileWalletAdapter (removed for web compatibility)', () => {
+    it('should not auto-connect on desktop', () => {
       render(
         <WalletProvider>
           <div>Test</div>
         </WalletProvider>
       );
 
-      // Phantom and Solflare adapters handle mobile detection automatically
-      const { PhantomWalletAdapter, SolflareWalletAdapter } = 
-        require('@solana/wallet-adapter-wallets');
-      
-      expect(PhantomWalletAdapter).toHaveBeenCalled();
-      expect(SolflareWalletAdapter).toHaveBeenCalled();
+      expect(solanaWalletProviderProps().autoConnect).toBe(false);
     });
   });
 
@@ -192,20 +186,6 @@ describe('WalletProvider Configuration', () => {
       }).not.toThrow();
     });
     
-    it('should initialize Phantom and Solflare adapters with mobile auto-detection', () => {
-      const { PhantomWalletAdapter, SolflareWalletAdapter } = 
-        require('@solana/wallet-adapter-wallets');
-      
-      render(
-        <WalletProvider>
-          <div>Test</div>
-        </WalletProvider>
-      );
-      
-      // Both adapters automatically handle mobile detection
-      expect(PhantomWalletAdapter).toHaveBeenCalled();
-      expect(SolflareWalletAdapter).toHaveBeenCalled();
-    });
   });
 
   describe('No Wallet Banner', () => {
