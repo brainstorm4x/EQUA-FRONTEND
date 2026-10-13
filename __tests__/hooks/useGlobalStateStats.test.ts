@@ -49,7 +49,7 @@ describe('useGlobalStateStats', () => {
     });
   });
 
-  it('should return zero values when global state account does not exist', async () => {
+  it('should return zero values and flag a config error when global state account does not exist', async () => {
     mockConnection.getAccountInfo = jest.fn().mockResolvedValue(null);
 
     const { result } = renderHook(() => useGlobalStateStats());
@@ -61,7 +61,8 @@ describe('useGlobalStateStats', () => {
     expect(result.current.totalUsers).toBe(0);
     expect(result.current.totalTransactions).toBe(0);
     expect(result.current.currentEpoch).toBe(0);
-    expect(result.current.error).toBeNull();
+    // A missing GlobalState means wrong cluster or program ID (6c26d9c)
+    expect(result.current.error).toMatch(/GlobalState account not found/);
   });
 
   it('should parse and return global state data correctly', async () => {

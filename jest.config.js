@@ -13,7 +13,7 @@ const customJestConfig = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   // netlify/__tests__/*.test.mjs use node's test runner: npm run test:functions
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/', '<rootDir>/e2e/', '<rootDir>/__tests__/utils/', '<rootDir>/netlify/__tests__/'],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/', '<rootDir>/tests/e2e/', '<rootDir>/__tests__/utils/', '<rootDir>/netlify/__tests__/'],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     'app/**/*.{js,jsx,ts,tsx}',

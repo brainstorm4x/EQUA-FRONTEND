@@ -59,19 +59,28 @@ describe('locked-tokens utilities', () => {
   });
 
   describe('formatTimeRemaining', () => {
+    // formatTimeRemaining counts calendar years from now, so a fixed
+    // 365-day year is short by a day whenever the span crosses Feb 29.
+    const secondsToCalendarYears = (years: number) => {
+      const now = new Date();
+      const later = new Date(now);
+      later.setFullYear(now.getFullYear() + years);
+      return (later.getTime() - now.getTime()) / 1000;
+    };
+
     it('should return "Unlocked" for 0 or negative seconds', () => {
       expect(formatTimeRemaining(0)).toBe('Unlocked');
       expect(formatTimeRemaining(-100)).toBe('Unlocked');
     });
 
     it('should format years, months, and days correctly', () => {
-      const twoYears = 2 * 365 * 24 * 60 * 60;
+      const twoYears = secondsToCalendarYears(2);
       const result = formatTimeRemaining(twoYears);
       expect(result).toContain('2 years');
     });
 
     it('should handle singular year', () => {
-      const oneYear = 365 * 24 * 60 * 60;
+      const oneYear = secondsToCalendarYears(1);
       const result = formatTimeRemaining(oneYear);
       expect(result).toContain('1 year');
       expect(result).not.toContain('years');

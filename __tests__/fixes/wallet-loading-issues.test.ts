@@ -1,8 +1,8 @@
 /**
- * Tests to verify the three main fixes:
+ * Tests to verify the main fixes:
  * 1. Wallet and button components use ssr: false
  * 2. Account data short errors are handled gracefully
- * 3. Pyth API endpoint is correct
+ * (Issue 3, the Pyth endpoint, went with UNX in 89d93a8.)
  */
 
 import { parseUserAccountData, getUserAccountData } from '@/utils/onchainRegistration';
@@ -82,21 +82,6 @@ describe('Fix verification tests', () => {
       expect(result?.authority).toBeInstanceOf(PublicKey);
       expect(result?.referral).toBeInstanceOf(PublicKey);
       expect(result?.tokenAccount).toBeInstanceOf(PublicKey);
-    });
-  });
-
-  describe('Issue 3: Pyth API endpoint verification', () => {
-    it('should use the correct Pyth Hermes API endpoint', () => {
-      // Import the module to verify the constant
-      const unxOracle = require('@/utils/unxOracle');
-      
-      // We can't directly access the const, but we can verify the module loads
-      expect(unxOracle).toBeDefined();
-      // getUNXPriceData was renamed to getUniyaaPriceMultiFormat
-      expect(unxOracle.getUniyaaPriceMultiFormat).toBeDefined();
-      
-      // The correct endpoint should be used internally
-      // This test verifies the module structure is correct
     });
   });
 });

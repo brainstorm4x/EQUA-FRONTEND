@@ -20,12 +20,13 @@ jest.mock('@/lib/program', () => ({
   getGlobalState: jest.fn(),
 }));
 
-// Mock wallet adapter
+// Mock wallet adapter. The connection must be one stable object, as the real
+// ConnectionProvider's is: a new object every render changes initializeProgram,
+// which re-runs init after an ERROR and hides the error state.
+const mockConnection = { rpcEndpoint: 'https://api.devnet.solana.com' };
 jest.mock('@solana/wallet-adapter-react', () => ({
   useConnection: () => ({
-    connection: {
-      rpcEndpoint: 'https://api.devnet.solana.com',
-    },
+    connection: mockConnection,
   }),
   useWallet: () => ({
     publicKey: null,

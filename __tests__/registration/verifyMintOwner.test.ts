@@ -34,7 +34,8 @@ describe('verifyMintOwner', () => {
       lamports: 1000000
     });
 
-    await expect(verifyMintOwner(mockConnection, mintPubkey)).resolves.toBe(true);
+    // Returns the token program to build instructions with (0208c85)
+    await expect(verifyMintOwner(mockConnection, mintPubkey)).resolves.toEqual(token2022Program);
   });
 
   it('should throw error when mint does not exist', async () => {
@@ -74,11 +75,11 @@ describe('verifyMintOwner', () => {
     }
   });
 
-  it('should handle RPC errors gracefully', async () => {
+  it('should propagate RPC errors instead of passing the check', async () => {
     mockConnection.getAccountInfo.mockRejectedValue(new Error('RPC connection failed'));
 
     await expect(verifyMintOwner(mockConnection, mintPubkey))
       .rejects
-      .toThrow('Failed to verify mint owner');
+      .toThrow('RPC connection failed');
   });
 });

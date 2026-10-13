@@ -25,6 +25,8 @@ interface Props {
 export const DesktopWalletProvider: FC<Props> = ({ children }) => {
   const endpoint = useMemo(() => walletRpcEndpoint(), []);
 
+  console.log('🖥️ [DesktopProvider] Initializing with Wallet Standard auto-detection');
+
   return (
     <ConnectionProvider endpoint={endpoint}>
       <SolanaWalletProvider wallets={[]} autoConnect={false}>
