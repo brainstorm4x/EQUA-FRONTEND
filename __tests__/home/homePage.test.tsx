@@ -282,8 +282,6 @@ describe('Home/Landing Page', () => {
     beforeEach(() => {
       // Reset mocks
       jest.clearAllMocks();
-      // The site remembers registered wallets per device; start each test fresh
-      window.localStorage.clear();
     });
 
     it('should show "Mint UNIYAA" button for registered users', async () => {

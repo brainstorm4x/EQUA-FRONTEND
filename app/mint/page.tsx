@@ -44,10 +44,9 @@ import {
 } from '@/utils/registration';
 import { safeParseTimestamp } from '@/utils/safeAccountParsing';
 import { isUserAccountRegisteredOnchain } from '@/utils/onchainRegistration';
-import * as CooldownGuard from '@/utils/cooldown';
+import { getCooldownPeriod } from '@/utils/cooldown';
 import { fetchUserMetadata, type UserMetadata } from '@/utils/userMetadata';
 import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrationCheck';
-import { rememberRegistered, wasRegistered } from '@/utils/registeredWallets';
 import { getLockedTokenAccountPda, getLockedTokenPda, getLockedTokenAta } from '@/utils/pda-helpers';
 import { PROGRAM_ID } from '@/lib/constants';
 import { sendTransactionWithSign, isMobileBrowser } from '@/utils/transactionSender';
@@ -341,7 +340,6 @@ export default function MintPage() {
     globalStatePDA,
     mintPDA,
     mintAuthority,
-    checkRegistration,
     getBalance,
     getTokenBalance,
     fetchGlobalState,
@@ -354,6 +352,8 @@ export default function MintPage() {
   const [error, setError] = useState('');
   const [txSignature, setTxSignature] = useState('');
   const [isCheckingRegistration, setIsCheckingRegistration] = useState(true);
+  // Set when the chain could not be read: show a retry, never the registration form
+  const [registrationCheckFailed, setRegistrationCheckFailed] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [lastMintTime, setLastMintTime] = useState<number>(0);
   const [timeUntilNextMint, setTimeUntilNextMint] = useState<number>(0);
@@ -453,21 +453,21 @@ export default function MintPage() {
         // ✅ Check on-chain registration status using canonical check
         const registered = await isUserRegistered(connection, publicKey);
         
+        setRegistrationCheckFailed(false);
         if (registered) {
           // ✅ Registered → show mint interface
           console.log('✅ User registered, showing mint interface');
           setRegistered(true);
         } else {
-          // ✅ NOT registered → show registration form (don't redirect)
+          // ✅ The chain says NOT registered → show registration form (don't redirect)
           console.log('💡 User not registered, showing registration form');
           setRegistered(false);
         }
       } catch (error) {
+        // Unknown is not "unregistered": showing the form here sent registered
+        // users back to registration. Offer a retry instead.
         console.error('❌ Error checking registration:', error);
-        // ✅ On error, assume not registered and show registration form
-        // This is safer than redirecting - user can still attempt to register
-        console.log('💡 Error checking registration, showing registration form as fallback');
-        setRegistered(false);
+        setRegistrationCheckFailed(true);
       } finally {
         setIsCheckingRegistration(false);
       }
@@ -502,23 +502,31 @@ export default function MintPage() {
   }, [publicKey, connection]);
 
 
-  // Retries while a just-registered wallet's UserMetadata is not visible yet
+  // Retries while a registered wallet's UserMetadata is not visible yet
   const metadataRetries = useRef(0);
-  const checkUserRegistrationRef = useRef<(() => Promise<void>) | null>(null);
+  const checkUserRegistrationRef = useRef<((background?: boolean) => Promise<void>) | null>(null);
+  // In-page locks against double clicks (a ref is set synchronously; React
+  // state would still read "not loading" on a fast second click)
+  const registerInFlight = useRef(false);
+  const mintInFlight = useRef(false);
 
-  const checkUserRegistration = useCallback(async () => {
+  // background: re-check without the full-page loading screen (page shown again, focus)
+  const checkUserRegistration = useCallback(async (background = false) => {
     if (!publicKey || !isReady || !userAccountPDA) {
       setIsCheckingRegistration(false);
       return;
     }
 
-    setIsCheckingRegistration(true);
+    if (!background) setIsCheckingRegistration(true);
     try {
-      // Registered on-chain, or already seen registered on this device (an RPC
-      // node can lag a few seconds right after registration; see registeredWallets.ts)
-      const isReg = (await checkRegistration(publicKey)) || wasRegistered(publicKey);
-      if (isReg) rememberRegistered(publicKey);
+      // The canonical check (UserMetadata at "confirmed", uncached). It used to
+      // be useProgram's checkRegistration(publicKey), which expects the
+      // UserAccount PDA: given the wallet it always said "not registered", and
+      // whichever of the two checks on this page finished last decided whether
+      // a registered user saw the registration form.
+      const isReg = await isUserRegistered(connection, publicKey);
       setRegistered(isReg);
+      setRegistrationCheckFailed(false);
 
       if (isReg && publicKey) {
         // Fetch actual SPL token balance directly without cache
@@ -556,12 +564,12 @@ export default function MintPage() {
         console.log('📋 Fetching UserMetadata from on-chain...');
         const metadata = await fetchUserMetadata(connection, publicKey);
         
-        if (!metadata && wasRegistered(publicKey) && metadataRetries.current < 15) {
-          // Just registered: the RPC node has not caught up yet. Keep the
-          // registered view (never the registration form) and look again.
+        if (!metadata && metadataRetries.current < 10) {
+          // The UserAccount exists but its UserMetadata is not visible yet (a
+          // node a moment behind): keep the registered view and look again.
           metadataRetries.current += 1;
           console.log('⏳ UserMetadata not visible yet; retrying in 2 s');
-          setTimeout(() => void checkUserRegistrationRef.current?.(), 2000);
+          setTimeout(() => void checkUserRegistrationRef.current?.(true), 2000);
           return;
         }
         if (!metadata) {
@@ -641,12 +649,14 @@ export default function MintPage() {
         }
       }
     } catch (err) {
+      // Unknown is not "unregistered": keep what we know, offer a retry
       console.error('Error checking registration:', err);
+      setRegistrationCheckFailed(true);
     } finally {
       setIsCheckingRegistration(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [publicKey, isReady, userAccountPDA, checkRegistration, mintPDA, connection]);
+  }, [publicKey, isReady, userAccountPDA, mintPDA, connection]);
 
   useEffect(() => {
     checkUserRegistrationRef.current = checkUserRegistration;
@@ -667,7 +677,7 @@ export default function MintPage() {
     const updateCooldown = () => {
       const now = Math.floor(Date.now() / 1000);
       const timeSinceLastMint = now - lastMintTime;
-      const cooldownPeriod = CooldownGuard.getCooldownPeriod();
+      const cooldownPeriod = getCooldownPeriod();
       
       if (timeSinceLastMint >= cooldownPeriod) {
         setCanMint(true);
@@ -682,6 +692,28 @@ export default function MintPage() {
     const interval = setInterval(updateCooldown, 1000);
     return () => clearInterval(interval);
   }, [lastMintTime]);
+
+  // Re-read registration from the chain whenever this page is shown again: the
+  // browser's back/forward cache can restore an old copy of the page (e.g. the
+  // registration form from before registering), and a tab can sit for hours.
+  useEffect(() => {
+    if (!publicKey) return;
+    const recheck = () => void checkUserRegistration(true);
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) recheck();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') recheck();
+    };
+    window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('focus', recheck);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('focus', recheck);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [publicKey, checkUserRegistration]);
 
   // Listen for registration completion events
   useEffect(() => {
@@ -728,6 +760,8 @@ export default function MintPage() {
       return;
     }
 
+    if (registerInFlight.current) return; // a second click while registering
+    registerInFlight.current = true;
     setIsLoading(true);
     setError('');
     setTxSignature('');
@@ -755,19 +789,6 @@ export default function MintPage() {
         );
       }
       
-      // Log fingerprint metadata for Sybil prevention (informational only, not enforced)
-      if (metadata?.fingerprint) {
-        console.log('🔐 Device fingerprint:', metadata.fingerprint.fingerprint);
-        // Store fingerprint in localStorage for duplicate detection
-        if (typeof window !== 'undefined') {
-          const existingFingerprints = JSON.parse(localStorage.getItem('uniyaa_registered_fingerprints') || '[]');
-          if (existingFingerprints.includes(metadata.fingerprint.fingerprint)) {
-            // Warn but don't block - fingerprint is informational
-            console.warn('⚠️ Duplicate fingerprint detected in localStorage (informational)');
-          }
-          // Don't add fingerprint yet - only add after successful registration
-        }
-      }
 
       // First, verify that the mint account exists and owner matches TOKEN_PROGRAM_ID
       console.log('🔍 [Registration] Verifying mint account exists and owner matches...');
@@ -919,25 +940,13 @@ export default function MintPage() {
         console.log('  📍 Signature:', signature);
         setTxSignature(signature);
         setRegistered(true);
-        rememberRegistered(publicKey);
 
         // Note: Registration is now persisted on-chain only. No database storage needed.
         // The blockchain is the source of truth for all registration data.
         console.log('✅ Registration persisted on-chain (blockchain is source of truth)');
         
         if (typeof window !== 'undefined') {
-          // Store fingerprint AFTER successful registration (Sybil prevention)
-          if (metadata?.fingerprint) {
-            const existingFingerprints = JSON.parse(localStorage.getItem('uniyaa_registered_fingerprints') || '[]');
-            existingFingerprints.push(metadata.fingerprint.fingerprint);
-            localStorage.setItem('uniyaa_registered_fingerprints', JSON.stringify(existingFingerprints));
-            localStorage.setItem(`uniyaa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
-            console.log('🔐 Device fingerprint stored for Sybil prevention');
-          }
-          
-          // Notify other components that registration is complete
-          // This triggers GetStartedButton to update its state
-          localStorage.setItem('uniyaa_registration_complete', Date.now().toString());
+          // Notify other components on this page that registration is complete
           window.dispatchEvent(new CustomEvent('uniyaa_registration_complete'));
           console.log('📢 Registration complete event dispatched');
         }
@@ -1089,25 +1098,13 @@ export default function MintPage() {
         console.log('🎉 [Registration] Registration completed successfully!');
         setTxSignature(signature);
         setRegistered(true);
-        rememberRegistered(publicKey);
 
         // Note: Registration is now persisted on-chain only. No database storage needed.
         // The blockchain is the source of truth for all registration data.
         console.log('✅ Registration persisted on-chain (blockchain is source of truth)');
         
         if (typeof window !== 'undefined') {
-          // Store fingerprint AFTER successful registration (Sybil prevention)
-          if (metadata?.fingerprint) {
-            const existingFingerprints = JSON.parse(localStorage.getItem('uniyaa_registered_fingerprints') || '[]');
-            existingFingerprints.push(metadata.fingerprint.fingerprint);
-            localStorage.setItem('uniyaa_registered_fingerprints', JSON.stringify(existingFingerprints));
-            localStorage.setItem(`uniyaa_fingerprint_${publicKey.toBase58()}`, metadata.fingerprint.fingerprint);
-            console.log('🔐 Device fingerprint stored for Sybil prevention');
-          }
-          
-          // Notify other components that registration is complete
-          // This triggers GetStartedButton to update its state
-          localStorage.setItem('uniyaa_registration_complete', Date.now().toString());
+          // Notify other components on this page that registration is complete
           window.dispatchEvent(new CustomEvent('uniyaa_registration_complete'));
           console.log('📢 Registration complete event dispatched');
         }
@@ -1192,7 +1189,11 @@ export default function MintPage() {
       }
       // Account already exists
       else if (errorMessage.includes('0x0') || errorMessage.includes('already in use')) {
-        errorMessage = '❌ Account already exists. You may already be registered. Try refreshing the page.';
+        // The program refused a second registration: this wallet IS registered
+        // (e.g. the form was submitted again from an old copy of the page).
+        setRegistered(true);
+        void checkUserRegistration();
+        return;
       }
       // Simulation failures
       else if (errorMessage.includes('Simulation failed') || errorMessage.includes('simulation failed')) {
@@ -1221,6 +1222,7 @@ export default function MintPage() {
       
       setError(errorMessage);
     } finally {
+      registerInFlight.current = false;
       setIsLoading(false);
     }
   };
@@ -1238,29 +1240,18 @@ export default function MintPage() {
       return;
     }
     
-    // ✅ COOLDOWN GUARD: Check cooldown with CooldownGuard (prevents race conditions)
-    const walletAddress = publicKey.toBase58();
-    if (!CooldownGuard.canMintNow(walletAddress)) {
-      const remaining = CooldownGuard.timeRemaining(walletAddress);
-      setError(`⏰ Please wait ${formatTimeRemaining(remaining)} before minting again`);
-      return;
-    }
-    
-    // ✅ COOLDOWN GUARD: Start mint - set optimistic cooldown and in-flight lock
-    CooldownGuard.startMint(walletAddress);
-    
+    // Double clicks: one mint at a time on this page. The cooldown itself is
+    // read from the chain (canMint, from last_mint_time) and enforced by the
+    // program, which refuses a second mint within 30 days even if two are
+    // sent at once.
+    if (mintInFlight.current || !canMint) return;
+    mintInFlight.current = true;
+
     // Update UI state immediately
     setIsLoading(true);
     setCanMint(false);
     setError('');
     setTxSignature('');
-    
-    // Update cooldown timer immediately with optimistic value
-    const cooldownUntil = CooldownGuard.getCooldownUntil(walletAddress);
-    if (cooldownUntil) {
-      const now = Math.floor(Date.now() / 1000);
-      setTimeUntilNextMint(Math.max(0, cooldownUntil - now));
-    }
     
     try {
       console.log('🔄 Starting mint process...');
@@ -1626,16 +1617,13 @@ export default function MintPage() {
       setLastMintTime(newLastMintTime);
       console.log('⏰ Updated last mint time:', newLastMintTime);
       
-      // ✅ COOLDOWN GUARD: End mint successfully - reconcile with on-chain data
-      const now = Math.floor(Date.now() / 1000);
-      CooldownGuard.endMint(walletAddress, true, now, newLastMintTime);
 
     } catch (err: any) {
       console.error('❌ Minting error:', err);
       
-      // ✅ COOLDOWN GUARD: End mint with error - clear optimistic cooldown
-      CooldownGuard.endMint(walletAddress, false);
-      
+      // Nothing was minted: the chain still allows it
+      setCanMint(true);
+
       // Extract transaction logs for detailed diagnostics
       let logs: string[] = [];
       if (err?.logs) {
@@ -1704,6 +1692,7 @@ export default function MintPage() {
       
       setError(errorMessage);
     } finally {
+      mintInFlight.current = false;
       setIsLoading(false);
     }
   };
@@ -1933,7 +1922,20 @@ export default function MintPage() {
           )}
 
           <div className={registered ? 'grid md:grid-cols-2 gap-6' : 'max-w-xl mx-auto'}>
-            {!registered ? (
+            {!registered && registrationCheckFailed ? (
+              // The chain could not be read: never guess "not registered"
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-purple-500/30 text-center">
+                <p className="text-white text-lg mb-4">
+                  We couldn&apos;t check your registration right now. Please check your connection and try again.
+                </p>
+                <button
+                  onClick={() => void checkUserRegistration()}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : !registered ? (
               <>
                 <RegistrationForm
                   totalUsers={totalUsers}
@@ -1973,7 +1975,7 @@ export default function MintPage() {
                             {formatTimeRemaining(timeUntilNextMint)}
                           </p>
                           <p className="text-yellow-200 text-sm">
-                            Come back on {new Date((lastMintTime + CooldownGuard.getCooldownPeriod()) * 1000).toLocaleString()}
+                            Come back on {new Date((lastMintTime + getCooldownPeriod()) * 1000).toLocaleString()}
                           </p>
                         </>
                       )}
