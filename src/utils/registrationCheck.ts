@@ -6,6 +6,11 @@ import { fetchUserMetadata } from '@/utils/userMetadata';
  * 
  * A user is considered registered if their UserMetadata account exists on-chain.
  * This is the authoritative check used across the entire application.
+ *
+ * Read from the chain only (the connection reads at "confirmed", the level
+ * registration waits for). An RPC failure is thrown, NOT reported as "not
+ * registered": callers must not show the registration form when the answer
+ * is unknown.
  * 
  * @param connection - Solana RPC connection
  * @param authority - User's wallet public key
@@ -40,7 +45,7 @@ export async function isUserRegistered(
     
   } catch (error) {
     console.error('❌ [RegistrationCheck] Unexpected error during registration check:', error);
-    return false;
+    throw error;
   }
 }
 

@@ -60,7 +60,6 @@ export interface MobileRegisterParams {
   userTokenAccount: PublicKey;
   mintPDA: PublicKey;
   businessRegistryPDA: PublicKey;
-  lockedTokenAta: PublicKey;
   preInstructions: TransactionInstruction[];
   accountType: number;
   now: number;

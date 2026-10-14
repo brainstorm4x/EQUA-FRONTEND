@@ -54,24 +54,21 @@ describe('registrationCheck - Single Source of Truth', () => {
       expect(mockFetchUserMetadata).toHaveBeenCalledWith(mockConnection, mockAuthority);
     });
 
-    it('should return false on RPC network error', async () => {
+    it('reports an RPC network error instead of saying "not registered"', async () => {
+      // Unknown must not show the registration form to a registered user
       mockFetchUserMetadata.mockRejectedValue(new Error('Network error'));
 
-      const result = await isUserRegistered(mockConnection, mockAuthority);
-
-      expect(result).toBe(false);
+      await expect(isUserRegistered(mockConnection, mockAuthority)).rejects.toThrow('Network error');
       expect(console.error).toHaveBeenCalledWith(
         expect.stringContaining('❌ [RegistrationCheck] Unexpected error'),
         expect.any(Error)
       );
     });
 
-    it('should return false on timeout error', async () => {
+    it('reports a timeout instead of saying "not registered"', async () => {
       mockFetchUserMetadata.mockRejectedValue(new Error('Request timeout'));
 
-      const result = await isUserRegistered(mockConnection, mockAuthority);
-
-      expect(result).toBe(false);
+      await expect(isUserRegistered(mockConnection, mockAuthority)).rejects.toThrow('Request timeout');
     });
 
     it('should log registration check details for registered user', async () => {
@@ -294,27 +291,22 @@ describe('registrationCheck - Single Source of Truth', () => {
     });
   });
 
-  describe('Error handling and fail-safe behavior', () => {
-    it('should fail safe (return false) on unexpected error types', async () => {
+  describe('Error handling', () => {
+    // An unknown answer must never be reported as "not registered": that
+    // showed registered users the registration form. Callers offer a retry.
+    it('reports unexpected error types', async () => {
       mockFetchUserMetadata.mockRejectedValue('String error');
-
-      const result = await isUserRegistered(mockConnection, mockAuthority);
-
-      expect(result).toBe(false);
+      await expect(isUserRegistered(mockConnection, mockAuthority)).rejects.toBe('String error');
     });
 
-    it('should fail safe (return false) on null error', async () => {
+    it('reports a null error', async () => {
       mockFetchUserMetadata.mockRejectedValue(null);
-
-      const result = await isUserRegistered(mockConnection, mockAuthority);
-
-      expect(result).toBe(false);
+      await expect(isUserRegistered(mockConnection, mockAuthority)).rejects.toBeNull();
     });
 
-    it('should not throw error to caller on RPC failure', async () => {
+    it('passes an RPC failure to the caller', async () => {
       mockFetchUserMetadata.mockRejectedValue(new Error('RPC failed'));
-
-      await expect(isUserRegistered(mockConnection, mockAuthority)).resolves.toBe(false);
+      await expect(isUserRegistered(mockConnection, mockAuthority)).rejects.toThrow('RPC failed');
     });
   });
 });

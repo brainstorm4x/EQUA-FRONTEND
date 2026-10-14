@@ -6,7 +6,7 @@ import {
   WalletProvider as SolanaWalletProvider,
 } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { walletRpcEndpoint } from './walletEndpoint';
+import { WALLET_CONNECTION_CONFIG, walletRpcEndpoint } from './walletEndpoint';
 
 interface Props {
   children: ReactNode;
@@ -27,7 +27,7 @@ export const MobileInAppWalletProvider: FC<Props> = ({ children }) => {
   console.log('📱 [MobileInAppProvider] Initializing with Wallet Standard auto-detection');
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
+    <ConnectionProvider endpoint={endpoint} config={WALLET_CONNECTION_CONFIG}>
       <SolanaWalletProvider wallets={[]} autoConnect={true}>
         <WalletModalProvider>
           {children}

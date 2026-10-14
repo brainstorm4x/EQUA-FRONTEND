@@ -202,6 +202,7 @@ const SendModal: FC<SendModalProps> = ({
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const sendInFlight = useRef(false); // one send at a time (see handleSend)
   const [error, setError] = useState('');
   const [txSignature, setTxSignature] = useState('');
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -482,11 +483,14 @@ const SendModal: FC<SendModalProps> = ({
   const handleSend = async () => {
     if (!recipientAddress || !amount || !signTransaction) return;
     
-    // ✅ ADDED: Prevent duplicate submissions
-    if (isLoading) {
+    // Prevent duplicate sends. A ref is set synchronously, so a fast second
+    // click is refused; the isLoading state would still read false until the
+    // next render, letting two valid transfers go out.
+    if (sendInFlight.current) {
       console.warn('⚠️ Transaction already in progress, ignoring duplicate request');
       return;
     }
+    sendInFlight.current = true;
     
     setIsLoading(true);
     setError('');
@@ -663,6 +667,7 @@ const SendModal: FC<SendModalProps> = ({
       
       setError(errorMessage);
     } finally {
+      sendInFlight.current = false;
       setIsLoading(false);
     }
   };

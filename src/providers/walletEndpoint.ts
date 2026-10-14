@@ -1,4 +1,4 @@
-import { clusterApiUrl, Cluster } from '@solana/web3.js';
+import { clusterApiUrl, Cluster, type ConnectionConfig } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { NETWORK, RPC_ENDPOINT } from '@/lib/constants';
 
@@ -30,3 +30,12 @@ export function walletRpcEndpoint(
   if (rpcEndpoint && rpcEndpoint.length > 0) return rpcEndpoint;
   return clusterApiUrl(resolveNetwork(network) as Cluster);
 }
+
+/**
+ * Connection settings shared by every wallet provider. Reads use "confirmed",
+ * the level registration and payments wait for. Without it the RPC default is
+ * "finalized", which trails by ~13 s, so a just-registered wallet read as
+ * "not registered". One shared object, because ConnectionProvider makes a new
+ * connection whenever its config object changes.
+ */
+export const WALLET_CONNECTION_CONFIG: ConnectionConfig = { commitment: 'confirmed' };

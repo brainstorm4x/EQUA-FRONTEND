@@ -4,8 +4,8 @@
  * Issue: Multiple transaction requests were being triggered for a single user action
  * causing "Transaction simulation failed: This transaction has already been processed" errors
  * 
- * Fix: Added early return guards in handleSend to prevent
- * duplicate submissions when already processing
+ * Fix: an in-flight ref in handleSend refuses duplicate submissions while one
+ * is processing (a state check let fast double clicks through)
  */
 
 import { readFileSync } from 'fs';
@@ -16,48 +16,30 @@ describe('WalletDashboard - Duplicate Transaction Prevention', () => {
   const sourceCode = readFileSync(walletDashboardPath, 'utf-8');
 
   describe('handleSend function', () => {
-    it('should check isLoading state before processing', () => {
-      // Verify the duplicate submission guard is present
-      expect(sourceCode).toMatch(/if \(isLoading\) \{[\s\S]*?console\.warn\(['"]⚠️ Transaction already in progress/);
+    // The guard is a ref, set synchronously. A check on the isLoading state
+    // reads the value from the last render, so a fast second click passed it
+    // and two valid transfers could go out.
+    const handleSendStart = () =>
+      sourceCode.match(/const handleSend = async \(\) => \{[\s\S]*?setIsLoading\(true\);/)?.[0] ?? '';
+
+    it('refuses a second send while one is in flight, using a ref (not state)', () => {
+      expect(handleSendStart()).toMatch(/if \(sendInFlight\.current\) \{[\s\S]*?return;/);
+      expect(handleSendStart()).not.toContain('if (isLoading)');
     });
 
-    it('should return early if already loading', () => {
-      // The pattern should be:
-      // if (isLoading) {
-      //   console.warn('...');
-      //   return;
-      // }
-      const handleSendMatch = sourceCode.match(/const handleSend = async \(\) => \{[\s\S]*?setIsLoading\(true\)/);
-      expect(handleSendMatch).toBeTruthy();
-      
-      if (handleSendMatch) {
-        const handleSendCode = handleSendMatch[0];
-        expect(handleSendCode).toContain('if (isLoading)');
-        expect(handleSendCode).toContain('return;');
-      }
+    it('takes the lock before setting the loading state', () => {
+      const code = handleSendStart();
+      const lockIndex = code.indexOf('sendInFlight.current = true;');
+      expect(lockIndex).toBeGreaterThan(-1);
+      expect(lockIndex).toBeLessThan(code.indexOf('setIsLoading(true)'));
+    });
+
+    it('always releases the lock when the send ends', () => {
+      expect(sourceCode).toMatch(/\} finally \{\s*sendInFlight\.current = false;/);
     });
 
     it('should warn about duplicate requests in console', () => {
-      // Verify warning message is included
       expect(sourceCode).toContain('Transaction already in progress, ignoring duplicate request');
-    });
-
-    it('should have duplicate guard BEFORE setIsLoading(true)', () => {
-      // The guard must be before setting loading state
-      // Pattern: if (isLoading) { ... return; } ... setIsLoading(true);
-      const handleSendMatch = sourceCode.match(/const handleSend = async \(\) => \{[\s\S]*?setIsLoading\(true\);/);
-      expect(handleSendMatch).toBeTruthy();
-      
-      if (handleSendMatch) {
-        const codeSection = handleSendMatch[0];
-        const isLoadingCheckIndex = codeSection.indexOf('if (isLoading)');
-        const setLoadingIndex = codeSection.indexOf('setIsLoading(true)');
-        
-        // isLoading check should come BEFORE setIsLoading(true)
-        expect(isLoadingCheckIndex).toBeGreaterThan(-1);
-        expect(setLoadingIndex).toBeGreaterThan(-1);
-        expect(isLoadingCheckIndex).toBeLessThan(setLoadingIndex);
-      }
     });
   });
 
