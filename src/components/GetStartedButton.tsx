@@ -4,6 +4,7 @@ import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useRouter } from 'next/navigation';
 import { isUserRegistered, getUserAccountPDA } from '@/lib/program';
+import { rememberRegistered, wasRegistered } from '@/utils/registeredWallets';
 import { detectWalletEnvironment } from '@/utils/walletEnvironment';
 
 interface GetStartedButtonProps {
@@ -71,8 +72,10 @@ export const GetStartedButton: FC<GetStartedButtonProps> = ({
       // Derive the user account PDA from the connected wallet's public key
       const [userAccountPDA] = getUserAccountPDA(publicKey);
       
-      // Check if the PDA account exists on-chain
-      registered = await isUserRegistered(connection, userAccountPDA);
+      // Check if the PDA account exists on-chain (or the wallet was already
+      // seen registered on this device; see registeredWallets.ts)
+      registered = wasRegistered(publicKey) || (await isUserRegistered(connection, userAccountPDA));
+      if (registered) rememberRegistered(publicKey);
       console.log(`✓ On-chain check via PDA (${userAccountPDA.toBase58()}): ${registered ? 'registered' : 'not registered'}`);
       
       setIsRegistered(registered);

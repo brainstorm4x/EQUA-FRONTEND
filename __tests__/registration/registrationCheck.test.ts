@@ -8,6 +8,7 @@
 import { PublicKey } from '@solana/web3.js';
 import { isUserRegistered, getUserMetadataIfRegistered } from '@/utils/registrationCheck';
 import { fetchUserMetadata } from '@/utils/userMetadata';
+import { rememberRegistered, wasRegistered } from '@/utils/registeredWallets';
 
 // Mock fetchUserMetadata dependency
 jest.mock('@/utils/userMetadata', () => ({
@@ -22,6 +23,8 @@ describe('registrationCheck - Single Source of Truth', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Each test starts on a device that has not seen any registration
+    window.localStorage.clear();
     // Suppress console logs during tests
     jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
@@ -315,6 +318,49 @@ describe('registrationCheck - Single Source of Truth', () => {
       mockFetchUserMetadata.mockRejectedValue(new Error('RPC failed'));
 
       await expect(isUserRegistered(mockConnection, mockAuthority)).resolves.toBe(false);
+    });
+  });
+
+  describe('wallets already seen registered on this device', () => {
+    it('stays registered when the RPC node briefly answers "not found" after registering', async () => {
+      mockFetchUserMetadata.mockResolvedValueOnce({ user_index: 7, elevated_mint_attempts_used: 0 });
+      expect(await isUserRegistered(mockConnection, mockAuthority)).toBe(true);
+
+      // A lagging node, a moment later (e.g. after a reload or the back button)
+      mockFetchUserMetadata.mockResolvedValueOnce(null);
+      expect(await isUserRegistered(mockConnection, mockAuthority)).toBe(true);
+    });
+
+    it('stays registered when the RPC check fails', async () => {
+      rememberRegistered(mockAuthority);
+      mockFetchUserMetadata.mockRejectedValueOnce(new Error('Network error'));
+      expect(await isUserRegistered(mockConnection, mockAuthority)).toBe(true);
+    });
+
+    it('remembers only the wallet that registered', async () => {
+      rememberRegistered(mockAuthority);
+      const other = PublicKey.unique();
+      mockFetchUserMetadata.mockResolvedValueOnce(null);
+      expect(await isUserRegistered(mockConnection, other)).toBe(false);
+      expect(wasRegistered(other)).toBe(false);
+    });
+
+    it('a new deployment (different program ID) starts clean', () => {
+      // The key includes the program ID, so registrations on an old program are not reused
+      window.localStorage.setItem(`uniyaa:registered:SomeOldProgram:${mockAuthority.toBase58()}`, '1');
+      expect(wasRegistered(mockAuthority)).toBe(false);
+    });
+
+    it('works without storage (private mode): the on-chain check decides', async () => {
+      const spy = jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+        throw new Error('blocked');
+      });
+      jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('blocked');
+      });
+      mockFetchUserMetadata.mockResolvedValueOnce(null);
+      expect(await isUserRegistered(mockConnection, mockAuthority)).toBe(false);
+      expect(spy).toHaveBeenCalled();
     });
   });
 });
