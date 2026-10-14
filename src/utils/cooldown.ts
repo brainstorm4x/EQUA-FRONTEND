@@ -16,6 +16,7 @@
 
 import { Connection, PublicKey } from '@solana/web3.js';
 import { safeParseTimestamp } from './safeAccountParsing';
+import { PROGRAM_ID } from '@/lib/constants';
 
 // Constants
 const LAST_MINT_TIME_OFFSET = 136; // Offset in UserAccount for last_mint_time (i64)
@@ -54,14 +55,15 @@ interface InFlightLock {
  * Get localStorage key for cooldown state
  */
 function getCooldownKey(walletAddress: string): string {
-  return `${COOLDOWN_KEY_PREFIX}${walletAddress}`;
+  // Per program: a cooldown from an older deployment must not block this one
+  return `${COOLDOWN_KEY_PREFIX}${PROGRAM_ID.toBase58()}:${walletAddress}`;
 }
 
 /**
  * Get localStorage key for in-flight lock
  */
 function getInFlightKey(walletAddress: string): string {
-  return `${IN_FLIGHT_KEY_PREFIX}${walletAddress}`;
+  return `${IN_FLIGHT_KEY_PREFIX}${PROGRAM_ID.toBase58()}:${walletAddress}`;
 }
 
 /**
@@ -85,6 +87,17 @@ function getCooldownState(walletAddress: string): CooldownState | null {
       typeof parsed.cooldownUntil === 'number' &&
       typeof parsed.isOptimistic === 'boolean'
     ) {
+      // startMint() writes an optimistic 30-day cooldown before the wallet has
+      // even signed. If the page was left mid-mint (back button, reload, the
+      // wallet never answered), endMint() never ran and that cooldown blocked
+      // minting for 30 days although nothing was minted. After the in-flight
+      // window a mint that really landed is visible on-chain (the page reads
+      // last_mint_time) and the program enforces the cooldown, so drop it.
+      const now = Math.floor(Date.now() / 1000);
+      if (parsed.isOptimistic && now - parsed.lastMintTime > IN_FLIGHT_LOCK_TTL) {
+        localStorage.removeItem(key);
+        return null;
+      }
       return parsed as CooldownState;
     }
     

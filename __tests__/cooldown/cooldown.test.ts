@@ -235,4 +235,40 @@ describe('Cooldown Guard', () => {
       expect(hasInFlightMint(testWallet)).toBe(false); // But lock should be cleared
     });
   });
+
+  describe('a mint left unfinished (page closed or back button mid-mint)', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it('blocks a second click while the first mint may still be in flight', () => {
+      startMint(testWallet);
+      expect(canMintNow(testWallet)).toBe(false);
+    });
+
+    it('does not block minting for 30 days once the in-flight window has passed', () => {
+      startMint(testWallet); // the page is then left before endMint() runs
+      const later = Date.now() + 3 * 60 * 1000; // 3 minutes on (in-flight lock is 2)
+      jest.spyOn(Date, 'now').mockReturnValue(later);
+
+      expect(canMintNow(testWallet)).toBe(true);
+      expect(timeRemaining(testWallet)).toBe(0);
+      expect(getCooldownUntil(testWallet)).toBeNull();
+    });
+
+    it('a confirmed mint still keeps its 30-day cooldown', () => {
+      const now = Math.floor(Date.now() / 1000);
+      endMint(testWallet, true, now, now - 60);
+      jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 3 * 60 * 1000);
+      expect(canMintNow(testWallet)).toBe(false);
+    });
+
+    it('ignores cooldowns stored by an older deployment', () => {
+      const now = Math.floor(Date.now() / 1000);
+      // old key format (no program ID) with a confirmed cooldown
+      localStorageMock.setItem(
+        `uniyaa:cooldown:${testWallet}`,
+        JSON.stringify({ lastMintTime: now - 60, cooldownUntil: now + 2591940, isOptimistic: false }),
+      );
+      expect(canMintNow(testWallet)).toBe(true);
+    });
+  });
 });
